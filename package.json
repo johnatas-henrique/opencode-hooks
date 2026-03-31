@@ -1,0 +1,48 @@
+{
+    "name": "opencode-hooks",
+    "version": "0.0.0-dev-01",
+    "description": "opencode-hooks",
+    "main": "./dist/index.js",
+    "scripts": {
+        "start": "node .",
+        "build": "tsc",
+        "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit",
+        "test:e2e": "bash test/e2e/session-lifecycle.sh",
+        "test": "npm run test:unit",
+        "test:ci": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage --forceExit",
+        "coverage": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage --forceExit",
+        "coverage:report": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage --coverageReporters=text-summary --forceExit",
+        "eslint": "eslint src/**/*.ts"
+    },
+    "keywords": [
+        "opencode-hooks",
+        "created-with-typescript-new-project-scaffolding",
+        "template",
+        "typescript",
+        "node",
+        "nodejs"
+    ],
+    "author": {
+        "email": "info@example.com",
+        "name": "Change me"
+    },
+    "license": "MIT",
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@trickfilm400/eslint-shared-config": "^0.0.2",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^25.5.0",
+        "eslint": "^10.1.0",
+        "globals": "^17.4.0",
+        "jest": "^30.3.0",
+        "jest-environment-jsdom": "^30.3.0",
+        "ts-jest": "^29.4.9",
+        "typescript": "^6.0.2",
+        "typescript-eslint": "^8.58.0"
+    },
+    "files": [
+        "dist",
+        "typings"
+    ],
+    "typings": "types/index.d.ts"
+}
