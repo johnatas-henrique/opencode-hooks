@@ -1,7 +1,6 @@
 import { PluginInput } from "@opencode-ai/plugin";
 import { saveToFile } from "./save-to-file";
-
-const SCRIPTS_DIR = ".opencode/scripts";
+import { SCRIPTS_DIR } from "./constants";
 
 export const runScript = async (
   $: PluginInput["$"],
