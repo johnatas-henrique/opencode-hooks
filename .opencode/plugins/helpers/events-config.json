@@ -1,23 +1,83 @@
 {
-  "version": "1.0.0",
-  "description": "Event toggle config - all default to ON, override what you want OFF",
+  "version": "2.0.0",
+  "description": "Event configuration - modular and configurable per event",
   "enabled": true,
   "toast": false,
   "script": true,
   "saveToFile": true,
   "appendToSession": true,
+  "handlers": {
+    "onSessionCreated": "./handlers/on-session-created.ts",
+    "onSessionCompacted": "./handlers/on-session-compacted.ts",
+    "onSessionDeleted": "./handlers/on-session-deleted.ts",
+    "onSessionError": "./handlers/on-session-error.ts",
+    "onSubAgentCalled": "./handlers/on-subagent-called.ts"
+  },
   "events": {
     "session.created": {
-      "toast": true
+      "enabled": true,
+      "toast": {
+        "title": "====SESSION CREATED====",
+        "variant": "success",
+        "duration": 2000
+      },
+      "script": "session-start.sh",
+      "appendToSession": true
     },
     "session.compacted": {
-      "toast": true
+      "enabled": true,
+      "toast": {
+        "title": "====SESSION COMPACTED====",
+        "variant": "info",
+        "duration": 2000
+      },
+      "script": "pre-compact.sh",
+      "appendToSession": true
+    },
+    "session.deleted": {
+      "enabled": true,
+      "toast": {
+        "title": "====SESSION DELETED====",
+        "variant": "error",
+        "duration": 2000
+      }
     },
     "session.error": {
-      "toast": true
+      "enabled": true,
+      "toast": {
+        "title": "====SESSION ERROR====",
+        "variant": "error",
+        "duration": 30000
+      }
+    },
+    "session.diff": {
+      "enabled": false,
+      "toast": false
+    },
+    "session.idle": {
+      "enabled": false,
+      "toast": false
+    },
+    "session.status": {
+      "enabled": true,
+      "toast": false
+    },
+    "session.updated": {
+      "enabled": true,
+      "toast": false
+    },
+    "server.instance.disposed": {
+      "enabled": true,
+      "script": "session-stop.sh"
     },
     "tool.execute.after": {
-      "toast": true
+      "enabled": true,
+      "toast": {
+        "title": "====SUBAGENT CALLED====",
+        "variant": "info",
+        "duration": 2000
+      },
+      "script": "log-agent.sh"
     }
   }
 }
