@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "description": "Event toggle config - all default to ON, override what you want OFF",
+  "enabled": true,
+  "toast": false,
+  "script": true,
+  "saveToFile": true,
+  "appendToSession": true,
+  "events": {
+    "session.created": {
+      "toast": true
+    },
+    "session.compacted": {
+      "toast": true
+    },
+    "session.error": {
+      "toast": true
+    },
+    "tool.execute.after": {
+      "toast": true
+    }
+  }
+}
