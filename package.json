@@ -12,7 +12,10 @@
         "test:ci": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage --forceExit",
         "coverage": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage --forceExit",
         "coverage:report": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage --coverageReporters=text-summary --forceExit",
-        "eslint": "eslint src/**/*.ts"
+        "lint": "eslint \"**/*.ts\" --ignore-pattern \"node_modules/**\" --ignore-pattern \"dist/**\" --ignore-pattern \"coverage/**\"",
+        "lint:fix": "eslint \"**/*.ts\" --ignore-pattern \"node_modules/**\" --ignore-pattern \"dist/**\" --ignore-pattern \"coverage/**\" --fix",
+        "format": "prettier --write \"**/*.ts\" --ignore-path .gitignore",
+        "format:check": "prettier --check \"**/*.ts\" --ignore-path .gitignore"
     },
     "keywords": [
         "opencode-hooks",
@@ -36,6 +39,7 @@
         "globals": "^17.4.0",
         "jest": "^30.3.0",
         "jest-environment-jsdom": "^30.3.0",
+        "prettier": "^3.8.1",
         "ts-jest": "^29.4.9",
         "typescript": "^6.0.2",
         "typescript-eslint": "^8.58.0"
