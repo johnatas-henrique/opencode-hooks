@@ -75,6 +75,59 @@ const EVENT_TYPES = {
   DISPOSED: 'server.instance.disposed',
 } as const;
 
+type EventHandlerConfig = {
+  toastTitle: string;
+  toastVariant: ToastVariant;
+  toastDuration: number;
+  script?: string;
+  appendToSession: boolean;
+  getSessionId: (event: any) => string;
+};
+
+const createSessionHandler = (
+  config: EventHandlerConfig,
+  run$: PluginInput["$"]
+) => {
+  return async (event: any, ctx: any, toastQueue: any, eventConfig: any, globalConfig: any, timestamp: string) => {
+    if (config.toastTitle && eventConfig.toast) {
+      createEventToast(
+        toastQueue,
+        config.toastTitle,
+        `Session Id: ${config.getSessionId(event)}\nTime: ${formatTime()}`,
+        config.toastVariant,
+        config.toastDuration
+      );
+    }
+    
+    let output = '';
+    if (config.script && (eventConfig.script || eventConfig.appendToSession)) {
+      output = await runScript(run$, config.script);
+      if (globalConfig.saveToFile && output) {
+        await saveToFile({ content: `[${timestamp}] ${output}\n` });
+      }
+    }
+    
+    if (config.appendToSession && eventConfig.appendToSession && output) {
+      await appendToSession(ctx, config.getSessionId(event), output);
+    }
+  };
+};
+
+const handleSimpleToast = (
+  event: any,
+  toastQueue: any,
+  title: string,
+  variant: ToastVariant,
+  duration: number,
+  extra?: string
+) => {
+  const sessionId = event.properties.info?.id || event.properties.sessionID || 'unknown';
+  const message = extra 
+    ? `Session Id: ${sessionId}\n${extra}\nTime: ${formatTime()}`
+    : `Session Id: ${sessionId}\nTime: ${formatTime()}`;
+  createEventToast(toastQueue, title, message, variant, duration);
+};
+
 export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
   const { client, $ } = ctx;
 
