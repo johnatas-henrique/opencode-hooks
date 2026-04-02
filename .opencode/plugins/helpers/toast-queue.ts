@@ -31,10 +31,10 @@ export async function showToastStaggered(
 
 export function createToastQueue(
   showFn: (toast: TuiToast) => void | Promise<void>,
-  options: { staggerMs?: number } = {}
+  options: { staggerMs?: number; maxSize?: number } = {}
 ) {
+  const { staggerMs = 500, maxSize = 50 } = options;
   const queue: TuiToast[] = [];
-  const staggerMs = options.staggerMs ?? 500;
   let processing = false;
   let currentProcessing: Promise<void> | null = null;
 
@@ -61,11 +61,21 @@ export function createToastQueue(
 
   const queueObj = {
     add: (toast: TuiToast) => {
+      if (queue.length >= maxSize) {
+        const dropped = queue.shift();
+        console.warn(`Toast queue full, dropping: ${dropped?.title || 'unknown'}`);
+      }
       queue.push(toast);
       processQueue();
     },
     addMultiple: (toasts: TuiToast[]) => {
-      queue.push(...toasts);
+      for (const toast of toasts) {
+        if (queue.length >= maxSize) {
+          const dropped = queue.shift();
+          console.warn(`Toast queue full, dropping: ${dropped?.title || 'unknown'}`);
+        }
+        queue.push(toast);
+      }
       processQueue();
     },
     clear: () => {
