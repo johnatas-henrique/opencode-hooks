@@ -2,12 +2,22 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 import { saveToFile } from "./save-to-file";
 
-export interface EventToggleConfig {
+export type ToastVariant = 'success' | 'warning' | 'error' | 'info';
+
+export interface ToastConfig {
+  title?: string;
+  message?: string;
+  variant?: ToastVariant;
+  duration?: number;
+}
+
+export interface EventHandlerConfig {
   enabled?: boolean;
-  toast?: boolean;
-  script?: boolean;
+  toast?: boolean | ToastConfig;
+  script?: string | boolean;
   saveToFile?: boolean;
   appendToSession?: boolean;
+  customHandler?: string;
 }
 
 export interface EventsConfig {
@@ -18,7 +28,8 @@ export interface EventsConfig {
   script: boolean;
   saveToFile: boolean;
   appendToSession: boolean;
-  events: Record<string, EventToggleConfig | boolean>;
+  events: Record<string, EventHandlerConfig | boolean>;
+  handlers?: Record<string, string>;
 }
 
 const DEFAULT_CONFIG: EventsConfig = {
@@ -62,7 +73,7 @@ export async function loadEventsConfig(): Promise<EventsConfig> {
   }
 }
 
-export function getEventConfig(eventType: string): EventToggleConfig {
+export function getEventConfig(eventType: string): EventHandlerConfig {
   const config = cachedConfig || DEFAULT_CONFIG;
   
   const eventConfig = config.events[eventType];
@@ -76,6 +87,7 @@ export function getEventConfig(eventType: string): EventToggleConfig {
       script: eventConfig.script ?? config.script,
       saveToFile: eventConfig.saveToFile ?? config.saveToFile,
       appendToSession: eventConfig.appendToSession ?? config.appendToSession,
+      customHandler: eventConfig.customHandler,
     };
   }
   
