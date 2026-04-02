@@ -8,6 +8,8 @@ jest.mock("fs/promises", () => ({
 const mockAppendFile = fs.appendFile as jest.MockedFunction<typeof fs.appendFile>;
 
 describe("save-to-file", () => {
+  const LOG_DIR = "./production/session-logs";
+  
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -18,7 +20,7 @@ describe("save-to-file", () => {
 
     expect(mockAppendFile).toHaveBeenCalledTimes(1);
     expect(mockAppendFile).toHaveBeenCalledWith(
-      "./session_events.log",
+      `${LOG_DIR}/./session_events.log`,
       expect.stringContaining("Test content")
     );
   });
@@ -30,7 +32,7 @@ describe("save-to-file", () => {
 
     expect(mockAppendFile).toHaveBeenCalledTimes(1);
     expect(mockAppendFile).toHaveBeenCalledWith(
-      customFile,
+      `${LOG_DIR}/${customFile}`,
       expect.stringContaining("Test content")
     );
   });
@@ -40,7 +42,7 @@ describe("save-to-file", () => {
     await saveToFile({ content });
 
     expect(mockAppendFile).toHaveBeenCalledWith(
-      "./session_events.log",
+      `${LOG_DIR}/./session_events.log`,
       expect.stringContaining("Test")
     );
   });
