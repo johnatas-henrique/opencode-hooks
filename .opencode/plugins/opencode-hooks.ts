@@ -1,14 +1,4 @@
 import type { Plugin, PluginInput } from '@opencode-ai/plugin';
-import type {
-  EventSessionCreated,
-  EventSessionCompacted,
-  EventSessionDeleted,
-  EventSessionDiff,
-  EventSessionError,
-  EventSessionIdle,
-  EventSessionUpdated,
-  EventSessionStatus,
-} from '@opencode-ai/sdk';
 import {
   ToolExecuteAfterInput,
   ToolExecuteAfterOutput,
@@ -42,22 +32,29 @@ const createEventToast = (
 
 const formatTime = (): string => new Date().toLocaleTimeString();
 
-const isSessionCreated = (event: { type: string }): event is EventSessionCreated => 
-  event.type === 'session.created';
-const isSessionCompacted = (event: { type: string }): event is EventSessionCompacted => 
-  event.type === 'session.compacted';
-const isSessionDeleted = (event: { type: string }): event is EventSessionDeleted => 
-  event.type === 'session.deleted';
-const isSessionDiff = (event: { type: string }): event is EventSessionDiff => 
-  event.type === 'session.diff';
-const isSessionError = (event: { type: string }): event is EventSessionError => 
-  event.type === 'session.error';
-const isSessionIdle = (event: { type: string }): event is EventSessionIdle => 
-  event.type === 'session.idle';
-const isSessionStatus = (event: { type: string }): event is EventSessionStatus => 
-  event.type === 'session.status';
-const isSessionUpdated = (event: { type: string }): event is EventSessionUpdated => 
-  event.type === 'session.updated';
+const isSessionEvent = <T extends { type: string }>(
+  event: T,
+  eventType: string
+): boolean => event.type === eventType;
+
+const SCRIPTS = {
+  CREATED: 'session-start.sh',
+  COMPACTED: 'pre-compact.sh',
+  DISPOSED: 'session-stop.sh',
+  AGENT: 'log-agent.sh',
+} as const;
+
+const TOAST_TITLES = {
+  CREATED: '====SESSION CREATED====',
+  COMPACTED: '====SESSION COMPACTED====',
+  DELETED: '====SESSION DELETED====',
+  DIFF: '====SESSION DIFF====',
+  ERROR: '====SESSION ERROR====',
+  IDLE: '====IDLE SESSION====',
+  STATUS: '====SESSION STATUS====',
+  UPDATED: '====UPDATED SESSION====',
+  SUBAGENT: '====SUBAGENT CALLED====',
+} as const;
 
 export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
   const { client, $ } = ctx;
@@ -107,11 +104,11 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
 
       switch (event.type) {
         case 'session.created': {
-          if (!isSessionCreated(event)) break;
+          if (!isSessionEvent(event, 'session.created')) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
-              '====SESSION CREATED====',
+              TOAST_TITLES.CREATED,
               `Session Id: ${event.properties.info.id}\nTime: ${formatTime()}`,
               'success',
               TOAST_DURATION.SHORT
@@ -119,7 +116,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
           }
           let output = '';
           if (eventConfig.script || eventConfig.appendToSession) {
-            output = await runScript($, 'session-start.sh');
+            output = await runScript($, SCRIPTS.CREATED);
           }
           if (config.saveToFile && output) {
             await saveToFile({ content: `[${timestamp}] ${output}\n` });
@@ -131,11 +128,11 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         }
 
         case 'session.compacted': {
-          if (!isSessionCompacted(event)) break;
+          if (!isSessionEvent(event, 'session.compacted')) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
-              '====SESSION COMPACTED====',
+              TOAST_TITLES.COMPACTED,
               `Session Id: ${event.properties.sessionID}\nTime: ${formatTime()}`,
               'info',
               TOAST_DURATION.SHORT
@@ -143,7 +140,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
           }
           let output = '';
           if (eventConfig.script || eventConfig.appendToSession) {
-            output = await runScript($, 'pre-compact.sh');
+            output = await runScript($, SCRIPTS.COMPACTED);
           }
           if (config.saveToFile && output) {
             await saveToFile({ content: `[${timestamp}] ${output}\n` });
@@ -160,7 +157,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
 
         case 'server.instance.disposed': {
           if (eventConfig.script) {
-            const output = await runScript($, 'session-stop.sh');
+            const output = await runScript($, SCRIPTS.DISPOSED);
             if (config.saveToFile && output) {
               await saveToFile({ content: `[${timestamp}] ${output}\n` });
             }
@@ -169,11 +166,11 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         }
 
         case 'session.deleted': {
-          if (!isSessionDeleted(event)) break;
+          if (!isSessionEvent(event, 'session.deleted')) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
-              '====SESSION DELETED====',
+              TOAST_TITLES.DELETED,
               `Session Id: ${event.properties.info.id}\nTime: ${formatTime()}`,
               'error',
               TOAST_DURATION.SHORT
@@ -183,11 +180,11 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         }
 
         case 'session.diff': {
-          if (!isSessionDiff(event)) break;
+          if (!isSessionEvent(event, 'session.diff')) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
-              '====SESSION DIFF====',
+              TOAST_TITLES.DIFF,
               `Session Id: ${event.properties.sessionID}\neventConfig: ${JSON.stringify(eventConfig)}\nTime: ${formatTime()}`,
               'warning',
               TOAST_DURATION.SHORT
@@ -197,11 +194,11 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         }
 
         case 'session.error': {
-          if (!isSessionError(event)) break;
+          if (!isSessionEvent(event, 'session.error')) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
-              '====SESSION ERROR====',
+              TOAST_TITLES.ERROR,
               `Session Id: ${event.properties.sessionID} || Error\nError: ${event.properties?.error?.name || 'Unknown error'}\nMessage: ${event.properties?.error?.data?.message || 'Unknown message'}\nTime: ${formatTime()}`,
               'error',
               TOAST_DURATION.LONG
@@ -211,11 +208,11 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         }
 
         case 'session.idle': {
-          if (!isSessionIdle(event)) break;
+          if (!isSessionEvent(event, 'session.idle')) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
-              '====IDLE SESSION====',
+              TOAST_TITLES.IDLE,
               `Session Id: ${event.properties.sessionID}\neventConfig: ${JSON.stringify(eventConfig)}\nTime: ${formatTime()}`,
               'info',
               TOAST_DURATION.SHORT
@@ -225,11 +222,11 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         }
 
         case 'session.status': {
-          if (!isSessionStatus(event)) break;
+          if (!isSessionEvent(event, 'session.status')) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
-              '====SESSION STATUS====',
+              TOAST_TITLES.STATUS,
               `Session Id: ${event.properties.sessionID}\neventConfig: ${JSON.stringify(eventConfig)}\nStatus: ${JSON.stringify(event.properties.status)}\nTime: ${formatTime()}`,
               'info',
               TOAST_DURATION.SHORT
@@ -239,11 +236,11 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         }
 
         case 'session.updated': {
-          if (!isSessionUpdated(event)) break;
+          if (!isSessionEvent(event, 'session.updated')) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
-              '====UPDATED SESSION====',
+              TOAST_TITLES.UPDATED,
               `Session Id: ${event.properties.info.id}\neventConfig: ${JSON.stringify(eventConfig)}\nTime: ${formatTime()}`,
               'info',
               TOAST_DURATION.SHORT
@@ -271,14 +268,14 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
           if (toolConfig.toast) {
             createEventToast(
               toastQueue,
-              '====SUBAGENT CALLED====',
+              TOAST_TITLES.SUBAGENT,
               `Session Id: ${input.sessionID}\nAgent: ${subagentType}\nTime: ${formatTime()}`,
               'info',
               TOAST_DURATION.SHORT
             );
           }
           if (toolConfig.script) {
-            const output = await runScript($, 'log-agent.sh', subagentType);
+            const output = await runScript($, SCRIPTS.AGENT, subagentType);
             if (config.saveToFile && output) {
               await saveToFile({ content: `[${timestamp}] ${output}\n` });
             }
