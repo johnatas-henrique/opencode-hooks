@@ -56,6 +56,25 @@ const TOAST_TITLES = {
   SUBAGENT: '====SUBAGENT CALLED====',
 } as const;
 
+const TOAST_VARIANTS = {
+  SUCCESS: 'success',
+  WARNING: 'warning',
+  ERROR: 'error',
+  INFO: 'info',
+} as const;
+
+const EVENT_TYPES = {
+  CREATED: 'session.created',
+  COMPACTED: 'session.compacted',
+  DELETED: 'session.deleted',
+  DIFF: 'session.diff',
+  ERROR: 'session.error',
+  IDLE: 'session.idle',
+  STATUS: 'session.status',
+  UPDATED: 'session.updated',
+  DISPOSED: 'server.instance.disposed',
+} as const;
+
 export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
   const { client, $ } = ctx;
 
@@ -73,7 +92,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       body: {
         title: toast.title,
         message: toast.message,
-        variant: toast.variant ?? 'info',
+        variant: toast.variant ?? TOAST_VARIANTS.INFO,
         duration: toast.duration,
       },
     });
@@ -103,14 +122,14 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       }
 
       switch (event.type) {
-        case 'session.created': {
-          if (!isSessionEvent(event, 'session.created')) break;
+        case EVENT_TYPES.CREATED: {
+          if (!isSessionEvent(event, EVENT_TYPES.CREATED)) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
               TOAST_TITLES.CREATED,
               `Session Id: ${event.properties.info.id}\nTime: ${formatTime()}`,
-              'success',
+TOAST_VARIANTS.SUCCESS,
               TOAST_DURATION.SHORT
             );
           }
@@ -127,14 +146,14 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
           break;
         }
 
-        case 'session.compacted': {
-          if (!isSessionEvent(event, 'session.compacted')) break;
+        case EVENT_TYPES.COMPACTED: {
+          if (!isSessionEvent(event, EVENT_TYPES.COMPACTED)) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
               TOAST_TITLES.COMPACTED,
               `Session Id: ${event.properties.sessionID}\nTime: ${formatTime()}`,
-              'info',
+              TOAST_VARIANTS.INFO,
               TOAST_DURATION.SHORT
             );
           }
@@ -165,84 +184,84 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
           break;
         }
 
-        case 'session.deleted': {
-          if (!isSessionEvent(event, 'session.deleted')) break;
+        case EVENT_TYPES.DELETED: {
+          if (!isSessionEvent(event, EVENT_TYPES.DELETED)) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
               TOAST_TITLES.DELETED,
               `Session Id: ${event.properties.info.id}\nTime: ${formatTime()}`,
-              'error',
+              TOAST_VARIANTS.ERROR,
               TOAST_DURATION.SHORT
             );
           }
           break;
         }
 
-        case 'session.diff': {
-          if (!isSessionEvent(event, 'session.diff')) break;
+        case EVENT_TYPES.DIFF: {
+          if (!isSessionEvent(event, EVENT_TYPES.DIFF)) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
               TOAST_TITLES.DIFF,
               `Session Id: ${event.properties.sessionID}\neventConfig: ${JSON.stringify(eventConfig)}\nTime: ${formatTime()}`,
-              'warning',
+TOAST_VARIANTS.WARNING,
               TOAST_DURATION.SHORT
             );
           }
           break;
         }
 
-        case 'session.error': {
-          if (!isSessionEvent(event, 'session.error')) break;
+        case EVENT_TYPES.ERROR: {
+          if (!isSessionEvent(event, EVENT_TYPES.ERROR)) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
               TOAST_TITLES.ERROR,
               `Session Id: ${event.properties.sessionID} || Error\nError: ${event.properties?.error?.name || 'Unknown error'}\nMessage: ${event.properties?.error?.data?.message || 'Unknown message'}\nTime: ${formatTime()}`,
-              'error',
+              TOAST_VARIANTS.ERROR,
               TOAST_DURATION.LONG
             );
           }
           break;
         }
 
-        case 'session.idle': {
-          if (!isSessionEvent(event, 'session.idle')) break;
+        case EVENT_TYPES.IDLE: {
+          if (!isSessionEvent(event, EVENT_TYPES.IDLE)) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
               TOAST_TITLES.IDLE,
               `Session Id: ${event.properties.sessionID}\neventConfig: ${JSON.stringify(eventConfig)}\nTime: ${formatTime()}`,
-              'info',
+              TOAST_VARIANTS.INFO,
               TOAST_DURATION.SHORT
             );
           }
           break;
         }
 
-        case 'session.status': {
-          if (!isSessionEvent(event, 'session.status')) break;
+        case EVENT_TYPES.STATUS: {
+          if (!isSessionEvent(event, EVENT_TYPES.STATUS)) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
               TOAST_TITLES.STATUS,
               `Session Id: ${event.properties.sessionID}\neventConfig: ${JSON.stringify(eventConfig)}\nStatus: ${JSON.stringify(event.properties.status)}\nTime: ${formatTime()}`,
-              'info',
+              TOAST_VARIANTS.INFO,
               TOAST_DURATION.SHORT
             );
           }
           break;
         }
 
-        case 'session.updated': {
-          if (!isSessionEvent(event, 'session.updated')) break;
+        case EVENT_TYPES.UPDATED: {
+          if (!isSessionEvent(event, EVENT_TYPES.UPDATED)) break;
           if (eventConfig.toast) {
             createEventToast(
               toastQueue,
               TOAST_TITLES.UPDATED,
               `Session Id: ${event.properties.info.id}\neventConfig: ${JSON.stringify(eventConfig)}\nTime: ${formatTime()}`,
-              'info',
+              TOAST_VARIANTS.INFO,
               TOAST_DURATION.SHORT
             );
           }
@@ -270,7 +289,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
               toastQueue,
               TOAST_TITLES.SUBAGENT,
               `Session Id: ${input.sessionID}\nAgent: ${subagentType}\nTime: ${formatTime()}`,
-              'info',
+              TOAST_VARIANTS.INFO,
               TOAST_DURATION.SHORT
             );
           }
