@@ -1,6 +1,6 @@
-import { PluginInput } from "@opencode-ai/plugin";
-import { saveToFile } from "./save-to-file";
-import { SCRIPTS_DIR } from "./constants";
+import { PluginInput } from '@opencode-ai/plugin';
+import { saveToFile } from './save-to-file';
+import { SCRIPTS_DIR } from './constants';
 
 const validateScriptPath = (scriptPath: string): boolean => {
   if (!scriptPath || typeof scriptPath !== 'string') return false;
@@ -9,7 +9,7 @@ const validateScriptPath = (scriptPath: string): boolean => {
 };
 
 export const runScript = async (
-  $: PluginInput["$"],
+  $: PluginInput['$'],
   scriptPath: string,
   ...args: string[]
 ): Promise<string> => {
@@ -19,12 +19,11 @@ export const runScript = async (
   try {
     const result =
       args.length > 0
-        ? await $`./${SCRIPTS_DIR}/${scriptPath} ${args.join(" ")}`.quiet()
+        ? await $`./${SCRIPTS_DIR}/${scriptPath} ${args.join(' ')}`.quiet()
         : await $`./${SCRIPTS_DIR}/${scriptPath}`.quiet();
     return result.text();
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await saveToFile({
       content: `[ERROR] Script ${scriptPath} failed: ${errorMessage}\n`,
     });
