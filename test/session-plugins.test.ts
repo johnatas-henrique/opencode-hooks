@@ -372,6 +372,15 @@ import { saveToFile } from '../.opencode/plugins/helpers/save-to-file';
 
 const _LOG_FILE = './session_events.log';
 
+const createMockCtx = (client: any, dollar: any) => ({
+  client,
+  $: dollar,
+  project: 'test-project',
+  directory: '/test/dir',
+  worktree: '/test/dir',
+  serverUrl: 'http://localhost:3000',
+});
+
 interface Session {
   id: string;
   projectID: string;
@@ -424,7 +433,7 @@ describe('Session Plugins', () => {
 
   describe('session.created', () => {
     it('should trigger toast with variant success', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.created',
@@ -438,7 +447,7 @@ describe('Session Plugins', () => {
     });
 
     it('should contain correct session ID in message', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.created',
@@ -450,7 +459,7 @@ describe('Session Plugins', () => {
     });
 
     it('should have duration of 2000ms (default SHORT)', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.created',
@@ -462,7 +471,7 @@ describe('Session Plugins', () => {
     });
 
     it('should call saveToFile with log entry', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.created',
@@ -480,7 +489,7 @@ describe('Session Plugins', () => {
 
   describe('session.compacted', () => {
     it('should trigger toast with variant info', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.compacted',
@@ -494,7 +503,7 @@ describe('Session Plugins', () => {
     });
 
     it('should run pre-compact.sh script', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.compacted',
@@ -506,7 +515,7 @@ describe('Session Plugins', () => {
     });
 
     it('should contain session ID in message', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.compacted',
@@ -520,7 +529,7 @@ describe('Session Plugins', () => {
 
   describe('session.deleted', () => {
     it('should trigger toast with variant error', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.deleted',
@@ -534,7 +543,7 @@ describe('Session Plugins', () => {
     });
 
     it('should contain correct session ID', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.deleted',
@@ -548,7 +557,7 @@ describe('Session Plugins', () => {
 
   describe('session.idle', () => {
     it('should not trigger toast when disabled in config', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.idle',
@@ -561,7 +570,7 @@ describe('Session Plugins', () => {
 
   describe('session.error', () => {
     it('should trigger toast with variant error', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.error',
@@ -578,7 +587,7 @@ describe('Session Plugins', () => {
     });
 
     it('should extract error name correctly', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.error',
@@ -596,7 +605,7 @@ describe('Session Plugins', () => {
     });
 
     it('should extract error message correctly', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.error',
@@ -614,7 +623,7 @@ describe('Session Plugins', () => {
     });
 
     it('should show Unknown error fallback when error is undefined', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.error',
@@ -627,7 +636,7 @@ describe('Session Plugins', () => {
     });
 
     it('should show Unknown message fallback when data is missing', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.error',
@@ -644,7 +653,7 @@ describe('Session Plugins', () => {
 
   describe('session.diff', () => {
     it('should not trigger toast when disabled in config', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.diff',
@@ -657,7 +666,7 @@ describe('Session Plugins', () => {
 
   describe('session.status', () => {
     it('should not trigger toast', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.status',
@@ -671,7 +680,7 @@ describe('Session Plugins', () => {
     });
 
     it('should complete without error', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.status',
@@ -686,7 +695,7 @@ describe('Session Plugins', () => {
 
   describe('session.updated', () => {
     it('should not trigger toast', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.updated',
@@ -697,7 +706,7 @@ describe('Session Plugins', () => {
     });
 
     it('should complete without error', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.updated',
@@ -709,7 +718,7 @@ describe('Session Plugins', () => {
 
   describe('server.instance.disposed', () => {
     it('should run session-stop.sh script', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'server.instance.disposed',
@@ -721,7 +730,7 @@ describe('Session Plugins', () => {
     });
 
     it('should not trigger toast', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'server.instance.disposed',
@@ -734,7 +743,7 @@ describe('Session Plugins', () => {
 
   describe('tool.execute.after handler', () => {
     it('should trigger toast when tool is task', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const input = {
         tool: 'task',
@@ -752,7 +761,7 @@ describe('Session Plugins', () => {
     });
 
     it('should not trigger toast for non-task tools', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const input = {
         tool: 'read',
@@ -770,7 +779,7 @@ describe('Session Plugins', () => {
     });
 
     it('should not trigger toast when subagent_type is undefined', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const input = {
         tool: 'task',
@@ -790,7 +799,7 @@ describe('Session Plugins', () => {
 
   describe('saveToFile', () => {
     it('should be called for enabled events with logToFile', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const events = [
         { type: 'session.created', properties: { info: createMockSession() } },
@@ -819,7 +828,7 @@ describe('Session Plugins', () => {
     it('should show error toast when script fails', async () => {
       mockRunScript.mockRejectedValueOnce(new Error('Script not found'));
 
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.created',
@@ -842,7 +851,7 @@ describe('Session Plugins', () => {
     it('should save error to file when script fails', async () => {
       mockRunScript.mockRejectedValueOnce(new Error('Script not found'));
 
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'session.created',
@@ -860,7 +869,7 @@ describe('Session Plugins', () => {
     it('should show error toast for tool.execute.after script failure', async () => {
       mockRunScript.mockRejectedValueOnce(new Error('Agent script failed'));
 
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const input = {
         tool: 'task',
