@@ -36,15 +36,16 @@ export function createToastQueue(
 ) {
   const { staggerMs = 500, maxSize = 50 } = options;
   const queue: TuiToast[] = [];
-  let processing = false;
-  let currentProcessing: Promise<void> | null = null;
+  let processingLock: Promise<void> | null = null;
   let activeTimers: ReturnType<typeof setTimeout>[] = [];
 
-  const processQueue = () => {
-    if (processing || queue.length === 0) return;
-    processing = true;
+  const processQueue = async () => {
+    if (processingLock) {
+      await processingLock;
+      if (queue.length === 0) return;
+    }
 
-    const run = async () => {
+    processingLock = (async () => {
       while (queue.length > 0) {
         const toast = queue.shift();
         if (toast) {
@@ -60,11 +61,10 @@ export function createToastQueue(
           });
         }
       }
-      processing = false;
-    };
+      processingLock = null;
+    })();
 
-    currentProcessing = run();
-    return currentProcessing;
+    await processingLock;
   };
 
   const logDroppedToast = (title: string) => {
@@ -98,8 +98,8 @@ export function createToastQueue(
       activeTimers = [];
     },
     flush: async () => {
-      if (currentProcessing) {
-        await currentProcessing;
+      if (processingLock) {
+        await processingLock;
       }
     },
     get pending() {
