@@ -1,4 +1,4 @@
-import type { Plugin, PluginInput } from "@opencode-ai/plugin";
+import type { Plugin, PluginInput } from '@opencode-ai/plugin';
 import type {
   EventSessionCreated,
   EventSessionCompacted,
@@ -9,7 +9,7 @@ import type {
   EventSessionStatus,
   EventSessionUpdated,
   Session,
-} from "@opencode-ai/sdk";
+} from '@opencode-ai/sdk';
 
 export type {
   Plugin,
@@ -26,11 +26,11 @@ export type {
 };
 
 export const mockSession: Session = {
-  id: "test-session-123",
-  projectID: "test-project",
-  directory: "/test/dir",
-  title: "Test Session",
-  version: "1.0.0",
+  id: 'test-session-123',
+  projectID: 'test-project',
+  directory: '/test/dir',
+  title: 'Test Session',
+  version: '1.0.0',
   time: {
     created: Date.now(),
     updated: Date.now(),
@@ -38,42 +38,42 @@ export const mockSession: Session = {
 };
 
 export const mockEventSessionCreated: EventSessionCreated = {
-  type: "session.created",
+  type: 'session.created',
   properties: {
     info: mockSession,
   },
 };
 
 export const mockEventSessionCompacted: EventSessionCompacted = {
-  type: "session.compacted",
+  type: 'session.compacted',
   properties: {
-    sessionID: "test-session-123",
+    sessionID: 'test-session-123',
   },
 };
 
 export const mockEventSessionDeleted: EventSessionDeleted = {
-  type: "session.deleted",
+  type: 'session.deleted',
   properties: {
     info: mockSession,
   },
 };
 
 export const mockEventSessionDiff: EventSessionDiff = {
-  type: "session.diff",
+  type: 'session.diff',
   properties: {
-    sessionID: "test-session-123",
+    sessionID: 'test-session-123',
     diff: [],
   },
 };
 
 export const mockEventSessionError: EventSessionError = {
-  type: "session.error",
+  type: 'session.error',
   properties: {
-    sessionID: "test-session-123",
+    sessionID: 'test-session-123',
     error: {
-      name: "ApiError" as const,
+      name: 'ApiError' as const,
       data: {
-        message: "Test error message",
+        message: 'Test error message',
         isRetryable: false,
       },
     },
@@ -81,30 +81,30 @@ export const mockEventSessionError: EventSessionError = {
 };
 
 export const mockEventSessionErrorUnknown: EventSessionError = {
-  type: "session.error",
+  type: 'session.error',
   properties: {
-    sessionID: "test-session-123",
+    sessionID: 'test-session-123',
     error: undefined,
   },
 };
 
 export const mockEventSessionIdle: EventSessionIdle = {
-  type: "session.idle",
+  type: 'session.idle',
   properties: {
-    sessionID: "test-session-123",
+    sessionID: 'test-session-123',
   },
 };
 
 export const mockEventSessionStatus: EventSessionStatus = {
-  type: "session.status",
+  type: 'session.status',
   properties: {
-    sessionID: "test-session-123",
-    status: { type: "idle" as const },
+    sessionID: 'test-session-123',
+    status: { type: 'idle' as const },
   },
 };
 
 export const mockEventSessionUpdated: EventSessionUpdated = {
-  type: "session.updated",
+  type: 'session.updated',
   properties: {
     info: mockSession,
   },
@@ -127,5 +127,5 @@ export const createMockClient = (): MockClient => ({
 });
 
 export const createMockDollar = (): MockDollar => ({
-  spawn: jest.fn().mockResolvedValue({ exitCode: 0, stdout: "", stderr: "" }),
+  spawn: jest.fn().mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' }),
 });

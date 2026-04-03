@@ -9,4 +9,7 @@ export type PluginInput = {
 
 export type PluginOptions = Record<string, unknown>;
 
-export type Plugin = (input: PluginInput, options?: PluginOptions) => Promise<any>;
+export type Plugin = (
+  input: PluginInput,
+  options?: PluginOptions
+) => Promise<any>;
