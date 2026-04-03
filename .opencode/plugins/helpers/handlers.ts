@@ -20,7 +20,6 @@ export interface EventHandler<T = any> {
 const formatTime = (): string => new Date().toLocaleTimeString();
 
 export const handlers: Record<string, EventHandler> = {
-  // Session Events (8)
   'session.created': {
     title: '====SESSION CREATED====',
     variant: 'success',
@@ -100,7 +99,6 @@ export const handlers: Record<string, EventHandler> = {
       `Session Id: ${event.properties.info.id}\n` + `Time: ${formatTime()}`,
   },
 
-  // Message Events (4)
   'message.part.removed': {
     title: '====MESSAGE PART REMOVED====',
     variant: 'warning',
@@ -145,7 +143,6 @@ export const handlers: Record<string, EventHandler> = {
       `Time: ${formatTime()}`,
   },
 
-  // Tool Events (2)
   'tool.execute.before': {
     title: '====TOOL EXECUTE BEFORE====',
     variant: 'info',
@@ -168,7 +165,6 @@ export const handlers: Record<string, EventHandler> = {
       `Time: ${formatTime()}`,
   },
 
-  // File Events (2)
   'file.edited': {
     title: '====FILE EDITED====',
     variant: 'info',
@@ -190,7 +186,6 @@ export const handlers: Record<string, EventHandler> = {
       `Time: ${formatTime()}`,
   },
 
-  // Permission Events (2)
   'permission.asked': {
     title: '====PERMISSION ASKED====',
     variant: 'warning',
@@ -213,7 +208,6 @@ export const handlers: Record<string, EventHandler> = {
       `Time: ${formatTime()}`,
   },
 
-  // Server Events (2)
   'server.connected': {
     title: '====SERVER CONNECTED====',
     variant: 'success',
@@ -233,7 +227,6 @@ export const handlers: Record<string, EventHandler> = {
       `Time: ${formatTime()}`,
   },
 
-  // Command Events (1)
   'command.executed': {
     title: '====COMMAND EXECUTED====',
     variant: 'info',
@@ -244,7 +237,6 @@ export const handlers: Record<string, EventHandler> = {
       `Time: ${formatTime()}`,
   },
 
-  // LSP Events (2)
   'lsp.client.diagnostics': {
     title: '====LSP DIAGNOSTICS====',
     variant: 'warning',
@@ -266,7 +258,6 @@ export const handlers: Record<string, EventHandler> = {
       `Time: ${formatTime()}`,
   },
 
-  // Installation Events (1)
   'installation.updated': {
     title: '====INSTALLATION UPDATED====',
     variant: 'success',
@@ -277,7 +268,6 @@ export const handlers: Record<string, EventHandler> = {
       `Time: ${formatTime()}`,
   },
 
-  // Todo Events (1)
   'todo.updated': {
     title: '====TODO UPDATED====',
     variant: 'info',
@@ -289,7 +279,6 @@ export const handlers: Record<string, EventHandler> = {
       `Time: ${formatTime()}`,
   },
 
-  // Shell Events (1)
   'shell.env': {
     title: '====SHELL ENV====',
     variant: 'info',
@@ -300,7 +289,6 @@ export const handlers: Record<string, EventHandler> = {
       `Time: ${formatTime()}`,
   },
 
-  // TUI Events (3)
   'tui.prompt.append': {
     title: '====TUI PROMPT APPEND====',
     variant: 'info',
@@ -331,7 +319,6 @@ export const handlers: Record<string, EventHandler> = {
       `Time: ${formatTime()}`,
   },
 
-  // Experimental Events (1)
   'experimental.session.compacting': {
     title: '====SESSION COMPACTING====',
     variant: 'warning',
