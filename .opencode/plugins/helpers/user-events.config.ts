@@ -9,8 +9,11 @@ export const userConfig: UserEventsConfig = {
   runScripts: true,
 
   events: {
-    [EventType.SESSION_CREATED]: { toast: { duration: 5000 } },
-    [EventType.SESSION_COMPACTED]: { scripts: ['pre-compact.sh'], toast: { duration: 5000, variant: 'warning' } },
+    [EventType.SESSION_CREATED]: { toast: { duration: 5000 }, runOnce: true },
+    [EventType.SESSION_COMPACTED]: {
+      scripts: ['pre-compact.sh'],
+      toast: { duration: 5000, variant: 'warning' },
+    },
     [EventType.SESSION_DELETED]: false,
     [EventType.SESSION_DIFF]: false,
     [EventType.SESSION_ERROR]: { toast: { duration: 30000 } },
@@ -26,11 +29,16 @@ export const userConfig: UserEventsConfig = {
     [EventType.FILE_EDITED]: true,
     [EventType.FILE_WATCHER_UPDATED]: true,
 
-    [EventType.PERMISSION_ASKED]: { toast: { duration: 5000, variant: 'info' } },
+    [EventType.PERMISSION_ASKED]: {
+      toast: { duration: 5000, variant: 'info' },
+    },
     [EventType.PERMISSION_REPLIED]: true,
 
     [EventType.SERVER_CONNECTED]: { toast: { duration: 10000 } },
-    [EventType.SERVER_INSTANCE_DISPOSED]: { scripts: ['session-closed.sh'], toast: false },
+    [EventType.SERVER_INSTANCE_DISPOSED]: {
+      scripts: ['session-closed.sh'],
+      toast: false,
+    },
 
     [EventType.COMMAND_EXECUTED]: true,
 

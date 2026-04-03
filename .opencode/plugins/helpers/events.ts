@@ -19,6 +19,7 @@ const DISABLED_CONFIG: ResolvedEventConfig = {
   scripts: [],
   saveToFile: false,
   appendToSession: false,
+  runOnce: false,
 };
 
 export function getHandler(eventType: string): EventHandler | undefined {
@@ -100,6 +101,7 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
         : [],
       saveToFile: global.saveToFile,
       appendToSession: global.appendToSession,
+      runOnce: false,
     };
   }
 
@@ -130,6 +132,10 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
       (typeof userEventConfig === 'object' && userEventConfig !== null
         ? userEventConfig.appendToSession
         : undefined) ?? global.appendToSession,
+    runOnce:
+      (typeof userEventConfig === 'object' && userEventConfig !== null
+        ? userEventConfig.runOnce
+        : undefined) ?? false,
   };
 }
 
@@ -178,5 +184,9 @@ export function resolveToolConfig(
       (typeof toolConfig === 'object' && toolConfig !== null
         ? toolConfig.appendToSession
         : undefined) ?? global.appendToSession,
+    runOnce:
+      (typeof toolConfig === 'object' && toolConfig !== null
+        ? toolConfig.runOnce
+        : undefined) ?? false,
   };
 }
