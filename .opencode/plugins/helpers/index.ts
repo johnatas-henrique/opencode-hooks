@@ -1,7 +1,6 @@
 import { saveToFile } from './save-to-file';
 import { runScript } from './run-script';
 import { appendToSession } from './append-to-session';
-import { createToast } from './create-toast';
 import {
   showToastStaggered,
   createToastQueue,
@@ -29,7 +28,6 @@ export {
   saveToFile,
   runScript,
   appendToSession,
-  createToast,
   showToastStaggered,
   createToastQueue,
   getGlobalToastQueue,
