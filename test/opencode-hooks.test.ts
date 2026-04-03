@@ -2,6 +2,15 @@ import { OpencodeHooks } from '../.opencode/plugins/opencode-hooks';
 
 const mockRunScript = jest.fn().mockResolvedValue('Script executed');
 
+const createMockCtx = (client: any, dollar: any) => ({
+  client,
+  $: dollar,
+  project: 'test-project',
+  directory: '/test/dir',
+  worktree: '/test/dir',
+  serverUrl: 'http://localhost:3000',
+});
+
 jest.mock('../.opencode/plugins/helpers/run-script', () => ({
   runScript: jest
     .fn()
@@ -345,9 +354,13 @@ describe('opencode-hooks - plugin hooks', () => {
 
   describe('tool.execute.before', () => {
     it('should trigger toast when tool is read', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar) as any;
       const plugin = await OpencodeHooks(ctx);
-      const input = { tool: 'read', sessionID: 'session-123' };
+      const input = {
+        tool: 'read',
+        sessionID: 'session-123',
+        callID: 'call-1',
+      };
       const output = {};
       await plugin['tool.execute.before'](input, output);
 
@@ -358,9 +371,13 @@ describe('opencode-hooks - plugin hooks', () => {
     });
 
     it('should not trigger toast when tool is write', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar) as any;
       const plugin = await OpencodeHooks(ctx);
-      const input = { tool: 'write', sessionID: 'session-123' };
+      const input = {
+        tool: 'write',
+        sessionID: 'session-123',
+        callID: 'call-2',
+      };
       const output = {};
       await plugin['tool.execute.before'](input, output);
 
@@ -368,7 +385,7 @@ describe('opencode-hooks - plugin hooks', () => {
     });
 
     it('should run script for read tool', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const input = { tool: 'read', sessionID: 'session-123' };
       const output = {};
@@ -382,7 +399,7 @@ describe('opencode-hooks - plugin hooks', () => {
     });
 
     it('should not run script when tool is disabled', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const input = { tool: 'disabled', sessionID: 'session-123' };
       const output = {};
@@ -395,7 +412,7 @@ describe('opencode-hooks - plugin hooks', () => {
     it('should show error toast when script fails', async () => {
       mockRunScript.mockRejectedValueOnce(new Error('Script not found'));
 
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const input = { tool: 'read', sessionID: 'session-123' };
       const output = {};
@@ -413,7 +430,7 @@ describe('opencode-hooks - plugin hooks', () => {
     it('should save error to file when script fails', async () => {
       mockRunScript.mockRejectedValueOnce(new Error('Script not found'));
 
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const input = { tool: 'read', sessionID: 'session-123' };
       const output = {};
@@ -429,7 +446,7 @@ describe('opencode-hooks - plugin hooks', () => {
 
   describe('shell.env', () => {
     it('should run scripts when enabled', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const input = { cwd: '/test/dir' };
       const output = { env: {} };
@@ -441,7 +458,7 @@ describe('opencode-hooks - plugin hooks', () => {
     it('should show error toast when script fails', async () => {
       mockRunScript.mockRejectedValueOnce(new Error('Env script failed'));
 
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const input = { cwd: '/test/dir' };
       const output = { env: {} };
@@ -459,7 +476,7 @@ describe('opencode-hooks - plugin hooks', () => {
 
   describe('tool.execute.after', () => {
     it('should not trigger toast for non-task tools', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const input = {
         tool: 'read',
@@ -478,7 +495,7 @@ describe('opencode-hooks - plugin hooks', () => {
     });
 
     it('should not trigger toast when subagent_type is undefined', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const input = {
         tool: 'task',
@@ -499,7 +516,7 @@ describe('opencode-hooks - plugin hooks', () => {
     it('should show error toast when script fails', async () => {
       mockRunScript.mockRejectedValueOnce(new Error('Agent script failed'));
 
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const input = {
         tool: 'task',
@@ -526,7 +543,7 @@ describe('opencode-hooks - plugin hooks', () => {
 
   describe('event handler', () => {
     it('should return early when no handler exists for event type', async () => {
-      const ctx = { client: mockClient, $: mockDollar };
+      const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
       const event = {
         type: 'unknown.event',

@@ -4,6 +4,7 @@ import type {
   ResolvedEventConfig,
   EventConfig,
   ToolConfig,
+  ToastOverride,
 } from './event-types';
 
 export { ResolvedEventConfig };
@@ -48,9 +49,7 @@ function resolveToast(cfg: EventConfig, globalToast: boolean): boolean {
   return globalToast;
 }
 
-function resolveToastOverride(
-  cfg: EventConfig
-): Record<string, unknown> | null {
+function resolveToastOverride(cfg: EventConfig): ToastOverride | null {
   if (
     typeof cfg === 'object' &&
     cfg !== null &&
