@@ -76,7 +76,7 @@ jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
     appendToSession: true,
     runScripts: true,
     events: {
-      'session.created': true,
+      'session.created': { runOnce: true },
       'shell.env': { runScripts: true, scripts: ['shell-env.sh'] },
     },
     tools: {
@@ -552,6 +552,113 @@ describe('opencode-hooks - plugin hooks', () => {
       await plugin.event({ event });
 
       expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
+    });
+
+    it('should skip script on second event when runOnce is true', async () => {
+      jest.resetModules();
+      jest.unmock('../.opencode/plugins/helpers/user-events.config');
+      jest.unmock('../.opencode/plugins/helpers/run-script');
+      jest.unmock('../.opencode/plugins/helpers/save-to-file');
+      jest.unmock('../.opencode/plugins/helpers/append-to-session');
+      jest.unmock('../.opencode/plugins/helpers/handlers');
+      jest.unmock('../.opencode/plugins/helpers/events');
+
+      jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
+        userConfig: {
+          enabled: true,
+          toast: true,
+          saveToFile: true,
+          appendToSession: true,
+          runScripts: true,
+          events: {
+            'session.created': { runOnce: true },
+          },
+          tools: {},
+        },
+      }));
+
+      const mockRunScriptFn = jest.fn().mockResolvedValue('Script executed');
+      jest.doMock('../.opencode/plugins/helpers/run-script', () => ({
+        runScript: mockRunScriptFn,
+      }));
+
+      const { OpencodeHooks: FreshPlugin } =
+        await import('../.opencode/plugins/opencode-hooks');
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await FreshPlugin(ctx);
+
+      mockRunScriptFn.mockClear();
+
+      const event1 = {
+        type: 'session.created',
+        properties: { info: { id: 'session-1', title: 'Main' } },
+      };
+      await plugin.event({ event: event1 });
+
+      expect(mockRunScriptFn).toHaveBeenCalledTimes(1);
+
+      const event2 = {
+        type: 'session.created',
+        properties: { info: { id: 'session-2', title: 'Subagent' } },
+      };
+      await plugin.event({ event: event2 });
+
+      expect(mockRunScriptFn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should still show toast when runOnce skips script', async () => {
+      jest.resetModules();
+      jest.unmock('../.opencode/plugins/helpers/user-events.config');
+      jest.unmock('../.opencode/plugins/helpers/run-script');
+      jest.unmock('../.opencode/plugins/helpers/save-to-file');
+      jest.unmock('../.opencode/plugins/helpers/append-to-session');
+      jest.unmock('../.opencode/plugins/helpers/handlers');
+      jest.unmock('../.opencode/plugins/helpers/events');
+
+      jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
+        userConfig: {
+          enabled: true,
+          toast: true,
+          saveToFile: true,
+          appendToSession: true,
+          runScripts: true,
+          events: {
+            'session.created': { runOnce: true },
+          },
+          tools: {},
+        },
+      }));
+
+      const mockRunScriptFn2 = jest.fn().mockResolvedValue('Script executed');
+      jest.doMock('../.opencode/plugins/helpers/run-script', () => ({
+        runScript: mockRunScriptFn2,
+      }));
+
+      const { OpencodeHooks: FreshPlugin2 } =
+        await import('../.opencode/plugins/opencode-hooks');
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await FreshPlugin2(ctx);
+
+      mockRunScriptFn2.mockClear();
+      mockClient.tui.showToast.mockClear();
+
+      const event1 = {
+        type: 'session.created',
+        properties: { info: { id: 'session-1', title: 'Main' } },
+      };
+      await plugin.event({ event: event1 });
+
+      const toastCountAfterFirst = mockClient.tui.showToast.mock.calls.length;
+
+      const event2 = {
+        type: 'session.created',
+        properties: { info: { id: 'session-2', title: 'Subagent' } },
+      };
+      await plugin.event({ event: event2 });
+
+      expect(mockClient.tui.showToast.mock.calls.length).toBe(
+        toastCountAfterFirst + 1
+      );
     });
   });
 });
