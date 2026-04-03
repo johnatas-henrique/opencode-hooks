@@ -138,23 +138,26 @@ describe('toast-queue', () => {
 
   describe('queue backpressure', () => {
     it('should drop oldest toast when queue is full', () => {
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       const showFn = jest.fn();
-      const queue = createToastQueue(showFn, { maxSize: 2, staggerMs: 999999 });
+      const queue = createToastQueue(showFn, {
+        maxSize: 2,
+        staggerMs: 999999,
+      });
 
       queue.add({ title: '1', message: 'msg', variant: 'info' as const });
       queue.add({ title: '2', message: 'msg', variant: 'info' as const });
       queue.add({ title: '3', message: 'msg', variant: 'info' as const });
       queue.add({ title: '4', message: 'msg', variant: 'info' as const });
 
-      expect(warnSpy).toHaveBeenCalled();
-      warnSpy.mockRestore();
+      expect(queue.pending).toBeLessThanOrEqual(2);
     });
 
     it('should addMultiple toasts and drop when full', () => {
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       const showFn = jest.fn();
-      const queue = createToastQueue(showFn, { maxSize: 2, staggerMs: 999999 });
+      const queue = createToastQueue(showFn, {
+        maxSize: 2,
+        staggerMs: 999999,
+      });
 
       queue.addMultiple([
         { title: '1', message: 'msg', variant: 'info' as const },
@@ -162,8 +165,7 @@ describe('toast-queue', () => {
         { title: '3', message: 'msg', variant: 'info' as const },
       ]);
 
-      expect(warnSpy).toHaveBeenCalled();
-      warnSpy.mockRestore();
+      expect(queue.pending).toBeLessThanOrEqual(2);
     });
   });
 });

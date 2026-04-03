@@ -168,6 +168,13 @@ describe('events - resolveEventConfig', () => {
     expect(config.enabled).toBe(false);
   });
 
+  it('should return default script for event set to boolean true', () => {
+    const config = resolveEventConfig('session.created');
+
+    expect(config.enabled).toBe(true);
+    expect(config.scripts).toEqual(['session-created.sh']);
+  });
+
   it('should return specified scripts for event with scripts array', () => {
     const config = resolveEventConfig('session.custom');
 
@@ -216,6 +223,42 @@ describe('events - resolveEventConfig', () => {
     expect(config.toast).toBe(true);
     expect(config.saveToFile).toBe(true);
     expect(config.appendToSession).toBe(true);
+  });
+
+  it('should return empty scripts when event is boolean true and global runScripts is false', () => {
+    jest.resetModules();
+    jest.doMock('../.opencode/plugins/helpers/handlers', () => ({
+      handlers: {
+        'session.created': {
+          title: '====SESSION CREATED====',
+          variant: 'success',
+          duration: 2000,
+          defaultScript: 'session-created.sh',
+          buildMessage: () => 'test',
+        },
+      },
+    }));
+    jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
+      userConfig: {
+        enabled: true,
+        toast: true,
+        saveToFile: true,
+        appendToSession: true,
+        runScripts: false,
+        events: {
+          'session.created': true,
+        },
+        tools: {},
+      },
+    }));
+
+    const {
+      resolveEventConfig: rec,
+    } = require('../.opencode/plugins/helpers/events');
+    const config = rec('session.created');
+
+    expect(config.enabled).toBe(true);
+    expect(config.scripts).toEqual([]);
   });
 });
 
