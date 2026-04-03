@@ -142,14 +142,10 @@ describe('toast-queue', () => {
       const showFn = jest.fn();
       const queue = createToastQueue(showFn, { maxSize: 2, staggerMs: 999999 });
 
-      // First add triggers processQueue which shifts item 1 immediately
       queue.add({ title: '1', message: 'msg', variant: 'info' as const });
-      // Now queue is empty (item 1 shifted for processing)
       queue.add({ title: '2', message: 'msg', variant: 'info' as const });
       queue.add({ title: '3', message: 'msg', variant: 'info' as const });
-      // Now queue has [2, 3], maxSize=2
       queue.add({ title: '4', message: 'msg', variant: 'info' as const });
-      // Queue full, should drop oldest
 
       expect(warnSpy).toHaveBeenCalled();
       warnSpy.mockRestore();
