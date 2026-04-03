@@ -4,7 +4,7 @@ import { LOG_DIR, LOG_FILE } from './constants';
 const isValidFilename = (filename: string): boolean => {
   if (!filename || typeof filename !== 'string') return false;
   if (filename.length > 255) return false;
-  const invalidChars = /[<>:"\\|?*\u0000-\u001f]/;
+  const invalidChars = /[<>:"\\|?*]/;
   return !invalidChars.test(filename);
 };
 

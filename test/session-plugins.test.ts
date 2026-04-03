@@ -370,7 +370,7 @@ jest.mock('../.opencode/plugins/helpers/toast-queue', () => ({
 import { runScript } from '../.opencode/plugins/helpers/run-script';
 import { saveToFile } from '../.opencode/plugins/helpers/save-to-file';
 
-const LOG_FILE = './session_events.log';
+const _LOG_FILE = './session_events.log';
 
 interface Session {
   id: string;

@@ -102,7 +102,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       }
     },
 
-    'tool.execute.before': async (input: any, output: any) => {
+    'tool.execute.before': async (input: any, _output: any) => {
       const timestamp = new Date().toISOString();
       const resolved = resolveToolConfig('tool.execute.before', input.tool);
 
@@ -187,7 +187,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       }
     },
 
-    'shell.env': async (input: any, output: any) => {
+    'shell.env': async (_input: any, _output: any) => {
       const timestamp = new Date().toISOString();
       const resolved = resolveEventConfig('shell.env');
 
