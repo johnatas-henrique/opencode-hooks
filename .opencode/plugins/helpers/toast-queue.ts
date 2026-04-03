@@ -1,4 +1,5 @@
-import type { TuiToast } from "@opencode-ai/plugin/tui";
+import type { TuiToast } from '@opencode-ai/plugin/tui';
+import { saveToFile } from './save-to-file';
 
 export type ShowToastOptions = {
   delay?: number;
@@ -31,10 +32,10 @@ export async function showToastStaggered(
 
 export function createToastQueue(
   showFn: (toast: TuiToast) => void | Promise<void>,
-  options: { staggerMs?: number } = {}
+  options: { staggerMs?: number; maxSize?: number } = {}
 ) {
+  const { staggerMs = 500, maxSize = 50 } = options;
   const queue: TuiToast[] = [];
-  const staggerMs = options.staggerMs ?? 500;
   let processing = false;
   let currentProcessing: Promise<void> | null = null;
 
@@ -59,13 +60,29 @@ export function createToastQueue(
     return currentProcessing;
   };
 
+  const logDroppedToast = (title: string) => {
+    saveToFile({
+      content: `[WARN] Toast queue full, dropping: ${title}\n`,
+    });
+  };
+
   const queueObj = {
     add: (toast: TuiToast) => {
+      if (queue.length >= maxSize) {
+        const dropped = queue.shift();
+        logDroppedToast(dropped?.title || 'unknown');
+      }
       queue.push(toast);
       processQueue();
     },
     addMultiple: (toasts: TuiToast[]) => {
-      queue.push(...toasts);
+      for (const toast of toasts) {
+        if (queue.length >= maxSize) {
+          const dropped = queue.shift();
+          logDroppedToast(dropped?.title || 'unknown');
+        }
+        queue.push(toast);
+      }
       processQueue();
     },
     clear: () => {
