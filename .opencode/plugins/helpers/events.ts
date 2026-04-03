@@ -1,4 +1,4 @@
-import { handlers } from './handlers';
+import { handlers, type EventHandler } from './handlers';
 import { userConfig } from './user-events.config';
 import type {
   ResolvedEventConfig,
@@ -9,7 +9,19 @@ import type {
 
 export { ResolvedEventConfig };
 
-export function getHandler(eventType: string) {
+const DISABLED_CONFIG: ResolvedEventConfig = {
+  enabled: false,
+  toast: false,
+  toastTitle: '',
+  toastMessage: undefined,
+  toastVariant: 'info',
+  toastDuration: 0,
+  scripts: [],
+  saveToFile: false,
+  appendToSession: false,
+};
+
+export function getHandler(eventType: string): EventHandler | undefined {
   return handlers[eventType];
 }
 
@@ -32,6 +44,10 @@ function resolveScripts(
     if (cfg.runScripts === true || globalRunScripts) {
       return [handlerDefaultScript];
     }
+    return [];
+  }
+  if (cfg === true) {
+    return globalRunScripts ? [handlerDefaultScript] : [];
   }
   return [];
 }
@@ -68,7 +84,7 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
   const global = userConfig;
 
   if (!global.enabled) {
-    return { enabled: false } as ResolvedEventConfig;
+    return DISABLED_CONFIG;
   }
 
   if (userEventConfig === undefined) {
@@ -88,7 +104,7 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
   }
 
   if (userEventConfig === false) {
-    return { enabled: false } as ResolvedEventConfig;
+    return DISABLED_CONFIG;
   }
 
   const scripts = resolveScripts(
@@ -101,13 +117,10 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
   return {
     enabled: true,
     toast: resolveToast(userEventConfig, global.toast),
-    toastTitle: (toastCfg?.title as string) ?? handler?.title ?? '',
-    toastMessage: toastCfg?.message as string | undefined,
-    toastVariant:
-      (toastCfg?.variant as ResolvedEventConfig['toastVariant']) ??
-      handler?.variant ??
-      'info',
-    toastDuration: (toastCfg?.duration as number) ?? handler?.duration ?? 2000,
+    toastTitle: toastCfg?.title ?? handler?.title ?? '',
+    toastMessage: toastCfg?.message,
+    toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
+    toastDuration: toastCfg?.duration ?? handler?.duration ?? 2000,
     scripts,
     saveToFile:
       (typeof userEventConfig === 'object' && userEventConfig !== null
@@ -132,7 +145,7 @@ export function resolveToolConfig(
   const toolConfig = toolConfigs?.[toolName];
 
   if (toolConfig === false) {
-    return { enabled: false } as ResolvedEventConfig;
+    return DISABLED_CONFIG;
   }
 
   if (!toolConfig) {
@@ -152,13 +165,10 @@ export function resolveToolConfig(
   return {
     enabled: true,
     toast: resolveToast(toolConfig, global.toast),
-    toastTitle: (toastCfg?.title as string) ?? handler?.title ?? '',
-    toastMessage: toastCfg?.message as string | undefined,
-    toastVariant:
-      (toastCfg?.variant as ResolvedEventConfig['toastVariant']) ??
-      handler?.variant ??
-      'info',
-    toastDuration: (toastCfg?.duration as number) ?? handler?.duration ?? 2000,
+    toastTitle: toastCfg?.title ?? handler?.title ?? '',
+    toastMessage: toastCfg?.message,
+    toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
+    toastDuration: toastCfg?.duration ?? handler?.duration ?? 2000,
     scripts,
     saveToFile:
       (typeof toolConfig === 'object' && toolConfig !== null
