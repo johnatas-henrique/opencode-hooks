@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFile } from 'fs/promises';
 
 const TOAST_PATTERN = /path=\/tui\/show-toast/g;
 
@@ -23,11 +23,11 @@ export function waitForToastSilence(
       }, pollMs);
     };
 
-    const check = () => {
+    const check = async () => {
       if (resolved) return;
 
       try {
-        const content = readFileSync(logFile, 'utf-8');
+        const content = await readFile(logFile, 'utf-8');
         const matches = content.match(TOAST_PATTERN);
         const count = matches ? matches.length : 0;
 
@@ -64,9 +64,9 @@ export function waitForToastSilence(
   return { promise, cleanup };
 }
 
-export function countToastsInLog(logFile: string): number {
+export async function countToastsInLog(logFile: string): Promise<number> {
   try {
-    const content = readFileSync(logFile, 'utf-8');
+    const content = await readFile(logFile, 'utf-8');
     const matches = content.match(TOAST_PATTERN);
     return matches ? matches.length : 0;
   } catch {
