@@ -2,6 +2,8 @@ import type { Plugin, PluginInput } from '@opencode-ai/plugin';
 import {
   ToolExecuteAfterInput,
   ToolExecuteAfterOutput,
+  ToolExecuteBeforeInput,
+  ToolExecuteBeforeOutput,
 } from './types/opencode-hooks';
 import {
   appendToSession,
@@ -83,9 +85,10 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
             await saveToFile({ content: `[${timestamp}] ${output}\n` });
           }
           if (resolved.appendToSession && output) {
-            const props = event.properties as any;
-            const sessionId = props?.info?.id ?? props?.sessionID ?? 'unknown';
-            await appendToSession(ctx, sessionId, output);
+            const props = event.properties as Record<string, unknown>;
+            const info = props?.info as Record<string, unknown> | undefined;
+            const sessionId = info?.id ?? props?.sessionID ?? 'unknown';
+            await appendToSession(ctx, sessionId as string, output);
           }
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : String(err);
@@ -102,7 +105,10 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       }
     },
 
-    'tool.execute.before': async (input: any, _output: any) => {
+    'tool.execute.before': async (
+      input: ToolExecuteBeforeInput,
+      _output: ToolExecuteBeforeOutput
+    ) => {
       const timestamp = new Date().toISOString();
       const resolved = resolveToolConfig('tool.execute.before', input.tool);
 
@@ -187,7 +193,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       }
     },
 
-    'shell.env': async (_input: any, _output: any) => {
+    'shell.env': async () => {
       const timestamp = new Date().toISOString();
       const resolved = resolveEventConfig('shell.env');
 

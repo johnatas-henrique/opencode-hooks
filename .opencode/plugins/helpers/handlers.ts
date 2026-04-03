@@ -1,23 +1,35 @@
-import type {
-  EventSessionCreated,
-  EventSessionCompacted,
-  EventSessionDeleted,
-  EventSessionError,
-  EventSessionDiff,
-  EventSessionIdle,
-  EventSessionStatus,
-  EventSessionUpdated,
-} from '@opencode-ai/sdk';
+type BuildMessageFn = (event: Record<string, unknown>) => string;
 
-export interface EventHandler<T = any> {
+export interface EventHandler {
   title: string;
   variant: 'success' | 'warning' | 'error' | 'info';
   duration: number;
   defaultScript: string;
-  buildMessage: (event: T) => string;
+  buildMessage: BuildMessageFn;
 }
 
 const formatTime = (): string => new Date().toLocaleTimeString();
+
+const getProp = (event: Record<string, unknown>, path: string): unknown => {
+  const parts = path.split('.');
+  let current: unknown = event;
+  for (const part of parts) {
+    if (
+      current === null ||
+      current === undefined ||
+      typeof current !== 'object'
+    ) {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[part];
+  }
+  return current;
+};
+
+const toStr = (value: unknown, fallback = 'unknown'): string => {
+  if (value === null || value === undefined) return fallback;
+  return String(value);
+};
 
 export const handlers: Record<string, EventHandler> = {
   'session.created': {
@@ -25,9 +37,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'success',
     duration: 2000,
     defaultScript: 'session-created.sh',
-    buildMessage: (event: EventSessionCreated) =>
-      `Session Id: ${event.properties.info.id}\n` +
-      `Title: ${event.properties.info.title}\n` +
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.info.id'))}\n` +
+      `Title: ${toStr(getProp(event, 'properties.info.title'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -36,8 +48,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'session-compacted.sh',
-    buildMessage: (event: EventSessionCompacted) =>
-      `Session Id: ${event.properties.sessionID}\n` + `Time: ${formatTime()}`,
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Time: ${formatTime()}`,
   },
 
   'session.deleted': {
@@ -45,8 +58,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'error',
     duration: 2000,
     defaultScript: 'session-deleted.sh',
-    buildMessage: (event: EventSessionDeleted) =>
-      `Session Id: ${event.properties.info.id}\n` + `Time: ${formatTime()}`,
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.info.id'))}\n` +
+      `Time: ${formatTime()}`,
   },
 
   'session.error': {
@@ -54,11 +68,22 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'error',
     duration: 30000,
     defaultScript: 'session-error.sh',
-    buildMessage: (event: EventSessionError) =>
-      `Session Id: ${event.properties.sessionID}\n` +
-      `Error: ${event.properties.error?.name || 'Unknown error'}\n` +
-      `Message: ${event.properties.error?.data?.message || 'Unknown message'}\n` +
-      `Time: ${formatTime()}`,
+    buildMessage: (event) => {
+      const error = getProp(event, 'properties.error') as
+        | Record<string, unknown>
+        | undefined;
+      const errorName = error?.name ? String(error.name) : 'Unknown error';
+      const errorMessage = getProp(event, 'properties.error.data.message');
+      const messageStr = errorMessage
+        ? String(errorMessage)
+        : 'Unknown message';
+      return (
+        `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+        `Error: ${errorName}\n` +
+        `Message: ${messageStr}\n` +
+        `Time: ${formatTime()}`
+      );
+    },
   },
 
   'session.diff': {
@@ -66,8 +91,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: 2000,
     defaultScript: 'session-diff.sh',
-    buildMessage: (event: EventSessionDiff) =>
-      `Session Id: ${event.properties.sessionID}\n` + `Time: ${formatTime()}`,
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Time: ${formatTime()}`,
   },
 
   'session.idle': {
@@ -75,8 +101,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'session-idle.sh',
-    buildMessage: (event: EventSessionIdle) =>
-      `Session Id: ${event.properties.sessionID}\n` + `Time: ${formatTime()}`,
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Time: ${formatTime()}`,
   },
 
   'session.status': {
@@ -84,9 +111,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'session-status.sh',
-    buildMessage: (event: EventSessionStatus) =>
-      `Session Id: ${event.properties.sessionID}\n` +
-      `Status: ${JSON.stringify(event.properties.status)}\n` +
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Status: ${JSON.stringify(getProp(event, 'properties.status'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -95,8 +122,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'session-updated.sh',
-    buildMessage: (event: EventSessionUpdated) =>
-      `Session Id: ${event.properties.info.id}\n` + `Time: ${formatTime()}`,
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.info.id'))}\n` +
+      `Time: ${formatTime()}`,
   },
 
   'message.part.removed': {
@@ -104,9 +132,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: 2000,
     defaultScript: 'message-part-removed.sh',
-    buildMessage: (event: any) =>
-      `Session Id: ${event.properties?.sessionID || 'unknown'}\n` +
-      `Message Id: ${event.properties?.messageID || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Message Id: ${toStr(getProp(event, 'properties.messageID'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -115,9 +143,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'message-part-updated.sh',
-    buildMessage: (event: any) =>
-      `Session Id: ${event.properties?.sessionID || 'unknown'}\n` +
-      `Message Id: ${event.properties?.messageID || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Message Id: ${toStr(getProp(event, 'properties.messageID'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -126,9 +154,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: 2000,
     defaultScript: 'message-removed.sh',
-    buildMessage: (event: any) =>
-      `Session Id: ${event.properties?.sessionID || 'unknown'}\n` +
-      `Message Id: ${event.properties?.messageID || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Message Id: ${toStr(getProp(event, 'properties.messageID'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -137,9 +165,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'message-updated.sh',
-    buildMessage: (event: any) =>
-      `Session Id: ${event.properties?.sessionID || 'unknown'}\n` +
-      `Message Id: ${event.properties?.messageID || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Message Id: ${toStr(getProp(event, 'properties.messageID'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -148,9 +176,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'tool-execute-before.sh',
-    buildMessage: (event: any) =>
-      `Session Id: ${event.properties?.sessionID || 'unknown'}\n` +
-      `Tool: ${event.properties?.tool || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Tool: ${toStr(getProp(event, 'properties.tool'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -159,9 +187,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'tool-execute-after.sh',
-    buildMessage: (event: any) =>
-      `Session Id: ${event.properties?.sessionID || 'unknown'}\n` +
-      `Tool: ${event.properties?.tool || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Tool: ${toStr(getProp(event, 'properties.tool'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -170,8 +198,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'file-edited.sh',
-    buildMessage: (event: any) =>
-      `File: ${event.properties?.path || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `File: ${toStr(getProp(event, 'properties.path'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -180,9 +208,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'file-watcher-updated.sh',
-    buildMessage: (event: any) =>
-      `File: ${event.properties?.path || 'unknown'}\n` +
-      `Event: ${event.properties?.event || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `File: ${toStr(getProp(event, 'properties.path'))}\n` +
+      `Event: ${toStr(getProp(event, 'properties.event'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -191,9 +219,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: 5000,
     defaultScript: 'permission-asked.sh',
-    buildMessage: (event: any) =>
-      `Session Id: ${event.properties?.sessionID || 'unknown'}\n` +
-      `Permission: ${event.properties?.permission || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Permission: ${toStr(getProp(event, 'properties.permission'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -202,9 +230,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'permission-replied.sh',
-    buildMessage: (event: any) =>
-      `Session Id: ${event.properties?.sessionID || 'unknown'}\n` +
-      `Decision: ${event.properties?.decision || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Decision: ${toStr(getProp(event, 'properties.decision'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -213,8 +241,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'success',
     duration: 2000,
     defaultScript: 'server-connected.sh',
-    buildMessage: (event: any) =>
-      `URL: ${event.properties?.url || 'unknown'}\n` + `Time: ${formatTime()}`,
+    buildMessage: (event) =>
+      `URL: ${toStr(getProp(event, 'properties.url'))}\n` +
+      `Time: ${formatTime()}`,
   },
 
   'server.instance.disposed': {
@@ -222,8 +251,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 0,
     defaultScript: 'session-stop.sh',
-    buildMessage: (event: any) =>
-      `Directory: ${event.properties.directory || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Directory: ${toStr(getProp(event, 'properties.directory'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -232,8 +261,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'command-executed.sh',
-    buildMessage: (event: any) =>
-      `Command: ${event.properties?.command || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Command: ${toStr(getProp(event, 'properties.command'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -242,10 +271,16 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: 2000,
     defaultScript: 'lsp-client-diagnostics.sh',
-    buildMessage: (event: any) =>
-      `File: ${event.properties?.uri || 'unknown'}\n` +
-      `Diagnostics: ${event.properties?.diagnostics?.length || 0}\n` +
-      `Time: ${formatTime()}`,
+    buildMessage: (event) => {
+      const diagnostics = getProp(event, 'properties.diagnostics') as
+        | Array<unknown>
+        | undefined;
+      return (
+        `File: ${toStr(getProp(event, 'properties.uri'))}\n` +
+        `Diagnostics: ${diagnostics?.length ?? 0}\n` +
+        `Time: ${formatTime()}`
+      );
+    },
   },
 
   'lsp.updated': {
@@ -253,8 +288,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'lsp-updated.sh',
-    buildMessage: (event: any) =>
-      `Server: ${event.properties?.serverID || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Server: ${toStr(getProp(event, 'properties.serverID'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -263,8 +298,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'success',
     duration: 2000,
     defaultScript: 'installation-updated.sh',
-    buildMessage: (event: any) =>
-      `Version: ${event.properties?.version || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Version: ${toStr(getProp(event, 'properties.version'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -273,9 +308,9 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'todo-updated.sh',
-    buildMessage: (event: any) =>
-      `Session Id: ${event.properties?.sessionID || 'unknown'}\n` +
-      `Count: ${event.properties?.count || 0}\n` +
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Count: ${toStr(getProp(event, 'properties.count'), '0')}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -284,8 +319,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 0,
     defaultScript: 'shell-env.sh',
-    buildMessage: (event: any) =>
-      `Directory: ${event.properties?.cwd || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Directory: ${toStr(getProp(event, 'properties.cwd'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -294,8 +329,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'tui-prompt-append.sh',
-    buildMessage: (event: any) =>
-      `Session Id: ${event.properties?.sessionID || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -304,8 +339,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'tui-command-execute.sh',
-    buildMessage: (event: any) =>
-      `Command: ${event.properties?.command || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Command: ${toStr(getProp(event, 'properties.command'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -314,8 +349,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: 2000,
     defaultScript: 'tui-toast-show.sh',
-    buildMessage: (event: any) =>
-      `Title: ${event.properties?.title || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Title: ${toStr(getProp(event, 'properties.title'))}\n` +
       `Time: ${formatTime()}`,
   },
 
@@ -324,8 +359,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: 2000,
     defaultScript: 'session-compacting.sh',
-    buildMessage: (event: any) =>
-      `Session Id: ${event.properties?.sessionID || 'unknown'}\n` +
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
       `Time: ${formatTime()}`,
   },
 };

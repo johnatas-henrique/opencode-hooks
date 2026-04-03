@@ -40,28 +40,4 @@ export default defineConfig([
       '@typescript-eslint/no-require-imports': 'off',
     },
   },
-  {
-    files: ['.opencode/plugins/helpers/handlers.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-    },
-  },
-  {
-    files: ['.opencode/plugins/helpers/handlers.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-    },
-  },
-  {
-    files: ['.opencode/plugins/helpers/events.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-    },
-  },
-  {
-    files: ['.opencode/plugins/opencode-hooks.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-    },
-  },
 ]);
