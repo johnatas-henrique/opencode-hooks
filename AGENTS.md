@@ -117,6 +117,7 @@ plans/                         # Implementation plans (keep in English)
 - Use `gh` CLI for GitHub interactions (PRs, issues, CI)
 - Commit author: `Johnatas Henrique <johnatas.henrique@gmail.com>`
 - Plans in `plans/` must be written in English with timestamps
+- Release process: PR → merge → bump version → tag → `gh release create`
 
 ## Key Patterns
 
@@ -126,3 +127,12 @@ plans/                         # Implementation plans (keep in English)
 - **Script resolution**: `runScripts: false` wins over `scripts` array; default script name = event name with dashes
 - **Message builders**: Each handler has a `buildMessage` function that preserves event data (error.name, sessionID, etc.)
 - **No comments in code**: Code must be self-documenting; only add comments if truly necessary and not obvious from reading
+- **Error handling**: Script errors never use `console.error` — log to file and show toast instead
+
+## Release Process
+
+1. Merge feature branch to main via PR
+2. Bump version in `package.json` (semver: feat=MINOR, fix=PATCH, BREAKING=MAJOR)
+3. Commit version bump via PR
+4. Tag release: `git tag v0.1.0 && git push origin v0.1.0`
+5. Create release: `gh release create v0.1.0 --title "v0.1.0" --notes-file RELEASE_NOTES.md`
