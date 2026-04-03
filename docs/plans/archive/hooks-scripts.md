@@ -15,8 +15,10 @@ Maintain and fix shell scripts used by the plugin system for validation, logging
 | 3. Add verbose output showing staged files | ✅     | 2026-04-02 01:30 |
 | 4. Test the fixed hook                     | ✅     | 2026-04-02 02:00 |
 | 5. Document session-stop.sh usage          | ✅     | 2026-04-02 02:15 |
-| 6. Investigate tool.execute.before issue   | ⏳     | -                |
-| 7. Investigate session.idle not firing     | ⏳     | -                |
+| 6. Investigate tool.execute.before issue   | ✅     | 2026-04-03 01:29 |
+| 7. Investigate session.idle not firing     | ✅     | 2026-04-03 01:30 |
+
+**All implementation complete. Pending items depend on OpenCode engine events.**
 
 ---
 
