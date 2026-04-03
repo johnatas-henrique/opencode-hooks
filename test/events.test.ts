@@ -133,12 +133,14 @@ jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
       },
       'session.save-override': { saveToFile: false },
       'session.append-override': { appendToSession: false },
+      'session.run-once': { scripts: ['run-once.sh'], runOnce: true },
     },
     tools: {
       'tool.execute.after': {
         task: {
           toast: true,
           scripts: ['log-agent.sh'],
+          runOnce: true,
         },
         chat: { toast: false },
         'git.commit': { runScripts: false },
@@ -348,5 +350,31 @@ describe('events - global disabled', () => {
     const config = resolveEventConfig('session.created');
 
     expect(config.enabled).toBe(false);
+  });
+
+  it('should return runOnce: true when configured', () => {
+    const config = resolveEventConfig('session.run-once');
+
+    expect(config.runOnce).toBe(true);
+  });
+
+  it('should return runOnce: false when not configured', () => {
+    const config = resolveEventConfig('session.created');
+
+    expect(config.runOnce).toBe(false);
+  });
+});
+
+describe('resolveToolConfig - runOnce', () => {
+  it('should return runOnce: true for tool with runOnce configured', () => {
+    const config = resolveToolConfig('tool.execute.after', 'task');
+
+    expect(config.runOnce).toBe(true);
+  });
+
+  it('should return runOnce: false for tool without runOnce', () => {
+    const config = resolveToolConfig('tool.execute.after', 'chat');
+
+    expect(config.runOnce).toBe(false);
   });
 });

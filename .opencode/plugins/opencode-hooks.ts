@@ -26,6 +26,8 @@ let hasShownToast = false;
 let wasOverwritten = false;
 let fallbackShown = false;
 let ourToastCount = 0;
+const runOnceTracker = new Map<string, boolean>();
+let checkOverwriteTimer: ReturnType<typeof setTimeout> | null = null;
 
 const isSubagentSession = (title: string): boolean =>
   title.startsWith('Task:') || title.startsWith('Agent:');
@@ -40,12 +42,16 @@ const runScriptAndHandle = async (
   try {
     const output = await runScript($, script, arg);
     if (output) {
-      await saveToFile({ content: `[${timestamp}] ${output}\n` });
+      await saveToFile({
+        content: `[${timestamp}] ${output}\n`,
+        showToast: toastQueue.add,
+      });
     }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     await saveToFile({
       content: `[${timestamp}] - Script error: ${script} - ${errorMessage}\n`,
+      showToast: toastQueue.add,
     });
     toastQueue.add({
       title: '====SCRIPT ERROR====',
@@ -107,15 +113,19 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       Promise.race([promise, timeout]).then(async () => {
         clearTimeout(timeoutTimer!);
         cleanup();
+        if (checkOverwriteTimer) {
+          clearTimeout(checkOverwriteTimer);
+          checkOverwriteTimer = null;
+        }
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
         try {
-          await showActivePluginsToast(toastQueue, { duration: 15000 });
-          ourToastCount = countToastsInLog(logFile);
+          await showActivePluginsToast(toastQueue, { duration: 5000 });
+          ourToastCount = await countToastsInLog(logFile);
 
-          setTimeout(() => {
-            const newCount = countToastsInLog(logFile);
+          checkOverwriteTimer = setTimeout(async () => {
+            const newCount = await countToastsInLog(logFile);
             if (newCount > ourToastCount) {
               wasOverwritten = true;
             }
@@ -140,7 +150,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
 
         if (!isSubagentSession(title)) {
           fallbackShown = true;
-          await showActivePluginsToast(toastQueue, { duration: 15000 });
+          await showActivePluginsToast(toastQueue, { duration: 5000 });
         }
       }
 
@@ -150,6 +160,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       if (!resolved.enabled) {
         await saveToFile({
           content: `[${timestamp}] - Skipping disabled event: ${event.type}\n`,
+          showToast: toastQueue.add,
         });
         return;
       }
@@ -157,6 +168,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       if (userConfig.saveToFile && !event.type.startsWith('message.')) {
         await saveToFile({
           content: `[${timestamp}] - ${event.type} - ${JSON.stringify(resolved)}\n`,
+          showToast: toastQueue.add,
         });
       }
 
@@ -174,11 +186,15 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         });
       }
 
+      if (resolved.runOnce && runOnceTracker.get(event.type)) {
+        return;
+      }
+
       for (const script of resolved.scripts) {
         try {
           const output = await runScript($, script);
           if (resolved.saveToFile && output) {
-            await saveToFile({ content: `[${timestamp}] ${output}\n` });
+            await saveToFile({ content: `[${timestamp}] ${output}\n`, showToast: toastQueue.add });
           }
           if (resolved.appendToSession && output) {
             const props = event.properties as Record<string, unknown>;
@@ -191,6 +207,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
           const errorMessage = err instanceof Error ? err.message : String(err);
           await saveToFile({
             content: `[${timestamp}] - Script error: ${script} - ${errorMessage}\n`,
+            showToast: toastQueue.add,
           });
           toastQueue.add({
             title: '====SCRIPT ERROR====',
@@ -199,6 +216,10 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
             duration: 5000,
           });
         }
+      }
+
+      if (resolved.runOnce && resolved.scripts.length > 0) {
+        runOnceTracker.set(event.type, true);
       }
     },
 

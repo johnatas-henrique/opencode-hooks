@@ -50,6 +50,20 @@ describe('save-to-file', () => {
     );
   });
 
+  it('should show toast on filesystem error', async () => {
+    const mockShowToast = jest.fn();
+    (fs.appendFile as jest.Mock).mockRejectedValueOnce(new Error('Disk full'));
+
+    await saveToFile({ content: 'test', showToast: mockShowToast });
+
+    expect(mockShowToast).toHaveBeenCalledWith({
+      title: '====SAVE TO FILE ERROR====',
+      message: 'Disk full',
+      variant: 'error',
+      duration: 5000,
+    });
+  });
+
   it('should not throw on filesystem error', async () => {
     (fs.appendFile as jest.Mock).mockRejectedValueOnce(new Error('Disk full'));
 

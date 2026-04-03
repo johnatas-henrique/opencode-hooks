@@ -58,6 +58,7 @@ export interface EventOverride {
   runScripts?: boolean;
   saveToFile?: boolean;
   appendToSession?: boolean;
+  runOnce?: boolean;
 }
 
 export interface ToolOverride {
@@ -66,6 +67,7 @@ export interface ToolOverride {
   runScripts?: boolean;
   saveToFile?: boolean;
   appendToSession?: boolean;
+  runOnce?: boolean;
 }
 
 export type EventConfig = boolean | EventOverride;
@@ -94,4 +96,5 @@ export interface ResolvedEventConfig {
   scripts: string[];
   saveToFile: boolean;
   appendToSession: boolean;
+  runOnce: boolean;
 }

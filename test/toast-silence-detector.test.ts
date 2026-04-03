@@ -3,15 +3,13 @@ import {
   countToastsInLog,
 } from '../.opencode/plugins/helpers/toast-silence-detector';
 
-jest.mock('fs', () => ({
-  readFileSync: jest.fn(),
+jest.mock('fs/promises', () => ({
+  readFile: jest.fn(),
 }));
 
-import { readFileSync } from 'fs';
+import { readFile } from 'fs/promises';
 
-const mockReadFileSync = readFileSync as jest.MockedFunction<
-  typeof readFileSync
->;
+const mockReadFile = readFile as jest.MockedFunction<typeof readFile>;
 
 describe('toast-silence-detector', () => {
   beforeEach(() => {
@@ -25,7 +23,7 @@ describe('toast-silence-detector', () => {
 
   describe('waitForToastSilence', () => {
     it('should resolve when no toasts in log', async () => {
-      mockReadFileSync.mockReturnValue('no toasts here');
+      mockReadFile.mockResolvedValue('no toasts here');
 
       const { promise, cleanup } = waitForToastSilence('/fake/log.log');
 
@@ -37,7 +35,7 @@ describe('toast-silence-detector', () => {
 
     it('should resolve after silence period following toast activity', async () => {
       let callCount = 0;
-      mockReadFileSync.mockImplementation(() => {
+      mockReadFile.mockImplementation(async () => {
         callCount++;
         if (callCount <= 3) return 'path=/tui/show-toast path=/tui/show-toast';
         return 'path=/tui/show-toast path=/tui/show-toast';
@@ -59,7 +57,7 @@ describe('toast-silence-detector', () => {
 
     it('should reset timer when new toast appears', async () => {
       let callCount = 0;
-      mockReadFileSync.mockImplementation(() => {
+      mockReadFile.mockImplementation(async () => {
         callCount++;
         if (callCount <= 2) return 'path=/tui/show-toast';
         if (callCount <= 5) return 'path=/tui/show-toast path=/tui/show-toast';
@@ -83,7 +81,7 @@ describe('toast-silence-detector', () => {
     });
 
     it('should resolve on log file error', async () => {
-      mockReadFileSync.mockImplementation(() => {
+      mockReadFile.mockImplementation(async () => {
         throw new Error('File not found');
       });
 
@@ -96,7 +94,7 @@ describe('toast-silence-detector', () => {
     });
 
     it('should stop polling after cleanup', async () => {
-      mockReadFileSync.mockReturnValue('path=/tui/show-toast');
+      mockReadFile.mockResolvedValue('path=/tui/show-toast');
 
       const { cleanup } = waitForToastSilence('/fake/log.log', {
         silenceMs: 10000,
@@ -108,33 +106,33 @@ describe('toast-silence-detector', () => {
       jest.advanceTimersByTime(200);
       jest.advanceTimersByTime(200);
 
-      expect(mockReadFileSync).toHaveBeenCalledTimes(1);
+      expect(mockReadFile).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('countToastsInLog', () => {
-    it('should return correct count', () => {
-      mockReadFileSync.mockReturnValue(
+    it('should return correct count', async () => {
+      mockReadFile.mockResolvedValue(
         'path=/tui/show-toast\npath=/tui/show-toast\npath=/tui/show-toast'
       );
 
-      const count = countToastsInLog('/fake/log.log');
+      const count = await countToastsInLog('/fake/log.log');
       expect(count).toBe(3);
     });
 
-    it('should return 0 when no toasts', () => {
-      mockReadFileSync.mockReturnValue('no toasts here');
+    it('should return 0 when no toasts', async () => {
+      mockReadFile.mockResolvedValue('no toasts here');
 
-      const count = countToastsInLog('/fake/log.log');
+      const count = await countToastsInLog('/fake/log.log');
       expect(count).toBe(0);
     });
 
-    it('should return 0 on file error', () => {
-      mockReadFileSync.mockImplementation(() => {
+    it('should return 0 on file error', async () => {
+      mockReadFile.mockImplementation(async () => {
         throw new Error('Permission denied');
       });
 
-      const count = countToastsInLog('/fake/log.log');
+      const count = await countToastsInLog('/fake/log.log');
       expect(count).toBe(0);
     });
   });

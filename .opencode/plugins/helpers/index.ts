@@ -1,4 +1,4 @@
-import { saveToFile } from './save-to-file';
+import { saveToFile, type ToastCallback } from './save-to-file';
 import { runScript } from './run-script';
 import { appendToSession } from './append-to-session';
 import {
@@ -55,4 +55,5 @@ export type {
   EventConfig,
   ToolConfig,
   UserEventsConfig,
+  ToastCallback,
 };
