@@ -1,4 +1,4 @@
-# Fix Critical Issues - Implementation Plan
+# Code Review Fixes - Implementation Plan
 
 **Created:** 2026-04-03
 
@@ -11,7 +11,9 @@
 | 3    | Fix race condition in toast-queue.ts (lines 43-68)                     | ⏳     |
 | 4    | Fix script argument sanitization in run-script.ts (lines 13-22)        | ⏳     |
 | 5    | Fix synchronous file reads in toast-silence-detector.ts (lines 30, 69) | ⏳     |
-| 6    | Run tests to verify all fixes                                          | ⏳     |
+| 6    | Add toast error feedback in save-to-file.ts                            | ✅     |
+| 7    | Add tests for script error paths                                       | ⏳     |
+| 8    | Run tests to verify all fixes                                          | ⏳     |
 
 ---
 
