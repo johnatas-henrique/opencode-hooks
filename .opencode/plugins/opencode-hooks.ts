@@ -13,10 +13,22 @@ import {
   handlers,
   resolveEventConfig,
   resolveToolConfig,
+  showActivePluginsToast,
+  waitForToastSilence,
+  countToastsInLog,
 } from './helpers';
 import { userConfig } from './helpers/user-events.config';
+import { getLatestLogFile } from './helpers/plugin-status';
 
 type ToastQueue = ReturnType<typeof getGlobalToastQueue>;
+
+let hasShownToast = false;
+let wasOverwritten = false;
+let fallbackShown = false;
+let ourToastCount = 0;
+
+const isSubagentSession = (title: string): boolean =>
+  title.startsWith('Task:') || title.startsWith('Agent:');
 
 const runScriptAndHandle = async (
   $: PluginInput['$'],
@@ -74,8 +86,64 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
     `,
   });
 
+  if (!hasShownToast && process.env.NODE_ENV !== 'test') {
+    hasShownToast = true;
+    const logFile = getLatestLogFile();
+
+    toastQueue.add({
+      title: 'Loading plugin status...',
+      message: 'Scanning OpenCode plugins',
+      variant: 'info',
+      duration: 3000,
+    });
+
+    if (logFile) {
+      const { promise, cleanup } = waitForToastSilence(logFile);
+      let timeoutTimer: ReturnType<typeof setTimeout>;
+      const timeout = new Promise<void>((resolve) => {
+        timeoutTimer = setTimeout(resolve, 5000);
+      });
+
+      Promise.race([promise, timeout]).then(async () => {
+        clearTimeout(timeoutTimer!);
+        cleanup();
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        try {
+          await showActivePluginsToast(toastQueue, { duration: 15000 });
+          ourToastCount = countToastsInLog(logFile);
+
+          setTimeout(() => {
+            const newCount = countToastsInLog(logFile);
+            if (newCount > ourToastCount) {
+              wasOverwritten = true;
+            }
+          }, 3000);
+        } catch {
+          // Silent fail - startup toast should not break plugin
+        }
+      });
+    }
+  }
+
   return {
     event: async ({ event }) => {
+      if (
+        event.type === 'session.created' &&
+        wasOverwritten &&
+        !fallbackShown
+      ) {
+        const props = event.properties as Record<string, unknown>;
+        const info = props?.info as Record<string, unknown> | undefined;
+        const title = typeof info?.title === 'string' ? info.title : '';
+
+        if (!isSubagentSession(title)) {
+          fallbackShown = true;
+          await showActivePluginsToast(toastQueue, { duration: 15000 });
+        }
+      }
+
       const timestamp = new Date().toISOString();
       const resolved = resolveEventConfig(event.type);
 
