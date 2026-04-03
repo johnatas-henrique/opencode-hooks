@@ -12,10 +12,6 @@ jest.mock('../.opencode/plugins/helpers/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../.opencode/plugins/helpers/create-toast', () => ({
-  createToast: jest.fn().mockResolvedValue(undefined),
-}));
-
 jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
   userConfig: {
     enabled: true,
@@ -373,7 +369,6 @@ jest.mock('../.opencode/plugins/helpers/toast-queue', () => ({
 
 import { runScript } from '../.opencode/plugins/helpers/run-script';
 import { saveToFile } from '../.opencode/plugins/helpers/save-to-file';
-import { createToast } from '../.opencode/plugins/helpers/create-toast';
 
 const LOG_FILE = './session_events.log';
 

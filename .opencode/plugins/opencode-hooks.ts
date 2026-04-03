@@ -108,8 +108,6 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
 
       if (!resolved.enabled) return;
 
-      const handler = handlers['tool.execute.before'];
-
       if (resolved.toast) {
         const message = `Session Id: ${input.sessionID || 'unknown'}\nTool: ${input.tool}\nTime: ${new Date().toLocaleTimeString()}`;
         toastQueue.add({
@@ -151,8 +149,6 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       const resolved = resolveToolConfig('tool.execute.after', input.tool);
 
       if (!resolved.enabled) return;
-
-      const handler = handlers['tool.execute.after'];
 
       if (input.tool === 'task') {
         const subagentType = input.args.subagent_type as string;
