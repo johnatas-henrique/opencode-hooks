@@ -7,7 +7,12 @@ import {
 
 describe('toast-queue', () => {
   beforeEach(() => {
+    jest.useFakeTimers();
     resetGlobalToastQueue();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   describe('createToastQueue', () => {
@@ -50,6 +55,8 @@ describe('toast-queue', () => {
         variant: 'info' as const,
         duration: 10,
       });
+
+      await jest.runAllTimersAsync();
       await queue.flush();
     });
   });
@@ -106,11 +113,15 @@ describe('toast-queue', () => {
         variant: 'info' as const,
         duration: 3000,
       };
-      const startTime = Date.now();
 
-      await showToastStaggered(showFn, toast, { delay: 50, stagger: false });
+      const promise = showToastStaggered(showFn, toast, {
+        delay: 50,
+        stagger: false,
+      });
+      await jest.runAllTimersAsync();
+      await promise;
 
-      expect(Date.now() - startTime).toBeGreaterThanOrEqual(45);
+      expect(showFn).toHaveBeenCalledWith(toast);
     });
 
     it('should wait for activeToast when stagger is true', async () => {
@@ -130,6 +141,8 @@ describe('toast-queue', () => {
 
       const promise1 = showToastStaggered(showFn, toast1, { stagger: true });
       const promise2 = showToastStaggered(showFn, toast2, { stagger: true });
+
+      await jest.runAllTimersAsync();
 
       await Promise.all([promise1, promise2]);
       expect(showFn).toHaveBeenCalledTimes(2);

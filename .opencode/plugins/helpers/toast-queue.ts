@@ -38,6 +38,7 @@ export function createToastQueue(
   const queue: TuiToast[] = [];
   let processing = false;
   let currentProcessing: Promise<void> | null = null;
+  let activeTimers: ReturnType<typeof setTimeout>[] = [];
 
   const processQueue = () => {
     if (processing || queue.length === 0) return;
@@ -48,9 +49,15 @@ export function createToastQueue(
         const toast = queue.shift();
         if (toast) {
           const duration = toast.duration ?? 3000;
-          await new Promise((resolve) => setTimeout(resolve, staggerMs));
+          await new Promise<void>((resolve) => {
+            const t = setTimeout(resolve, staggerMs);
+            activeTimers.push(t);
+          });
           await Promise.resolve(showFn(toast));
-          await new Promise((resolve) => setTimeout(resolve, duration));
+          await new Promise<void>((resolve) => {
+            const t = setTimeout(resolve, duration);
+            activeTimers.push(t);
+          });
         }
       }
       processing = false;
@@ -87,6 +94,8 @@ export function createToastQueue(
     },
     clear: () => {
       queue.length = 0;
+      for (const t of activeTimers) clearTimeout(t);
+      activeTimers = [];
     },
     flush: async () => {
       if (currentProcessing) {
