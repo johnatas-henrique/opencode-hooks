@@ -1,104 +1,233 @@
-# Plano de Correções - opencode-hooks
+# Code Review Fixes - Implementation Plan
 
-**Data:** 2026-04-02 14:45  
-**Objetivo:** Aplicar coding standards mantendo compatibilidade total com testes existentes
-
----
+**Created:** 2026-04-03
 
 ## Execution
 
-| Step                                                   | Status | Timestamp        |
-| ------------------------------------------------------ | ------ | ---------------- |
-| 1. Corrigir timestamp nos event handlers               | ✅     | 2026-04-02 15:30 |
-| 2. Adicionar type guards para eventos                  | ✅     | 2026-04-02 16:00 |
-| 3. Adicionar error handling + logging em run-script.ts | ✅     | 2026-04-02 15:15 |
-| 4. Extrair magic numbers para constantes               | ✅     | 2026-04-02 15:20 |
-| 5. Criar helper para toasts repetidos                  | ✅     | 2026-04-02 15:30 |
-| 6. Melhorar error handling em events-config            | ✅     | 2026-04-02 15:35 |
-| 7. Adicionar validação de input em save-to-file        | ✅     | 2026-04-02 16:05 |
-| 8. Remover log-parser.ts (não utilizado)               | ✅     | 2026-04-02 16:10 |
-| 9. Adicionar limite de tamanho em appendToSession      | ✅     | 2026-04-02 15:40 |
-| 10. Corrigir global state em toast-queue               | ✅     | 2026-04-02 15:20 |
-| 11. Rodar testes para validar                          | ✅     | 2026-04-02 16:15 |
+| Step | Description                                                            | Status | Timestamp        |
+| ---- | ---------------------------------------------------------------------- | ------ | ---------------- |
+| 1    | Research current implementation of all 4 files                         | ✅     | 2026-04-03 17:30 |
+| 2    | Fix memory leak in opencode-hooks.ts (lines 118-123)                   | ✅     | 2026-04-03 17:42 |
+| 3    | Fix race condition in toast-queue.ts (lines 43-68)                     | ✅     | 2026-04-03 17:43 |
+| 4    | Fix script argument sanitization in run-script.ts (lines 13-22)        | ✅     | 2026-04-03 17:44 |
+| 5    | Fix synchronous file reads in toast-silence-detector.ts (lines 30, 69) | ✅     | 2026-04-03 17:45 |
+| 6    | Add toast error feedback in save-to-file.ts                            | ✅     | 2026-04-03 18:06 |
+| 7    | Add tests for script error paths                                       | ✅     | 2026-04-03 18:10 |
+| 8    | Run tests to verify all fixes                                          | ✅     | 2026-04-03 18:15 |
+
+**All fixes verified and implemented in previous commits.**
 
 ---
 
-## Result ✅
+## Issue 1: Memory Leak in opencode-hooks.ts
 
-This plan was completed. All code review fixes were applied.
+### Location
 
----
+`.opencode/plugins/opencode-hooks.ts:118-123`
 
-## Detalhamento
+### Current Implementation
 
-### Step 1: Corrigir timestamp nos event handlers
+```typescript
+setTimeout(() => {
+  const newCount = countToastsInLog(logFile);
+  if (newCount > ourToastCount) {
+    wasOverwritten = true;
+  }
+}, 3000);
+```
 
-**Arquivo:** `opencode-hooks.ts:28`  
-**Problema:** Timestamp criado uma vez mas usado para todos os eventos  
-**Solução:** Mover criação do timestamp para dentro de cada event handler
+### Problem
 
-### Step 2: Adicionar type guards para eventos
+The nested setTimeout is never cleaned up. If the parent Promise.race resolves early or if the component is disposed, the inner timer continues running and may access stale state.
 
-**Arquivo:** `opencode-hooks.ts:42`  
-**Problema:** Type assertion sem verificação  
-**Solução:** Criar type guard function para validar o tipo do evento
+### Solution
 
-### Step 3: Adicionar error handling + logging em run-script.ts
+1. Store the nested timer in a variable
+2. Clear it in the cleanup path
+3. Add a flag check to prevent execution after cleanup
 
-**Arquivo:** `helpers/run-script.ts`  
-**Problema:** Sem tratamento de erros  
-**Solução:** Adicionar try/catch com logging para session_events.log
-
-### Step 4: Extrair magic numbers para constantes
-
-**Arquivos:** `opencode-hooks.ts`, `toast-queue.ts`  
-**Problema:** Magic numbers sem explicação  
-**Solução:** Criar arquivo de constantes
-
-### Step 5: Criar helper para toasts repetidos
-
-**Arquivo:** `opencode-hooks.ts`  
-**Problema:** Código DRY violado  
-**Solução:** Extrair função `createEventToast()`
-
-### Step 6: Melhorar error handling em events-config
-
-**Arquivo:** `helpers/events-config.ts:43`  
-**Problema:** Erro ignorado silenciosamente  
-**Solução:** Logar o erro original
-
-### Step 7: Adicionar validação de input em save-to-file
-
-**Arquivo:** `helpers/save-to-file.ts`  
-**Problema:** Caminho relativo problemático + sem validação  
-**Solução:** Validar filename
-
-### Step 8: Remover log-parser.ts
-
-**Arquivo:** `helpers/log-parser.ts`  
-**Problema:** Função não utilizada  
-**Solução:** Remover arquivo e imports relacionados
-
-### Step 9: Adicionar limite em appendToSession
-
-**Arquivo:** `helpers/append-to-session.ts`  
-**Problema:** Sem validação de tamanho  
-**Solução:** Adicionar MAX_PROMPT_LENGTH
-
-### Step 10: Corrigir global state em toast-queue
-
-**Arquivo:** `helpers/toast-queue.ts`  
-**Problema:** Singleton global dificulta testes  
-**Solução:** Manter compatibilidade, adicionar reset para testes
-
-### Step 11: Rodar testes
-
-**Objetivo:** Garantir que todos os testes passam
+```typescript
+let checkOverwriteTimer: ReturnType<typeof setTimeout>;
+const checkOverwrite = () => {
+  if (!logFile || resolved) return;
+  checkOverwriteTimer = setTimeout(() => {
+    if (!logFile || resolved) return;
+    const newCount = countToastsInLog(logFile);
+    if (newCount > ourToastCount) {
+      wasOverwritten = true;
+    }
+  }, 3000);
+};
+```
 
 ---
 
-## Regra de Compatibilidade
+## Issue 2: Race Condition in toast-queue.ts
 
-- Manter API pública exatamente igual
-- Não quebrar testes existentes
-- TODOS os testes devem passar ao final
+### Location
+
+`.opencode/plugins/helpers/toast-queue.ts:43-68`
+
+### Current Implementation
+
+```typescript
+const processQueue = () => {
+  if (processing || queue.length === 0) return;
+  processing = true;
+  // ...
+};
+```
+
+### Problem
+
+The `processing` flag check is not atomic. Multiple simultaneous calls to `processQueue()` (from multiple `add()` calls) can pass the check before `processing` is set to `true`, causing duplicate processing.
+
+### Solution
+
+Use a mutex/lock pattern with async/await:
+
+```typescript
+let processingLock: Promise<void> | null = null;
+
+const processQueue = async () => {
+  if (processingLock) {
+    await processingLock;
+    if (queue.length === 0) return;
+  }
+
+  processingLock = (async () => {
+    while (queue.length > 0) {
+      // ... processing logic
+    }
+    processingLock = null;
+  })();
+
+  await processingLock;
+};
+```
+
+---
+
+## Issue 3: Script Argument Sanitization in run-script.ts
+
+### Location
+
+`.opencode/plugins/helpers/run-script.ts:13-22`
+
+### Current Implementation
+
+```typescript
+const result =
+  args.length > 0
+    ? await $`./${SCRIPTS_DIR}/${scriptPath} ${args.join(' ')}`.quiet()
+    : await $`./${SCRIPTS_DIR}/${scriptPath}`.quiet();
+```
+
+### Problem
+
+Arguments are passed directly to the shell without sanitization. Special characters like `;`, `|`, `&&`, `$(...)` could enable command injection.
+
+### Solution
+
+1. Sanitize each argument to escape shell metacharacters
+2. Pass arguments as separate array elements instead of string interpolation
+
+```typescript
+const shellSpecialChars = /[;&|`$(){}[\]<>\\!#*?"'\n\r]/g;
+
+const sanitizeArg = (arg: string): string => {
+  return arg.replace(shellSpecialChars, '\\$&');
+};
+
+export const runScript = async (
+  $: PluginInput['$'],
+  scriptPath: string,
+  ...args: string[]
+): Promise<string> => {
+  if (!validateScriptPath(scriptPath)) {
+    throw new Error(`Invalid script path: ${scriptPath}`);
+  }
+
+  const sanitizedArgs = args.map(sanitizeArg);
+
+  if (sanitizedArgs.length > 0) {
+    const result =
+      await $`./${SCRIPTS_DIR}/${scriptPath} ${sanitizedArgs}`.quiet();
+    return result.text();
+  }
+
+  const result = await $`./${SCRIPTS_DIR}/${scriptPath}`.quiet();
+  return result.text();
+};
+```
+
+---
+
+## Issue 4: Synchronous File Reads in toast-silence-detector.ts
+
+### Location
+
+`.opencode/plugins/helpers/toast-silence-detector.ts:30, 69`
+
+### Current Implementation
+
+```typescript
+const content = readFileSync(logFile, 'utf-8');
+```
+
+### Problem
+
+File is read synchronously on every poll (default 200ms). This blocks the Node.js event loop and can cause performance issues.
+
+### Solution
+
+Use async file operations with `fs.promises`:
+
+```typescript
+import { readFile } from 'fs/promises';
+
+// In the check function:
+const content = await readFile(logFile, 'utf-8');
+
+// Also update countToastsInLog:
+export async function countToastsInLog(logFile: string): Promise<number> {
+  try {
+    const content = await readFile(logFile, 'utf-8');
+    const matches = content.match(TOAST_PATTERN);
+    return matches ? matches.length : 0;
+  } catch {
+    return 0;
+  }
+}
+```
+
+Note: The caller in `opencode-hooks.ts:116` will need to use `await` when calling `countToastsInLog`.
+
+---
+
+## Testing Strategy
+
+1. Run existing test suite to ensure no regressions
+2. Add new tests for:
+   - Timer cleanup verification
+   - Race condition prevention
+   - Argument sanitization edge cases
+   - Async file operations
+3. Verify backward compatibility
+
+---
+
+## Files to Modify
+
+1. `.opencode/plugins/opencode-hooks.ts` - Fix memory leak
+2. `.opencode/plugins/helpers/toast-queue.ts` - Fix race condition
+3. `.opencode/plugins/helpers/run-script.ts` - Fix sanitization
+4. `.opencode/plugins/helpers/toast-silence-detector.ts` - Fix sync reads
+
+---
+
+## Backward Compatibility
+
+- All changes maintain existing API contracts
+- Default behavior preserved
+- Only internal implementation details changed
