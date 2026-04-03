@@ -26,6 +26,8 @@ let hasShownToast = false;
 let wasOverwritten = false;
 let fallbackShown = false;
 let ourToastCount = 0;
+const runOnceTracker = new Map<string, boolean>();
+let checkOverwriteTimer: ReturnType<typeof setTimeout> | null = null;
 
 const isSubagentSession = (title: string): boolean =>
   title.startsWith('Task:') || title.startsWith('Agent:');
@@ -107,15 +109,19 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       Promise.race([promise, timeout]).then(async () => {
         clearTimeout(timeoutTimer!);
         cleanup();
+        if (checkOverwriteTimer) {
+          clearTimeout(checkOverwriteTimer);
+          checkOverwriteTimer = null;
+        }
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
         try {
-          await showActivePluginsToast(toastQueue, { duration: 15000 });
-          ourToastCount = countToastsInLog(logFile);
+          await showActivePluginsToast(toastQueue, { duration: 5000 });
+          ourToastCount = await countToastsInLog(logFile);
 
-          setTimeout(() => {
-            const newCount = countToastsInLog(logFile);
+          checkOverwriteTimer = setTimeout(async () => {
+            const newCount = await countToastsInLog(logFile);
             if (newCount > ourToastCount) {
               wasOverwritten = true;
             }
@@ -140,7 +146,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
 
         if (!isSubagentSession(title)) {
           fallbackShown = true;
-          await showActivePluginsToast(toastQueue, { duration: 15000 });
+          await showActivePluginsToast(toastQueue, { duration: 5000 });
         }
       }
 
@@ -174,6 +180,10 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         });
       }
 
+      if (resolved.runOnce && runOnceTracker.get(event.type)) {
+        return;
+      }
+
       for (const script of resolved.scripts) {
         try {
           const output = await runScript($, script);
@@ -199,6 +209,10 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
             duration: 5000,
           });
         }
+      }
+
+      if (resolved.runOnce && resolved.scripts.length > 0) {
+        runOnceTracker.set(event.type, true);
       }
     },
 
