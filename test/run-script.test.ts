@@ -8,7 +8,7 @@ describe('run-script', () => {
   let mockDollar: any;
 
   beforeEach(() => {
-    mockDollar = jest.fn((strings: any) => {
+    mockDollar = jest.fn((_strings: any) => {
       const result = {
         quiet: jest.fn().mockReturnValue({
           text: jest.fn().mockReturnValue('script output'),
@@ -39,7 +39,7 @@ describe('run-script', () => {
 
   it('should return output text from script', async () => {
     const customResult = 'custom output';
-    mockDollar = jest.fn((strings: any) => {
+    mockDollar = jest.fn((_strings: any) => {
       return {
         quiet: jest.fn().mockReturnValue({
           text: jest.fn().mockReturnValue(customResult),
@@ -71,7 +71,7 @@ describe('run-script', () => {
   });
 
   it('should throw error and log when script fails', async () => {
-    mockDollar = jest.fn((strings: any) => {
+    mockDollar = jest.fn((_strings: any) => {
       return {
         quiet: jest.fn().mockImplementation(() => {
           throw new Error('Script execution failed');
