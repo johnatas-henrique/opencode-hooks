@@ -1,4 +1,4 @@
-import type { TuiToast } from "@opencode-ai/plugin/tui";
+import type { TuiToast } from '@opencode-ai/plugin/tui';
 
 export type ShowToastOptions = {
   delay?: number;
@@ -63,7 +63,9 @@ export function createToastQueue(
     add: (toast: TuiToast) => {
       if (queue.length >= maxSize) {
         const dropped = queue.shift();
-        console.warn(`Toast queue full, dropping: ${dropped?.title || 'unknown'}`);
+        console.warn(
+          `Toast queue full, dropping: ${dropped?.title || 'unknown'}`
+        );
       }
       queue.push(toast);
       processQueue();
@@ -72,7 +74,9 @@ export function createToastQueue(
       for (const toast of toasts) {
         if (queue.length >= maxSize) {
           const dropped = queue.shift();
-          console.warn(`Toast queue full, dropping: ${dropped?.title || 'unknown'}`);
+          console.warn(
+            `Toast queue full, dropping: ${dropped?.title || 'unknown'}`
+          );
         }
         queue.push(toast);
       }
