@@ -270,3 +270,40 @@ describe('events - getHandler', () => {
     expect(handler).toBeUndefined();
   });
 });
+
+describe('events - global disabled', () => {
+  it('should return enabled: false when global enabled is false', () => {
+    jest.resetModules();
+    jest.doMock('../.opencode/plugins/helpers/handlers', () => ({
+      handlers: {
+        'session.created': {
+          title: '====SESSION CREATED====',
+          variant: 'success',
+          duration: 2000,
+          defaultScript: 'session-created.sh',
+          buildMessage: () => 'test',
+        },
+      },
+    }));
+    jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
+      userConfig: {
+        enabled: false,
+        toast: true,
+        saveToFile: true,
+        appendToSession: true,
+        runScripts: true,
+        events: {
+          'session.created': true,
+        },
+        tools: {},
+      },
+    }));
+
+    const {
+      resolveEventConfig,
+    } = require('../.opencode/plugins/helpers/events');
+    const config = resolveEventConfig('session.created');
+
+    expect(config.enabled).toBe(false);
+  });
+});

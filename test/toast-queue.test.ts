@@ -112,5 +112,62 @@ describe('toast-queue', () => {
 
       expect(Date.now() - startTime).toBeGreaterThanOrEqual(45);
     });
+
+    it('should wait for activeToast when stagger is true', async () => {
+      const showFn = jest.fn();
+      const toast1 = {
+        title: 'Test 1',
+        message: 'Message 1',
+        variant: 'info' as const,
+        duration: 10,
+      };
+      const toast2 = {
+        title: 'Test 2',
+        message: 'Message 2',
+        variant: 'info' as const,
+        duration: 10,
+      };
+
+      const promise1 = showToastStaggered(showFn, toast1, { stagger: true });
+      const promise2 = showToastStaggered(showFn, toast2, { stagger: true });
+
+      await Promise.all([promise1, promise2]);
+      expect(showFn).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('queue backpressure', () => {
+    it('should drop oldest toast when queue is full', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const showFn = jest.fn();
+      const queue = createToastQueue(showFn, { maxSize: 2, staggerMs: 999999 });
+
+      // First add triggers processQueue which shifts item 1 immediately
+      queue.add({ title: '1', message: 'msg', variant: 'info' as const });
+      // Now queue is empty (item 1 shifted for processing)
+      queue.add({ title: '2', message: 'msg', variant: 'info' as const });
+      queue.add({ title: '3', message: 'msg', variant: 'info' as const });
+      // Now queue has [2, 3], maxSize=2
+      queue.add({ title: '4', message: 'msg', variant: 'info' as const });
+      // Queue full, should drop oldest
+
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('should addMultiple toasts and drop when full', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const showFn = jest.fn();
+      const queue = createToastQueue(showFn, { maxSize: 2, staggerMs: 999999 });
+
+      queue.addMultiple([
+        { title: '1', message: 'msg', variant: 'info' as const },
+        { title: '2', message: 'msg', variant: 'info' as const },
+        { title: '3', message: 'msg', variant: 'info' as const },
+      ]);
+
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
   });
 });

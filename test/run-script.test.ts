@@ -1,5 +1,9 @@
 import { runScript } from '../.opencode/plugins/helpers/run-script';
 
+jest.mock('../.opencode/plugins/helpers/save-to-file', () => ({
+  saveToFile: jest.fn().mockResolvedValue(undefined),
+}));
+
 describe('run-script', () => {
   let mockDollar: any;
 
@@ -46,5 +50,37 @@ describe('run-script', () => {
     const result = await runScript(mockDollar as any, 'test-script.sh');
 
     expect(result).toBe(customResult);
+  });
+
+  it('should throw error for invalid script path with ..', async () => {
+    await expect(
+      runScript(mockDollar as any, '../malicious.sh')
+    ).rejects.toThrow('Invalid script path');
+  });
+
+  it('should throw error for invalid script path starting with /', async () => {
+    await expect(runScript(mockDollar as any, '/etc/passwd')).rejects.toThrow(
+      'Invalid script path'
+    );
+  });
+
+  it('should throw error for empty script path', async () => {
+    await expect(runScript(mockDollar as any, '')).rejects.toThrow(
+      'Invalid script path'
+    );
+  });
+
+  it('should throw error and log when script fails', async () => {
+    mockDollar = jest.fn((strings: any) => {
+      return {
+        quiet: jest.fn().mockImplementation(() => {
+          throw new Error('Script execution failed');
+        }),
+      };
+    });
+
+    await expect(runScript(mockDollar as any, 'failing.sh')).rejects.toThrow(
+      'Script execution failed'
+    );
   });
 });
