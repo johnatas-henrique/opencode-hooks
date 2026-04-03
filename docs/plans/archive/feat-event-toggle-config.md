@@ -1,21 +1,28 @@
 # Plan: Event Toggle System via JSON Config
 
 ## Objective
+
 Create a JSON configuration file to enable/disable events without modifying code. Each event can be turned on/off independently via configuration. The design must be **future-proof** - no need to update when OpenCode adds new events.
 
 ---
 
 ## Execution
 
-| Step | Status | Timestamp |
-| ---- | ------ | --------- |
-| 1. Create events-config.json with opt-out pattern | ✅ | 2026-04-02 02:30 |
-| 2. Create events-config.ts loader module | ✅ | 2026-04-02 02:35 |
-| 3. Update session-plugins.ts to use config | ✅ | 2026-04-02 02:40 |
-| 4. Add granular controls (toast, script, appendToSession) | ✅ | 2026-04-02 02:40 |
-| 5. Test the toggle system | ✅ | 2026-04-02 02:45 |
-| 6. Update documentation | ✅ | 2026-04-02 02:45 |
-| 7. Fix logToFile flag for script output | ✅ | 2026-04-02 05:00 |
+| Step                                                      | Status | Timestamp        |
+| --------------------------------------------------------- | ------ | ---------------- |
+| 1. Create events-config.json with opt-out pattern         | ✅     | 2026-04-02 02:30 |
+| 2. Create events-config.ts loader module                  | ✅     | 2026-04-02 02:35 |
+| 3. Update session-plugins.ts to use config                | ✅     | 2026-04-02 02:40 |
+| 4. Add granular controls (toast, script, appendToSession) | ✅     | 2026-04-02 02:40 |
+| 5. Test the toggle system                                 | ✅     | 2026-04-02 02:45 |
+| 6. Update documentation                                   | ✅     | 2026-04-02 02:45 |
+| 7. Fix logToFile flag for script output                   | ✅     | 2026-04-02 05:00 |
+
+---
+
+## Result ✅
+
+This plan was completed. The event toggle system is implemented via `user-events.config.ts` with modular event system.
 
 ---
 
@@ -23,20 +30,20 @@ Create a JSON configuration file to enable/disable events without modifying code
 
 ### Categories & Events
 
-| Category | Events | Plugin Status |
-|----------|--------|----------------|
-| **Command** | `command.executed` | ❌ Not implemented |
-| **File** | `file.edited`, `file.watcher.updated` | ⚠️ Not fully implemented |
-| **Installation** | `installation.updated` | ❌ Not implemented |
-| **LSP** | `lsp.client.diagnostics`, `lsp.updated` | ❌ Not implemented |
-| **Message** | `message.part.removed`, `message.part_updated`, `message.removed`, `message.updated` | ❌ Not implemented |
-| **Permission** | `permission.asked`, `permission.replied` | ❌ Not implemented |
-| **Server** | `server.connected`, `server.instance.disposed` | ⚠️ Partial |
-| **Session** | `session.created`, `session.compacted`, `session.deleted`, `session.diff`, `session.error`, `session.idle`, `session.status`, `session.updated` | ✅ Fully implemented |
-| **Todo** | `todo.updated` | ❌ Not implemented |
-| **Shell** | `shell.env` | ❌ Not implemented |
-| **Tool** | `tool.execute.after`, `tool.execute.before` | ⚠️ Partial |
-| **TUI** | `tui.prompt.append`, `tui.command.execute`, `tui.toast.show` | ❌ Not implemented |
+| Category         | Events                                                                                                                                          | Plugin Status            |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| **Command**      | `command.executed`                                                                                                                              | ❌ Not implemented       |
+| **File**         | `file.edited`, `file.watcher.updated`                                                                                                           | ⚠️ Not fully implemented |
+| **Installation** | `installation.updated`                                                                                                                          | ❌ Not implemented       |
+| **LSP**          | `lsp.client.diagnostics`, `lsp.updated`                                                                                                         | ❌ Not implemented       |
+| **Message**      | `message.part.removed`, `message.part_updated`, `message.removed`, `message.updated`                                                            | ❌ Not implemented       |
+| **Permission**   | `permission.asked`, `permission.replied`                                                                                                        | ❌ Not implemented       |
+| **Server**       | `server.connected`, `server.instance.disposed`                                                                                                  | ⚠️ Partial               |
+| **Session**      | `session.created`, `session.compacted`, `session.deleted`, `session.diff`, `session.error`, `session.idle`, `session.status`, `session.updated` | ✅ Fully implemented     |
+| **Todo**         | `todo.updated`                                                                                                                                  | ❌ Not implemented       |
+| **Shell**        | `shell.env`                                                                                                                                     | ❌ Not implemented       |
+| **Tool**         | `tool.execute.after`, `tool.execute.before`                                                                                                     | ⚠️ Partial               |
+| **TUI**          | `tui.prompt.append`, `tui.command.execute`, `tui.toast.show`                                                                                    | ❌ Not implemented       |
 
 **Total: 38 events across 12 categories**
 
@@ -50,29 +57,26 @@ Create a JSON configuration file to enable/disable events without modifying code
 {
   "version": "1.0.0",
   "description": "Event toggle config - defaults to ON, override what you want OFF",
-  
+
   "global": {
     "enabled": true,
     "logToFile": true,
     "defaultToastDuration": 3000
   },
-  
+
   "events": {
     // === EXAMPLES (uncomment and modify as needed) ===
-    
     // Disable entire event:
     // "session.status": false,
     // "session.updated": false,
     // "tool.execute.before": false,
-    
     // Disable only toast for specific event:
     // "session.diff": { "toast": false },
-    
     // Enable specific features for event:
     // "session.created": { "toast": true, "script": true, "appendToSession": true },
     // "session.compacted": { "toast": true, "script": true, "appendToSession": true }
   },
-  
+
   "toast": true,
   "scripts": true,
   "appendToSession": true
@@ -81,22 +85,22 @@ Create a JSON configuration file to enable/disable events without modifying code
 
 ### How It Works
 
-| Property | Default | Override |
-|----------|---------|----------|
-| `events."event-name"` | true | `"event-name": false` (disable) or `"event-name": { "toast": false }` (granular) |
-| `toast` | true | `"toast": false` (disable all toasts) |
-| `scripts` | true | `"scripts": false` (disable all scripts) |
-| `appendToSession` | true | `"appendToSession": false` (disable all appends) |
+| Property              | Default | Override                                                                         |
+| --------------------- | ------- | -------------------------------------------------------------------------------- |
+| `events."event-name"` | true    | `"event-name": false` (disable) or `"event-name": { "toast": false }` (granular) |
+| `toast`               | true    | `"toast": false` (disable all toasts)                                            |
+| `scripts`             | true    | `"scripts": false` (disable all scripts)                                         |
+| `appendToSession`     | true    | `"appendToSession": false` (disable all appends)                                 |
 
 ### Usage Examples
 
-| Case | Configuration |
-|------|---------------|
-| Disable entire event | `"session.idle": false` |
-| Disable only toast for session.diff | `"session.diff": { "toast": false }` |
-| Disable all toasts globally | `"toast": false` |
-| Disable all scripts globally | `"scripts": false` |
-| Combine global + specific | `"toast": false` + `"session.error": { "toast": true }` |
+| Case                                | Configuration                                           |
+| ----------------------------------- | ------------------------------------------------------- |
+| Disable entire event                | `"session.idle": false`                                 |
+| Disable only toast for session.diff | `"session.diff": { "toast": false }`                    |
+| Disable all toasts globally         | `"toast": false`                                        |
+| Disable all scripts globally        | `"scripts": false`                                      |
+| Combine global + specific           | `"toast": false` + `"session.error": { "toast": true }` |
 
 ### Priority Order
 
@@ -121,16 +125,17 @@ Priority (highest to lowest):
 
 ### Benefits
 
-| Feature | Description |
-|---------|-------------|
-| **Zero maintenance** | New OpenCode events automatically use category defaults |
-| **Easy to understand** | User only configures what they need |
-| **Flexible** | Override at event level OR category level |
-| **Git trackable** | JSON changes are version controlled |
+| Feature                | Description                                             |
+| ---------------------- | ------------------------------------------------------- |
+| **Zero maintenance**   | New OpenCode events automatically use category defaults |
+| **Easy to understand** | User only configures what they need                     |
+| **Flexible**           | Override at event level OR category level               |
+| **Git trackable**      | JSON changes are version controlled                     |
 
 ### Example: Future Event Auto-Enable
 
 If OpenCode adds `session.migrated` in the future:
+
 - Automatically inherits from `categories.session` settings
 - User doesn't need to update config
 - Can opt-out by adding to `events.*` with `"enabled": false`
@@ -165,13 +170,13 @@ If OpenCode adds `session.migrated` in the future:
 {
   "version": "1.0.0",
   "description": "Event toggle configuration - opt-out pattern (defaults to ON)",
-  
+
   "global": {
     "enabled": true,
     "logToFile": true,
     "defaultToastDuration": 3000
   },
-  
+
   "events": {
     // === Current implementations - defaults to ON ===
     // "session.created": { "toast": true, "script": true, "appendToSession": true },
@@ -182,16 +187,14 @@ If OpenCode adds `session.migrated` in the future:
     // "session.idle": { "toast": true },
     // "server.instance.disposed": { "script": true },
     // "tool.execute.after": { "toast": true, "script": true },
-    
     // === Disabled by default ===
     // "session.status": false,
     // "session.updated": false,
     // "tool.execute.before": false,
-    
     // === Override examples ===
     // "session.diff": { "toast": false }
   },
-  
+
   "toast": true,
   "scripts": true,
   "appendToSession": true
@@ -203,8 +206,8 @@ If OpenCode adds `session.migrated` in the future:
 ```typescript
 // .opencode/plugins/helpers/events-config.ts
 
-import { readFile } from "fs/promises";
-import { join } from "path";
+import { readFile } from 'fs/promises';
+import { join } from 'path';
 
 export interface EventToggleConfig {
   enabled?: boolean;
@@ -231,8 +234,8 @@ export interface EventsConfig {
 
 // Default config - everything ON by default
 const DEFAULT_CONFIG: EventsConfig = {
-  version: "1.0.0",
-  description: "Default event toggle configuration",
+  version: '1.0.0',
+  description: 'Default event toggle configuration',
   global: {
     enabled: true,
     logToFile: true,
@@ -240,24 +243,34 @@ const DEFAULT_CONFIG: EventsConfig = {
   },
   events: {
     // Session events - enabled by default
-    "session.created": { enabled: true, toast: true, script: true, appendToSession: true },
-    "session.compacted": { enabled: true, toast: true, script: true, appendToSession: true },
-    "session.deleted": { enabled: true, toast: true },
-    "session.diff": { enabled: true, toast: true },
-    "session.error": { enabled: true, toast: true },
-    "session.idle": { enabled: true, toast: true },
-    
+    'session.created': {
+      enabled: true,
+      toast: true,
+      script: true,
+      appendToSession: true,
+    },
+    'session.compacted': {
+      enabled: true,
+      toast: true,
+      script: true,
+      appendToSession: true,
+    },
+    'session.deleted': { enabled: true, toast: true },
+    'session.diff': { enabled: true, toast: true },
+    'session.error': { enabled: true, toast: true },
+    'session.idle': { enabled: true, toast: true },
+
     // Disabled by default
-    "session.status": { enabled: false },
-    "session.updated": { enabled: false },
-    
+    'session.status': { enabled: false },
+    'session.updated': { enabled: false },
+
     // Server events
-    "server.instance.disposed": { enabled: true, script: true },
-    "server.connected": { enabled: false },
-    
+    'server.instance.disposed': { enabled: true, script: true },
+    'server.connected': { enabled: false },
+
     // Tool events
-    "tool.execute.after": { enabled: true, toast: true, script: true },
-    "tool.execute.before": { enabled: false },
+    'tool.execute.after': { enabled: true, toast: true, script: true },
+    'tool.execute.before': { enabled: false },
   },
   toast: true,
   scripts: true,
@@ -270,8 +283,8 @@ export async function loadEventsConfig(): Promise<EventsConfig> {
   if (cachedConfig) return cachedConfig;
 
   try {
-    const configPath = join(__dirname, "..", "events-config.json");
-    const content = await readFile(configPath, "utf-8");
+    const configPath = join(__dirname, '..', 'events-config.json');
+    const content = await readFile(configPath, 'utf-8');
     cachedConfig = JSON.parse(content) as EventsConfig;
     return cachedConfig;
   } catch {
@@ -282,12 +295,12 @@ export async function loadEventsConfig(): Promise<EventsConfig> {
 // Get config with cascading fallback
 export function getEventConfig(eventType: string): EventToggleConfig {
   const config = cachedConfig || DEFAULT_CONFIG;
-  
+
   // 1. Check specific event in config
   const eventConfig = config.events[eventType];
   if (eventConfig !== undefined) {
     // If boolean false, event is disabled
-    if (typeof eventConfig === "boolean") {
+    if (typeof eventConfig === 'boolean') {
       return { enabled: eventConfig };
     }
     return eventConfig;
@@ -315,24 +328,24 @@ export function resetConfigCache(): void {
 ### Step 3: session-plugins.ts (Updated)
 
 ```typescript
-import { loadEventsConfig, getEventConfig } from "./helpers/events-config";
+import { loadEventsConfig, getEventConfig } from './helpers/events-config';
 
 export const SessionPlugins: Plugin = async (ctx: PluginInput) => {
   const { client, $ } = ctx;
   const config = await loadEventsConfig();
-  
+
   // Check global master switch
   if (!config.global.enabled) {
-    return { event: async () => {}, "tool.execute.after": async () => {} };
+    return { event: async () => {}, 'tool.execute.after': async () => {} };
   }
-  
+
   const toastQueue = getGlobalToastQueue(/* ... */);
   const timestamp = new Date().toISOString();
 
   return {
     event: async ({ event }) => {
       const eventConfig = getEventConfig(event.type);
-      
+
       // Skip if event is disabled
       if (eventConfig.enabled === false) {
         return;
@@ -344,45 +357,57 @@ export const SessionPlugins: Plugin = async (ctx: PluginInput) => {
       }
 
       switch (event.type) {
-        case "session.created": {
+        case 'session.created': {
           if (eventConfig.toast) {
-            toastQueue.add({ /* toast code */ });
+            toastQueue.add({
+              /* toast code */
+            });
           }
-          
-          let output = "";
+
+          let output = '';
           if (eventConfig.script) {
-            output = await runScript($, "session-start.sh");
+            output = await runScript($, 'session-start.sh');
           }
-          
+
           if (eventConfig.appendToSession && output) {
             await appendToSession(ctx, sessionEvent.properties.info.id, output);
           }
           break;
         }
-        
-        case "session.compacted": {
-          if (eventConfig.toast) { /* ... */ }
-          if (eventConfig.script) { /* ... */ }
-          if (eventConfig.appendToSession) { /* ... */ }
+
+        case 'session.compacted': {
+          if (eventConfig.toast) {
+            /* ... */
+          }
+          if (eventConfig.script) {
+            /* ... */
+          }
+          if (eventConfig.appendToSession) {
+            /* ... */
+          }
           break;
         }
-        
+
         // ... other events
       }
     },
 
-    "tool.execute.after": async (input, _output) => {
+    'tool.execute.after': async (input, _output) => {
       const toolConfig = getEventConfig(`tool.execute.${input.tool}`);
-      
+
       if (toolConfig.enabled === false) {
         return;
       }
-      
-      if (input.tool === "task") {
-        if (toolConfig.toast) { /* ... */ }
-        if (toolConfig.script) { /* ... */ }
+
+      if (input.tool === 'task') {
+        if (toolConfig.toast) {
+          /* ... */
+        }
+        if (toolConfig.script) {
+          /* ... */
+        }
       }
-    }
+    },
   };
 };
 ```
@@ -392,6 +417,7 @@ export const SessionPlugins: Plugin = async (ctx: PluginInput) => {
 ## Usage Examples
 
 ### Disable entire event
+
 ```json
 {
   "events": {
@@ -401,6 +427,7 @@ export const SessionPlugins: Plugin = async (ctx: PluginInput) => {
 ```
 
 ### Disable only toast for specific event
+
 ```json
 {
   "events": {
@@ -410,6 +437,7 @@ export const SessionPlugins: Plugin = async (ctx: PluginInput) => {
 ```
 
 ### Disable all toasts globally
+
 ```json
 {
   "toast": false
@@ -417,6 +445,7 @@ export const SessionPlugins: Plugin = async (ctx: PluginInput) => {
 ```
 
 ### Combine global off + specific on
+
 ```json
 {
   "toast": false,
@@ -427,6 +456,7 @@ export const SessionPlugins: Plugin = async (ctx: PluginInput) => {
 ```
 
 ### Disable all scripts globally
+
 ```json
 {
   "scripts": false
@@ -437,12 +467,12 @@ export const SessionPlugins: Plugin = async (ctx: PluginInput) => {
 
 ## Files to Create/Modify
 
-| File | Action |
-|------|--------|
-| `.opencode/plugins/events-config.json` | CREATE |
-| `.opencode/plugins/helpers/events-config.ts` | CREATE |
-| `.opencode/plugins/helpers/index.ts` | MODIFY (export) |
-| `.opencode/plugins/session-plugins.ts` | MODIFY (use config) |
+| File                                         | Action              |
+| -------------------------------------------- | ------------------- |
+| `.opencode/plugins/events-config.json`       | CREATE              |
+| `.opencode/plugins/helpers/events-config.ts` | CREATE              |
+| `.opencode/plugins/helpers/index.ts`         | MODIFY (export)     |
+| `.opencode/plugins/session-plugins.ts`       | MODIFY (use config) |
 
 ---
 
