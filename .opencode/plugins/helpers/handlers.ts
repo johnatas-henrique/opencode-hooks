@@ -247,7 +247,7 @@ export const handlers: Record<string, EventHandler> = {
   },
 
   'server.instance.disposed': {
-    title: '',
+    title: '====SERVER INSTANCE DISPOSED====',
     variant: 'info',
     duration: 0,
     defaultScript: 'session-stop.sh',
