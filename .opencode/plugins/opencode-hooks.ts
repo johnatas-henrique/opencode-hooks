@@ -8,114 +8,21 @@ import {
   getGlobalToastQueue,
   runScript,
   saveToFile,
-  loadEventsConfig,
-  getEventConfig,
-  type ToastConfig,
-  type ToastVariant,
+  handlers,
+  resolveEventConfig,
+  resolveToolConfig,
 } from './helpers';
-import { TOAST_DURATION } from './helpers/constants';
-
-const DEFAULT_SCRIPTS = {
-  CREATED: 'session-start.sh',
-  COMPACTED: 'pre-compact.sh',
-  DISPOSED: 'session-stop.sh',
-  AGENT: 'log-agent.sh',
-} as const;
-
-const formatTime = (): string => new Date().toLocaleTimeString();
-
-const isSessionEvent = <T extends { type: string }>(
-  event: T,
-  eventType: string
-): boolean => event.type === eventType;
-
-const createEventToast = (
-  queue: ReturnType<typeof getGlobalToastQueue>,
-  config: ToastConfig | undefined,
-  defaultTitle: string,
-  defaultVariant: ToastVariant,
-  defaultDuration: number,
-  message: string
-) => {
-  const toastConfig = typeof config === 'boolean' ? undefined : config;
-  queue.add({
-    title: toastConfig?.title ?? defaultTitle,
-    message: message.trim().replace(/^\s+/gm, ''),
-    variant: toastConfig?.variant ?? defaultVariant,
-    duration: toastConfig?.duration ?? defaultDuration,
-  });
-};
-
-type EventHandlerFactory = (
-  event: any,
-  ctx: any,
-  toastQueue: any,
-  eventConfig: ReturnType<typeof getEventConfig>,
-  globalConfig: any,
-  timestamp: string,
-  run$: PluginInput["$"]
-) => Promise<void> | void;
-
-const createEventHandler = (
-  getSessionId: (event: any) => string,
-  defaultTitle: string,
-  defaultVariant: ToastVariant,
-  defaultDuration: number,
-  fallbackScript?: string
-): EventHandlerFactory => {
-  return async (event, ctx, toastQueue, eventConfig, globalConfig, timestamp, run$) => {
-    const toastCfg = eventConfig.toast as ToastConfig | undefined;
-    const message = `Session Id: ${getSessionId(event)}\nTime: ${formatTime()}`;
-    
-    if (eventConfig.toast !== false) {
-      createEventToast(
-        toastQueue,
-        toastCfg,
-        defaultTitle,
-        defaultVariant,
-        defaultDuration,
-        message
-      );
-    }
-
-    const scriptConfig = eventConfig.script;
-    let scriptName: string | undefined;
-    
-    if (typeof scriptConfig === 'string') {
-      scriptName = scriptConfig;
-    } else if (scriptConfig === true && fallbackScript) {
-      scriptName = fallbackScript;
-    } else if (scriptConfig === true && globalConfig.script && fallbackScript) {
-      scriptName = fallbackScript;
-    }
-    
-    if (scriptName) {
-      try {
-        const output = await runScript(run$, scriptName);
-        
-        if (globalConfig.saveToFile && output) {
-          await saveToFile({ content: `[${timestamp}] ${output}\n` });
-        }
-        
-        if (eventConfig.appendToSession && output) {
-          await appendToSession(ctx, getSessionId(event), output);
-        }
-      } catch (err) {
-        console.error(`Script ${scriptName} failed:`, err);
-      }
-    }
-  };
-};
+import { userConfig } from './helpers/user-events.config';
 
 export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
   const { client, $ } = ctx;
 
-  const config = await loadEventsConfig();
-
-  if (!config.enabled) {
+  if (!userConfig.enabled) {
     return {
       event: async () => {},
+      'tool.execute.before': async () => {},
       'tool.execute.after': async () => {},
+      'shell.env': async () => {},
     };
   }
 
@@ -133,91 +40,106 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
   await saveToFile({
     content: `
     |=================================OpencodeHooks plugin initialized=================================|
-    [${new Date().toISOString()}] - Configuration: ${JSON.stringify(config)}\n
+    [${new Date().toISOString()}] - Configuration loaded from user-events.config.ts\n
     `,
   });
-
-  const eventHandlers: Record<string, EventHandlerFactory> = {
-    'session.created': createEventHandler(
-      (e) => e.properties.info.id,
-      '====SESSION CREATED====',
-      'success',
-      TOAST_DURATION.SHORT,
-      DEFAULT_SCRIPTS.CREATED
-    ),
-    'session.compacted': createEventHandler(
-      (e) => e.properties.sessionID,
-      '====SESSION COMPACTED====',
-      'info',
-      TOAST_DURATION.SHORT,
-      DEFAULT_SCRIPTS.COMPACTED
-    ),
-    'session.deleted': createEventHandler(
-      (e) => e.properties.info.id,
-      '====SESSION DELETED====',
-      'error',
-      TOAST_DURATION.SHORT
-    ),
-    'session.error': createEventHandler(
-      (e) => e.properties.sessionID,
-      '====SESSION ERROR====',
-      'error',
-      TOAST_DURATION.LONG
-    ),
-    'session.diff': createEventHandler(
-      (e) => e.properties.sessionID,
-      '====SESSION DIFF====',
-      'warning',
-      TOAST_DURATION.SHORT
-    ),
-    'session.idle': createEventHandler(
-      (e) => e.properties.sessionID,
-      '====IDLE SESSION====',
-      'info',
-      TOAST_DURATION.SHORT
-    ),
-    'session.status': createEventHandler(
-      (e) => e.properties.sessionID,
-      '====SESSION STATUS====',
-      'info',
-      TOAST_DURATION.SHORT
-    ),
-    'session.updated': createEventHandler(
-      (e) => e.properties.info.id,
-      '====UPDATED SESSION====',
-      'info',
-      TOAST_DURATION.SHORT
-    ),
-    'server.instance.disposed': createEventHandler(
-      (e) => e.properties.directory || 'unknown',
-      '',
-      'info',
-      0,
-      DEFAULT_SCRIPTS.DISPOSED
-    ),
-  };
 
   return {
     event: async ({ event }) => {
       const timestamp = new Date().toISOString();
-      const eventConfig = getEventConfig(event.type);
+      const resolved = resolveEventConfig(event.type);
 
-      if (eventConfig.enabled === false) {
+      if (!resolved.enabled) {
         await saveToFile({
           content: `[${timestamp}] - Skipping disabled event: ${event.type}\n`,
         });
         return;
       }
 
-      if (config.saveToFile && !event.type.includes('message')) {
+      if (userConfig.saveToFile && !event.type.includes('message')) {
         await saveToFile({
-          content: `[${timestamp}] - ${event.type} - ${JSON.stringify(eventConfig)}\n`,
+          content: `[${timestamp}] - ${event.type} - ${JSON.stringify(resolved)}\n`,
         });
       }
 
-      const handler = eventHandlers[event.type];
-      if (handler) {
-        await handler(event, ctx, toastQueue, eventConfig, config, timestamp, $);
+      const handler = handlers[event.type];
+      if (!handler) return;
+
+      if (resolved.toast) {
+        toastQueue.add({
+          title: resolved.toastTitle,
+          message: (resolved.toastMessage ?? handler.buildMessage(event))
+            .trim()
+            .replace(/^\s+/gm, ''),
+          variant: resolved.toastVariant,
+          duration: resolved.toastDuration,
+        });
+      }
+
+      for (const script of resolved.scripts) {
+        try {
+          const output = await runScript($, script);
+          if (resolved.saveToFile && output) {
+            await saveToFile({ content: `[${timestamp}] ${output}\n` });
+          }
+          if (resolved.appendToSession && output) {
+            const props = event.properties as any;
+            const sessionId = props?.info?.id ?? props?.sessionID ?? 'unknown';
+            await appendToSession(ctx, sessionId, output);
+          }
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          await saveToFile({
+            content: `[${timestamp}] - Script error: ${script} - ${errorMessage}\n`,
+          });
+          toastQueue.add({
+            title: '====SCRIPT ERROR====',
+            message: `Script: ${script}\nError: ${errorMessage}\nCheck user-events.config.ts`,
+            variant: 'error',
+            duration: 5000,
+          });
+        }
+      }
+    },
+
+    'tool.execute.before': async (input: any, output: any) => {
+      const timestamp = new Date().toISOString();
+      const resolved = resolveToolConfig('tool.execute.before', input.tool);
+
+      if (!resolved.enabled) return;
+
+      const handler = handlers['tool.execute.before'];
+
+      if (resolved.toast) {
+        const message = `Session Id: ${input.sessionID || 'unknown'}\nTool: ${input.tool}\nTime: ${new Date().toLocaleTimeString()}`;
+        toastQueue.add({
+          title: resolved.toastTitle,
+          message: (resolved.toastMessage ?? message)
+            .trim()
+            .replace(/^\s+/gm, ''),
+          variant: resolved.toastVariant,
+          duration: resolved.toastDuration,
+        });
+      }
+
+      for (const script of resolved.scripts) {
+        try {
+          const scriptOutput = await runScript($, script, input.tool);
+          if (resolved.saveToFile && scriptOutput) {
+            await saveToFile({ content: `[${timestamp}] ${scriptOutput}\n` });
+          }
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          await saveToFile({
+            content: `[${timestamp}] - Script error: ${script} - ${errorMessage}\n`,
+          });
+          toastQueue.add({
+            title: '====SCRIPT ERROR====',
+            message: `Script: ${script}\nError: ${errorMessage}\nCheck user-events.config.ts`,
+            variant: 'error',
+            duration: 5000,
+          });
+        }
       }
     },
 
@@ -226,41 +148,72 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       _output: ToolExecuteAfterOutput
     ) => {
       const timestamp = new Date().toISOString();
-      const toolConfig = getEventConfig(`tool.execute.${input.tool}`);
+      const resolved = resolveToolConfig('tool.execute.after', input.tool);
 
-      if (toolConfig.enabled === false) {
-        return;
-      }
+      if (!resolved.enabled) return;
+
+      const handler = handlers['tool.execute.after'];
 
       if (input.tool === 'task') {
         const subagentType = input.args.subagent_type as string;
-        if (subagentType) {
-          const toastCfg = toolConfig.toast as ToastConfig | undefined;
-          if (toolConfig.toast !== false) {
-            createEventToast(
-              toastQueue,
-              toastCfg,
-              '====SUBAGENT CALLED====',
-              'info',
-              TOAST_DURATION.SHORT,
-              `Session Id: ${input.sessionID}\nAgent: ${subagentType}\nTime: ${formatTime()}`
-            );
-          }
+        if (subagentType && resolved.toast) {
+          const message = `Session Id: ${input.sessionID}\nAgent: ${subagentType}\nTime: ${new Date().toLocaleTimeString()}`;
+          toastQueue.add({
+            title: resolved.toastTitle,
+            message: (resolved.toastMessage ?? message)
+              .trim()
+              .replace(/^\s+/gm, ''),
+            variant: resolved.toastVariant,
+            duration: resolved.toastDuration,
+          });
+        }
 
-          const scriptName = typeof toolConfig.script === 'string'
-            ? toolConfig.script
-            : undefined;
-          
-          if (scriptName) {
-            try {
-              const output = await runScript($, scriptName, subagentType);
-              if (config.saveToFile && output) {
-                await saveToFile({ content: `[${timestamp}] ${output}\n` });
-              }
-            } catch (err) {
-              console.error(`Script ${scriptName} failed:`, err);
+        for (const script of resolved.scripts) {
+          try {
+            const output = await runScript($, script, subagentType);
+            if (resolved.saveToFile && output) {
+              await saveToFile({ content: `[${timestamp}] ${output}\n` });
             }
+          } catch (err) {
+            const errorMessage =
+              err instanceof Error ? err.message : String(err);
+            await saveToFile({
+              content: `[${timestamp}] - Script error: ${script} - ${errorMessage}\n`,
+            });
+            toastQueue.add({
+              title: '====SCRIPT ERROR====',
+              message: `Script: ${script}\nError: ${errorMessage}\nCheck user-events.config.ts`,
+              variant: 'error',
+              duration: 5000,
+            });
           }
+        }
+      }
+    },
+
+    'shell.env': async (input: any, output: any) => {
+      const timestamp = new Date().toISOString();
+      const resolved = resolveEventConfig('shell.env');
+
+      if (!resolved.enabled) return;
+
+      for (const script of resolved.scripts) {
+        try {
+          const scriptOutput = await runScript($, script);
+          if (resolved.saveToFile && scriptOutput) {
+            await saveToFile({ content: `[${timestamp}] ${scriptOutput}\n` });
+          }
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          await saveToFile({
+            content: `[${timestamp}] - Script error: ${script} - ${errorMessage}\n`,
+          });
+          toastQueue.add({
+            title: '====SCRIPT ERROR====',
+            message: `Script: ${script}\nError: ${errorMessage}\nCheck user-events.config.ts`,
+            variant: 'error',
+            duration: 5000,
+          });
         }
       }
     },
