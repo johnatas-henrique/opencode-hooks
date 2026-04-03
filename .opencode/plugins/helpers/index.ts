@@ -23,6 +23,11 @@ import {
   type ToolConfig,
   type UserEventsConfig,
 } from './event-types';
+import { showActivePluginsToast } from './show-active-plugins';
+import {
+  waitForToastSilence,
+  countToastsInLog,
+} from './toast-silence-detector';
 
 export {
   saveToFile,
@@ -37,6 +42,9 @@ export {
   resolveToolConfig,
   getHandler,
   EventType,
+  showActivePluginsToast,
+  waitForToastSilence,
+  countToastsInLog,
 };
 export type {
   EventHandler,
