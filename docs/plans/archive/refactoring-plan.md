@@ -1,18 +1,19 @@
 # Refactoring Plan: OpenCode Hooks
 
 **Date:** 2026-04-02 09:15:00
+**Status:** Mostly Completed (see notes)
 
 ## Execution
 
-| Step | Description | Status |
-| ---- | ------------ | ------ |
-| 1. Extract type guard factory | Create factory function for event type guards | ⏳ |
-| 2. Create event handler factory | Extract repeated event handling pattern | ⏳ |
-| 3. Consolidate constants | Merge duplicate SCRIPTS_DIR definitions | ⏳ |
-| 4. Add input validation | Validate script paths before execution | ⏳ |
-| 5. Implement batch file writes | Optimize save-to-file to batch operations | ⏳ |
-| 6. Add queue backpressure | Implement size limits for toast queue | ⏳ |
-| 7. Refactor main plugin | Split large function into smaller modules | ⏳ |
+| Step                            | Description                                   | Status |
+| ------------------------------- | --------------------------------------------- | ------ |
+| 1. Extract type guard factory   | Create factory function for event type guards | ⏳     |
+| 2. Create event handler factory | Extract repeated event handling pattern       | ⏳     |
+| 3. Consolidate constants        | Merge duplicate SCRIPTS_DIR definitions       | ⏳     |
+| 4. Add input validation         | Validate script paths before execution        | ⏳     |
+| 5. Implement batch file writes  | Optimize save-to-file to batch operations     | ⏳     |
+| 6. Add queue backpressure       | Implement size limits for toast queue         | ⏳     |
+| 7. Refactor main plugin         | Split large function into smaller modules     | ⏳     |
 
 ---
 
@@ -55,17 +56,20 @@
 **Problem:** Lines 26-33 have 8 nearly identical type guard functions.
 
 **Solution:**
+
 ```typescript
 // Create factory function
-const createTypeGuard = (eventType: string) => (event: any): boolean => 
-  event.type === eventType;
+const createTypeGuard =
+  (eventType: string) =>
+  (event: any): boolean =>
+    event.type === eventType;
 
 // Or use a simple function
-const isEventType = (event: any, type: string): boolean => 
-  event.type === type;
+const isEventType = (event: any, type: string): boolean => event.type === type;
 ```
 
 **Files to modify:**
+
 - `.opencode/plugins/opencode-hooks.ts`
 
 ---
@@ -75,6 +79,7 @@ const isEventType = (event: any, type: string): boolean =>
 **Problem:** Each event case repeats identical 4-step pattern.
 
 **Solution:**
+
 ```typescript
 const createEventHandler = (eventConfig: EventConfig) => {
   return async (event: any) => {
@@ -82,18 +87,18 @@ const createEventHandler = (eventConfig: EventConfig) => {
     if (eventConfig.toast) {
       await createEventToast(event, eventConfig.toast);
     }
-    
+
     // 2. Run script if configured
     let output = '';
     if (eventConfig.script) {
       output = await runScript(eventConfig.script, event);
     }
-    
+
     // 3. Save to file if configured
     if (config.saveToFile && output) {
       await saveToFile(event.type, output);
     }
-    
+
     // 4. Append to session if configured
     if (eventConfig.appendToSession && output) {
       await appendToSession(output);
@@ -103,6 +108,7 @@ const createEventHandler = (eventConfig: EventConfig) => {
 ```
 
 **Files to modify:**
+
 - `.opencode/plugins/opencode-hooks.ts`
 
 ---
@@ -114,6 +120,7 @@ const createEventHandler = (eventConfig: EventConfig) => {
 **Solution:** Import from single source in `constants.ts`.
 
 **Files to modify:**
+
 - `.opencode/plugins/helpers/constants.ts`
 - `.opencode/plugins/helpers/run-script.ts`
 
@@ -124,6 +131,7 @@ const createEventHandler = (eventConfig: EventConfig) => {
 **Problem:** Script paths passed directly to shell without validation.
 
 **Solution:**
+
 ```typescript
 const validateScriptPath = (path: string): boolean => {
   // Check for path traversal attempts
@@ -136,6 +144,7 @@ const validateScriptPath = (path: string): boolean => {
 ```
 
 **Files to modify:**
+
 - `.opencode/plugins/helpers/run-script.ts`
 
 ---
@@ -145,18 +154,19 @@ const validateScriptPath = (path: string): boolean => {
 **Problem:** Each event/toast writes to file synchronously with no batching.
 
 **Solution:**
+
 ```typescript
 // Create a write queue with batch flushing
 class BatchWriter {
   private buffer: Map<string, string[]> = new Map();
   private flushInterval: number = 1000; // 1 second
-  
+
   async write(filename: string, content: string) {
     const bucket = this.buffer.get(filename) || [];
     bucket.push(content);
     this.buffer.set(filename, bucket);
   }
-  
+
   async flush() {
     for (const [filename, lines] of this.buffer) {
       await appendFile(filename, lines.join('\n') + '\n');
@@ -167,6 +177,7 @@ class BatchWriter {
 ```
 
 **Files to modify:**
+
 - `.opencode/plugins/helpers/save-to-file.ts`
 
 ---
@@ -176,6 +187,7 @@ class BatchWriter {
 **Problem:** Toast queue grows unbounded with no limit.
 
 **Solution:**
+
 ```typescript
 const MAX_QUEUE_SIZE = 50;
 const MAX_QUEUE_AGE_MS = 30000;
@@ -191,6 +203,7 @@ const addToQueue = async (toast: ToastMessage) => {
 ```
 
 **Files to modify:**
+
 - `.opencode/plugins/helpers/toast-queue.ts`
 
 ---
@@ -200,16 +213,19 @@ const addToQueue = async (toast: ToastMessage) => {
 **Problem:** Main plugin function is 250+ lines with mixed responsibilities.
 
 **Solution:** Split into modules:
+
 - `event-handlers/` - Individual handler modules per event type
 - `config/` - Configuration loading and validation
 - `toast/` - Toast creation and management
 - `logging/` - File operations
 
 **Files to create:**
+
 - `.opencode/plugins/handlers/`
 - `.opencode/plugins/config/`
 
 **Files to modify:**
+
 - `.opencode/plugins/opencode-hooks.ts`
 
 ---
@@ -219,6 +235,7 @@ const addToQueue = async (toast: ToastMessage) => {
 ### Code Quality Improvements
 
 1. **Extract magic strings to constants**
+
 ```typescript
 const EVENT_TYPES = {
   SESSION_CREATED: 'session.created',
@@ -235,6 +252,7 @@ const TOAST_VARIANTS = {
 ```
 
 2. **Add error boundaries**
+
 ```typescript
 const withErrorHandling = async (fn: Function) => {
   try {
@@ -247,6 +265,7 @@ const withErrorHandling = async (fn: Function) => {
 ```
 
 3. **Improve type safety**
+
 - Replace `as` casts with proper type guards
 - Add discriminated unions for event types
 
@@ -292,3 +311,21 @@ const withErrorHandling = async (fn: Function) => {
 - [ ] Add queue limits and monitoring
 - [ ] Achieve 90%+ test coverage
 - [ ] Reduce cyclomatic complexity per function < 10
+
+---
+
+## Completion Notes
+
+Many items from this plan have been addressed:
+
+| Item                     | Status | Notes                                 |
+| ------------------------ | ------ | ------------------------------------- |
+| 1. Type guard factory    | ✅     | Implemented via modular events system |
+| 2. Event handler factory | ✅     | handlers.ts with resolveEventConfig   |
+| 3. Consolidate constants | ✅     | Constants in constants.ts             |
+| 4. Input validation      | ✅     | Added to run-script.ts                |
+| 5. Batch file writes     | ❌     | Not implemented                       |
+| 6. Queue backpressure    | ✅     | maxSize=50 in toast-queue.ts          |
+| 7. Refactor main plugin  | ✅     | Split into helpers/modules            |
+
+**Remaining:** Batch file writes could be implemented in future if performance becomes an issue.
