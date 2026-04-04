@@ -15,29 +15,52 @@ import {
   resolveToolConfig,
   showActivePluginsToast,
   waitForToastSilence,
-  countToastsInLog,
 } from './helpers';
-import { userConfig } from './helpers/user-events.config';
+import {
+  DEBUG_LOG_FILE,
+  RUN_ONCE_TTL_HOURS,
+  TIMER,
+  TOAST_DURATION,
+} from './helpers/constants';
 import { getLatestLogFile } from './helpers/plugin-status';
+import { userConfig } from './helpers/user-events.config';
 
 type ToastQueue = ReturnType<typeof getGlobalToastQueue>;
 
 let hasShownToast = false;
-let wasOverwritten = false;
-let fallbackShown = false;
-let ourToastCount = 0;
-const runOnceTracker = new Map<string, boolean>();
-let checkOverwriteTimer: ReturnType<typeof setTimeout> | null = null;
+type RunOnceEntry = { value: boolean; timestamp: number };
+const runOnlyOnceTracker = new Map<string, RunOnceEntry>();
 
-const isSubagentSession = (title: string): boolean =>
-  title.startsWith('Task:') || title.startsWith('Agent:');
+const getRunOnce = (eventType: string): boolean => {
+  const entry = runOnlyOnceTracker.get(eventType);
+  if (!entry) return false;
+  const ttlMs = RUN_ONCE_TTL_HOURS * 60 * 60 * 1000;
+  if (Date.now() - entry.timestamp > ttlMs) {
+    runOnlyOnceTracker.delete(eventType);
+    return false;
+  }
+  return entry.value;
+};
+
+const setRunOnce = (eventType: string) => {
+  runOnlyOnceTracker.set(eventType, { value: true, timestamp: Date.now() });
+};
+
+const formatEventInfo = (eventType: string, toolName?: string): string => {
+  if (eventType.startsWith('tool.execute.') && toolName) {
+    return toolName;
+  }
+  return eventType;
+};
 
 const runScriptAndHandle = async (
   $: PluginInput['$'],
   script: string,
   arg: string,
   timestamp: string,
-  toastQueue: ToastQueue
+  toastQueue: ToastQueue,
+  eventType: string,
+  toolName?: string
 ) => {
   try {
     const output = await runScript($, script, arg);
@@ -49,15 +72,16 @@ const runScriptAndHandle = async (
     }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
+    const eventInfo = formatEventInfo(eventType, toolName);
     await saveToFile({
-      content: `[${timestamp}] - Script error: ${script} - ${errorMessage}\n`,
+      content: `[${timestamp}] - Script error: ${eventInfo} - ${script} - ${errorMessage}\n`,
       showToast: toastQueue.add,
     });
     toastQueue.add({
       title: '====SCRIPT ERROR====',
-      message: `Script: ${script}\nError: ${errorMessage}\nCheck user-events.config.ts`,
+      message: `Event: ${eventInfo}\nScript: ${script}\nError: ${errorMessage}\nCheck user-events.config.ts`,
       variant: 'error',
-      duration: 5000,
+      duration: TOAST_DURATION.TEN_SECONDS,
     });
   }
 };
@@ -100,38 +124,32 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       title: 'Loading plugin status...',
       message: 'Scanning OpenCode plugins',
       variant: 'info',
-      duration: 3000,
+      duration: TOAST_DURATION.TWO_SECONDS,
     });
 
     if (logFile) {
       const { promise, cleanup } = waitForToastSilence(logFile);
       let timeoutTimer: ReturnType<typeof setTimeout>;
       const timeout = new Promise<void>((resolve) => {
-        timeoutTimer = setTimeout(resolve, 5000);
+        timeoutTimer = setTimeout(resolve, TOAST_DURATION.TEN_SECONDS);
       });
 
       Promise.race([promise, timeout]).then(async () => {
         clearTimeout(timeoutTimer!);
         cleanup();
-        if (checkOverwriteTimer) {
-          clearTimeout(checkOverwriteTimer);
-          checkOverwriteTimer = null;
-        }
 
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) =>
+          setTimeout(resolve, TIMER.OVERWRITE_CHECK_DELAY)
+        );
 
         try {
-          await showActivePluginsToast(toastQueue, { duration: 5000 });
-          ourToastCount = await countToastsInLog(logFile);
-
-          checkOverwriteTimer = setTimeout(async () => {
-            const newCount = await countToastsInLog(logFile);
-            if (newCount > ourToastCount) {
-              wasOverwritten = true;
-            }
-          }, 3000);
-        } catch {
-          // Silent fail - startup toast should not break plugin
+          await showActivePluginsToast(toastQueue, {
+            duration: TOAST_DURATION.FIVE_SECONDS,
+          });
+        } catch (err) {
+          await saveToFile({
+            content: `[${new Date().toISOString()}] - Startup toast error: ${err}\n`,
+          });
         }
       });
     }
@@ -139,23 +157,23 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
 
   return {
     event: async ({ event }) => {
-      if (
-        event.type === 'session.created' &&
-        wasOverwritten &&
-        !fallbackShown
-      ) {
-        const props = event.properties as Record<string, unknown>;
-        const info = props?.info as Record<string, unknown> | undefined;
-        const title = typeof info?.title === 'string' ? info.title : '';
-
-        if (!isSubagentSession(title)) {
-          fallbackShown = true;
-          await showActivePluginsToast(toastQueue, { duration: 5000 });
-        }
-      }
-
       const timestamp = new Date().toISOString();
       const resolved = resolveEventConfig(event.type);
+
+      if (resolved.debug) {
+        const debugMessage = JSON.stringify(event, null, 2);
+        toastQueue.add({
+          title: `====DEBUG EVENT - ${event.type}====`,
+          message: debugMessage,
+          variant: 'info',
+          duration: TOAST_DURATION.TEN_SECONDS,
+        });
+        await saveToFile({
+          content: `[${timestamp}] - ${event.type}\n${debugMessage}\n`,
+          filename: DEBUG_LOG_FILE,
+          showToast: toastQueue.add,
+        });
+      }
 
       if (!resolved.enabled) {
         await saveToFile({
@@ -165,7 +183,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         return;
       }
 
-      if (userConfig.saveToFile && !event.type.startsWith('message.')) {
+      if (resolved.saveToFile && !event.type.startsWith('message.')) {
         await saveToFile({
           content: `[${timestamp}] - ${event.type} - ${JSON.stringify(resolved)}\n`,
           showToast: toastQueue.add,
@@ -186,7 +204,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         });
       }
 
-      if (resolved.runOnce && runOnceTracker.get(event.type)) {
+      if (resolved.runOnlyOnce && getRunOnce(event.type)) {
         return;
       }
 
@@ -194,7 +212,10 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         try {
           const output = await runScript($, script);
           if (resolved.saveToFile && output) {
-            await saveToFile({ content: `[${timestamp}] ${output}\n`, showToast: toastQueue.add });
+            await saveToFile({
+              content: `[${timestamp}] ${output}\n`,
+              showToast: toastQueue.add,
+            });
           }
           if (resolved.appendToSession && output) {
             const props = event.properties as Record<string, unknown>;
@@ -213,13 +234,13 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
             title: '====SCRIPT ERROR====',
             message: `Script: ${script}\nError: ${errorMessage}\nCheck user-events.config.ts`,
             variant: 'error',
-            duration: 5000,
+            duration: TOAST_DURATION.FIVE_SECONDS,
           });
         }
       }
 
-      if (resolved.runOnce && resolved.scripts.length > 0) {
-        runOnceTracker.set(event.type, true);
+      if (resolved.runOnlyOnce && resolved.scripts.length > 0) {
+        setRunOnce(event.type);
       }
     },
 
@@ -229,6 +250,21 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
     ) => {
       const timestamp = new Date().toISOString();
       const resolved = resolveToolConfig('tool.execute.before', input.tool);
+
+      if (resolved.debug) {
+        const debugMessage = JSON.stringify({ input, resolved }, null, 2);
+        toastQueue.add({
+          title: 'DEBUG TOOL.BEFORE',
+          message: debugMessage,
+          variant: 'info',
+          duration: TOAST_DURATION.TEN_SECONDS,
+        });
+        await saveToFile({
+          content: `[${timestamp}] - tool.execute.before - ${input.tool}\n${debugMessage}\n`,
+          filename: DEBUG_LOG_FILE,
+          showToast: toastQueue.add,
+        });
+      }
 
       if (!resolved.enabled) return;
 
@@ -245,7 +281,15 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       }
 
       for (const script of resolved.scripts) {
-        await runScriptAndHandle($, script, input.tool, timestamp, toastQueue);
+        await runScriptAndHandle(
+          $,
+          script,
+          input.tool,
+          timestamp,
+          toastQueue,
+          'tool.execute.before',
+          input.tool
+        );
       }
     },
 
@@ -255,6 +299,25 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
     ) => {
       const timestamp = new Date().toISOString();
       const resolved = resolveToolConfig('tool.execute.after', input.tool);
+
+      if (resolved.debug) {
+        const debugMessage = JSON.stringify(
+          { input, _output, resolved },
+          null,
+          2
+        );
+        toastQueue.add({
+          title: 'DEBUG TOOL.AFTER',
+          message: debugMessage,
+          variant: 'info',
+          duration: TOAST_DURATION.TEN_SECONDS,
+        });
+        await saveToFile({
+          content: `[${timestamp}] - tool.execute.after - ${input.tool}\n${debugMessage}\n`,
+          filename: DEBUG_LOG_FILE,
+          showToast: toastQueue.add,
+        });
+      }
 
       if (!resolved.enabled) return;
 
@@ -281,7 +344,9 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
             script,
             subagentType,
             timestamp,
-            toastQueue
+            toastQueue,
+            'tool.execute.after',
+            input.tool
           );
         }
       } else {
@@ -291,7 +356,9 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
             script,
             input.tool,
             timestamp,
-            toastQueue
+            toastQueue,
+            'tool.execute.after',
+            input.tool
           );
         }
       }
@@ -304,7 +371,14 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       if (!resolved.enabled) return;
 
       for (const script of resolved.scripts) {
-        await runScriptAndHandle($, script, '', timestamp, toastQueue);
+        await runScriptAndHandle(
+          $,
+          script,
+          '',
+          timestamp,
+          toastQueue,
+          'shell.env'
+        );
       }
     },
   };

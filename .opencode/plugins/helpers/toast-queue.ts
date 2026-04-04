@@ -1,5 +1,6 @@
 import type { TuiToast } from '@opencode-ai/plugin/tui';
 import { saveToFile } from './save-to-file';
+import { STAGGER_MS, TOAST_DURATION } from './constants';
 
 export type ShowToastOptions = {
   delay?: number;
@@ -7,8 +8,6 @@ export type ShowToastOptions = {
 };
 
 let activeToast: Promise<void> | null = null;
-
-const defaultStagger = 300;
 
 export async function showToastStaggered(
   showFn: (toast: TuiToast) => void | Promise<void>,
@@ -19,7 +18,7 @@ export async function showToastStaggered(
 
   if (stagger && activeToast) {
     await activeToast;
-    await new Promise((resolve) => setTimeout(resolve, defaultStagger));
+    await new Promise((resolve) => setTimeout(resolve, STAGGER_MS.DEFAULT));
   }
 
   if (delay > 0) {
@@ -34,7 +33,7 @@ export function createToastQueue(
   showFn: (toast: TuiToast) => void | Promise<void>,
   options: { staggerMs?: number; maxSize?: number } = {}
 ) {
-  const { staggerMs = 500, maxSize = 50 } = options;
+  const { staggerMs = STAGGER_MS.QUEUE, maxSize = 50 } = options;
   const queue: TuiToast[] = [];
   let processingLock: Promise<void> | null = null;
   let activeTimers: ReturnType<typeof setTimeout>[] = [];
@@ -49,7 +48,7 @@ export function createToastQueue(
       while (queue.length > 0) {
         const toast = queue.shift();
         if (toast) {
-          const duration = toast.duration ?? 3000;
+          const duration = toast.duration ?? TOAST_DURATION.FIVE_SECONDS;
           await new Promise<void>((resolve) => {
             const t = setTimeout(resolve, staggerMs);
             activeTimers.push(t);
@@ -116,7 +115,9 @@ export function getGlobalToastQueue(
   showFn: (toast: TuiToast) => void | Promise<void>
 ) {
   if (!globalToastQueue) {
-    globalToastQueue = createToastQueue(showFn, { staggerMs: defaultStagger });
+    globalToastQueue = createToastQueue(showFn, {
+      staggerMs: STAGGER_MS.DEFAULT,
+    });
   }
   return globalToastQueue;
 }
