@@ -18,6 +18,8 @@
 | 6. Update package.json         | ✅     | 2026-04-04 13:22 UTC |
 | 7. Add badges to README        | ✅     | 2026-04-04 13:23 UTC |
 | 8. Verify all tests pass       | ✅     | 2026-04-04 13:24 UTC |
+| 9. Fix Node version in CI      | ✅     | 2026-04-04 13:40 UTC |
+| 10. Add auto-assign workflow   | ✅     | 2026-04-04 13:42 UTC |
 
 ---
 
