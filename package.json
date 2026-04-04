@@ -50,6 +50,7 @@
     "@trickfilm400/eslint-shared-config": "^0.0.2",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.5.0",
+    "conventional-changelog-conventionalcommits": "^9.3.1",
     "eslint": "^10.1.0",
     "globals": "^17.4.0",
     "jest": "^30.3.0",
