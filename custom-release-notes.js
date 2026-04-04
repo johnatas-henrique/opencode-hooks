@@ -1,13 +1,26 @@
 function generateReleaseNotes(pluginConfig, context) {
-  const {
-    commits,
-    previousTag,
-    currentTag,
-    commitsByType,
-    nextRelease,
-    owner,
-    repo,
-  } = context;
+  const { commits, previousTag, currentTag, commitsByType, nextRelease } =
+    context;
+
+  let owner = context.owner;
+  let repo = context.repo;
+
+  if (!owner || !repo) {
+    const gitUrl =
+      context.repositoryUrl || context.commits?.[0]?.repository_url;
+    if (gitUrl && gitUrl.includes('github.com')) {
+      const match = gitUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
+      if (match) {
+        owner = match[1];
+        repo = match[2];
+      }
+    }
+  }
+
+  if (!owner || !repo) {
+    owner = 'johnatas-henrique';
+    repo = 'opencode-hooks';
+  }
 
   const typeMap = {
     feat: { emoji: '✨', name: 'Features' },
