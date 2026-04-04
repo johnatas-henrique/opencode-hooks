@@ -43,7 +43,7 @@ jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
   },
 }));
 
-jest.mock('../.opencode/plugins/helpers/handlers', () => ({
+jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
