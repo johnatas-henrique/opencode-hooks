@@ -1,8 +1,16 @@
 {
   "name": "opencode-hooks",
   "version": "0.2.0",
-  "description": "opencode-hooks",
+  "description": "TypeScript plugin system for OpenCode AI providing event-driven hooks",
   "main": "./dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/johnatas-henrique/opencode-hooks.git"
+  },
+  "homepage": "https://github.com/johnatas-henrique/opencode-hooks#readme",
+  "bugs": {
+    "url": "https://github.com/johnatas-henrique/opencode-hooks/issues"
+  },
   "scripts": {
     "start": "node .",
     "build": "tsc",
@@ -18,20 +26,23 @@
     "format:check": "prettier --check \"**/*.ts\" --ignore-path .gitignore"
   },
   "keywords": [
+    "opencode",
     "opencode-hooks",
-    "created-with-typescript-new-project-scaffolding",
-    "template",
-    "typescript",
-    "node",
-    "nodejs"
+    "plugin",
+    "events",
+    "automation",
+    "typescript"
   ],
   "author": {
-    "email": "info@example.com",
-    "name": "Change me"
+    "email": "johnatas.henrique@gmail.com",
+    "name": "Johnatas Henrique"
   },
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/github": "^12.0.6",
+    "@semantic-release/release-notes-generator": "^14.1.0",
     "@trickfilm400/eslint-shared-config": "^0.0.2",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.5.0",
@@ -40,6 +51,7 @@
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
     "prettier": "^3.8.1",
+    "semantic-release": "^25.0.3",
     "ts-jest": "^29.4.9",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.0"

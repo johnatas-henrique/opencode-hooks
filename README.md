@@ -1,5 +1,10 @@
 # OpenCode Hooks
 
+[![CI](https://github.com/johnatas-henrique/opencode-hooks/actions/workflows/ci.yml/badge.svg)](https://github.com/johnatas-henrique/opencode-hooks/actions)
+[![npm version](https://img.shields.io/npm/v/opencode-hooks.svg)](https://www.npmjs.com/package/opencode-hooks)
+[![license](https://img.shields.io/npm/l/opencode-hooks.svg)](LICENSE)
+[![Coverage](./coverage/badge-lines.svg)](https://github.com/johnatas-henrique/opencode-hooks/actions/workflows/ci.yml)
+
 A TypeScript plugin system for [OpenCode AI](https://opencode.ai) that provides event-driven hooks for session lifecycle, tool execution, file operations, and UI notifications (toasts).
 
 ## Features
