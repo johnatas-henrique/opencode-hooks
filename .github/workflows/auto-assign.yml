@@ -12,3 +12,4 @@ jobs:
       - uses: actions-ecosystem/action-add-assignees@v1
         with:
           assignees: 'johnatas-henrique'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
