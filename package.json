@@ -38,6 +38,10 @@
     "name": "Johnatas Henrique"
   },
   "license": "MIT",
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.3.5",
+    "@opencode-ai/sdk": "^1.3.0"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@semantic-release/commit-analyzer": "^13.0.1",
