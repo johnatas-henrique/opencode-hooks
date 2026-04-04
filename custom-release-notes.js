@@ -36,23 +36,33 @@ function generateReleaseNotes(pluginConfig, context) {
   ];
   const sections = [];
 
-  for (const type of sortedTypes) {
-    const typeCommits = commitsByType[type] || [];
-    if (typeCommits.length === 0) continue;
-
-    const { emoji, name } = typeMap[type] || {
-      emoji: '📌',
-      name: type.charAt(0).toUpperCase() + type.slice(1),
-    };
-
-    const commitLines = typeCommits
+  if (!commitsByType || Object.keys(commitsByType).length === 0) {
+    const commitLines = commits
       .map((commit) => {
         const shortHash = commit.hash.substring(0, 7);
         return `- ${commit.subject} (${shortHash})`;
       })
       .join('\n');
+    sections.push(`### 📌 Changes\n\n${commitLines}`);
+  } else {
+    for (const type of sortedTypes) {
+      const typeCommits = commitsByType[type] || [];
+      if (typeCommits.length === 0) continue;
 
-    sections.push(`### ${emoji} ${name}\n\n${commitLines}`);
+      const { emoji, name } = typeMap[type] || {
+        emoji: '📌',
+        name: type.charAt(0).toUpperCase() + type.slice(1),
+      };
+
+      const commitLines = typeCommits
+        .map((commit) => {
+          const shortHash = commit.hash.substring(0, 7);
+          return `- ${commit.subject} (${shortHash})`;
+        })
+        .join('\n');
+
+      sections.push(`### ${emoji} ${name}\n\n${commitLines}`);
+    }
   }
 
   let notes = "## What's Changed\n\n";
