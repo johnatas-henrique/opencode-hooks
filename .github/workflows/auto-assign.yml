@@ -1,0 +1,17 @@
+name: Auto Assign
+
+on: pull_request
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions-ecosystem/action-add-assignees@v1
+        with:
+          assignees: 'johnatas-henrique'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
