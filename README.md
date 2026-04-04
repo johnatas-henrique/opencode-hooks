@@ -1,5 +1,8 @@
 # OpenCode Hooks
 
+[![Codecov](https://codecov.io/gh/johnatas-henrique/opencode-hooks/branch/main/graph/badge.svg)](https://codecov.io/gh/johnatas-henrique/opencode-hooks)
+[![CI](https://github.com/johnatas-henrique/opencode-hooks/actions/workflows/ci.yml/badge.svg)](https://github.com/johnatas-henrique/opencode-hooks/actions/workflows/ci.yml)
+
 A TypeScript plugin system for [OpenCode AI](https://opencode.ai) that provides event-driven hooks for session lifecycle, tool execution, file operations, and UI notifications (toasts).
 
 ## Features
