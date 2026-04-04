@@ -4,7 +4,7 @@ import {
   getHandler,
 } from '../.opencode/plugins/helpers/events';
 
-jest.mock('../.opencode/plugins/helpers/handlers', () => ({
+jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -107,10 +107,14 @@ jest.mock('../.opencode/plugins/helpers/handlers', () => ({
 jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
   userConfig: {
     enabled: true,
-    toast: true,
-    saveToFile: true,
-    appendToSession: true,
-    runScripts: true,
+    default: {
+      debug: false,
+      toast: true,
+      runScripts: false,
+      runOnlyOnce: false,
+      saveToFile: true,
+      appendToSession: true,
+    },
     events: {
       'session.created': true,
       'session.error': { saveToFile: false, appendToSession: false },
@@ -133,14 +137,21 @@ jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
       },
       'session.save-override': { saveToFile: false },
       'session.append-override': { appendToSession: false },
-      'session.run-once': { scripts: ['run-once.sh'], runOnce: true },
+      'session.run-once': { scripts: ['run-once.sh'], runOnlyOnce: true },
+      'unknown.event': {
+        toast: true,
+        scripts: ['unknown.event.sh'],
+        saveToFile: true,
+        appendToSession: true,
+      },
+      'session.toast-defaults': { toast: true, runScripts: true },
     },
     tools: {
       'tool.execute.after': {
         task: {
           toast: true,
           scripts: ['log-agent.sh'],
-          runOnce: true,
+          runOnlyOnce: true,
         },
         chat: { toast: false },
         'git.commit': { runScripts: false },
@@ -151,15 +162,15 @@ jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
 }));
 
 describe('events - resolveEventConfig', () => {
-  it('should return global defaults for event not listed', () => {
-    const config = resolveEventConfig('unknown.event');
+  it('should return defaults for event not listed', () => {
+    const config = resolveEventConfig('session.unknown');
 
     expect(config.enabled).toBe(true);
     expect(config.toast).toBe(true);
-    expect(config.toastTitle).toBe('');
+    expect(config.toastTitle).toBe('====UNKNOWN====');
     expect(config.toastVariant).toBe('info');
-    expect(config.toastDuration).toBe(0);
-    expect(config.scripts).toEqual(['unknown.event.sh']);
+    expect(config.toastDuration).toBe(2000);
+    expect(config.scripts).toEqual([]);
     expect(config.saveToFile).toBe(true);
     expect(config.appendToSession).toBe(true);
   });
@@ -218,7 +229,7 @@ describe('events - resolveEventConfig', () => {
     expect(config.appendToSession).toBe(false);
   });
 
-  it('should return global defaults when event not in config', () => {
+  it('should return defaults when event not in config', () => {
     const config = resolveEventConfig('session.unknown');
 
     expect(config.enabled).toBe(true);
@@ -229,7 +240,7 @@ describe('events - resolveEventConfig', () => {
 
   it('should return empty scripts when event is boolean true and global runScripts is false', () => {
     jest.resetModules();
-    jest.doMock('../.opencode/plugins/helpers/handlers', () => ({
+    jest.doMock('../.opencode/plugins/helpers/default-handlers', () => ({
       handlers: {
         'session.created': {
           title: '====SESSION CREATED====',
@@ -246,9 +257,8 @@ describe('events - resolveEventConfig', () => {
         toast: true,
         saveToFile: true,
         appendToSession: true,
-        runScripts: false,
         events: {
-          'session.created': true,
+          'session.created': { runScripts: false },
         },
         tools: {},
       },
@@ -278,7 +288,7 @@ describe('events - resolveToolConfig', () => {
 
     expect(config.enabled).toBe(true);
     expect(config.toast).toBe(true);
-    expect(config.scripts).toEqual(['tool-execute-after.sh']);
+    expect(config.scripts).toEqual([]);
   });
 
   it('should return enabled: false when tool is disabled', () => {
@@ -319,7 +329,7 @@ describe('events - getHandler', () => {
 describe('events - global disabled', () => {
   it('should return enabled: false when global enabled is false', () => {
     jest.resetModules();
-    jest.doMock('../.opencode/plugins/helpers/handlers', () => ({
+    jest.doMock('../.opencode/plugins/helpers/default-handlers', () => ({
       handlers: {
         'session.created': {
           title: '====SESSION CREATED====',
@@ -352,29 +362,29 @@ describe('events - global disabled', () => {
     expect(config.enabled).toBe(false);
   });
 
-  it('should return runOnce: true when configured', () => {
+  it('should return runOnlyOnce: true when configured', () => {
     const config = resolveEventConfig('session.run-once');
 
-    expect(config.runOnce).toBe(true);
+    expect(config.runOnlyOnce).toBe(true);
   });
 
-  it('should return runOnce: false when not configured', () => {
+  it('should return runOnlyOnce: false when not configured', () => {
     const config = resolveEventConfig('session.created');
 
-    expect(config.runOnce).toBe(false);
+    expect(config.runOnlyOnce).toBe(false);
   });
 });
 
-describe('resolveToolConfig - runOnce', () => {
-  it('should return runOnce: true for tool with runOnce configured', () => {
+describe('resolveToolConfig - runOnlyOnce', () => {
+  it('should return runOnlyOnce: true for tool with runOnlyOnce configured', () => {
     const config = resolveToolConfig('tool.execute.after', 'task');
 
-    expect(config.runOnce).toBe(true);
+    expect(config.runOnlyOnce).toBe(true);
   });
 
-  it('should return runOnce: false for tool without runOnce', () => {
+  it('should return runOnlyOnce: false for tool without runOnlyOnce', () => {
     const config = resolveToolConfig('tool.execute.after', 'chat');
 
-    expect(config.runOnce).toBe(false);
+    expect(config.runOnlyOnce).toBe(false);
   });
 });

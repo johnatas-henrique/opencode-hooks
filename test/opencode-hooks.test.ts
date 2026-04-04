@@ -25,7 +25,7 @@ jest.mock('../.opencode/plugins/helpers/append-to-session', () => ({
   appendToSession: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../.opencode/plugins/helpers/handlers', () => ({
+jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -76,7 +76,7 @@ jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
     appendToSession: true,
     runScripts: true,
     events: {
-      'session.created': { runOnce: true },
+      'session.created': { runOnlyOnce: true },
       'shell.env': { runScripts: true, scripts: ['shell-env.sh'] },
     },
     tools: {
@@ -554,13 +554,13 @@ describe('opencode-hooks - plugin hooks', () => {
       expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
     });
 
-    it('should skip script on second event when runOnce is true', async () => {
+    it('should skip script on second event when runOnlyOnce is true', async () => {
       jest.resetModules();
       jest.unmock('../.opencode/plugins/helpers/user-events.config');
       jest.unmock('../.opencode/plugins/helpers/run-script');
       jest.unmock('../.opencode/plugins/helpers/save-to-file');
       jest.unmock('../.opencode/plugins/helpers/append-to-session');
-      jest.unmock('../.opencode/plugins/helpers/handlers');
+      jest.unmock('../.opencode/plugins/helpers/default-handlers');
       jest.unmock('../.opencode/plugins/helpers/events');
 
       jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
@@ -569,9 +569,8 @@ describe('opencode-hooks - plugin hooks', () => {
           toast: true,
           saveToFile: true,
           appendToSession: true,
-          runScripts: true,
           events: {
-            'session.created': { runOnce: true },
+            'session.created': { runScripts: true, runOnlyOnce: true },
           },
           tools: {},
         },
@@ -606,24 +605,24 @@ describe('opencode-hooks - plugin hooks', () => {
       expect(mockRunScriptFn).toHaveBeenCalledTimes(1);
     });
 
-    it('should still show toast when runOnce skips script', async () => {
+    it('should still show toast when runOnlyOnce skips script', async () => {
       jest.resetModules();
       jest.unmock('../.opencode/plugins/helpers/user-events.config');
       jest.unmock('../.opencode/plugins/helpers/run-script');
       jest.unmock('../.opencode/plugins/helpers/save-to-file');
       jest.unmock('../.opencode/plugins/helpers/append-to-session');
-      jest.unmock('../.opencode/plugins/helpers/handlers');
+      jest.unmock('../.opencode/plugins/helpers/default-handlers');
       jest.unmock('../.opencode/plugins/helpers/events');
 
       jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
           enabled: true,
-          toast: true,
-          saveToFile: true,
-          appendToSession: true,
-          runScripts: true,
           events: {
-            'session.created': { runOnce: true },
+            'session.created': {
+              toast: true,
+              runScripts: true,
+              runOnlyOnce: true,
+            },
           },
           tools: {},
         },

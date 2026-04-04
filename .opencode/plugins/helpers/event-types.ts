@@ -8,6 +8,7 @@ export enum EventType {
   SESSION_STATUS = 'session.status',
   SESSION_UPDATED = 'session.updated',
 
+  MESSAGE_PART_DELTA = 'message.part.delta',
   MESSAGE_PART_REMOVED = 'message.part.removed',
   MESSAGE_PART_UPDATED = 'message.part.updated',
   MESSAGE_REMOVED = 'message.removed',
@@ -46,6 +47,7 @@ export enum EventType {
 export type EventVariant = 'success' | 'warning' | 'error' | 'info';
 
 export interface ToastOverride {
+  enabled?: boolean;
   title?: string;
   message?: string;
   variant?: EventVariant;
@@ -53,21 +55,25 @@ export interface ToastOverride {
 }
 
 export interface EventOverride {
+  enabled?: boolean;
+  debug?: boolean;
   toast?: boolean | ToastOverride;
   scripts?: string[];
   runScripts?: boolean;
+  runOnlyOnce?: boolean;
   saveToFile?: boolean;
   appendToSession?: boolean;
-  runOnce?: boolean;
 }
 
 export interface ToolOverride {
+  enabled?: boolean;
+  debug?: boolean;
   toast?: boolean | ToastOverride;
   scripts?: string[];
   runScripts?: boolean;
+  runOnlyOnce?: boolean;
   saveToFile?: boolean;
   appendToSession?: boolean;
-  runOnce?: boolean;
 }
 
 export type EventConfig = boolean | EventOverride;
@@ -75,10 +81,7 @@ export type ToolConfig = boolean | ToolOverride;
 
 export interface UserEventsConfig {
   enabled: boolean;
-  toast: boolean;
-  saveToFile: boolean;
-  appendToSession: boolean;
-  runScripts: boolean;
+  default?: EventOverride;
   events: Partial<Record<EventType, EventConfig>>;
   tools: {
     [EventType.TOOL_EXECUTE_AFTER]?: Record<string, ToolConfig>;
@@ -88,6 +91,7 @@ export interface UserEventsConfig {
 
 export interface ResolvedEventConfig {
   enabled: boolean;
+  debug: boolean;
   toast: boolean;
   toastTitle: string;
   toastMessage?: string;
@@ -96,5 +100,5 @@ export interface ResolvedEventConfig {
   scripts: string[];
   saveToFile: boolean;
   appendToSession: boolean;
-  runOnce: boolean;
+  runOnlyOnce: boolean;
 }

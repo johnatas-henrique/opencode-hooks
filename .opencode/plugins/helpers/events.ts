@@ -1,10 +1,13 @@
-import { handlers, type EventHandler } from './handlers';
+import { handlers, type EventHandler } from './default-handlers';
 import { userConfig } from './user-events.config';
+import { saveToFile } from './save-to-file';
+import { DEBUG_LOG_FILE } from './constants';
 import type {
   ResolvedEventConfig,
   EventConfig,
   ToolConfig,
   ToastOverride,
+  EventOverride,
 } from './event-types';
 
 export { ResolvedEventConfig };
@@ -19,7 +22,8 @@ const DISABLED_CONFIG: ResolvedEventConfig = {
   scripts: [],
   saveToFile: false,
   appendToSession: false,
-  runOnce: false,
+  runOnlyOnce: false,
+  debug: false,
 };
 
 export function getHandler(eventType: string): EventHandler | undefined {
@@ -33,7 +37,7 @@ function getDefaultScript(eventType: string): string {
 function resolveScripts(
   cfg: EventConfig,
   handlerDefaultScript: string,
-  globalRunScripts: boolean
+  eventBaseScripts: string[]
 ): string[] {
   if (typeof cfg === 'object' && cfg !== null) {
     if (cfg.runScripts === false) {
@@ -42,28 +46,15 @@ function resolveScripts(
     if (cfg.scripts !== undefined) {
       return cfg.scripts;
     }
-    if (cfg.runScripts === true || globalRunScripts) {
+    if (cfg.runScripts === true) {
       return [handlerDefaultScript];
     }
-    return [];
+    return eventBaseScripts;
   }
   if (cfg === true) {
-    return globalRunScripts ? [handlerDefaultScript] : [];
+    return [handlerDefaultScript];
   }
   return [];
-}
-
-function resolveToast(cfg: EventConfig, globalToast: boolean): boolean {
-  if (typeof cfg === 'object' && cfg !== null) {
-    if (cfg.toast === undefined) {
-      return globalToast;
-    }
-    if (typeof cfg.toast === 'boolean') {
-      return cfg.toast;
-    }
-    return true;
-  }
-  return globalToast;
 }
 
 function resolveToastOverride(cfg: EventConfig): ToastOverride | null {
@@ -78,64 +69,143 @@ function resolveToastOverride(cfg: EventConfig): ToastOverride | null {
   return null;
 }
 
+function resolveToast(
+  eventCfg: EventConfig,
+  defaultCfg: EventOverride | undefined
+): boolean {
+  if (
+    typeof eventCfg === 'object' &&
+    eventCfg !== null &&
+    eventCfg.toast !== undefined
+  ) {
+    if (typeof eventCfg.toast === 'boolean') {
+      return eventCfg.toast;
+    }
+    if (typeof eventCfg.toast === 'object') {
+      return eventCfg.toast.enabled ?? true;
+    }
+  }
+  if (
+    defaultCfg !== null &&
+    defaultCfg !== undefined &&
+    defaultCfg.toast !== undefined
+  ) {
+    if (typeof defaultCfg.toast === 'boolean') {
+      return defaultCfg.toast;
+    }
+    if (typeof defaultCfg.toast === 'object') {
+      return defaultCfg.toast.enabled ?? true;
+    }
+  }
+  return false;
+}
+
+function getWithDefault(
+  eventCfg: EventConfig,
+  defaultCfg: EventOverride | undefined,
+  key: keyof EventOverride,
+  fallback: boolean
+): boolean {
+  if (key === 'toast') {
+    return resolveToast(eventCfg, defaultCfg);
+  }
+
+  if (typeof eventCfg === 'object' && eventCfg !== null) {
+    const eventValue = eventCfg[key];
+    if (eventValue !== undefined) {
+      return eventValue as boolean;
+    }
+  }
+  if (defaultCfg !== null && defaultCfg !== undefined) {
+    const defaultValue = defaultCfg[key];
+    if (defaultValue !== undefined) {
+      return defaultValue as boolean;
+    }
+  }
+  return fallback;
+}
+
+function isEventDisabled(eventCfg: EventConfig): boolean {
+  if (eventCfg === false) return true;
+  if (typeof eventCfg === 'object' && eventCfg !== null) {
+    return eventCfg.enabled === false;
+  }
+  return false;
+}
+
 export function resolveEventConfig(eventType: string): ResolvedEventConfig {
   const handler = handlers[eventType];
   const userEventConfig =
     userConfig.events[eventType as keyof typeof userConfig.events];
-  const global = userConfig;
+  const defaultCfg = userConfig.default;
 
-  if (!global.enabled) {
+  if (!userConfig.enabled) {
     return DISABLED_CONFIG;
   }
 
   if (userEventConfig === undefined) {
+    saveToFile({
+      content: `[WARN] Event '${eventType}' not configured. Add it to events config or set to false to disable.\n`,
+      filename: DEBUG_LOG_FILE,
+    });
     return {
       enabled: true,
-      toast: global.toast,
+      debug: getWithDefault(true, defaultCfg, 'debug', false),
+      toast: getWithDefault(true, defaultCfg, 'toast', false),
       toastTitle: handler?.title ?? '',
       toastMessage: undefined,
       toastVariant: handler?.variant ?? 'info',
       toastDuration: handler?.duration ?? 2000,
-      scripts: global.runScripts
-        ? [handler?.defaultScript ?? getDefaultScript(eventType)]
-        : [],
-      saveToFile: global.saveToFile,
-      appendToSession: global.appendToSession,
-      runOnce: false,
+      scripts: [],
+      saveToFile: getWithDefault(true, defaultCfg, 'saveToFile', false),
+      appendToSession: getWithDefault(
+        true,
+        defaultCfg,
+        'appendToSession',
+        false
+      ),
+      runOnlyOnce: false,
     };
   }
 
-  if (userEventConfig === false) {
+  if (isEventDisabled(userEventConfig)) {
     return DISABLED_CONFIG;
   }
 
   const scripts = resolveScripts(
     userEventConfig,
     handler?.defaultScript ?? getDefaultScript(eventType),
-    global.runScripts
+    []
   );
   const toastCfg = resolveToastOverride(userEventConfig);
 
   return {
     enabled: true,
-    toast: resolveToast(userEventConfig, global.toast),
+    debug: getWithDefault(userEventConfig, defaultCfg, 'debug', false),
+    toast: getWithDefault(userEventConfig, defaultCfg, 'toast', false),
     toastTitle: toastCfg?.title ?? handler?.title ?? '',
     toastMessage: toastCfg?.message,
     toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
     toastDuration: toastCfg?.duration ?? handler?.duration ?? 2000,
     scripts,
-    saveToFile:
-      (typeof userEventConfig === 'object' && userEventConfig !== null
-        ? userEventConfig.saveToFile
-        : undefined) ?? global.saveToFile,
-    appendToSession:
-      (typeof userEventConfig === 'object' && userEventConfig !== null
-        ? userEventConfig.appendToSession
-        : undefined) ?? global.appendToSession,
-    runOnce:
-      (typeof userEventConfig === 'object' && userEventConfig !== null
-        ? userEventConfig.runOnce
-        : undefined) ?? false,
+    saveToFile: getWithDefault(
+      userEventConfig,
+      defaultCfg,
+      'saveToFile',
+      false
+    ),
+    appendToSession: getWithDefault(
+      userEventConfig,
+      defaultCfg,
+      'appendToSession',
+      false
+    ),
+    runOnlyOnce: getWithDefault(
+      userEventConfig,
+      defaultCfg,
+      'runOnlyOnce',
+      false
+    ),
   };
 }
 
@@ -150,43 +220,60 @@ export function resolveToolConfig(
   const toolConfigs = tools?.[toolEventType];
   const toolConfig = toolConfigs?.[toolName];
 
+  const isEmptyObject = (obj: unknown): boolean => {
+    return (
+      typeof obj === 'object' && obj !== null && Object.keys(obj).length === 0
+    );
+  };
+
   if (toolConfig === false) {
     return DISABLED_CONFIG;
   }
 
-  if (!toolConfig) {
-    return resolveEventConfig(toolEventType);
+  const eventBase = resolveEventConfig(toolEventType);
+
+  if (!toolConfig || isEmptyObject(toolConfig)) {
+    return eventBase;
   }
 
   const handler = handlers[toolEventType];
-  const global = userConfig;
+  const defaultCfg = userConfig.default;
 
   const scripts = resolveScripts(
     toolConfig,
-    handler?.defaultScript ?? getDefaultScript(toolEventType),
-    global.runScripts
+    eventBase.scripts[0] ?? getDefaultScript(toolEventType),
+    eventBase.scripts
   );
   const toastCfg = resolveToastOverride(toolConfig);
 
   return {
-    enabled: true,
-    toast: resolveToast(toolConfig, global.toast),
-    toastTitle: toastCfg?.title ?? handler?.title ?? '',
-    toastMessage: toastCfg?.message,
-    toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
-    toastDuration: toastCfg?.duration ?? handler?.duration ?? 2000,
+    ...eventBase,
+    debug: getWithDefault(toolConfig, defaultCfg, 'debug', eventBase.debug),
+    toast: getWithDefault(toolConfig, defaultCfg, 'toast', eventBase.toast),
+    toastTitle: toastCfg?.title ?? handler?.title ?? eventBase.toastTitle,
+    toastMessage: toastCfg?.message ?? eventBase.toastMessage,
+    toastVariant:
+      toastCfg?.variant ?? handler?.variant ?? eventBase.toastVariant,
+    toastDuration:
+      toastCfg?.duration ?? handler?.duration ?? eventBase.toastDuration,
     scripts,
-    saveToFile:
-      (typeof toolConfig === 'object' && toolConfig !== null
-        ? toolConfig.saveToFile
-        : undefined) ?? global.saveToFile,
-    appendToSession:
-      (typeof toolConfig === 'object' && toolConfig !== null
-        ? toolConfig.appendToSession
-        : undefined) ?? global.appendToSession,
-    runOnce:
-      (typeof toolConfig === 'object' && toolConfig !== null
-        ? toolConfig.runOnce
-        : undefined) ?? false,
+    saveToFile: getWithDefault(
+      toolConfig,
+      defaultCfg,
+      'saveToFile',
+      eventBase.saveToFile
+    ),
+    appendToSession: getWithDefault(
+      toolConfig,
+      defaultCfg,
+      'appendToSession',
+      eventBase.appendToSession
+    ),
+    runOnlyOnce: getWithDefault(
+      toolConfig,
+      defaultCfg,
+      'runOnlyOnce',
+      eventBase.runOnlyOnce
+    ),
   };
 }
