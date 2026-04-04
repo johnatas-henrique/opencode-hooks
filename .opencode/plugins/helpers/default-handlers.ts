@@ -1,3 +1,5 @@
+import { TOAST_DURATION } from './constants';
+
 type BuildMessageFn = (event: Record<string, unknown>) => string;
 
 export interface EventHandler {
@@ -34,8 +36,8 @@ const toStr = (value: unknown, fallback = 'unknown'): string => {
 export const handlers: Record<string, EventHandler> = {
   'session.created': {
     title: '====SESSION CREATED====',
-    variant: 'success',
-    duration: 2000,
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-created.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.info.id'))}\n` +
@@ -46,7 +48,7 @@ export const handlers: Record<string, EventHandler> = {
   'session.compacted': {
     title: '====SESSION COMPACTED====',
     variant: 'info',
-    duration: 2000,
+    duration: TOAST_DURATION.TEN_SECONDS,
     defaultScript: 'session-compacted.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
@@ -56,7 +58,7 @@ export const handlers: Record<string, EventHandler> = {
   'session.deleted': {
     title: '====SESSION DELETED====',
     variant: 'error',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-deleted.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.info.id'))}\n` +
@@ -66,7 +68,7 @@ export const handlers: Record<string, EventHandler> = {
   'session.error': {
     title: '====SESSION ERROR====',
     variant: 'error',
-    duration: 30000,
+    duration: TOAST_DURATION.TEN_SECONDS,
     defaultScript: 'session-error.sh',
     buildMessage: (event) => {
       const error = getProp(event, 'properties.error') as
@@ -89,7 +91,7 @@ export const handlers: Record<string, EventHandler> = {
   'session.diff': {
     title: '====SESSION DIFF====',
     variant: 'warning',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-diff.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
@@ -99,7 +101,7 @@ export const handlers: Record<string, EventHandler> = {
   'session.idle': {
     title: '====IDLE SESSION====',
     variant: 'info',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-idle.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
@@ -109,7 +111,7 @@ export const handlers: Record<string, EventHandler> = {
   'session.status': {
     title: '====SESSION STATUS====',
     variant: 'info',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-status.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
@@ -120,7 +122,7 @@ export const handlers: Record<string, EventHandler> = {
   'session.updated': {
     title: '====UPDATED SESSION====',
     variant: 'info',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-updated.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.info.id'))}\n` +
@@ -130,7 +132,7 @@ export const handlers: Record<string, EventHandler> = {
   'message.part.removed': {
     title: '====MESSAGE PART REMOVED====',
     variant: 'warning',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-part-removed.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
@@ -141,7 +143,7 @@ export const handlers: Record<string, EventHandler> = {
   'message.part.updated': {
     title: '====MESSAGE PART UPDATED====',
     variant: 'info',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-part-updated.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
@@ -152,7 +154,7 @@ export const handlers: Record<string, EventHandler> = {
   'message.removed': {
     title: '====MESSAGE REMOVED====',
     variant: 'warning',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-removed.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
@@ -163,7 +165,7 @@ export const handlers: Record<string, EventHandler> = {
   'message.updated': {
     title: '====MESSAGE UPDATED====',
     variant: 'info',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-updated.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
@@ -174,7 +176,7 @@ export const handlers: Record<string, EventHandler> = {
   'tool.execute.before': {
     title: '====TOOL EXECUTE BEFORE====',
     variant: 'info',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
@@ -183,9 +185,9 @@ export const handlers: Record<string, EventHandler> = {
   },
 
   'tool.execute.after': {
-    title: '====SUBAGENT CALLED====',
+    title: '====TOOL EXECUTE AFTER====',
     variant: 'info',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
@@ -196,7 +198,7 @@ export const handlers: Record<string, EventHandler> = {
   'file.edited': {
     title: '====FILE EDITED====',
     variant: 'info',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'file-edited.sh',
     buildMessage: (event) =>
       `File: ${toStr(getProp(event, 'properties.path'))}\n` +
@@ -206,7 +208,7 @@ export const handlers: Record<string, EventHandler> = {
   'file.watcher.updated': {
     title: '====FILE WATCHER UPDATED====',
     variant: 'info',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'file-watcher-updated.sh',
     buildMessage: (event) =>
       `File: ${toStr(getProp(event, 'properties.path'))}\n` +
@@ -217,7 +219,7 @@ export const handlers: Record<string, EventHandler> = {
   'permission.asked': {
     title: '====PERMISSION ASKED====',
     variant: 'warning',
-    duration: 5000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'permission-asked.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
@@ -227,8 +229,8 @@ export const handlers: Record<string, EventHandler> = {
 
   'permission.replied': {
     title: '====PERMISSION REPLIED====',
-    variant: 'info',
-    duration: 2000,
+    variant: 'warning',
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'permission-replied.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
@@ -239,7 +241,7 @@ export const handlers: Record<string, EventHandler> = {
   'server.connected': {
     title: '====SERVER CONNECTED====',
     variant: 'success',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'server-connected.sh',
     buildMessage: (event) =>
       `URL: ${toStr(getProp(event, 'properties.url'))}\n` +
@@ -249,7 +251,7 @@ export const handlers: Record<string, EventHandler> = {
   'server.instance.disposed': {
     title: '====SERVER INSTANCE DISPOSED====',
     variant: 'info',
-    duration: 0,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-stop.sh',
     buildMessage: (event) =>
       `Directory: ${toStr(getProp(event, 'properties.directory'))}\n` +
@@ -258,8 +260,8 @@ export const handlers: Record<string, EventHandler> = {
 
   'command.executed': {
     title: '====COMMAND EXECUTED====',
-    variant: 'info',
-    duration: 2000,
+    variant: 'success',
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'command-executed.sh',
     buildMessage: (event) =>
       `Command: ${toStr(getProp(event, 'properties.command'))}\n` +
@@ -269,7 +271,7 @@ export const handlers: Record<string, EventHandler> = {
   'lsp.client.diagnostics': {
     title: '====LSP DIAGNOSTICS====',
     variant: 'warning',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'lsp-client-diagnostics.sh',
     buildMessage: (event) => {
       const diagnostics = getProp(event, 'properties.diagnostics') as
@@ -286,7 +288,7 @@ export const handlers: Record<string, EventHandler> = {
   'lsp.updated': {
     title: '====LSP UPDATED====',
     variant: 'info',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'lsp-updated.sh',
     buildMessage: (event) =>
       `Server: ${toStr(getProp(event, 'properties.serverID'))}\n` +
@@ -296,7 +298,7 @@ export const handlers: Record<string, EventHandler> = {
   'installation.updated': {
     title: '====INSTALLATION UPDATED====',
     variant: 'success',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'installation-updated.sh',
     buildMessage: (event) =>
       `Version: ${toStr(getProp(event, 'properties.version'))}\n` +
@@ -306,7 +308,7 @@ export const handlers: Record<string, EventHandler> = {
   'todo.updated': {
     title: '====TODO UPDATED====',
     variant: 'info',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'todo-updated.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
@@ -317,7 +319,7 @@ export const handlers: Record<string, EventHandler> = {
   'shell.env': {
     title: '====SHELL ENV====',
     variant: 'info',
-    duration: 0,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'shell-env.sh',
     buildMessage: (event) =>
       `Directory: ${toStr(getProp(event, 'properties.cwd'))}\n` +
@@ -327,7 +329,7 @@ export const handlers: Record<string, EventHandler> = {
   'tui.prompt.append': {
     title: '====TUI PROMPT APPEND====',
     variant: 'info',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tui-prompt-append.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
@@ -336,8 +338,8 @@ export const handlers: Record<string, EventHandler> = {
 
   'tui.command.execute': {
     title: '====TUI COMMAND EXECUTE====',
-    variant: 'info',
-    duration: 2000,
+    variant: 'success',
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tui-command-execute.sh',
     buildMessage: (event) =>
       `Command: ${toStr(getProp(event, 'properties.command'))}\n` +
@@ -347,7 +349,7 @@ export const handlers: Record<string, EventHandler> = {
   'tui.toast.show': {
     title: '====TUI TOAST SHOW====',
     variant: 'info',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tui-toast-show.sh',
     buildMessage: (event) =>
       `Title: ${toStr(getProp(event, 'properties.title'))}\n` +
@@ -357,7 +359,7 @@ export const handlers: Record<string, EventHandler> = {
   'experimental.session.compacting': {
     title: '====SESSION COMPACTING====',
     variant: 'warning',
-    duration: 2000,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-compacting.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
