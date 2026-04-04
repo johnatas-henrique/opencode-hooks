@@ -1,233 +1,74 @@
-# Code Review Fixes - Implementation Plan
-
-**Created:** 2026-04-03
-
 ## Execution
 
-| Step | Description                                                            | Status | Timestamp        |
-| ---- | ---------------------------------------------------------------------- | ------ | ---------------- |
-| 1    | Research current implementation of all 4 files                         | ✅     | 2026-04-03 17:30 |
-| 2    | Fix memory leak in opencode-hooks.ts (lines 118-123)                   | ✅     | 2026-04-03 17:42 |
-| 3    | Fix race condition in toast-queue.ts (lines 43-68)                     | ✅     | 2026-04-03 17:43 |
-| 4    | Fix script argument sanitization in run-script.ts (lines 13-22)        | ✅     | 2026-04-03 17:44 |
-| 5    | Fix synchronous file reads in toast-silence-detector.ts (lines 30, 69) | ✅     | 2026-04-03 17:45 |
-| 6    | Add toast error feedback in save-to-file.ts                            | ✅     | 2026-04-03 18:06 |
-| 7    | Add tests for script error paths                                       | ✅     | 2026-04-03 18:10 |
-| 8    | Run tests to verify all fixes                                          | ✅     | 2026-04-03 18:15 |
+| Step                                                | Status | Timestamp        |
+| --------------------------------------------------- | ------ | ---------------- |
+| 1. Extract magic numbers to constants.ts            | ✅     | 2026-04-03 23:15 |
+| 2. Add cleanup function for checkOverwriteTimer     | ✅     | 2026-04-03 23:15 |
+| 3. Add TTL to runOnceTracker to prevent memory leak | ✅     | 2026-04-03 23:20 |
+| 4. Add logging for silent catch blocks              | ✅     | 2026-04-03 23:25 |
+| 5. Verify build and tests pass                      | ✅     | 2026-04-03 23:26 |
 
-**All fixes verified and implemented in previous commits.**
+## Overview
 
----
+Fix issues identified in code review.
 
-## Issue 1: Memory Leak in opencode-hooks.ts
+## Details
 
-### Location
+### 1. Extract magic numbers to constants.ts (Medium Priority)
 
-`.opencode/plugins/opencode-hooks.ts:118-123`
+Move hardcoded values to constants file:
 
-### Current Implementation
+- 5000 (toast duration)
+- 3000 (timer duration)
+- 1000 (setTimeout delay)
+- 300 (toast stagger)
+- 500 (staggerMs)
+
+Add to .opencode/plugins/helpers/constants.ts
+
+### 2. Add cleanup function for checkOverwriteTimer (High Priority)
+
+Current issue in opencode-hooks.ts:
 
 ```typescript
-setTimeout(() => {
-  const newCount = countToastsInLog(logFile);
-  if (newCount > ourToastCount) {
-    wasOverwritten = true;
-  }
-}, 3000);
+let checkOverwriteTimer: ReturnType<typeof setTimeout> | null = null;
 ```
 
-### Problem
+The timer is never cleared. Add a cleanup function that runs when plugin is disposed:
 
-The nested setTimeout is never cleaned up. If the parent Promise.race resolves early or if the component is disposed, the inner timer continues running and may access stale state.
+- Clear the timer in a cleanup/return function
+- Ensure no timer leaks when plugin reloads
 
-### Solution
+### 3. Add TTL to runOnceTracker (Medium Priority)
 
-1. Store the nested timer in a variable
-2. Clear it in the cleanup path
-3. Add a flag check to prevent execution after cleanup
+Current issue:
 
 ```typescript
-let checkOverwriteTimer: ReturnType<typeof setTimeout>;
-const checkOverwrite = () => {
-  if (!logFile || resolved) return;
-  checkOverwriteTimer = setTimeout(() => {
-    if (!logFile || resolved) return;
-    const newCount = countToastsInLog(logFile);
-    if (newCount > ourToastCount) {
-      wasOverwritten = true;
-    }
-  }, 3000);
-};
+const runOnceTracker = new Map<string, boolean>();
 ```
 
----
+This Map grows indefinitely. Add a simple TTL mechanism:
 
-## Issue 2: Race Condition in toast-queue.ts
+- Store timestamp with value: Map<string, { value: boolean, timestamp: number }>
+- Clean up entries older than 24 hours periodically
 
-### Location
+### 4. Add logging for silent catch blocks (Medium Priority)
 
-`.opencode/plugins/helpers/toast-queue.ts:43-68`
-
-### Current Implementation
-
-```typescript
-const processQueue = () => {
-  if (processing || queue.length === 0) return;
-  processing = true;
-  // ...
-};
-```
-
-### Problem
-
-The `processing` flag check is not atomic. Multiple simultaneous calls to `processQueue()` (from multiple `add()` calls) can pass the check before `processing` is set to `true`, causing duplicate processing.
-
-### Solution
-
-Use a mutex/lock pattern with async/await:
+Current code in opencode-hooks.ts:
 
 ```typescript
-let processingLock: Promise<void> | null = null;
-
-const processQueue = async () => {
-  if (processingLock) {
-    await processingLock;
-    if (queue.length === 0) return;
-  }
-
-  processingLock = (async () => {
-    while (queue.length > 0) {
-      // ... processing logic
-    }
-    processingLock = null;
-  })();
-
-  await processingLock;
-};
-```
-
----
-
-## Issue 3: Script Argument Sanitization in run-script.ts
-
-### Location
-
-`.opencode/plugins/helpers/run-script.ts:13-22`
-
-### Current Implementation
-
-```typescript
-const result =
-  args.length > 0
-    ? await $`./${SCRIPTS_DIR}/${scriptPath} ${args.join(' ')}`.quiet()
-    : await $`./${SCRIPTS_DIR}/${scriptPath}`.quiet();
-```
-
-### Problem
-
-Arguments are passed directly to the shell without sanitization. Special characters like `;`, `|`, `&&`, `$(...)` could enable command injection.
-
-### Solution
-
-1. Sanitize each argument to escape shell metacharacters
-2. Pass arguments as separate array elements instead of string interpolation
-
-```typescript
-const shellSpecialChars = /[;&|`$(){}[\]<>\\!#*?"'\n\r]/g;
-
-const sanitizeArg = (arg: string): string => {
-  return arg.replace(shellSpecialChars, '\\$&');
-};
-
-export const runScript = async (
-  $: PluginInput['$'],
-  scriptPath: string,
-  ...args: string[]
-): Promise<string> => {
-  if (!validateScriptPath(scriptPath)) {
-    throw new Error(`Invalid script path: ${scriptPath}`);
-  }
-
-  const sanitizedArgs = args.map(sanitizeArg);
-
-  if (sanitizedArgs.length > 0) {
-    const result =
-      await $`./${SCRIPTS_DIR}/${scriptPath} ${sanitizedArgs}`.quiet();
-    return result.text();
-  }
-
-  const result = await $`./${SCRIPTS_DIR}/${scriptPath}`.quiet();
-  return result.text();
-};
-```
-
----
-
-## Issue 4: Synchronous File Reads in toast-silence-detector.ts
-
-### Location
-
-`.opencode/plugins/helpers/toast-silence-detector.ts:30, 69`
-
-### Current Implementation
-
-```typescript
-const content = readFileSync(logFile, 'utf-8');
-```
-
-### Problem
-
-File is read synchronously on every poll (default 200ms). This blocks the Node.js event loop and can cause performance issues.
-
-### Solution
-
-Use async file operations with `fs.promises`:
-
-```typescript
-import { readFile } from 'fs/promises';
-
-// In the check function:
-const content = await readFile(logFile, 'utf-8');
-
-// Also update countToastsInLog:
-export async function countToastsInLog(logFile: string): Promise<number> {
-  try {
-    const content = await readFile(logFile, 'utf-8');
-    const matches = content.match(TOAST_PATTERN);
-    return matches ? matches.length : 0;
-  } catch {
-    return 0;
-  }
+} catch {
+  // Silent fail - startup toast should not break plugin
 }
 ```
 
-Note: The caller in `opencode-hooks.ts:116` will need to use `await` when calling `countToastsInLog`.
+Add minimal logging instead of silent fail:
 
----
+```typescript
+} catch (err) {
+  // Log but don't break plugin
+  console.error('Startup toast error:', err);
+}
+```
 
-## Testing Strategy
-
-1. Run existing test suite to ensure no regressions
-2. Add new tests for:
-   - Timer cleanup verification
-   - Race condition prevention
-   - Argument sanitization edge cases
-   - Async file operations
-3. Verify backward compatibility
-
----
-
-## Files to Modify
-
-1. `.opencode/plugins/opencode-hooks.ts` - Fix memory leak
-2. `.opencode/plugins/helpers/toast-queue.ts` - Fix race condition
-3. `.opencode/plugins/helpers/run-script.ts` - Fix sanitization
-4. `.opencode/plugins/helpers/toast-silence-detector.ts` - Fix sync reads
-
----
-
-## Backward Compatibility
-
-- All changes maintain existing API contracts
-- Default behavior preserved
-- Only internal implementation details changed
+Created: 2026-04-03 23:10
