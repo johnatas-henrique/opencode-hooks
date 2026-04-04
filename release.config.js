@@ -1,3 +1,5 @@
+const customReleaseNotes = require('./custom-release-notes');
+
 module.exports = {
   branches: ['main'],
   plugins: [
@@ -17,7 +19,7 @@ module.exports = {
         ],
       },
     ],
-    '@semantic-release/release-notes-generator',
+    customReleaseNotes,
     '@semantic-release/github',
   ],
 };
