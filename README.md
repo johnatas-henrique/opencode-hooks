@@ -77,13 +77,14 @@ Each event can be configured in three ways:
 
 #### Override Fields
 
-| Field             | Type                                                   | Description                     |
-| ----------------- | ------------------------------------------------------ | ------------------------------- |
-| `toast`           | `boolean \| { title?, message?, variant?, duration? }` | Toggle or customize toast       |
-| `scripts`         | `string[]`                                             | Custom scripts to run           |
-| `runScripts`      | `boolean`                                              | Enable/disable script execution |
-| `saveToFile`      | `boolean`                                              | Toggle file persistence         |
-| `appendToSession` | `boolean`                                              | Toggle session appending        |
+| Field             | Type                                                   | Description                                      |
+| ----------------- | ------------------------------------------------------ | ------------------------------------------------ |
+| `debug`           | `boolean`                                              | Enable debug logging to session_debug_events.log |
+| `toast`           | `boolean \| { title?, message?, variant?, duration? }` | Toggle or customize toast                        |
+| `scripts`         | `string[]`                                             | Custom scripts to run                            |
+| `runScripts`      | `boolean`                                              | Enable/disable script execution                  |
+| `saveToFile`      | `boolean`                                              | Toggle file persistence                          |
+| `appendToSession` | `boolean`                                              | Toggle session appending                         |
 
 #### Script Resolution
 
@@ -111,6 +112,56 @@ echo "Agent executed: $1"
 ```
 
 Scripts receive the tool name as the first argument when called from `tool.execute` events.
+
+### Per-Tool Configuration
+
+For `tool.execute.before` and `tool.execute.after` events, you can configure behavior per specific tool. This is useful when you want different handling for different tools (e.g., `task` subagent calls vs `read` file operations).
+
+```typescript
+tools: {
+  [EventType.TOOL_EXECUTE_AFTER]: {
+    task: { debug: true, toast: true, scripts: ['log-agent.sh'] },
+    read: { debug: false, toast: false },
+    chat: { debug: false },
+    glob: { debug: false },
+  },
+  [EventType.TOOL_EXECUTE_BEFORE]: {
+    task: { debug: true },
+    read: { debug: false },
+  },
+}
+```
+
+#### Resolution Order
+
+Configuration is resolved in this order:
+
+1. **Tool-specific** - Check if the tool has explicit config in `tools` section
+2. **Event-level** - Fall back to config in `events` section
+3. **Global defaults** - Use global settings if neither above exists
+
+This means you can set a default for all tool events in `events`, then override specific tools in `tools`.
+
+### Debug Mode
+
+When `debug: true` is set for an event:
+
+- A 10-second toast shows with the complete event object (input, output, resolved config)
+- Full event data is saved to `session_debug_events.log` (in `production/session-logs/`)
+
+Debug works at both event-level and tool-level:
+
+```typescript
+events: {
+  [EventType.TOOL_EXECUTE_AFTER]: { debug: true },  // All tools
+},
+tools: {
+  [EventType.TOOL_EXECUTE_AFTER]: {
+    task: { debug: true },   // Only task tool
+    read: { debug: false },  // Exclude read
+  },
+}
+```
 
 ## Supported Events
 
