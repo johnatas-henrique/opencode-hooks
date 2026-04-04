@@ -1,7 +1,33 @@
+# Development
+docs/
+test/
+scripts/
+.github/
+.editorconfig
+.eslintrc.js
+.prettierrc
+tsconfig.json
+jest.config.js
+*.test.ts
+*.spec.ts
+
+# Build artifacts (keep dist/)
+dist/node_modules/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+
+# Legacy (from create-react-app template)
 node_modules/
 .idea/
 config.json
-.prettierrc
-.eslint*
 .gitmodules
 .gitignore
