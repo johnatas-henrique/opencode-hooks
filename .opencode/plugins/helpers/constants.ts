@@ -17,6 +17,7 @@ export const TIMER = {
 
 export const LOG_FILE = 'session_events.log';
 export const DEBUG_LOG_FILE = 'session_debug_events.log';
+export const UNKNOWN_EVENT_LOG_FILE = 'session_unknown_events.log';
 export const LOG_DIR = './production/session-logs';
 
 export const SCRIPTS_DIR = '.opencode/scripts';

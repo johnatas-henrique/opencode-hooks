@@ -1,7 +1,7 @@
 import { handlers, type EventHandler } from './default-handlers';
 import { userConfig } from './user-events.config';
 import { saveToFile } from './save-to-file';
-import { DEBUG_LOG_FILE } from './constants';
+import { UNKNOWN_EVENT_LOG_FILE } from './constants';
 import type {
   ResolvedEventConfig,
   EventConfig,
@@ -146,7 +146,7 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
   if (userEventConfig === undefined) {
     saveToFile({
       content: `[WARN] Event '${eventType}' not configured. Add it to events config or set to false to disable.\n`,
-      filename: DEBUG_LOG_FILE,
+      filename: UNKNOWN_EVENT_LOG_FILE,
     });
     return {
       enabled: true,
