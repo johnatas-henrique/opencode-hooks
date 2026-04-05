@@ -29,6 +29,7 @@ import {
   countToastsInLog,
 } from './toast-silence-detector';
 import { showStartupToast } from './show-startup-toast';
+import { logEventConfig, logScriptOutput } from './log-event';
 
 export {
   saveToFile,
@@ -47,6 +48,8 @@ export {
   waitForToastSilence,
   countToastsInLog,
   showStartupToast,
+  logEventConfig,
+  logScriptOutput,
 };
 export type {
   EventHandler,
