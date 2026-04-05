@@ -6,11 +6,9 @@
   "scripts": {
     "start": "node .",
     "build": "tsc",
-    "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --forceExit",
     "test:e2e": "bash test/e2e/session-lifecycle.sh",
-    "test": "npm run test:unit",
-    "test:ci": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
-    "coverage": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
+    "test:cov": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
     "coverage:report": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage --coverageReporters=text-summary --coverageReporters=html",
     "lint": "eslint \"**/*.ts\" --ignore-pattern \"node_modules/**\" --ignore-pattern \"dist/**\" --ignore-pattern \"coverage/**\"",
     "lint:fix": "eslint \"**/*.ts\" --ignore-pattern \"node_modules/**\" --ignore-pattern \"dist/**\" --ignore-pattern \"coverage/**\" --fix",
