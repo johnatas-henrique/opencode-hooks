@@ -367,6 +367,10 @@ jest.mock('../.opencode/plugins/helpers/toast-queue', () => ({
   resetGlobalToastQueue: jest.fn(),
 }));
 
+jest.mock('../.opencode/plugins/helpers/show-startup-toast', () => ({
+  showStartupToast: jest.fn().mockResolvedValue(undefined),
+}));
+
 import { runScript } from '../.opencode/plugins/helpers/run-script';
 import { saveToFile } from '../.opencode/plugins/helpers/save-to-file';
 
