@@ -7,7 +7,8 @@ import {
 } from './types/opencode-hooks';
 import {
   appendToSession,
-  getGlobalToastQueue,
+  initGlobalToastQueue,
+  useGlobalToastQueue,
   runScript,
   saveToFile,
   handlers,
@@ -23,8 +24,6 @@ import {
   TOAST_DURATION,
 } from './helpers/constants';
 import { userConfig } from './helpers/user-events.config';
-
-type ToastQueue = ReturnType<typeof getGlobalToastQueue>;
 
 let hasShownToast = false;
 type RunOnceEntry = { value: boolean; timestamp: number };
@@ -57,7 +56,6 @@ const runScriptAndHandle = async (
   script: string,
   arg: string,
   timestamp: string,
-  toastQueue: ToastQueue,
   eventType: string,
   toolName?: string
 ) => {
@@ -66,7 +64,7 @@ const runScriptAndHandle = async (
     if (output) {
       await saveToFile({
         content: `[${timestamp}] ${output}\n`,
-        showToast: toastQueue.add,
+        showToast: useGlobalToastQueue().add,
       });
     }
   } catch (err) {
@@ -74,9 +72,9 @@ const runScriptAndHandle = async (
     const eventInfo = formatEventInfo(eventType, toolName);
     await saveToFile({
       content: `[${timestamp}] - Script error: ${eventInfo} - ${script} - ${errorMessage}\n`,
-      showToast: toastQueue.add,
+      showToast: useGlobalToastQueue().add,
     });
-    toastQueue.add({
+    useGlobalToastQueue().add({
       title: '====SCRIPT ERROR====',
       message: `Event: ${eventInfo}\nScript: ${script}\nError: ${errorMessage}\nCheck user-events.config.ts`,
       variant: 'error',
@@ -97,7 +95,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
     };
   }
 
-  const toastQueue = getGlobalToastQueue((toast) => {
+  initGlobalToastQueue((toast) => {
     client.tui.showToast({
       body: {
         title: toast.title,
@@ -117,7 +115,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
 
   if (!hasShownToast) {
     hasShownToast = true;
-    await showStartupToast(toastQueue);
+    await showStartupToast();
   }
 
   return {
@@ -127,7 +125,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
 
       if (resolved.debug) {
         const debugMessage = JSON.stringify(event, null, 2);
-        toastQueue.add({
+        useGlobalToastQueue().add({
           title: `====DEBUG EVENT - ${event.type}====`,
           message: debugMessage,
           variant: 'info',
@@ -136,25 +134,25 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         await saveToFile({
           content: `[${timestamp}] - ${event.type}\n${debugMessage}\n`,
           filename: DEBUG_LOG_FILE,
-          showToast: toastQueue.add,
+          showToast: useGlobalToastQueue().add,
         });
       }
 
       if (!resolved.enabled) {
         await saveToFile({
           content: `[${timestamp}] - Skipping disabled event: ${event.type}\n`,
-          showToast: toastQueue.add,
+          showToast: useGlobalToastQueue().add,
         });
         return;
       }
 
-      await logEventConfig(timestamp, event.type, resolved, toastQueue);
+      await logEventConfig(timestamp, event.type, resolved);
 
       const handler = handlers[event.type];
       if (!handler) return;
 
       if (resolved.toast) {
-        toastQueue.add({
+        useGlobalToastQueue().add({
           title: resolved.toastTitle,
           message: (resolved.toastMessage ?? handler.buildMessage(event))
             .trim()
@@ -172,7 +170,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         try {
           const output = await runScript($, script);
           if (resolved.saveToFile && output) {
-            await logScriptOutput(timestamp, output, toastQueue);
+            await logScriptOutput(timestamp, output);
           }
           if (resolved.appendToSession && output) {
             const props = event.properties as Record<string, unknown>;
@@ -185,9 +183,9 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
           const errorMessage = err instanceof Error ? err.message : String(err);
           await saveToFile({
             content: `[${timestamp}] - Script error: ${script} - ${errorMessage}\n`,
-            showToast: toastQueue.add,
+            showToast: useGlobalToastQueue().add,
           });
-          toastQueue.add({
+          useGlobalToastQueue().add({
             title: '====SCRIPT ERROR====',
             message: `Script: ${script}\nError: ${errorMessage}\nCheck user-events.config.ts`,
             variant: 'error',
@@ -201,16 +199,16 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       }
     },
 
-    'tool.execute.before': async (
+    async 'tool.execute.before'(
       input: ToolExecuteBeforeInput,
       _output: ToolExecuteBeforeOutput
-    ) => {
+    ) {
       const timestamp = new Date().toISOString();
       const resolved = resolveToolConfig('tool.execute.before', input.tool);
 
       if (resolved.debug) {
         const debugMessage = JSON.stringify({ input, resolved }, null, 2);
-        toastQueue.add({
+        useGlobalToastQueue().add({
           title: 'DEBUG TOOL.BEFORE',
           message: debugMessage,
           variant: 'info',
@@ -219,7 +217,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         await saveToFile({
           content: `[${timestamp}] - tool.execute.before - ${input.tool}\n${debugMessage}\n`,
           filename: DEBUG_LOG_FILE,
-          showToast: toastQueue.add,
+          showToast: useGlobalToastQueue().add,
         });
       }
 
@@ -227,7 +225,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
 
       if (resolved.toast) {
         const message = `Session Id: ${input.sessionID || 'unknown'}\nTool: ${input.tool}\nTime: ${new Date().toLocaleTimeString()}`;
-        toastQueue.add({
+        useGlobalToastQueue().add({
           title: resolved.toastTitle,
           message: (resolved.toastMessage ?? message)
             .trim()
@@ -243,7 +241,6 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
           script,
           input.tool,
           timestamp,
-          toastQueue,
           'tool.execute.before',
           input.tool
         );
@@ -263,7 +260,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
           null,
           2
         );
-        toastQueue.add({
+        useGlobalToastQueue().add({
           title: 'DEBUG TOOL.AFTER',
           message: debugMessage,
           variant: 'info',
@@ -272,7 +269,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         await saveToFile({
           content: `[${timestamp}] - tool.execute.after - ${input.tool}\n${debugMessage}\n`,
           filename: DEBUG_LOG_FILE,
-          showToast: toastQueue.add,
+          showToast: useGlobalToastQueue().add,
         });
       }
 
@@ -285,7 +282,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
             : '';
         if (subagentType && resolved.toast) {
           const message = `Session Id: ${input.sessionID}\nAgent: ${subagentType}\nTime: ${new Date().toLocaleTimeString()}`;
-          toastQueue.add({
+          useGlobalToastQueue().add({
             title: resolved.toastTitle,
             message: (resolved.toastMessage ?? message)
               .trim()
@@ -301,7 +298,6 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
             script,
             subagentType,
             timestamp,
-            toastQueue,
             'tool.execute.after',
             input.tool
           );
@@ -313,7 +309,6 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
             script,
             input.tool,
             timestamp,
-            toastQueue,
             'tool.execute.after',
             input.tool
           );
@@ -328,14 +323,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       if (!resolved.enabled) return;
 
       for (const script of resolved.scripts) {
-        await runScriptAndHandle(
-          $,
-          script,
-          '',
-          timestamp,
-          toastQueue,
-          'shell.env'
-        );
+        await runScriptAndHandle($, script, '', timestamp, 'shell.env');
       }
     },
   };
