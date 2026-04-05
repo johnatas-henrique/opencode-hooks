@@ -17,12 +17,9 @@ import {
   showStartupToast,
   logEventConfig,
   logScriptOutput,
+  handleDebugLog,
 } from './helpers';
-import {
-  DEBUG_LOG_FILE,
-  RUN_ONCE_TTL_HOURS,
-  TOAST_DURATION,
-} from './helpers/constants';
+import { RUN_ONCE_TTL_HOURS, TOAST_DURATION } from './helpers/constants';
 import { userConfig } from './helpers/user-events.config';
 
 let hasShownToast = false;
@@ -124,18 +121,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       const resolved = resolveEventConfig(event.type);
 
       if (resolved.debug) {
-        const debugMessage = JSON.stringify(event, null, 2);
-        useGlobalToastQueue().add({
-          title: `====DEBUG EVENT - ${event.type}====`,
-          message: debugMessage,
-          variant: 'info',
-          duration: TOAST_DURATION.TEN_SECONDS,
-        });
-        await saveToFile({
-          content: `[${timestamp}] - ${event.type}\n${debugMessage}\n`,
-          filename: DEBUG_LOG_FILE,
-          showToast: useGlobalToastQueue().add,
-        });
+        await handleDebugLog(timestamp, `DEBUG EVENT - ${event.type}`, event);
       }
 
       if (!resolved.enabled) {
@@ -207,17 +193,9 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       const resolved = resolveToolConfig('tool.execute.before', input.tool);
 
       if (resolved.debug) {
-        const debugMessage = JSON.stringify({ input, resolved }, null, 2);
-        useGlobalToastQueue().add({
-          title: 'DEBUG TOOL.BEFORE',
-          message: debugMessage,
-          variant: 'info',
-          duration: TOAST_DURATION.TEN_SECONDS,
-        });
-        await saveToFile({
-          content: `[${timestamp}] - tool.execute.before - ${input.tool}\n${debugMessage}\n`,
-          filename: DEBUG_LOG_FILE,
-          showToast: useGlobalToastQueue().add,
+        await handleDebugLog(timestamp, 'DEBUG TOOL.BEFORE', {
+          input,
+          resolved,
         });
       }
 
@@ -255,21 +233,10 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       const resolved = resolveToolConfig('tool.execute.after', input.tool);
 
       if (resolved.debug) {
-        const debugMessage = JSON.stringify(
-          { input, _output, resolved },
-          null,
-          2
-        );
-        useGlobalToastQueue().add({
-          title: 'DEBUG TOOL.AFTER',
-          message: debugMessage,
-          variant: 'info',
-          duration: TOAST_DURATION.TEN_SECONDS,
-        });
-        await saveToFile({
-          content: `[${timestamp}] - tool.execute.after - ${input.tool}\n${debugMessage}\n`,
-          filename: DEBUG_LOG_FILE,
-          showToast: useGlobalToastQueue().add,
+        await handleDebugLog(timestamp, 'DEBUG TOOL.AFTER', {
+          input,
+          _output,
+          resolved,
         });
       }
 

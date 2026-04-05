@@ -1,6 +1,7 @@
 import { saveToFile, type ToastCallback } from './save-to-file';
 import { runScript } from './run-script';
 import { appendToSession } from './append-to-session';
+import { handleDebugLog } from './debug';
 import {
   showToastStaggered,
   createToastQueue,
@@ -38,6 +39,7 @@ export {
   saveToFile,
   runScript,
   appendToSession,
+  handleDebugLog,
   showToastStaggered,
   createToastQueue,
   initGlobalToastQueue,
