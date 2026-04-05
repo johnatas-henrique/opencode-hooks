@@ -13,16 +13,13 @@ import {
   handlers,
   resolveEventConfig,
   resolveToolConfig,
-  showActivePluginsToast,
-  waitForToastSilence,
+  showStartupToast,
 } from './helpers';
 import {
   DEBUG_LOG_FILE,
   RUN_ONCE_TTL_HOURS,
-  TIMER,
   TOAST_DURATION,
 } from './helpers/constants';
-import { getLatestLogFile } from './helpers/plugin-status';
 import { userConfig } from './helpers/user-events.config';
 
 type ToastQueue = ReturnType<typeof getGlobalToastQueue>;
@@ -116,43 +113,9 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
     `,
   });
 
-  if (!hasShownToast && process.env.NODE_ENV !== 'test') {
+  if (!hasShownToast) {
     hasShownToast = true;
-    const logFile = getLatestLogFile();
-
-    toastQueue.add({
-      title: 'Loading plugin status...',
-      message: 'Scanning OpenCode plugins',
-      variant: 'info',
-      duration: TOAST_DURATION.TWO_SECONDS,
-    });
-
-    if (logFile) {
-      const { promise, cleanup } = waitForToastSilence(logFile);
-      let timeoutTimer: ReturnType<typeof setTimeout>;
-      const timeout = new Promise<void>((resolve) => {
-        timeoutTimer = setTimeout(resolve, TOAST_DURATION.TEN_SECONDS);
-      });
-
-      Promise.race([promise, timeout]).then(async () => {
-        clearTimeout(timeoutTimer!);
-        cleanup();
-
-        await new Promise((resolve) =>
-          setTimeout(resolve, TIMER.OVERWRITE_CHECK_DELAY)
-        );
-
-        try {
-          await showActivePluginsToast(toastQueue, {
-            duration: TOAST_DURATION.FIVE_SECONDS,
-          });
-        } catch (err) {
-          await saveToFile({
-            content: `[${new Date().toISOString()}] - Startup toast error: ${err}\n`,
-          });
-        }
-      });
-    }
+    await showStartupToast(toastQueue);
   }
 
   return {
