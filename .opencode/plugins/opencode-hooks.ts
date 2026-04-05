@@ -14,6 +14,8 @@ import {
   resolveEventConfig,
   resolveToolConfig,
   showStartupToast,
+  logEventConfig,
+  logScriptOutput,
 } from './helpers';
 import {
   DEBUG_LOG_FILE,
@@ -146,12 +148,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         return;
       }
 
-      if (resolved.saveToFile && !event.type.startsWith('message.')) {
-        await saveToFile({
-          content: `[${timestamp}] - ${event.type} - ${JSON.stringify(resolved)}\n`,
-          showToast: toastQueue.add,
-        });
-      }
+      await logEventConfig(timestamp, event.type, resolved, toastQueue);
 
       const handler = handlers[event.type];
       if (!handler) return;
@@ -175,10 +172,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         try {
           const output = await runScript($, script);
           if (resolved.saveToFile && output) {
-            await saveToFile({
-              content: `[${timestamp}] ${output}\n`,
-              showToast: toastQueue.add,
-            });
+            await logScriptOutput(timestamp, output, toastQueue);
           }
           if (resolved.appendToSession && output) {
             const props = event.properties as Record<string, unknown>;
