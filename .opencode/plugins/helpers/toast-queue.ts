@@ -125,3 +125,5 @@ export function getGlobalToastQueue(
 export function resetGlobalToastQueue() {
   globalToastQueue = null;
 }
+
+export type ToastQueue = ReturnType<typeof createToastQueue>;

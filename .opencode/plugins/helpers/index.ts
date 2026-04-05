@@ -28,6 +28,7 @@ import {
   waitForToastSilence,
   countToastsInLog,
 } from './toast-silence-detector';
+import { showStartupToast } from './show-startup-toast';
 
 export {
   saveToFile,
@@ -45,6 +46,7 @@ export {
   showActivePluginsToast,
   waitForToastSilence,
   countToastsInLog,
+  showStartupToast,
 };
 export type {
   EventHandler,
