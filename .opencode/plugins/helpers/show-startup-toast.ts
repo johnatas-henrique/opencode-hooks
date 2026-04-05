@@ -1,19 +1,22 @@
 import { getLatestLogFile } from './plugin-status';
-import { showActivePluginsToast, waitForToastSilence } from './index';
+import {
+  showActivePluginsToast,
+  waitForToastSilence,
+  useGlobalToastQueue,
+} from './index';
 import { saveToFile } from './save-to-file';
 import { TIMER, TOAST_DURATION } from './constants';
-import type { ToastQueue } from './toast-queue';
 
 export interface ShowStartupToastOptions {
   getLogFile?: () => string | null;
 }
 
 export async function showStartupToast(
-  toastQueue: ToastQueue,
   options: ShowStartupToastOptions = {}
 ): Promise<void> {
   const getLogFile = options.getLogFile ?? getLatestLogFile;
   const logFile = getLogFile();
+  const toastQueue = useGlobalToastQueue();
 
   toastQueue.add({
     title: 'Loading plugin status...',
