@@ -111,13 +111,34 @@ export function createToastQueue(
 
 let globalToastQueue: ReturnType<typeof createToastQueue> | null = null;
 
-export function getGlobalToastQueue(
+export function initGlobalToastQueue(
   showFn: (toast: TuiToast) => void | Promise<void>
-) {
+): ToastQueue {
+  globalToastQueue = createToastQueue(showFn, {
+    staggerMs: STAGGER_MS.DEFAULT,
+  });
+  return globalToastQueue;
+}
+
+export function getGlobalToastQueue(
+  showFn?: (toast: TuiToast) => void | Promise<void>
+): ToastQueue {
+  if (!globalToastQueue && showFn) {
+    return initGlobalToastQueue(showFn);
+  }
   if (!globalToastQueue) {
-    globalToastQueue = createToastQueue(showFn, {
-      staggerMs: STAGGER_MS.DEFAULT,
-    });
+    throw new Error(
+      'ToastQueue not initialized. Call initGlobalToastQueue first.'
+    );
+  }
+  return globalToastQueue;
+}
+
+export function useGlobalToastQueue(): ToastQueue {
+  if (!globalToastQueue) {
+    throw new Error(
+      'ToastQueue not initialized. Call initGlobalToastQueue first.'
+    );
   }
   return globalToastQueue;
 }

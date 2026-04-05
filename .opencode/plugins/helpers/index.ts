@@ -4,8 +4,11 @@ import { appendToSession } from './append-to-session';
 import {
   showToastStaggered,
   createToastQueue,
+  initGlobalToastQueue,
+  useGlobalToastQueue,
   getGlobalToastQueue,
   resetGlobalToastQueue,
+  type ToastQueue,
 } from './toast-queue';
 import { handlers, type EventHandler } from './default-handlers';
 import {
@@ -37,6 +40,8 @@ export {
   appendToSession,
   showToastStaggered,
   createToastQueue,
+  initGlobalToastQueue,
+  useGlobalToastQueue,
   getGlobalToastQueue,
   resetGlobalToastQueue,
   handlers,
@@ -61,4 +66,5 @@ export type {
   ToolConfig,
   UserEventsConfig,
   ToastCallback,
+  ToastQueue,
 };
