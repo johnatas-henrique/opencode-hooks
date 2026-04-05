@@ -10,8 +10,13 @@
 | 4. Mock showStartupToast in tests                    | ✅          | 2026-04-04 22:00 |
 | 5. Run tests to verify                               | ✅          | 2026-04-04 22:00 |
 | 6. Add unit tests for showStartupToast               | ✅          | 2026-04-04 22:05 |
+| 7. Fix tsconfig.json module resolution               | ✅          | 2026-04-05 00:04 |
 
 ## Details
+
+### Step 7: Fix tsconfig.json module resolution
+
+Changed `"module": "nodenext"` to `"module": "es2022"` to resolve node types issue in LSP.
 
 ### Step 6: Add unit tests for showStartupToast
 
@@ -31,4 +36,4 @@ After adding tests, removed the mock from other test files since function is tes
 
 Command: `npm run test:unit`
 
-Result: All tests pass (251/251)
+Result: All tests pass (251/251 → 257/257)
