@@ -1,11 +1,8 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "module": "nodenext",
-    "lib": [
-      "dom",
-      "es2020"
-    ],
+    "module": "es2022",
+    "lib": ["dom", "es2020"],
     "sourceMap": false,
     "outDir": "./dist",
     "removeComments": true,
@@ -22,13 +19,6 @@
     "isolatedModules": true,
     "skipLibCheck": true
   },
-  "exclude": [
-    "node_modules",
-    "test"
-  ],
-  "include": [
-    "./src/**/*.tsx",
-    "./src/**/*.ts",
-    "./.opencode/**/*.ts"
-  ]
+  "exclude": ["node_modules", "test"],
+  "include": ["./src/**/*.tsx", "./src/**/*.ts", "./.opencode/**/*.ts"]
 }
