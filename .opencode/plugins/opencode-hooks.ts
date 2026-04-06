@@ -188,52 +188,18 @@ export const OpencodeHooks: Plugin = async (
 
       const resolved = resolveEventConfig(event.type);
 
-      if (resolved.debug) {
-        await handleDebugLog(timestamp, `DEBUG EVENT - ${event.type}`, event);
-      }
+      const props = event.properties as Record<string, unknown>;
+      const info = props?.info as Record<string, unknown> | undefined;
+      const rawId = info?.id ?? props?.sessionID;
+      const sessionId = typeof rawId === 'string' ? rawId : DEFAULT_SESSION_ID;
 
-      if (!resolved.enabled) {
-        await saveToFile({
-          content: `[${timestamp}] - Skipping disabled event: ${event.type}\n`,
-          showToast: useGlobalToastQueue().add,
-        });
-        return;
-      }
-
-      await logEventConfig(timestamp, event.type, resolved);
-
-      if (resolved.toast) {
-        const handler = handlers[event.type];
-        const message =
-          resolved.toastMessage ??
-          (handler
-            ? handler.buildMessage(event as Record<string, unknown>)
-            : event.type);
-
-        useGlobalToastQueue().add({
-          title: resolved.toastTitle,
-          message: message.trim().replace(/^\s+/gm, ''),
-          variant: resolved.toastVariant,
-          duration: resolved.toastDuration,
-        });
-      }
-
-      for (const script of resolved.scripts) {
-        const props = event.properties as Record<string, unknown>;
-        const info = props?.info as Record<string, unknown> | undefined;
-        const rawId = info?.id ?? props?.sessionID;
-        const sessionId =
-          typeof rawId === 'string' ? rawId : DEFAULT_SESSION_ID;
-
-        await runScriptAndHandle({
-          ctx,
-          script,
-          timestamp,
-          eventType: event.type,
-          resolved,
-          sessionId,
-        });
-      }
+      await executeHook({
+        ctx,
+        eventType: event.type,
+        resolved,
+        sessionId,
+        input: event as unknown as Record<string, unknown>,
+      });
     },
 
     'tool.execute.before': async (

@@ -485,7 +485,7 @@ describe('Session Plugins', () => {
         properties: { info: createMockSession() },
       };
       await plugin.event({ event });
-      expect(saveToFile).toHaveBeenCalledTimes(3);
+      expect(saveToFile).toHaveBeenCalledTimes(4);
       expect(saveToFile).toHaveBeenCalledWith(
         expect.objectContaining({
           content: expect.stringMatching(/session.created/),
@@ -827,7 +827,7 @@ describe('Session Plugins', () => {
       for (const event of events) {
         await plugin.event({ event });
       }
-      expect(saveToFile).toHaveBeenCalledTimes(15);
+      expect(saveToFile).toHaveBeenCalledTimes(23);
     });
   });
 
