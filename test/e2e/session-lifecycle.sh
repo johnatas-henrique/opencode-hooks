@@ -6,13 +6,13 @@ echo ""
 
 TEST_SESSION_ID="e2e-test-session-$(date +%s)"
 LOG_FILE="./session_events.log"
+UNKNOWN_LOG_FILE="./unknown_events.log"
 
 cleanup() {
   echo ""
   echo "Cleaning up..."
-  if [ -f "$LOG_FILE" ]; then
-    rm -f "$LOG_FILE"
-  fi
+  [ -f "$LOG_FILE" ] && rm -f "$LOG_FILE"
+  [ -f "$UNKNOWN_LOG_FILE" ] && rm -f "$UNKNOWN_LOG_FILE"
 }
 
 trap cleanup EXIT
@@ -20,45 +20,38 @@ trap cleanup EXIT
 echo "Test session ID: $TEST_SESSION_ID"
 echo ""
 
-echo "1. Testing session.created event..."
-echo "   (This should trigger when opencode creates a new session)"
-echo "   Manual verification: Check if toast appears with 'SESSION CREATED'"
+echo "=== E2E Test Coverage ==="
+echo ""
+echo "1. Session Events (automatic in opencode):"
+echo "   - session.created     -> Toast: SESSION CREATED"
+echo "   - session.compacted   -> Toast: SESSION COMPACTED"
+echo "   - session.idle       -> Toast: IDLE SESSION"
+echo "   - session.error      -> Toast: SESSION ERROR"
+echo "   - session.deleted    -> Toast: SESSION DELETED"
+echo ""
+echo "2. Tool Events (automatic in opencode):"
+echo "   - tool.execute.before  -> Logs tool execution"
+echo "   - tool.execute.after   -> Logs tool result"
+echo ""
+echo "3. File Events (manual testing):"
+echo "   - file.edited       -> Edit a file"
+echo "   - file.watcher.updated -> File watcher changes"
+echo ""
+echo "4. Permission Events (manual testing):"
+echo "   - permission.asked   -> Accept/deny permission"
+echo "   - permission.replied -> Reply to permission"
 echo ""
 
-echo "2. Testing session.compacted event..."
-echo "   (This should trigger during session compaction)"
-echo "   Manual verification: Check if toast appears with 'SESSION COMPACTED'"
-echo ""
-
-echo "3. Testing session.idle event..."
-echo "   (This should trigger when session becomes idle)"
-echo "   Manual verification: Check if toast appears with 'IDLE SESSION'"
-echo ""
-
-echo "4. Testing session.error event..."
-echo "   (This should trigger on session errors)"
-echo "   Manual verification: Check if toast appears with 'SESSION ERROR'"
-echo ""
-
-echo "5. Testing session.deleted event..."
-echo "   (This should trigger when session is deleted)"
-echo "   Manual verification: Check if toast appears with 'SESSION DELETED'"
-echo ""
-
-echo "=== Manual Test Instructions ==="
-echo "To fully test the E2E flow:"
-echo "1. Start a new opencode session"
-echo "2. Let it idle (triggers session.idle)"
-echo "3. Force compaction (triggers session.compacted)"
-echo "4. Delete the session (triggers session.deleted)"
-echo "5. Check $LOG_FILE for logged events"
-echo ""
-
-if [ -f "$LOG_FILE" ]; then
-  echo "=== Session Events Log ==="
-  cat "$LOG_FILE"
-fi
+echo "=== Running Unit Tests ==="
+npm test --silent
 
 echo ""
-echo "=== E2E Test Complete ==="
-echo "Note: Full E2E testing requires manual interaction with opencode CLI"
+echo "=== Running Lint ==="
+npm run lint --silent
+
+echo ""
+echo "=== Running Build ==="
+npm run build --silent
+
+echo ""
+echo "=== All Checks Passed ==="

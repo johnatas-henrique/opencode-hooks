@@ -1,23 +1,15 @@
 # OpenCode Hooks
 
-TypeScript plugin system for OpenCode AI providing event-driven hooks for 28 documented events.
+TypeScript plugin system for OpenCode AI with event-driven hooks.
 
-## Quick Reference
+## Commands
 
-| Command             | Description          |
-| ------------------- | -------------------- |
-| `npm run build`     | Compile TypeScript   |
-| `npm run lint`      | Run ESLint           |
-| `npm run test`      | Run all tests        |
-| `npm run test:unit` | Run unit tests       |
-| `npm run coverage`  | Full coverage report |
-
-### Single Test
-
-```bash
-NODE_OPTIONS='--experimental-vm-modules' npx jest test/events.test.ts
-NODE_OPTIONS='--experimental-vm-modules' npx jest -t "session.created"
-```
+| Command             | Description             |
+| ------------------- | ----------------------- |
+| `npm run build`     | Compile TypeScript      |
+| `npm run lint`      | Run ESLint              |
+| `npm run test:unit` | Run unit tests          |
+| `npm run test:ci`   | Run tests with coverage |
 
 ## Project Structure
 
@@ -48,3 +40,23 @@ test/                      # Jest tests
 2. Delegate to `general` subagent to write to `docs/plans/`
 3. Plans must be in English with execution table
 4. Run `npm run build && npm run lint && npm run test` before committing
+
+## Git Workflow
+
+- **ALWAYS ask for permission before git commit or push**
+- Use atomic commits with conventional commits format
+
+## Release
+
+Uses Release Please (not semantic-release). Workflow runs on push to main.
+
+- Config: `release-please-config.json`
+- Workflow: `.github/workflows/release-please.yml`
+- Version scheme: 0.x.x (features bump patch, breaking changes bump minor)
+- To release: push with conventional commit messages → merge the auto-created PR
+
+## Architecture
+
+- Plugin entry: `.opencode/plugins/opencode-hooks.ts`
+- User config: `.opencode/plugins/helpers/user-events.config.ts` (ONLY FILE TO EDIT)
+- Tests: `test/` with Jest

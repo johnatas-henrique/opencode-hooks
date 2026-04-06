@@ -12,7 +12,10 @@ export interface EventHandler {
 
 const formatTime = (): string => new Date().toLocaleTimeString();
 
-const getProp = (event: Record<string, unknown>, path: string): unknown => {
+export const getProp = (
+  event: Record<string, unknown>,
+  path: string
+): unknown => {
   const parts = path.split('.');
   let current: unknown = event;
   for (const part of parts) {
@@ -68,7 +71,7 @@ export const handlers: Record<string, EventHandler> = {
   'session.error': {
     title: '====SESSION ERROR====',
     variant: 'error',
-    duration: TOAST_DURATION.TEN_SECONDS,
+    duration: TOAST_DURATION.THIRTY_SECONDS,
     defaultScript: 'session-error.sh',
     buildMessage: (event) => {
       const error = getProp(event, 'properties.error') as
@@ -145,6 +148,17 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-part-updated.sh',
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Message Id: ${toStr(getProp(event, 'properties.messageID'))}\n` +
+      `Time: ${formatTime()}`,
+  },
+
+  'message.part.delta': {
+    title: '====MESSAGE PART DELTA====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'message-part-delta.sh',
     buildMessage: (event) =>
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
       `Message Id: ${toStr(getProp(event, 'properties.messageID'))}\n` +

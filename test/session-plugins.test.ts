@@ -352,19 +352,26 @@ jest.mock('../.opencode/plugins/helpers/events', () => {
   };
 });
 
-jest.mock('../.opencode/plugins/helpers/toast-queue', () => ({
-  ...jest.requireActual('../.opencode/plugins/helpers/toast-queue'),
-  getGlobalToastQueue: jest.fn((showFn) => {
-    const queue = {
-      add: jest.fn((toast) => {
-        showFn(toast);
-      }),
-      flush: jest.fn().mockResolvedValue(undefined),
-      pending: 0,
-    };
-    return queue;
-  }),
-  resetGlobalToastQueue: jest.fn(),
+jest.mock('../.opencode/plugins/helpers/toast-queue', () => {
+  const mockQueue = {
+    add: jest.fn(),
+    flush: jest.fn().mockResolvedValue(undefined),
+    pending: 0,
+  };
+  return {
+    ...jest.requireActual('../.opencode/plugins/helpers/toast-queue'),
+    initGlobalToastQueue: jest.fn((showFn) => {
+      mockQueue.add = jest.fn((toast) => showFn(toast));
+      return mockQueue;
+    }),
+    useGlobalToastQueue: jest.fn(() => mockQueue),
+    getGlobalToastQueue: jest.fn(() => mockQueue),
+    resetGlobalToastQueue: jest.fn(),
+  };
+});
+
+jest.mock('../.opencode/plugins/helpers/show-startup-toast', () => ({
+  showStartupToast: jest.fn().mockResolvedValue(undefined),
 }));
 
 import { runScript } from '../.opencode/plugins/helpers/run-script';

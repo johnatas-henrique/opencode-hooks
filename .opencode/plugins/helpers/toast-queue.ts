@@ -1,6 +1,6 @@
 import type { TuiToast } from '@opencode-ai/plugin/tui';
 import { saveToFile } from './save-to-file';
-import { STAGGER_MS, TOAST_DURATION } from './constants';
+import { STAGGER_MS, TOAST_DURATION, DEFAULT_SESSION_ID } from './constants';
 
 export type ShowToastOptions = {
   delay?: number;
@@ -27,8 +27,14 @@ export async function showToastStaggered(
 
   activeToast = Promise.resolve(showFn(toast));
   await activeToast;
+  activeToast = null;
 }
 
+/**
+ * Creates a toast queue with staggered processing.
+ * @param showFn - Function to display the toast
+ * @param options - Configuration options (staggerMs, maxSize)
+ */
 export function createToastQueue(
   showFn: (toast: TuiToast) => void | Promise<void>,
   options: { staggerMs?: number; maxSize?: number } = {}
@@ -55,12 +61,15 @@ export function createToastQueue(
           });
           await Promise.resolve(showFn(toast));
           await new Promise<void>((resolve) => {
-            const t = setTimeout(resolve, duration);
-            activeTimers.push(t);
+            setTimeout(resolve, duration);
           });
+          if (activeTimers.length > 0) {
+            activeTimers.shift();
+          }
         }
       }
       processingLock = null;
+      activeTimers = [];
     })();
 
     await processingLock;
@@ -76,7 +85,7 @@ export function createToastQueue(
     add: (toast: TuiToast) => {
       if (queue.length >= maxSize) {
         const dropped = queue.shift();
-        logDroppedToast(dropped?.title || 'unknown');
+        logDroppedToast(dropped?.title || DEFAULT_SESSION_ID);
       }
       queue.push(toast);
       processQueue();
@@ -85,14 +94,14 @@ export function createToastQueue(
       for (const toast of toasts) {
         if (queue.length >= maxSize) {
           const dropped = queue.shift();
-          logDroppedToast(dropped?.title || 'unknown');
+          logDroppedToast(dropped?.title || DEFAULT_SESSION_ID);
         }
         queue.push(toast);
       }
       processQueue();
     },
     clear: () => {
-      queue.length = 0;
+      queue.splice(0);
       for (const t of activeTimers) clearTimeout(t);
       activeTimers = [];
     },
@@ -111,13 +120,34 @@ export function createToastQueue(
 
 let globalToastQueue: ReturnType<typeof createToastQueue> | null = null;
 
-export function getGlobalToastQueue(
+export function initGlobalToastQueue(
   showFn: (toast: TuiToast) => void | Promise<void>
-) {
+): ToastQueue {
+  globalToastQueue = createToastQueue(showFn, {
+    staggerMs: STAGGER_MS.DEFAULT,
+  });
+  return globalToastQueue;
+}
+
+export function getGlobalToastQueue(
+  showFn?: (toast: TuiToast) => void | Promise<void>
+): ToastQueue {
+  if (!globalToastQueue && showFn) {
+    return initGlobalToastQueue(showFn);
+  }
   if (!globalToastQueue) {
-    globalToastQueue = createToastQueue(showFn, {
-      staggerMs: STAGGER_MS.DEFAULT,
-    });
+    throw new Error(
+      'ToastQueue not initialized. Call initGlobalToastQueue first.'
+    );
+  }
+  return globalToastQueue;
+}
+
+export function useGlobalToastQueue(): ToastQueue {
+  if (!globalToastQueue) {
+    throw new Error(
+      'ToastQueue not initialized. Call initGlobalToastQueue first.'
+    );
   }
   return globalToastQueue;
 }
@@ -125,3 +155,5 @@ export function getGlobalToastQueue(
 export function resetGlobalToastQueue() {
   globalToastQueue = null;
 }
+
+export type ToastQueue = ReturnType<typeof createToastQueue>;

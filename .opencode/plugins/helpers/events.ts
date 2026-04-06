@@ -1,7 +1,7 @@
 import { handlers, type EventHandler } from './default-handlers';
 import { userConfig } from './user-events.config';
 import { saveToFile } from './save-to-file';
-import { DEBUG_LOG_FILE } from './constants';
+import { UNKNOWN_EVENT_LOG_FILE } from './constants';
 import type {
   ResolvedEventConfig,
   EventConfig,
@@ -69,35 +69,37 @@ function resolveToastOverride(cfg: EventConfig): ToastOverride | null {
   return null;
 }
 
+/**
+ * Resolves the toast configuration for an event, checking event config first,
+ * then falling back to default config.
+ */
 function resolveToast(
   eventCfg: EventConfig,
   defaultCfg: EventOverride | undefined
 ): boolean {
-  if (
-    typeof eventCfg === 'object' &&
-    eventCfg !== null &&
-    eventCfg.toast !== undefined
-  ) {
-    if (typeof eventCfg.toast === 'boolean') {
-      return eventCfg.toast;
+  if (typeof eventCfg === 'object' && eventCfg !== null) {
+    const toast = eventCfg.toast;
+    if (toast === undefined) {
+      return resolveDefaultToast(defaultCfg);
     }
-    if (typeof eventCfg.toast === 'object') {
-      return eventCfg.toast.enabled ?? true;
+    if (typeof toast === 'boolean') {
+      return toast;
     }
-  }
-  if (
-    defaultCfg !== null &&
-    defaultCfg !== undefined &&
-    defaultCfg.toast !== undefined
-  ) {
-    if (typeof defaultCfg.toast === 'boolean') {
-      return defaultCfg.toast;
-    }
-    if (typeof defaultCfg.toast === 'object') {
-      return defaultCfg.toast.enabled ?? true;
+    if (typeof toast === 'object') {
+      return toast.enabled ?? true;
     }
   }
-  return false;
+  return resolveDefaultToast(defaultCfg);
+}
+
+function resolveDefaultToast(defaultCfg: EventOverride | undefined): boolean {
+  if (!defaultCfg?.toast) {
+    return false;
+  }
+  if (typeof defaultCfg.toast === 'boolean') {
+    return defaultCfg.toast;
+  }
+  return defaultCfg.toast.enabled ?? true;
 }
 
 function getWithDefault(
@@ -133,6 +135,10 @@ function isEventDisabled(eventCfg: EventConfig): boolean {
   return false;
 }
 
+/**
+ * Resolves the event configuration for a given event type.
+ * Configuration precedence: user config > handler defaults > system defaults.
+ */
 export function resolveEventConfig(eventType: string): ResolvedEventConfig {
   const handler = handlers[eventType];
   const userEventConfig =
@@ -144,10 +150,13 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
   }
 
   if (userEventConfig === undefined) {
-    saveToFile({
-      content: `[WARN] Event '${eventType}' not configured. Add it to events config or set to false to disable.\n`,
-      filename: DEBUG_LOG_FILE,
-    });
+    const isTool = eventType.startsWith('tool.');
+    if (!isTool) {
+      saveToFile({
+        content: `[WARN] Event '${eventType}' not configured. Add it to events config or set to false to disable.\n`,
+        filename: UNKNOWN_EVENT_LOG_FILE,
+      });
+    }
     return {
       enabled: true,
       debug: getWithDefault(true, defaultCfg, 'debug', false),
@@ -209,6 +218,10 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
   };
 }
 
+/**
+ * Resolves the tool configuration for a given tool event and tool name.
+ * Merges event base config with tool-specific overrides.
+ */
 export function resolveToolConfig(
   toolEventType: string,
   toolName: string
@@ -248,6 +261,12 @@ export function resolveToolConfig(
 
   return {
     ...eventBase,
+    enabled: getWithDefault(
+      toolConfig,
+      defaultCfg,
+      'enabled',
+      eventBase.enabled
+    ),
     debug: getWithDefault(toolConfig, defaultCfg, 'debug', eventBase.debug),
     toast: getWithDefault(toolConfig, defaultCfg, 'toast', eventBase.toast),
     toastTitle: toastCfg?.title ?? handler?.title ?? eventBase.toastTitle,

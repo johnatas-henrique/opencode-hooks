@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+import { DEFAULT_SESSION_ID } from './constants';
 
 export interface PluginStatus {
   name: string;
@@ -73,7 +74,7 @@ function parseLogLine(line: string): PluginEntry | null {
 }
 
 function extractPluginName(entry: PluginEntry): string {
-  return entry.name || entry.path || entry.pkg || 'unknown';
+  return entry.name || entry.path || entry.pkg || DEFAULT_SESSION_ID;
 }
 
 export function getPluginStatus(): PluginStatus[] {

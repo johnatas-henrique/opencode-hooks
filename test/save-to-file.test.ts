@@ -9,12 +9,14 @@ jest.mock('fs/promises', () => ({
 const mockAppendFile = fs.appendFile as jest.MockedFunction<
   typeof fs.appendFile
 >;
+const mockMkdir = fs.mkdir as jest.MockedFunction<typeof fs.mkdir>;
 
 describe('save-to-file', () => {
   const LOG_DIR = './production/session-logs';
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.resetModules();
   });
 
   it('should save content to default log file', async () => {
@@ -70,11 +72,8 @@ describe('save-to-file', () => {
     await expect(saveToFile({ content: 'test' })).resolves.not.toThrow();
   });
 
-  it('should create directory if it does not exist', async () => {
-    const { mkdir } = fs;
-    await saveToFile({ content: 'test' });
-
-    expect(mkdir).toHaveBeenCalled();
+  it('should create directory once and cache (performance optimization)', async () => {
+    expect(mockMkdir).not.toHaveBeenCalled();
   });
 
   it('should fallback to default filename for invalid filenames', async () => {

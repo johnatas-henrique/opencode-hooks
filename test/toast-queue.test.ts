@@ -3,6 +3,8 @@ import {
   getGlobalToastQueue,
   resetGlobalToastQueue,
   showToastStaggered,
+  useGlobalToastQueue,
+  initGlobalToastQueue,
 } from '../.opencode/plugins/helpers/toast-queue';
 
 describe('toast-queue', () => {
@@ -59,6 +61,57 @@ describe('toast-queue', () => {
       await jest.runAllTimersAsync();
       await queue.flush();
     });
+
+    it('should handle flush when queue is empty', async () => {
+      const showFn = jest.fn();
+      const queue = createToastQueue(showFn);
+
+      await queue.flush();
+      expect(queue.pending).toBe(0);
+    });
+
+    it('should handle add when queue is empty and process immediately', () => {
+      const showFn = jest.fn();
+      const queue = createToastQueue(showFn, { staggerMs: 0, maxSize: 1 });
+
+      queue.add({ title: 'Test', message: 'Msg', variant: 'info' as const });
+      queue.add({ title: 'Test2', message: 'Msg2', variant: 'info' as const });
+
+      expect(queue.pending).toBeLessThanOrEqual(1);
+    });
+
+    it('should return early when processingLock exists and queue is empty', async () => {
+      const showFn = jest.fn().mockResolvedValue(undefined);
+      const queue = createToastQueue(showFn, { staggerMs: 10 });
+
+      // Add to trigger processing
+      queue.add({ title: 'Test', message: 'Msg', variant: 'info' as const });
+      // Wait for processing to start but not complete
+      await jest.advanceTimersByTimeAsync(5);
+
+      // Add again while processing (to test early return when queue is empty)
+      queue.add({ title: 'Test2', message: 'Msg2', variant: 'info' as const });
+
+      await jest.runAllTimersAsync();
+    });
+
+    it('should handle stagger option correctly', async () => {
+      const showFn = jest.fn();
+      const toast = {
+        title: 'Test',
+        message: 'Msg',
+        variant: 'info' as const,
+        duration: 10,
+      };
+
+      const p1 = showToastStaggered(showFn, toast, { stagger: true });
+      const p2 = showToastStaggered(showFn, toast, { stagger: true });
+
+      await jest.runAllTimersAsync();
+      await Promise.all([p1, p2]);
+
+      expect(showFn).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('getGlobalToastQueue', () => {
@@ -68,6 +121,20 @@ describe('toast-queue', () => {
       const queue2 = getGlobalToastQueue(showFn);
 
       expect(queue1).toBe(queue2);
+    });
+
+    it('should throw error when not initialized and no showFn provided', () => {
+      resetGlobalToastQueue();
+      expect(() => getGlobalToastQueue()).toThrow(
+        'ToastQueue not initialized. Call initGlobalToastQueue first.'
+      );
+    });
+
+    it('should initialize when showFn provided but queue not initialized', () => {
+      resetGlobalToastQueue();
+      const showFn = jest.fn();
+      const queue = getGlobalToastQueue(showFn);
+      expect(queue).toBeDefined();
     });
   });
 
@@ -87,6 +154,48 @@ describe('toast-queue', () => {
 
       const newQueue = getGlobalToastQueue(showFn);
       expect(newQueue.pending).toBe(0);
+    });
+  });
+
+  describe('useGlobalToastQueue', () => {
+    beforeEach(() => {
+      resetGlobalToastQueue();
+    });
+
+    it('should return the global queue after initialization', () => {
+      const showFn = jest.fn();
+      const queue = initGlobalToastQueue(showFn);
+
+      expect(useGlobalToastQueue()).toBe(queue);
+    });
+
+    it('should throw error when not initialized', () => {
+      resetGlobalToastQueue();
+      expect(() => useGlobalToastQueue()).toThrow(
+        'ToastQueue not initialized. Call initGlobalToastQueue first.'
+      );
+    });
+  });
+
+  describe('initGlobalToastQueue', () => {
+    it('should initialize the global queue', () => {
+      const showFn = jest.fn();
+      const queue = initGlobalToastQueue(showFn);
+
+      expect(queue).toBeDefined();
+      expect(useGlobalToastQueue()).toBe(queue);
+    });
+
+    it('should create a new queue on each call (does not reuse)', () => {
+      const showFn = jest.fn();
+      const queue1 = initGlobalToastQueue(showFn);
+
+      // Add something to queue1
+      queue1.add({ title: 'Test', message: 'Msg', variant: 'info' as const });
+
+      // initGlobalToastQueue creates a new queue (doesn't reuse)
+      const queue2 = initGlobalToastQueue(showFn);
+      expect(queue2.pending).toBe(0);
     });
   });
 

@@ -7,31 +7,30 @@ export const userConfig: UserEventsConfig = {
 
   default: {
     debug: false,
-    toast: true,
+    toast: false,
     runScripts: false,
     runOnlyOnce: false,
     saveToFile: true,
-    appendToSession: true,
+    appendToSession: false,
   },
 
   events: {
-    [EventType.TOOL_EXECUTE_AFTER]: { runScripts: false, toast: false },
-    [EventType.TOOL_EXECUTE_BEFORE]: { runScripts: false, toast: false },
+    [EventType.TOOL_EXECUTE_AFTER]: false,
+    [EventType.TOOL_EXECUTE_BEFORE]: false,
 
     [EventType.SERVER_CONNECTED]: { toast: { variant: 'success' } },
-    [EventType.SERVER_INSTANCE_DISPOSED]: {
-      scripts: ['session-closed.sh'],
-      toast: false,
-    },
+    [EventType.SERVER_INSTANCE_DISPOSED]: { scripts: ['session-closed.sh'] },
+
     [EventType.SESSION_CREATED]: {
+      toast: { variant: 'success' },
       runScripts: true,
       runOnlyOnce: true,
-      toast: { variant: 'success' },
+      appendToSession: true,
     },
     [EventType.SESSION_COMPACTED]: {
+      toast: { duration: TOAST_DURATION.FIVE_SECONDS, variant: 'warning' },
       scripts: ['pre-compact.sh'],
       runScripts: true,
-      toast: { duration: TOAST_DURATION.FIVE_SECONDS, variant: 'warning' },
     },
     [EventType.SESSION_DELETED]: { enabled: false },
     [EventType.SESSION_DIFF]: { enabled: false },
@@ -73,8 +72,20 @@ export const userConfig: UserEventsConfig = {
   tools: {
     [EventType.TOOL_EXECUTE_AFTER]: {
       task: {
+        enabled: true,
         toast: {
+          enabled: true,
           title: '====SUBAGENT====',
+          duration: TOAST_DURATION.FIVE_SECONDS,
+        },
+        scripts: ['log-agent.sh'],
+        runScripts: true,
+      },
+      skill: {
+        enabled: true,
+        toast: {
+          enabled: true,
+          title: '====SKILL====',
           duration: TOAST_DURATION.FIVE_SECONDS,
         },
         scripts: ['log-agent.sh'],
@@ -92,7 +103,6 @@ export const userConfig: UserEventsConfig = {
       webfetch: { toast: { title: '====WEB FETCH====' } },
       websearch: { toast: { title: '====WEB SEARCH====' } },
       codesearch: { toast: { title: '====CODE SEARCH====' } },
-      skill: { toast: { title: '====SKILL====' } },
       todowrite: { toast: { title: '====TODO WRITE====' } },
       todoread: { toast: { title: '====TODO READ====' } },
       question: { toast: { title: '====QUESTION====' } },
@@ -109,7 +119,26 @@ export const userConfig: UserEventsConfig = {
       gh_grep_searchGitHub: { toast: { title: '====GH SEARCH====' } },
     },
     [EventType.TOOL_EXECUTE_BEFORE]: {
-      task: { toast: { title: '====SUBAGENT====' } },
+      task: {
+        enabled: true,
+        toast: {
+          enabled: true,
+          title: '====SUBAGENT====',
+          duration: TOAST_DURATION.FIVE_SECONDS,
+        },
+        scripts: ['log-agent.sh'],
+        runScripts: true,
+      },
+      skill: {
+        enabled: true,
+        toast: {
+          enabled: true,
+          title: '====SKILL====',
+          duration: TOAST_DURATION.FIVE_SECONDS,
+        },
+        scripts: ['log-agent.sh'],
+        runScripts: true,
+      },
       chat: { toast: { title: '====CHAT====' } },
       read: { toast: { title: '====FILE READ====' } },
       write: { toast: { title: '====FILE WRITE====' } },
@@ -122,7 +151,6 @@ export const userConfig: UserEventsConfig = {
       webfetch: { toast: { title: '====WEB FETCH====' } },
       websearch: { toast: { title: '====WEB SEARCH====' } },
       codesearch: { toast: { title: '====CODE SEARCH====' } },
-      skill: { toast: { title: '====SKILL====' } },
       todowrite: { toast: { title: '====TODO WRITE====' } },
       todoread: { toast: { title: '====TODO READ====' } },
       question: { toast: { title: '====QUESTION====' } },

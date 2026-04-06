@@ -1,0 +1,132 @@
+import {
+  logEventConfig,
+  logScriptOutput,
+} from '../.opencode/plugins/helpers/log-event';
+
+jest.mock('../.opencode/plugins/helpers/save-to-file', () => ({
+  saveToFile: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../.opencode/plugins/helpers/toast-queue', () => {
+  const mockQueue = {
+    add: jest.fn(),
+    addMultiple: jest.fn(),
+    clear: jest.fn(),
+    flush: jest.fn().mockResolvedValue(undefined),
+    pending: 0,
+  };
+  return {
+    createToastQueue: jest.fn(() => mockQueue),
+    initGlobalToastQueue: jest.fn(() => mockQueue),
+    useGlobalToastQueue: jest.fn(() => mockQueue),
+    getGlobalToastQueue: jest.fn(() => mockQueue),
+    resetGlobalToastQueue: jest.fn(),
+  };
+});
+
+const mockSaveToFile =
+  require('../.opencode/plugins/helpers/save-to-file').saveToFile;
+
+describe('logEventConfig', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    const {
+      resetGlobalToastQueue,
+    } = require('../.opencode/plugins/helpers/toast-queue');
+    resetGlobalToastQueue();
+  });
+  it('should save config when saveToFile is true', async () => {
+    const resolved = {
+      enabled: true,
+      debug: false,
+      toast: true,
+      toastTitle: 'Test',
+      toastMessage: 'Test message',
+      toastVariant: 'info' as const,
+      toastDuration: 2000,
+      scripts: ['test.sh'],
+      saveToFile: true,
+      appendToSession: false,
+      runOnlyOnce: false,
+    };
+
+    await logEventConfig(
+      '2026-04-04T22:00:00.000Z',
+      'session.created',
+      resolved
+    );
+
+    expect(mockSaveToFile).toHaveBeenCalledWith({
+      content: expect.stringContaining('session.created'),
+      showToast: expect.any(Function),
+    });
+  });
+
+  it('should not save when saveToFile is false', async () => {
+    const resolved = {
+      enabled: true,
+      debug: false,
+      toast: true,
+      toastTitle: 'Test',
+      toastMessage: 'Test message',
+      toastVariant: 'info' as const,
+      toastDuration: 2000,
+      scripts: [],
+      saveToFile: false,
+      appendToSession: false,
+      runOnlyOnce: false,
+    };
+
+    await logEventConfig(
+      '2026-04-04T22:00:00.000Z',
+      'session.created',
+      resolved
+    );
+
+    expect(mockSaveToFile).not.toHaveBeenCalled();
+  });
+
+  it('should skip message.* events', async () => {
+    const resolved = {
+      enabled: true,
+      debug: false,
+      toast: true,
+      toastTitle: 'Test',
+      toastMessage: 'Test message',
+      toastVariant: 'info' as const,
+      toastDuration: 2000,
+      scripts: [],
+      saveToFile: true,
+      appendToSession: false,
+      runOnlyOnce: false,
+    };
+
+    await logEventConfig(
+      '2026-04-04T22:00:00.000Z',
+      'message.created',
+      resolved
+    );
+
+    expect(mockSaveToFile).not.toHaveBeenCalled();
+  });
+});
+
+describe('logScriptOutput', () => {
+  it('should save script output', async () => {
+    await logScriptOutput('2026-04-04T22:00:00.000Z', 'Script output');
+
+    expect(mockSaveToFile).toHaveBeenCalledWith({
+      content: '[2026-04-04T22:00:00.000Z] Script output\n',
+      showToast: expect.any(Function),
+    });
+  });
+
+  it('should save empty output', async () => {
+    await logScriptOutput('2026-04-04T22:00:00.000Z', '');
+
+    expect(mockSaveToFile).toHaveBeenCalledWith({
+      content: '[2026-04-04T22:00:00.000Z] \n',
+      showToast: expect.any(Function),
+    });
+  });
+});

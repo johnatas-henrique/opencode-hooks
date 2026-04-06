@@ -12,7 +12,8 @@ mkdir -p "$SESSION_LOG_DIR" 2>/dev/null
 RECENT_COMMITS=""
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1 && \
    git rev-parse HEAD >/dev/null 2>&1; then
-    RECENT_COMMITS=$(git log --oneline --since="8 hours ago" 2>/dev/null || true)
+    SINCE_DATE=$(date -u -d '8 hours ago' +%Y-%m-%dT%H:%M:%S)
+    RECENT_COMMITS=$(git log --oneline --since="$SINCE_DATE" 2>/dev/null || true)
 fi
 MODIFIED_FILES=$(git diff --name-only 2>/dev/null || true)
 
