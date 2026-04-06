@@ -1,3 +1,5 @@
+export const DEFAULT_SESSION_ID = 'unknown';
+
 export const TOAST_DURATION = {
   TWO_SECONDS: 2000,
   FIVE_SECONDS: 5000,
@@ -23,5 +25,3 @@ export const LOG_DIR = './production/session-logs';
 export const SCRIPTS_DIR = '.opencode/scripts';
 
 export const MAX_PROMPT_LENGTH = 10000;
-
-export const RUN_ONCE_TTL_HOURS = 24;
