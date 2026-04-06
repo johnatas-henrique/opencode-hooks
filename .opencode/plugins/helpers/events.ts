@@ -144,10 +144,13 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
   }
 
   if (userEventConfig === undefined) {
-    saveToFile({
-      content: `[WARN] Event '${eventType}' not configured. Add it to events config or set to false to disable.\n`,
-      filename: UNKNOWN_EVENT_LOG_FILE,
-    });
+    const isTool = eventType.includes('tool.');
+    if (!isTool) {
+      saveToFile({
+        content: `[WARN] Event '${eventType}' not configured. Add it to events config or set to false to disable.\n`,
+        filename: UNKNOWN_EVENT_LOG_FILE,
+      });
+    }
     return {
       enabled: true,
       debug: getWithDefault(true, defaultCfg, 'debug', false),
