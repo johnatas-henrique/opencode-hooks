@@ -36,7 +36,7 @@ import {
 import { showStartupToast } from './show-startup-toast';
 import { logEventConfig, logScriptOutput } from './log-event';
 import {
-  isPrimarySession,
+  isPrimarySession as isSessionPrimary,
   getPrimarySessionId,
   resetSessionTracking,
 } from './session';
@@ -66,7 +66,7 @@ export {
   showStartupToast,
   logEventConfig,
   logScriptOutput,
-  isPrimarySession,
+  isSessionPrimary,
   getPrimarySessionId,
   resetSessionTracking,
 };
