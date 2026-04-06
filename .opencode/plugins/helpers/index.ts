@@ -1,5 +1,6 @@
 import { saveToFile, type ToastCallback } from './save-to-file';
 import { runScript } from './run-script';
+import { runScriptAndHandle } from './run-script-handler';
 import { appendToSession } from './append-to-session';
 import { handleDebugLog } from './debug';
 import {
@@ -11,7 +12,7 @@ import {
   resetGlobalToastQueue,
   type ToastQueue,
 } from './toast-queue';
-import { handlers, type EventHandler } from './default-handlers';
+import { handlers, getProp, type EventHandler } from './default-handlers';
 import {
   resolveEventConfig,
   resolveToolConfig,
@@ -34,10 +35,17 @@ import {
 } from './toast-silence-detector';
 import { showStartupToast } from './show-startup-toast';
 import { logEventConfig, logScriptOutput } from './log-event';
+import {
+  isPrimarySession,
+  getPrimarySessionId,
+  resetSessionTracking,
+} from './session';
+import type { RunScriptConfig } from './run-script-types';
 
 export {
   saveToFile,
   runScript,
+  runScriptAndHandle,
   appendToSession,
   handleDebugLog,
   showToastStaggered,
@@ -47,6 +55,7 @@ export {
   getGlobalToastQueue,
   resetGlobalToastQueue,
   handlers,
+  getProp,
   resolveEventConfig,
   resolveToolConfig,
   getHandler,
@@ -57,6 +66,9 @@ export {
   showStartupToast,
   logEventConfig,
   logScriptOutput,
+  isPrimarySession,
+  getPrimarySessionId,
+  resetSessionTracking,
 };
 export type {
   EventHandler,
@@ -69,4 +81,5 @@ export type {
   UserEventsConfig,
   ToastCallback,
   ToastQueue,
+  RunScriptConfig,
 };

@@ -12,7 +12,10 @@ export interface EventHandler {
 
 const formatTime = (): string => new Date().toLocaleTimeString();
 
-const getProp = (event: Record<string, unknown>, path: string): unknown => {
+export const getProp = (
+  event: Record<string, unknown>,
+  path: string
+): unknown => {
   const parts = path.split('.');
   let current: unknown = event;
   for (const part of parts) {
