@@ -2,13 +2,17 @@ import { runScript } from './run-script';
 import { appendToSession } from './append-to-session';
 import { logScriptOutput } from './log-event';
 import { useGlobalToastQueue } from './toast-queue';
-import { TOAST_DURATION } from './constants';
-import { isPrimarySession } from './session';
+import { TOAST_DURATION, DEFAULT_SESSION_ID } from './constants';
+import { isPrimarySession as isSessionPrimary } from './session';
 import type { RunScriptConfig } from './run-script-types';
 import { saveToFile } from './save-to-file';
 
 const runOnceTracker = new Map<string, boolean>();
 
+/**
+ * Runs a script and handles its output, logging, and error management.
+ * @param config - Configuration object containing script details and context
+ */
 export async function runScriptAndHandle(
   config: RunScriptConfig
 ): Promise<void> {
@@ -19,7 +23,7 @@ export async function runScriptAndHandle(
     timestamp,
     eventType,
     resolved,
-    sessionId,
+    sessionId = DEFAULT_SESSION_ID,
   } = config;
 
   const { $ } = ctx;
@@ -42,7 +46,10 @@ export async function runScriptAndHandle(
       await appendToSession(ctx, sessionId, output);
     }
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
+    const rawError = err instanceof Error ? err.message : String(err);
+    const errorMessage = rawError.replace(/[^\x20-\x7E\n]/g, (c) =>
+      c.charCodeAt(0) < 32 ? '?' : c
+    );
 
     await saveToFile({
       content: `[${timestamp}] - Script error: ${script} - ${errorMessage}\n`,
@@ -57,7 +64,7 @@ export async function runScriptAndHandle(
     });
   }
 
-  if (resolved.runOnlyOnce && isPrimarySession(sessionId)) {
+  if (resolved.runOnlyOnce && isSessionPrimary(sessionId)) {
     runOnceTracker.set(runOnceKey, true);
   }
 }
