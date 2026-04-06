@@ -1,74 +1,48 @@
+# Code Review Fixes Plan
+
+## Objective
+
+Fix critical and major code quality issues identified in the TypeScript review for branch `refactor/remove-env-check` before merging to main.
+
+---
+
 ## Execution
 
-| Step                                                | Status | Timestamp        |
-| --------------------------------------------------- | ------ | ---------------- |
-| 1. Extract magic numbers to constants.ts            | ✅     | 2026-04-03 23:15 |
-| 2. Add cleanup function for checkOverwriteTimer     | ✅     | 2026-04-03 23:15 |
-| 3. Add TTL to runOnceTracker to prevent memory leak | ✅     | 2026-04-03 23:20 |
-| 4. Add logging for silent catch blocks              | ✅     | 2026-04-03 23:25 |
-| 5. Verify build and tests pass                      | ✅     | 2026-04-03 23:26 |
+| Step                                            | Status | Timestamp               |
+| ----------------------------------------------- | ------ | ----------------------- |
+| 1. Fix immutability violation in toast-queue.ts | ✅     | 2026-04-06 00:20 -03:00 |
+| 2. Fix error handling in run-script-handler.ts  | ✅     | 2026-04-06 00:21 -03:00 |
+| 3. Refactor deep nesting in events.ts           | ✅     | 2026-04-06 00:25 -03:00 |
+| 4. Fix magic numbers in save-to-file.ts         | ✅     | 2026-04-06 00:20 -03:00 |
+| 5. Clean up unused constants in constants.ts    | ✅     | 2026-04-06 00:20 -03:00 |
+| 6. Fix boolean function naming in session.ts    | ✅     | 2026-04-06 00:20 -03:00 |
+| 7. Add JSDoc to complex functions               | ✅     | 2026-04-06 00:26 -03:00 |
+| 8. Extract 'unknown' magic string to constant   | ✅     | 2026-04-06 00:20 -03:00 |
+| 9. Fix null check redundancy in events.ts       | ✅     | 2026-04-06 00:25 -03:00 |
+| 10. Fix toast queue memory leak potential       | ✅     | 2026-04-06 00:20 -03:00 |
+| 11. Build, lint, test                           | ✅     | 2026-04-06 00:27 -03:00 |
 
-## Overview
+---
 
-Fix issues identified in code review.
+## Summary
 
-## Details
+- **Tests:** 304 passing (96.96% coverage)
+- **Build:** ✅ Pass
+- **Lint:** ✅ Pass
+- **Files Modified:** 7 files
 
-### 1. Extract magic numbers to constants.ts (Medium Priority)
+---
 
-Move hardcoded values to constants file:
+## Changes Applied
 
-- 5000 (toast duration)
-- 3000 (timer duration)
-- 1000 (setTimeout delay)
-- 300 (toast stagger)
-- 500 (staggerMs)
+1. **constants.ts** - Added DEFAULT_SESSION_ID, removed unused constants
+2. **opencode-hooks.ts** - Use DEFAULT_SESSION_ID constant
+3. **toast-queue.ts** - Fix immutability, memory leak, use constant
+4. **plugin-status.ts** - Use DEFAULT_SESSION_ID constant
+5. **events.ts** - Refactor deep nesting, add JSDoc
+6. **run-script-handler.ts** - Add error sanitization, JSDoc
+7. **index.ts** - Rename isPrimarySession to isSessionPrimary
 
-Add to .opencode/plugins/helpers/constants.ts
+---
 
-### 2. Add cleanup function for checkOverwriteTimer (High Priority)
-
-Current issue in opencode-hooks.ts:
-
-```typescript
-let checkOverwriteTimer: ReturnType<typeof setTimeout> | null = null;
-```
-
-The timer is never cleared. Add a cleanup function that runs when plugin is disposed:
-
-- Clear the timer in a cleanup/return function
-- Ensure no timer leaks when plugin reloads
-
-### 3. Add TTL to runOnceTracker (Medium Priority)
-
-Current issue:
-
-```typescript
-const runOnceTracker = new Map<string, boolean>();
-```
-
-This Map grows indefinitely. Add a simple TTL mechanism:
-
-- Store timestamp with value: Map<string, { value: boolean, timestamp: number }>
-- Clean up entries older than 24 hours periodically
-
-### 4. Add logging for silent catch blocks (Medium Priority)
-
-Current code in opencode-hooks.ts:
-
-```typescript
-} catch {
-  // Silent fail - startup toast should not break plugin
-}
-```
-
-Add minimal logging instead of silent fail:
-
-```typescript
-} catch (err) {
-  // Log but don't break plugin
-  console.error('Startup toast error:', err);
-}
-```
-
-Created: 2026-04-03 23:10
+_Plan completed on 2026-04-06 00:27 -03:00_
