@@ -32,6 +32,9 @@ import {
 } from './helpers/constants';
 import type { ResolvedEventConfig } from './helpers/event-types';
 
+const TASK_TOOL_NAME = 'task';
+const SUBAGENT_TYPE_ARG = 'subagent_type';
+
 interface ExecuteHookParams {
   ctx: PluginInput;
   eventType: string;
@@ -243,7 +246,7 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: 'tool.execute.before',
         resolved,
-        sessionId: input.sessionID || DEFAULT_SESSION_ID,
+        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
         toolName: input.tool,
@@ -257,18 +260,19 @@ export const OpencodeHooks: Plugin = async (
     ) => {
       const resolved = resolveToolConfig('tool.execute.after', input.tool);
 
+      const isTaskTool = input.tool === TASK_TOOL_NAME;
       const subagentType =
-        input.tool === 'task' && typeof input.args.subagent_type === 'string'
-          ? input.args.subagent_type
+        isTaskTool && typeof input.args[SUBAGENT_TYPE_ARG] === 'string'
+          ? input.args[SUBAGENT_TYPE_ARG]
           : '';
 
-      const showToast = input.tool === 'task' && !!subagentType;
+      const showToast = isTaskTool && !!subagentType;
 
       await executeHook({
         ctx,
         eventType: 'tool.execute.after',
         resolved,
-        sessionId: input.sessionID,
+        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
         input: { ...input, subagentType } as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
         toolName: input.tool,
@@ -310,7 +314,7 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: 'chat.message',
         resolved,
-        sessionId: input.sessionID,
+        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
       });
@@ -337,7 +341,7 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: 'chat.params',
         resolved,
-        sessionId: input.sessionID,
+        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
       });
@@ -359,7 +363,7 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: 'chat.headers',
         resolved,
-        sessionId: input.sessionID,
+        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
       });
@@ -391,7 +395,7 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: 'command.execute.before',
         resolved,
-        sessionId: input.sessionID,
+        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
       });
@@ -441,7 +445,7 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: 'experimental.session.compacting',
         resolved,
-        sessionId: input.sessionID,
+        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
       });
@@ -457,7 +461,7 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: 'experimental.text.complete',
         resolved,
-        sessionId: input.sessionID,
+        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
       });
