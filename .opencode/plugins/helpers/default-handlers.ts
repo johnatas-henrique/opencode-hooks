@@ -154,6 +154,17 @@ export const handlers: Record<string, EventHandler> = {
       `Time: ${formatTime()}`,
   },
 
+  'message.part.delta': {
+    title: '====MESSAGE PART DELTA====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'message-part-delta.sh',
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Message Id: ${toStr(getProp(event, 'properties.messageID'))}\n` +
+      `Time: ${formatTime()}`,
+  },
+
   'message.removed': {
     title: '====MESSAGE REMOVED====',
     variant: 'warning',
