@@ -61,12 +61,15 @@ export function createToastQueue(
           });
           await Promise.resolve(showFn(toast));
           await new Promise<void>((resolve) => {
-            const t = setTimeout(resolve, duration);
-            activeTimers.push(t);
+            setTimeout(resolve, duration);
           });
+          if (activeTimers.length > 0) {
+            activeTimers.shift();
+          }
         }
       }
       processingLock = null;
+      activeTimers = [];
     })();
 
     await processingLock;

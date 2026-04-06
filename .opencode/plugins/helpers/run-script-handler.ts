@@ -3,7 +3,6 @@ import { appendToSession } from './append-to-session';
 import { logScriptOutput } from './log-event';
 import { useGlobalToastQueue } from './toast-queue';
 import { TOAST_DURATION, DEFAULT_SESSION_ID } from './constants';
-import { isPrimarySession as isSessionPrimary } from './session';
 import type { RunScriptConfig } from './run-script-types';
 import { saveToFile } from './save-to-file';
 
@@ -29,8 +28,11 @@ export async function runScriptAndHandle(
   const { $ } = ctx;
   const runOnceKey = `${eventType}:${script}`;
 
-  if (resolved.runOnlyOnce && runOnceTracker.has(runOnceKey)) {
-    return;
+  if (resolved.runOnlyOnce) {
+    if (runOnceTracker.has(runOnceKey)) {
+      return;
+    }
+    runOnceTracker.set(runOnceKey, true);
   }
 
   try {
@@ -62,10 +64,6 @@ export async function runScriptAndHandle(
       variant: 'error',
       duration: TOAST_DURATION.FIVE_SECONDS,
     });
-  }
-
-  if (resolved.runOnlyOnce && isSessionPrimary(sessionId)) {
-    runOnceTracker.set(runOnceKey, true);
   }
 }
 

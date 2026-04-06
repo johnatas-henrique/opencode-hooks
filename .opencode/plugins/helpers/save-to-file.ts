@@ -8,6 +8,8 @@ export type ToastCallback = (params: {
   duration?: number;
 }) => void | Promise<void>;
 
+let dirCreated = false;
+
 const isValidFilename = (filename: string): boolean => {
   if (!filename || typeof filename !== 'string') return false;
   if (filename.length > 255) return false;
@@ -31,7 +33,10 @@ export const saveToFile = async ({
   try {
     const validFilename = isValidFilename(filename) ? filename : LOG_FILE;
     const contentTrimmed = content.trim().replace(/^\s+/gm, '') + '\n';
-    await mkdir(LOG_DIR, { recursive: true });
+    if (!dirCreated) {
+      await mkdir(LOG_DIR, { recursive: true });
+      dirCreated = true;
+    }
     await appendFile(`${LOG_DIR}/${validFilename}`, contentTrimmed);
   } catch (error) {
     if (showToast) {
