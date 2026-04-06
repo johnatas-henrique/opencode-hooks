@@ -144,7 +144,7 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
   }
 
   if (userEventConfig === undefined) {
-    const isTool = eventType.includes('tool.');
+    const isTool = eventType.startsWith('tool.');
     if (!isTool) {
       saveToFile({
         content: `[WARN] Event '${eventType}' not configured. Add it to events config or set to false to disable.\n`,
@@ -251,6 +251,12 @@ export function resolveToolConfig(
 
   return {
     ...eventBase,
+    enabled: getWithDefault(
+      toolConfig,
+      defaultCfg,
+      'enabled',
+      eventBase.enabled
+    ),
     debug: getWithDefault(toolConfig, defaultCfg, 'debug', eventBase.debug),
     toast: getWithDefault(toolConfig, defaultCfg, 'toast', eventBase.toast),
     toastTitle: toastCfg?.title ?? handler?.title ?? eventBase.toastTitle,
