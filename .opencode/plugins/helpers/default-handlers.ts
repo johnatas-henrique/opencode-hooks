@@ -379,4 +379,103 @@ export const handlers: Record<string, EventHandler> = {
       `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
       `Time: ${formatTime()}`,
   },
+
+  'chat.message': {
+    title: '====CHAT MESSAGE====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'chat-message.sh',
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'sessionID'))}\n` +
+      `Agent: ${toStr(getProp(event, 'agent'))}\n` +
+      `Message Id: ${toStr(getProp(event, 'messageID'))}\n` +
+      `Time: ${formatTime()}`,
+  },
+
+  'chat.params': {
+    title: '====CHAT PARAMS====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'chat-params.sh',
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'sessionID'))}\n` +
+      `Agent: ${toStr(getProp(event, 'agent'))}\n` +
+      `Model: ${toStr(getProp(event, 'model.modelID'))}\n` +
+      `Time: ${formatTime()}`,
+  },
+
+  'chat.headers': {
+    title: '====CHAT HEADERS====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'chat-headers.sh',
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'sessionID'))}\n` +
+      `Agent: ${toStr(getProp(event, 'agent'))}\n` +
+      `Time: ${formatTime()}`,
+  },
+
+  'permission.ask': {
+    title: '====PERMISSION ASK====',
+    variant: 'warning',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'permission-ask.sh',
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'sessionID'))}\n` +
+      `Tool: ${toStr(getProp(event, 'tool'))}\n` +
+      `Time: ${formatTime()}`,
+  },
+
+  'command.execute.before': {
+    title: '====COMMAND EXECUTE BEFORE====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'command-execute-before.sh',
+    buildMessage: (event) =>
+      `Command: ${toStr(getProp(event, 'command'))}\n` +
+      `Session Id: ${toStr(getProp(event, 'sessionID'))}\n` +
+      `Time: ${formatTime()}`,
+  },
+
+  'experimental.chat.messages.transform': {
+    title: '====CHAT MESSAGES TRANSFORM====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'experimental-chat-messages-transform.sh',
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'sessionID'))}\n` +
+      `Time: ${formatTime()}`,
+  },
+
+  'experimental.chat.system.transform': {
+    title: '====CHAT SYSTEM TRANSFORM====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'experimental-chat-system-transform.sh',
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'sessionID'))}\n` +
+      `Model: ${toStr(getProp(event, 'model.modelID'))}\n` +
+      `Time: ${formatTime()}`,
+  },
+
+  'experimental.text.complete': {
+    title: '====TEXT COMPLETE====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'experimental-text-complete.sh',
+    buildMessage: (event) =>
+      `Session Id: ${toStr(getProp(event, 'sessionID'))}\n` +
+      `Message Id: ${toStr(getProp(event, 'messageID'))}\n` +
+      `Part Id: ${toStr(getProp(event, 'partID'))}\n` +
+      `Time: ${formatTime()}`,
+  },
+
+  'tool.definition': {
+    title: '====TOOL DEFINITION====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'tool-definition.sh',
+    buildMessage: (event) =>
+      `Tool Id: ${toStr(getProp(event, 'toolID'))}\n` + `Time: ${formatTime()}`,
+  },
 };
