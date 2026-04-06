@@ -69,35 +69,37 @@ function resolveToastOverride(cfg: EventConfig): ToastOverride | null {
   return null;
 }
 
+/**
+ * Resolves the toast configuration for an event, checking event config first,
+ * then falling back to default config.
+ */
 function resolveToast(
   eventCfg: EventConfig,
   defaultCfg: EventOverride | undefined
 ): boolean {
-  if (
-    typeof eventCfg === 'object' &&
-    eventCfg !== null &&
-    eventCfg.toast !== undefined
-  ) {
-    if (typeof eventCfg.toast === 'boolean') {
-      return eventCfg.toast;
+  if (typeof eventCfg === 'object' && eventCfg !== null) {
+    const toast = eventCfg.toast;
+    if (toast === undefined) {
+      return resolveDefaultToast(defaultCfg);
     }
-    if (typeof eventCfg.toast === 'object') {
-      return eventCfg.toast.enabled ?? true;
+    if (typeof toast === 'boolean') {
+      return toast;
     }
-  }
-  if (
-    defaultCfg !== null &&
-    defaultCfg !== undefined &&
-    defaultCfg.toast !== undefined
-  ) {
-    if (typeof defaultCfg.toast === 'boolean') {
-      return defaultCfg.toast;
-    }
-    if (typeof defaultCfg.toast === 'object') {
-      return defaultCfg.toast.enabled ?? true;
+    if (typeof toast === 'object') {
+      return toast.enabled ?? true;
     }
   }
-  return false;
+  return resolveDefaultToast(defaultCfg);
+}
+
+function resolveDefaultToast(defaultCfg: EventOverride | undefined): boolean {
+  if (!defaultCfg?.toast) {
+    return false;
+  }
+  if (typeof defaultCfg.toast === 'boolean') {
+    return defaultCfg.toast;
+  }
+  return defaultCfg.toast.enabled ?? true;
 }
 
 function getWithDefault(
@@ -133,6 +135,10 @@ function isEventDisabled(eventCfg: EventConfig): boolean {
   return false;
 }
 
+/**
+ * Resolves the event configuration for a given event type.
+ * Configuration precedence: user config > handler defaults > system defaults.
+ */
 export function resolveEventConfig(eventType: string): ResolvedEventConfig {
   const handler = handlers[eventType];
   const userEventConfig =
@@ -212,6 +218,10 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
   };
 }
 
+/**
+ * Resolves the tool configuration for a given tool event and tool name.
+ * Merges event base config with tool-specific overrides.
+ */
 export function resolveToolConfig(
   toolEventType: string,
   toolName: string
