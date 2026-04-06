@@ -29,10 +29,6 @@ jest.mock('../.opencode/plugins/helpers/append-to-session', () => ({
   appendToSession: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../.opencode/plugins/helpers/debug', () => ({
-  handleDebugLog: jest.fn().mockResolvedValue(undefined),
-}));
-
 jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
   handlers: {
     'session.created': {
