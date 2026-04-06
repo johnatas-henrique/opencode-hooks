@@ -18,6 +18,10 @@ import {
   runScriptAndHandle,
 } from './helpers';
 import { userConfig } from './helpers/user-events.config';
+import {
+  UNKNOWN_EVENT_LOG_FILE,
+  DEFAULT_SESSION_ID,
+} from './helpers/constants';
 
 let hasShownToast = false;
 
@@ -59,6 +63,15 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
   return {
     event: async ({ event }) => {
       const timestamp = new Date().toISOString();
+      const isKnownEvent = !!handlers[event.type];
+      if (!isKnownEvent) {
+        await saveToFile({
+          content: `===================UNKNOWN EVENT======================\n
+          [${timestamp}] - [WARN] Event: ${event.type} is not configured.\n${JSON.stringify(event, null, 2)}\n\n`,
+          showToast: useGlobalToastQueue().add,
+          filename: UNKNOWN_EVENT_LOG_FILE,
+        });
+      }
       const resolved = resolveEventConfig(event.type);
 
       if (resolved.debug) {
@@ -93,7 +106,8 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         const props = event.properties as Record<string, unknown>;
         const info = props?.info as Record<string, unknown> | undefined;
         const rawId = info?.id ?? props?.sessionID;
-        const sessionId = typeof rawId === 'string' ? rawId : 'unknown';
+        const sessionId =
+          typeof rawId === 'string' ? rawId : DEFAULT_SESSION_ID;
 
         await runScriptAndHandle({
           ctx,
@@ -112,6 +126,15 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
     ) {
       const timestamp = new Date().toISOString();
       const resolved = resolveToolConfig('tool.execute.before', input.tool);
+      await saveToFile({
+        content: `
+        |=================================Tool Execute After Hook Triggered=================================|\n
+        [${timestamp}] - Tool: ${input.tool}
+        Arguments: ${JSON.stringify(input)}\n
+        Resolved Config: ${JSON.stringify(resolved, null, 2)}
+        \n
+        `,
+      });
 
       if (resolved.debug) {
         await handleDebugLog(timestamp, 'DEBUG TOOL.BEFORE', {
@@ -123,7 +146,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       if (!resolved.enabled) return;
 
       if (resolved.toast) {
-        const message = `Session Id: ${input.sessionID || 'unknown'}\nTool: ${input.tool}\nTime: ${new Date().toLocaleTimeString()}`;
+        const message = `Session Id: ${input.sessionID || DEFAULT_SESSION_ID}\nTool: ${input.tool}\nTime: ${new Date().toLocaleTimeString()}`;
         useGlobalToastQueue().add({
           title: resolved.toastTitle,
           message: (resolved.toastMessage ?? message)
@@ -143,7 +166,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
           timestamp,
           eventType: 'tool.execute.before',
           resolved,
-          sessionId: input.sessionID || 'unknown',
+          sessionId: input.sessionID || DEFAULT_SESSION_ID,
         });
       }
     },
@@ -154,7 +177,15 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
     ) => {
       const timestamp = new Date().toISOString();
       const resolved = resolveToolConfig('tool.execute.after', input.tool);
-
+      await saveToFile({
+        content: `
+        |=================================Tool Execute Before Hook Triggered=================================|\n
+        [${timestamp}] - Tool: ${input.tool}
+        Arguments: ${JSON.stringify(input)}\n
+        Resolved Config: ${JSON.stringify(resolved, null, 2)}
+        \n
+        `,
+      });
       if (resolved.debug) {
         await handleDebugLog(timestamp, 'DEBUG TOOL.AFTER', {
           input,
@@ -224,7 +255,7 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
           timestamp,
           eventType: 'shell.env',
           resolved,
-          sessionId: 'unknown',
+          sessionId: DEFAULT_SESSION_ID,
         });
       }
     },
