@@ -6,82 +6,23 @@ import {
   ToolExecuteBeforeOutput,
 } from './types/opencode-hooks';
 import {
-  appendToSession,
   initGlobalToastQueue,
   useGlobalToastQueue,
-  runScript,
   saveToFile,
   handlers,
   resolveEventConfig,
   resolveToolConfig,
   showStartupToast,
   logEventConfig,
-  logScriptOutput,
   handleDebugLog,
+  runScriptAndHandle,
 } from './helpers';
-import { RUN_ONCE_TTL_HOURS, TOAST_DURATION } from './helpers/constants';
 import { userConfig } from './helpers/user-events.config';
 
 let hasShownToast = false;
-type RunOnceEntry = { value: boolean; timestamp: number };
-const runOnlyOnceTracker = new Map<string, RunOnceEntry>();
-
-const getRunOnce = (eventType: string): boolean => {
-  const entry = runOnlyOnceTracker.get(eventType);
-  if (!entry) return false;
-  const ttlMs = RUN_ONCE_TTL_HOURS * 60 * 60 * 1000;
-  if (Date.now() - entry.timestamp > ttlMs) {
-    runOnlyOnceTracker.delete(eventType);
-    return false;
-  }
-  return entry.value;
-};
-
-const setRunOnce = (eventType: string) => {
-  runOnlyOnceTracker.set(eventType, { value: true, timestamp: Date.now() });
-};
-
-const formatEventInfo = (eventType: string, toolName?: string): string => {
-  if (eventType.startsWith('tool.execute.') && toolName) {
-    return toolName;
-  }
-  return eventType;
-};
-
-const runScriptAndHandle = async (
-  $: PluginInput['$'],
-  script: string,
-  arg: string,
-  timestamp: string,
-  eventType: string,
-  toolName?: string
-) => {
-  try {
-    const output = await runScript($, script, arg);
-    if (output) {
-      await saveToFile({
-        content: `[${timestamp}] ${output}\n`,
-        showToast: useGlobalToastQueue().add,
-      });
-    }
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
-    const eventInfo = formatEventInfo(eventType, toolName);
-    await saveToFile({
-      content: `[${timestamp}] - Script error: ${eventInfo} - ${script} - ${errorMessage}\n`,
-      showToast: useGlobalToastQueue().add,
-    });
-    useGlobalToastQueue().add({
-      title: '====SCRIPT ERROR====',
-      message: `Event: ${eventInfo}\nScript: ${script}\nError: ${errorMessage}\nCheck user-events.config.ts`,
-      variant: 'error',
-      duration: TOAST_DURATION.TEN_SECONDS,
-    });
-  }
-};
 
 export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
-  const { client, $ } = ctx;
+  const { client } = ctx;
 
   if (!userConfig.enabled) {
     return {
@@ -148,40 +89,20 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         });
       }
 
-      if (resolved.runOnlyOnce && getRunOnce(event.type)) {
-        return;
-      }
-
       for (const script of resolved.scripts) {
-        try {
-          const output = await runScript($, script);
-          if (resolved.saveToFile && output) {
-            await logScriptOutput(timestamp, output);
-          }
-          if (resolved.appendToSession && output) {
-            const props = event.properties as Record<string, unknown>;
-            const info = props?.info as Record<string, unknown> | undefined;
-            const rawId = info?.id ?? props?.sessionID;
-            const sessionId = typeof rawId === 'string' ? rawId : 'unknown';
-            await appendToSession(ctx, sessionId, output);
-          }
-        } catch (err) {
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          await saveToFile({
-            content: `[${timestamp}] - Script error: ${script} - ${errorMessage}\n`,
-            showToast: useGlobalToastQueue().add,
-          });
-          useGlobalToastQueue().add({
-            title: '====SCRIPT ERROR====',
-            message: `Script: ${script}\nError: ${errorMessage}\nCheck user-events.config.ts`,
-            variant: 'error',
-            duration: TOAST_DURATION.FIVE_SECONDS,
-          });
-        }
-      }
+        const props = event.properties as Record<string, unknown>;
+        const info = props?.info as Record<string, unknown> | undefined;
+        const rawId = info?.id ?? props?.sessionID;
+        const sessionId = typeof rawId === 'string' ? rawId : 'unknown';
 
-      if (resolved.runOnlyOnce && resolved.scripts.length > 0) {
-        setRunOnce(event.type);
+        await runScriptAndHandle({
+          ctx,
+          script,
+          timestamp,
+          eventType: event.type,
+          resolved,
+          sessionId,
+        });
       }
     },
 
@@ -214,14 +135,16 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       }
 
       for (const script of resolved.scripts) {
-        await runScriptAndHandle(
-          $,
+        await runScriptAndHandle({
+          ctx,
           script,
-          input.tool,
+          scriptArg: input.tool,
+          toolName: input.tool,
           timestamp,
-          'tool.execute.before',
-          input.tool
-        );
+          eventType: 'tool.execute.before',
+          resolved,
+          sessionId: input.sessionID || 'unknown',
+        });
       }
     },
 
@@ -260,25 +183,29 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
         }
 
         for (const script of resolved.scripts) {
-          await runScriptAndHandle(
-            $,
+          await runScriptAndHandle({
+            ctx,
             script,
-            subagentType,
+            scriptArg: subagentType,
+            toolName: input.tool,
             timestamp,
-            'tool.execute.after',
-            input.tool
-          );
+            eventType: 'tool.execute.after',
+            resolved,
+            sessionId: input.sessionID,
+          });
         }
       } else {
         for (const script of resolved.scripts) {
-          await runScriptAndHandle(
-            $,
+          await runScriptAndHandle({
+            ctx,
             script,
-            input.tool,
+            scriptArg: input.tool,
+            toolName: input.tool,
             timestamp,
-            'tool.execute.after',
-            input.tool
-          );
+            eventType: 'tool.execute.after',
+            resolved,
+            sessionId: input.sessionID,
+          });
         }
       }
     },
@@ -290,7 +217,15 @@ export const OpencodeHooks: Plugin = async (ctx: PluginInput) => {
       if (!resolved.enabled) return;
 
       for (const script of resolved.scripts) {
-        await runScriptAndHandle($, script, '', timestamp, 'shell.env');
+        await runScriptAndHandle({
+          ctx,
+          script,
+          toolName: 'shell.env',
+          timestamp,
+          eventType: 'shell.env',
+          resolved,
+          sessionId: 'unknown',
+        });
       }
     },
   };
