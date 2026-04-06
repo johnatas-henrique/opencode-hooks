@@ -459,7 +459,7 @@ describe('opencode-hooks - plugin hooks', () => {
       const output = { env: {} };
       await plugin['shell.env'](input, output);
 
-      expect(runScript).toHaveBeenCalledWith(mockDollar, 'shell-env.sh', '');
+      expect(runScript).toHaveBeenCalledWith(mockDollar, 'shell-env.sh');
     });
 
     it('should show error toast when script fails', async () => {
