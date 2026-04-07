@@ -5,11 +5,12 @@ import type { ResolvedEventConfig } from './event-types';
 export async function logEventConfig(
   timestamp: string,
   eventType: string,
+  input: Record<string, unknown> | undefined,
   resolved: ResolvedEventConfig
 ): Promise<void> {
   if (resolved.saveToFile && !eventType.startsWith('message.')) {
     await saveToFile({
-      content: `[${timestamp}] - ${eventType} - ${JSON.stringify(resolved)}\n`,
+      content: `[${timestamp}] - Hook: ${eventType}\nArguments: ${JSON.stringify(input, null, 2)}\nResolved Config: ${JSON.stringify(resolved, null, 2)}\n------------------------------\n`,
       showToast: useGlobalToastQueue().add,
     });
   }
