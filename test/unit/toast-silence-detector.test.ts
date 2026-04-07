@@ -18,7 +18,6 @@ describe('toast-silence-detector', () => {
   });
 
   afterEach(() => {
-    jest.runAllTimers();
     jest.useRealTimers();
   });
 

@@ -12,7 +12,7 @@ import {
   resetGlobalToastQueue,
   type ToastQueue,
 } from './toast-queue';
-import { handlers, getProp, type EventHandler } from './default-handlers';
+import { handlers, type EventHandler } from './default-handlers';
 import {
   resolveEventConfig,
   resolveToolConfig,
@@ -55,7 +55,6 @@ export {
   getGlobalToastQueue,
   resetGlobalToastQueue,
   handlers,
-  getProp,
   resolveEventConfig,
   resolveToolConfig,
   getHandler,

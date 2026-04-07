@@ -14,7 +14,6 @@ describe('toast-queue', () => {
   });
 
   afterEach(() => {
-    jest.runAllTimers();
     jest.useRealTimers();
   });
 

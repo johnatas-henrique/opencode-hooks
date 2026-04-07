@@ -103,4 +103,14 @@ describe('save-to-file', () => {
       expect.stringContaining('test')
     );
   });
+
+  it('should fallback to default filename for filename with control characters', async () => {
+    const invalidName = 'test\x00file.log';
+    await saveToFile({ content: 'test', filename: invalidName });
+
+    expect(mockAppendFile).toHaveBeenCalledWith(
+      `${LOG_DIR}/session_events.log`,
+      expect.stringContaining('test')
+    );
+  });
 });

@@ -12,7 +12,6 @@ describe('Global Toast Queue', () => {
   });
 
   afterEach(() => {
-    jest.runAllTimers();
     jest.useRealTimers();
   });
 
