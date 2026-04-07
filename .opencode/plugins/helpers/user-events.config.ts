@@ -73,7 +73,12 @@ export const userConfig: UserEventsConfig = {
     [EventType.TUI_COMMAND_EXECUTE]: { enabled: false },
     [EventType.TUI_TOAST_SHOW]: { enabled: false },
 
-    [EventType.EXPERIMENTAL_SESSION_COMPACTING]: { runScripts: true },
+    [EventType.EXPERIMENTAL_SESSION_COMPACTING]: {
+      toast: { duration: TOAST_DURATION.FIVE_SECONDS, variant: 'warning' },
+      scripts: ['pre-compact.sh'],
+      runScripts: true,
+      saveToFile: true,
+    },
 
     [EventType.CHAT_MESSAGE]: { enabled: false },
     [EventType.CHAT_PARAMS]: { enabled: false },
