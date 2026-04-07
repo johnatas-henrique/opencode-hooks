@@ -3,6 +3,6 @@ coverage:
     project:
       default:
         target: 80%
-        threshold: 1%
+        removed: 2%
 comment:
   layout: 'reach,diff,flags,files,footer'

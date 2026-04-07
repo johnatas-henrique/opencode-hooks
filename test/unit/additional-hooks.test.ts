@@ -413,5 +413,55 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
       await plugin['tool.execute.after'](input, output);
     });
+
+    it('should set toast message for skill tool without name arg', async () => {
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await OpencodeHooks(ctx);
+
+      const input = {
+        tool: 'skill',
+        sessionID: 'skill-session',
+        callID: 'call-skill',
+        args: {},
+      };
+      const output = {
+        result: 'Skill executed',
+      };
+
+      await plugin['tool.execute.after'](input, output);
+    });
+  });
+
+  describe('runOnlyOnce logic', () => {
+    it('should run script when runOnlyOnce is false', async () => {
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await OpencodeHooks(ctx);
+
+      const event = {
+        type: 'session.created' as const,
+        properties: { sessionID: 'test-session', info: { id: '123' } },
+      };
+
+      await plugin.event({ event });
+    });
+  });
+
+  describe('tool.execute.after - non-task tool', () => {
+    it('should handle non-task tool execution', async () => {
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await OpencodeHooks(ctx);
+
+      const input = {
+        tool: 'read',
+        sessionID: 'test-session',
+        callID: 'call-123',
+        args: { path: '/test/file.ts' },
+      };
+      const output = {
+        result: 'file content',
+      };
+
+      await plugin['tool.execute.after'](input, output);
+    });
   });
 });

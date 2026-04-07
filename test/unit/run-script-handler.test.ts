@@ -33,6 +33,7 @@ jest.mock('../../.opencode/plugins/helpers/session', () => ({
 import { runScript } from '../../.opencode/plugins/helpers/run-script';
 import { appendToSession } from '../../.opencode/plugins/helpers/append-to-session';
 import { isPrimarySession } from '../../.opencode/plugins/helpers/session';
+import { saveToFile } from '../../.opencode/plugins/helpers/save-to-file';
 import type { ResolvedEventConfig } from '../../.opencode/plugins/helpers/config';
 
 const createResolvedConfig = (
@@ -185,6 +186,112 @@ describe('run-script-handler.ts', () => {
       await runScriptAndHandle(config);
 
       expect(runScript).toHaveBeenCalledTimes(2);
+    });
+
+    it('should reset tracker for different sessions independently', async () => {
+      (isPrimarySession as jest.Mock)
+        .mockReturnValueOnce(true)
+        .mockReturnValueOnce(false);
+
+      const config1 = {
+        ctx: createMockCtx() as any,
+        script: 'test-script.sh',
+        scriptArg: 'arg1',
+        timestamp: '2026-01-01T00:00:00Z',
+        eventType: 'test.event',
+        resolved: createResolvedConfig({
+          saveToFile: false,
+          appendToSession: false,
+          runOnlyOnce: true,
+        }),
+        sessionId: 'session-1',
+      };
+
+      const config2 = {
+        ...config1,
+        sessionId: 'session-2',
+      };
+
+      await runScriptAndHandle(config1);
+      await runScriptAndHandle(config2);
+
+      expect(runScript).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('error handling', () => {
+    it('should handle script execution error', async () => {
+      (runScript as jest.Mock).mockRejectedValueOnce(
+        new Error('Script failed')
+      );
+
+      const config = {
+        ctx: createMockCtx() as any,
+        script: 'failing-script.sh',
+        scriptArg: 'arg1',
+        timestamp: '2026-01-01T00:00:00Z',
+        eventType: 'test.event',
+        resolved: createResolvedConfig({
+          saveToFile: true,
+          appendToSession: false,
+          runOnlyOnce: false,
+        }),
+        sessionId: 'session-1',
+      };
+
+      await runScriptAndHandle(config);
+
+      expect(saveToFile).toHaveBeenCalled();
+    });
+
+    it('should handle non-Error rejection', async () => {
+      (runScript as jest.Mock).mockRejectedValueOnce('String error');
+
+      const config = {
+        ctx: createMockCtx() as any,
+        script: 'failing-script.sh',
+        scriptArg: 'arg1',
+        timestamp: '2026-01-01T00:00:00Z',
+        eventType: 'test.event',
+        resolved: createResolvedConfig({
+          saveToFile: true,
+          appendToSession: false,
+          runOnlyOnce: false,
+        }),
+        sessionId: 'session-1',
+      };
+
+      await runScriptAndHandle(config);
+
+      expect(saveToFile).toHaveBeenCalled();
+    });
+
+    it('should handle error with special characters', async () => {
+      (runScript as jest.Mock).mockRejectedValueOnce(
+        new Error('Error with special \x00\x1F characters')
+      );
+
+      const config = {
+        ctx: createMockCtx() as any,
+        script: 'failing-script.sh',
+        scriptArg: 'arg1',
+        timestamp: '2026-01-01T00:00:00Z',
+        eventType: 'test.event',
+        resolved: createResolvedConfig({
+          saveToFile: true,
+          appendToSession: false,
+          runOnlyOnce: false,
+        }),
+        sessionId: 'session-1',
+      };
+
+      await runScriptAndHandle(config);
+
+      expect(saveToFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: expect.stringContaining('Script error'),
+        })
+      );
     });
   });
 });
