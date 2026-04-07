@@ -52,6 +52,13 @@ describe('plugin-status', () => {
       expect(result).toEqual([]);
     });
 
+    it('should return null when no .log files after filter', () => {
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(['readme.txt', 'config.json'] as any);
+      const result = getPluginStatus();
+      expect(result).toEqual([]);
+    });
+
     it('should parse active plugins from log', () => {
       mockExistsSync.mockReturnValue(true);
       mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as any);
@@ -289,6 +296,79 @@ describe('plugin-status', () => {
       expect(result).toHaveLength(1);
       expect(result[0].status).toBe('failed');
       expect(result[0].error).toBe('TestError');
+    });
+
+    it('should use entry.message when error tag is not present', () => {
+      const logWithErrorNoTag = [
+        'ERROR  2026-04-03T14:30:22 +200ms service=plugin name=test-plugin failed to load',
+      ].join('\n');
+
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as any);
+      mockReadFileSync.mockReturnValue(logWithErrorNoTag);
+
+      const result = getPluginStatus();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].status).toBe('failed');
+      expect(result[0].error).toBe('failed to load');
+    });
+
+    it('should not overwrite existing plugin status with same name', () => {
+      const logWithDuplicateNames = [
+        'INFO  2026-04-03T14:30:22 +50ms service=plugin name=test-plugin loading plugin',
+        'INFO  2026-04-03T14:30:22 +100ms service=plugin name=test-plugin loading plugin',
+      ].join('\n');
+
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as any);
+      mockReadFileSync.mockReturnValue(logWithDuplicateNames);
+
+      const result = getPluginStatus();
+
+      expect(result).toHaveLength(1);
+    });
+
+    it('should push dev.log to end when it is the only file', () => {
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(['dev.log', '2026-04-03.log'] as any);
+      mockReadFileSync.mockReturnValue(sampleLog);
+
+      getPluginStatus();
+
+      expect(mockReaddirSync).toHaveBeenCalled();
+    });
+
+    it('should handle warn level without incompatible message', () => {
+      const logWithWarnNoIncompatible = [
+        'WARN  2026-04-03T14:30:22 +250ms service=plugin name=test-plugin some warning',
+      ].join('\n');
+
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as any);
+      mockReadFileSync.mockReturnValue(logWithWarnNoIncompatible);
+
+      const result = getPluginStatus();
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should sort files with dev.log and timestamped files', () => {
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue([
+        'dev.log',
+        '2026-04-03T143022.log',
+        '2026-04-02T120000.log',
+      ] as any);
+      mockReadFileSync.mockReturnValue(sampleLog);
+
+      const result = getPluginStatus();
+
+      expect(result.length).toBeGreaterThan(0);
+      expect(mockReadFileSync).toHaveBeenCalledWith(
+        expect.stringContaining('2026-04-03T143022.log'),
+        'utf-8'
+      );
     });
   });
 
@@ -698,6 +778,22 @@ describe('plugin-status', () => {
 
         expect(result).toContain('Failed:');
         expect(result).toContain('broken-plugin (user)');
+      });
+
+      it('should use built-in label for failed in all-labeled mode', () => {
+        const statuses = [
+          {
+            name: 'CodexAuthPlugin',
+            status: 'failed' as const,
+            error: 'Error',
+            source: 'built-in' as const,
+          },
+        ];
+
+        const result = formatPluginStatus(statuses, 'all-labeled');
+
+        expect(result).toContain('(built-in)');
+        expect(result).toContain('CodexAuthPlugin');
       });
 
       it('should use user label when source is undefined in all-labeled mode', () => {
