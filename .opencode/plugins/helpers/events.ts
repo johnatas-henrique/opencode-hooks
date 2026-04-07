@@ -8,7 +8,7 @@ import type {
   ToolConfig,
   ToastOverride,
   EventOverride,
-} from './event-types';
+} from './config';
 
 export { ResolvedEventConfig };
 

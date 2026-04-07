@@ -1,4 +1,4 @@
-import { saveToFile } from '../.opencode/plugins/helpers/save-to-file';
+import { saveToFile } from '../../.opencode/plugins/helpers/save-to-file';
 import * as fs from 'fs/promises';
 
 jest.mock('fs/promises', () => ({
@@ -97,6 +97,16 @@ describe('save-to-file', () => {
   it('should fallback to default filename for too-long filename', async () => {
     const longName = 'a'.repeat(256) + '.log';
     await saveToFile({ content: 'test', filename: longName });
+
+    expect(mockAppendFile).toHaveBeenCalledWith(
+      `${LOG_DIR}/session_events.log`,
+      expect.stringContaining('test')
+    );
+  });
+
+  it('should fallback to default filename for filename with control characters', async () => {
+    const invalidName = 'test\x00file.log';
+    await saveToFile({ content: 'test', filename: invalidName });
 
     expect(mockAppendFile).toHaveBeenCalledWith(
       `${LOG_DIR}/session_events.log`,

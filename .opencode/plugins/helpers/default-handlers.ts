@@ -36,37 +36,58 @@ const toStr = (value: unknown, fallback = 'unknown'): string => {
   return String(value);
 };
 
+interface HandlerConfig {
+  title: string;
+  variant: EventHandler['variant'];
+  duration: number;
+  defaultScript: string;
+  props: Record<string, string>;
+}
+
+const createHandler = (config: HandlerConfig): EventHandler => ({
+  title: config.title,
+  variant: config.variant,
+  duration: config.duration,
+  defaultScript: config.defaultScript,
+  buildMessage: (event) => {
+    const lines = Object.entries(config.props)
+      .map(([label, path]) => `${label}: ${toStr(getProp(event, path))}`)
+      .join('\n');
+    return `${lines}\nTime: ${formatTime()}`;
+  },
+});
+
+const SESSION_ID = 'properties.sessionID';
+const INFO_ID = 'properties.info.id';
+const MESSAGE_ID = 'properties.messageID';
+
 export const handlers: Record<string, EventHandler> = {
-  'session.created': {
+  'session.created': createHandler({
     title: '====SESSION CREATED====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-created.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.info.id'))}\n` +
-      `Title: ${toStr(getProp(event, 'properties.info.title'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: {
+      'Session Id': INFO_ID,
+      Title: 'properties.info.title',
+    },
+  }),
 
-  'session.compacted': {
+  'session.compacted': createHandler({
     title: '====SESSION COMPACTED====',
     variant: 'info',
     duration: TOAST_DURATION.TEN_SECONDS,
     defaultScript: 'session-compacted.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': SESSION_ID },
+  }),
 
-  'session.deleted': {
+  'session.deleted': createHandler({
     title: '====SESSION DELETED====',
     variant: 'error',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-deleted.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.info.id'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': INFO_ID },
+  }),
 
   'session.error': {
     title: '====SESSION ERROR====',
@@ -83,7 +104,7 @@ export const handlers: Record<string, EventHandler> = {
         ? String(errorMessage)
         : 'Unknown message';
       return (
-        `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+        `Session Id: ${toStr(getProp(event, SESSION_ID))}\n` +
         `Error: ${errorName}\n` +
         `Message: ${messageStr}\n` +
         `Time: ${formatTime()}`
@@ -91,25 +112,21 @@ export const handlers: Record<string, EventHandler> = {
     },
   },
 
-  'session.diff': {
+  'session.diff': createHandler({
     title: '====SESSION DIFF====',
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-diff.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': SESSION_ID },
+  }),
 
-  'session.idle': {
+  'session.idle': createHandler({
     title: '====IDLE SESSION====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-idle.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': SESSION_ID },
+  }),
 
   'session.status': {
     title: '====SESSION STATUS====',
@@ -117,170 +134,138 @@ export const handlers: Record<string, EventHandler> = {
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-status.sh',
     buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Session Id: ${toStr(getProp(event, SESSION_ID))}\n` +
       `Status: ${JSON.stringify(getProp(event, 'properties.status'))}\n` +
       `Time: ${formatTime()}`,
   },
 
-  'session.updated': {
+  'session.updated': createHandler({
     title: '====UPDATED SESSION====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-updated.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.info.id'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': INFO_ID },
+  }),
 
-  'message.part.removed': {
+  'message.part.removed': createHandler({
     title: '====MESSAGE PART REMOVED====',
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-part-removed.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
-      `Message Id: ${toStr(getProp(event, 'properties.messageID'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': SESSION_ID, 'Message Id': MESSAGE_ID },
+  }),
 
-  'message.part.updated': {
+  'message.part.updated': createHandler({
     title: '====MESSAGE PART UPDATED====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-part-updated.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
-      `Message Id: ${toStr(getProp(event, 'properties.messageID'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': SESSION_ID, 'Message Id': MESSAGE_ID },
+  }),
 
-  'message.part.delta': {
+  'message.part.delta': createHandler({
     title: '====MESSAGE PART DELTA====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-part-delta.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
-      `Message Id: ${toStr(getProp(event, 'properties.messageID'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': SESSION_ID, 'Message Id': MESSAGE_ID },
+  }),
 
-  'message.removed': {
+  'message.removed': createHandler({
     title: '====MESSAGE REMOVED====',
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-removed.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
-      `Message Id: ${toStr(getProp(event, 'properties.messageID'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': SESSION_ID, 'Message Id': MESSAGE_ID },
+  }),
 
-  'message.updated': {
+  'message.updated': createHandler({
     title: '====MESSAGE UPDATED====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-updated.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
-      `Message Id: ${toStr(getProp(event, 'properties.messageID'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': SESSION_ID, 'Message Id': MESSAGE_ID },
+  }),
 
-  'tool.execute.before': {
+  'tool.execute.before': createHandler({
     title: '====TOOL EXECUTE BEFORE====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
-      `Tool: ${toStr(getProp(event, 'properties.tool'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': SESSION_ID, Tool: 'properties.tool' },
+  }),
 
-  'tool.execute.after': {
+  'tool.execute.after': createHandler({
     title: '====TOOL EXECUTE AFTER====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
-      `Tool: ${toStr(getProp(event, 'properties.tool'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': SESSION_ID, Tool: 'properties.tool' },
+  }),
 
-  'file.edited': {
+  'tool.execute.after.subagent': createHandler({
+    title: '====TOOL EXECUTE AFTER====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'tool-execute-after.subagent.sh',
+    props: { 'Session Id': SESSION_ID, Tool: 'properties.tool' },
+  }),
+
+  'file.edited': createHandler({
     title: '====FILE EDITED====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'file-edited.sh',
-    buildMessage: (event) =>
-      `File: ${toStr(getProp(event, 'properties.path'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { File: 'properties.path' },
+  }),
 
-  'file.watcher.updated': {
+  'file.watcher.updated': createHandler({
     title: '====FILE WATCHER UPDATED====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'file-watcher-updated.sh',
-    buildMessage: (event) =>
-      `File: ${toStr(getProp(event, 'properties.path'))}\n` +
-      `Event: ${toStr(getProp(event, 'properties.event'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { File: 'properties.path', Event: 'properties.event' },
+  }),
 
-  'permission.asked': {
+  'permission.asked': createHandler({
     title: '====PERMISSION ASKED====',
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'permission-asked.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
-      `Permission: ${toStr(getProp(event, 'properties.permission'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': SESSION_ID, Permission: 'properties.permission' },
+  }),
 
-  'permission.replied': {
+  'permission.replied': createHandler({
     title: '====PERMISSION REPLIED====',
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'permission-replied.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
-      `Decision: ${toStr(getProp(event, 'properties.decision'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': SESSION_ID, Decision: 'properties.decision' },
+  }),
 
-  'server.connected': {
+  'server.connected': createHandler({
     title: '====SERVER CONNECTED====',
     variant: 'success',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'server-connected.sh',
-    buildMessage: (event) =>
-      `URL: ${toStr(getProp(event, 'properties.url'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { URL: 'properties.url' },
+  }),
 
-  'server.instance.disposed': {
+  'server.instance.disposed': createHandler({
     title: '====SERVER INSTANCE DISPOSED====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-stop.sh',
-    buildMessage: (event) =>
-      `Directory: ${toStr(getProp(event, 'properties.directory'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { Directory: 'properties.directory' },
+  }),
 
-  'command.executed': {
+  'command.executed': createHandler({
     title: '====COMMAND EXECUTED====',
     variant: 'success',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'command-executed.sh',
-    buildMessage: (event) =>
-      `Command: ${toStr(getProp(event, 'properties.command'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { Command: 'properties.command' },
+  }),
 
   'lsp.client.diagnostics': {
     title: '====LSP DIAGNOSTICS====',
@@ -299,25 +284,21 @@ export const handlers: Record<string, EventHandler> = {
     },
   },
 
-  'lsp.updated': {
+  'lsp.updated': createHandler({
     title: '====LSP UPDATED====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'lsp-updated.sh',
-    buildMessage: (event) =>
-      `Server: ${toStr(getProp(event, 'properties.serverID'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { Server: 'properties.serverID' },
+  }),
 
-  'installation.updated': {
+  'installation.updated': createHandler({
     title: '====INSTALLATION UPDATED====',
     variant: 'success',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'installation-updated.sh',
-    buildMessage: (event) =>
-      `Version: ${toStr(getProp(event, 'properties.version'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { Version: 'properties.version' },
+  }),
 
   'todo.updated': {
     title: '====TODO UPDATED====',
@@ -325,58 +306,132 @@ export const handlers: Record<string, EventHandler> = {
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'todo-updated.sh',
     buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
+      `Session Id: ${toStr(getProp(event, SESSION_ID))}\n` +
       `Count: ${toStr(getProp(event, 'properties.count'), '0')}\n` +
       `Time: ${formatTime()}`,
   },
 
-  'shell.env': {
+  'shell.env': createHandler({
     title: '====SHELL ENV====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'shell-env.sh',
-    buildMessage: (event) =>
-      `Directory: ${toStr(getProp(event, 'properties.cwd'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { Directory: 'properties.cwd' },
+  }),
 
-  'tui.prompt.append': {
+  'tui.prompt.append': createHandler({
     title: '====TUI PROMPT APPEND====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tui-prompt-append.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': SESSION_ID },
+  }),
 
-  'tui.command.execute': {
+  'tui.command.execute': createHandler({
     title: '====TUI COMMAND EXECUTE====',
     variant: 'success',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tui-command-execute.sh',
-    buildMessage: (event) =>
-      `Command: ${toStr(getProp(event, 'properties.command'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { Command: 'properties.command' },
+  }),
 
-  'tui.toast.show': {
+  'tui.toast.show': createHandler({
     title: '====TUI TOAST SHOW====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tui-toast-show.sh',
-    buildMessage: (event) =>
-      `Title: ${toStr(getProp(event, 'properties.title'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { Title: 'properties.title' },
+  }),
 
-  'experimental.session.compacting': {
+  'experimental.session.compacting': createHandler({
     title: '====SESSION COMPACTING====',
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-compacting.sh',
-    buildMessage: (event) =>
-      `Session Id: ${toStr(getProp(event, 'properties.sessionID'))}\n` +
-      `Time: ${formatTime()}`,
-  },
+    props: { 'Session Id': SESSION_ID },
+  }),
+
+  'chat.message': createHandler({
+    title: '====CHAT MESSAGE====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'chat-message.sh',
+    props: {
+      'Session Id': 'sessionID',
+      Agent: 'agent',
+      'Message Id': 'messageID',
+    },
+  }),
+
+  'chat.params': createHandler({
+    title: '====CHAT PARAMS====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'chat-params.sh',
+    props: {
+      'Session Id': 'sessionID',
+      Agent: 'agent',
+      Model: 'model.modelID',
+    },
+  }),
+
+  'chat.headers': createHandler({
+    title: '====CHAT HEADERS====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'chat-headers.sh',
+    props: { 'Session Id': 'sessionID', Agent: 'agent' },
+  }),
+
+  'permission.ask': createHandler({
+    title: '====PERMISSION ASK====',
+    variant: 'warning',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'permission-ask.sh',
+    props: { 'Session Id': 'sessionID', Tool: 'tool' },
+  }),
+
+  'command.execute.before': createHandler({
+    title: '====COMMAND EXECUTE BEFORE====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'command-execute-before.sh',
+    props: { Command: 'command', 'Session Id': 'sessionID' },
+  }),
+
+  'experimental.chat.messages.transform': createHandler({
+    title: '====CHAT MESSAGES TRANSFORM====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'experimental-chat-messages-transform.sh',
+    props: { 'Session Id': 'sessionID' },
+  }),
+
+  'experimental.chat.system.transform': createHandler({
+    title: '====CHAT SYSTEM TRANSFORM====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'experimental-chat-system-transform.sh',
+    props: { 'Session Id': 'sessionID', Model: 'model.modelID' },
+  }),
+
+  'experimental.text.complete': createHandler({
+    title: '====TEXT COMPLETE====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'experimental-text-complete.sh',
+    props: {
+      'Session Id': 'sessionID',
+      'Message Id': 'messageID',
+      'Part Id': 'partID',
+    },
+  }),
+
+  'tool.definition': createHandler({
+    title: '====TOOL DEFINITION====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'tool-definition.sh',
+    props: { 'Tool Id': 'toolID' },
+  }),
 };

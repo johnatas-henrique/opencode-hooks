@@ -1,4 +1,4 @@
-import { OpencodeHooks } from '../.opencode/plugins/opencode-hooks';
+import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
 
 const mockRunScript = jest.fn().mockResolvedValue('Script executed');
 
@@ -11,21 +11,25 @@ const createMockCtx = (client: any, dollar: any) => ({
   serverUrl: 'http://localhost:3000',
 });
 
-jest.mock('../.opencode/plugins/helpers/run-script', () => ({
+jest.mock('../../.opencode/plugins/helpers/run-script', () => ({
   runScript: jest
     .fn()
     .mockImplementation((...args: any[]) => mockRunScript(...args)),
 }));
 
-jest.mock('../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../.opencode/plugins/helpers/append-to-session', () => ({
+jest.mock('../../.opencode/plugins/helpers/debug', () => ({
+  handleDebugLog: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../.opencode/plugins/helpers/append-to-session', () => ({
   appendToSession: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
+jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -51,6 +55,14 @@ jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
       buildMessage: (event: any) =>
         `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: now`,
     },
+    'tool.execute.after.subagent': {
+      title: '====SUBAGENT CALLED====',
+      variant: 'info',
+      duration: 2000,
+      defaultScript: 'log-agent.sh',
+      buildMessage: (event: any) =>
+        `Agent: ${event.properties?.subagentType || 'unknown'}\nTime: now`,
+    },
     'shell.env': {
       title: '====SHELL ENV====',
       variant: 'info',
@@ -68,7 +80,7 @@ jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
   },
 }));
 
-jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
+jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
   userConfig: {
     enabled: true,
     toast: true,
@@ -78,11 +90,21 @@ jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
     events: {
       'session.created': { runOnlyOnce: true },
       'shell.env': { runScripts: true, scripts: ['shell-env.sh'] },
+      'chat.message': { enabled: false },
+      'chat.params': { enabled: false },
+      'chat.headers': { enabled: false },
+      'experimental.chat.messages.transform': { enabled: false },
+      'experimental.chat.system.transform': { enabled: false },
+      'experimental.text.complete': { enabled: false },
+      'session.unknown': { enabled: false },
     },
     tools: {
       'tool.execute.after': {
         task: { toast: true, scripts: ['log-agent.sh'] },
         chat: { toast: false },
+      },
+      'tool.execute.after.subagent': {
+        task: { toast: true, scripts: ['log-agent.sh'] },
       },
       'tool.execute.before': {
         read: { toast: true, scripts: ['before-read.sh'] },
@@ -93,7 +115,7 @@ jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
   },
 }));
 
-jest.mock('../.opencode/plugins/helpers/events', () => {
+jest.mock('../../.opencode/plugins/helpers/events', () => {
   const mockHandlers = {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -118,6 +140,14 @@ jest.mock('../.opencode/plugins/helpers/events', () => {
       defaultScript: 'tool-execute-after.sh',
       buildMessage: (event: any) =>
         `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: now`,
+    },
+    'tool.execute.after.subagent': {
+      title: '====SUBAGENT CALLED====',
+      variant: 'info',
+      duration: 2000,
+      defaultScript: 'log-agent.sh',
+      buildMessage: (event: any) =>
+        `Agent: ${event.properties?.subagentType || 'unknown'}\nTime: now`,
     },
     'shell.env': {
       title: '====SHELL ENV====',
@@ -150,6 +180,9 @@ jest.mock('../.opencode/plugins/helpers/events', () => {
       'tool.execute.after': {
         task: { toast: true, scripts: ['log-agent.sh'] },
         chat: { toast: false },
+      },
+      'tool.execute.after.subagent': {
+        task: { toast: true, scripts: ['log-agent.sh'] },
       },
       'tool.execute.before': {
         read: { toast: true, scripts: ['before-read.sh'] },
@@ -272,14 +305,14 @@ jest.mock('../.opencode/plugins/helpers/events', () => {
   };
 });
 
-jest.mock('../.opencode/plugins/helpers/toast-queue', () => {
+jest.mock('../../.opencode/plugins/helpers/toast-queue', () => {
   const mockQueue = {
     add: jest.fn(),
     flush: jest.fn().mockResolvedValue(undefined),
     pending: 0,
   };
   return {
-    ...jest.requireActual('../.opencode/plugins/helpers/toast-queue'),
+    ...jest.requireActual('../../.opencode/plugins/helpers/toast-queue'),
     initGlobalToastQueue: jest.fn((showFn) => {
       mockQueue.add = jest.fn((toast) => showFn(toast));
       return mockQueue;
@@ -290,12 +323,12 @@ jest.mock('../.opencode/plugins/helpers/toast-queue', () => {
   };
 });
 
-jest.mock('../.opencode/plugins/helpers/show-startup-toast', () => ({
+jest.mock('../../.opencode/plugins/helpers/show-startup-toast', () => ({
   showStartupToast: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { runScript } from '../.opencode/plugins/helpers/run-script';
-import { saveToFile } from '../.opencode/plugins/helpers/save-to-file';
+import { runScript } from '../../.opencode/plugins/helpers/run-script';
+import { saveToFile } from '../../.opencode/plugins/helpers/save-to-file';
 
 interface MockClient {
   tui: {
@@ -333,7 +366,7 @@ describe('opencode-hooks - plugin hooks', () => {
   describe('disabled plugin', () => {
     it('should return empty handlers when plugin is disabled', async () => {
       jest.resetModules();
-      jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
           enabled: false,
           toast: true,
@@ -346,7 +379,7 @@ describe('opencode-hooks - plugin hooks', () => {
       }));
 
       const { OpencodeHooks: DisabledHooks } =
-        await import('../.opencode/plugins/opencode-hooks');
+        await import('../../.opencode/plugins/opencode-hooks');
       const plugin = await DisabledHooks({
         client: mockClient,
         $: mockDollar,
@@ -498,7 +531,7 @@ describe('opencode-hooks - plugin hooks', () => {
       };
       await plugin['tool.execute.after'](input, output);
 
-      expect(mockClient.tui.showToast).not.toHaveBeenCalled();
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
     });
 
     it('should not trigger toast when subagent_type is undefined', async () => {
@@ -517,7 +550,7 @@ describe('opencode-hooks - plugin hooks', () => {
       };
       await plugin['tool.execute.after'](input, output);
 
-      expect(mockClient.tui.showToast).not.toHaveBeenCalled();
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
     });
 
     it('should show error toast when script fails', async () => {
@@ -544,7 +577,9 @@ describe('opencode-hooks - plugin hooks', () => {
 
       expect(errorToastCall).toBeDefined();
       expect(errorToastCall[0].body.title).toBe('====SCRIPT ERROR====');
-      expect(errorToastCall[0].body.message).toContain('log-agent.sh');
+      expect(errorToastCall[0].body.message).toContain(
+        'Error: Agent script failed'
+      );
     });
   });
 
@@ -563,14 +598,14 @@ describe('opencode-hooks - plugin hooks', () => {
 
     it('should skip script on second event when runOnlyOnce is true', async () => {
       jest.resetModules();
-      jest.unmock('../.opencode/plugins/helpers/user-events.config');
-      jest.unmock('../.opencode/plugins/helpers/run-script');
-      jest.unmock('../.opencode/plugins/helpers/save-to-file');
-      jest.unmock('../.opencode/plugins/helpers/append-to-session');
-      jest.unmock('../.opencode/plugins/helpers/default-handlers');
-      jest.unmock('../.opencode/plugins/helpers/events');
+      jest.unmock('../../.opencode/plugins/helpers/user-events.config');
+      jest.unmock('../../.opencode/plugins/helpers/run-script');
+      jest.unmock('../../.opencode/plugins/helpers/save-to-file');
+      jest.unmock('../../.opencode/plugins/helpers/append-to-session');
+      jest.unmock('../../.opencode/plugins/helpers/default-handlers');
+      jest.unmock('../../.opencode/plugins/helpers/events');
 
-      jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
           enabled: true,
           toast: true,
@@ -584,12 +619,12 @@ describe('opencode-hooks - plugin hooks', () => {
       }));
 
       const mockRunScriptFn = jest.fn().mockResolvedValue('Script executed');
-      jest.doMock('../.opencode/plugins/helpers/run-script', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/run-script', () => ({
         runScript: mockRunScriptFn,
       }));
 
       const { OpencodeHooks: FreshPlugin } =
-        await import('../.opencode/plugins/opencode-hooks');
+        await import('../../.opencode/plugins/opencode-hooks');
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await FreshPlugin(ctx);
 
@@ -614,14 +649,14 @@ describe('opencode-hooks - plugin hooks', () => {
 
     it('should still show toast when runOnlyOnce skips script', async () => {
       jest.resetModules();
-      jest.unmock('../.opencode/plugins/helpers/user-events.config');
-      jest.unmock('../.opencode/plugins/helpers/run-script');
-      jest.unmock('../.opencode/plugins/helpers/save-to-file');
-      jest.unmock('../.opencode/plugins/helpers/append-to-session');
-      jest.unmock('../.opencode/plugins/helpers/default-handlers');
-      jest.unmock('../.opencode/plugins/helpers/events');
+      jest.unmock('../../.opencode/plugins/helpers/user-events.config');
+      jest.unmock('../../.opencode/plugins/helpers/run-script');
+      jest.unmock('../../.opencode/plugins/helpers/save-to-file');
+      jest.unmock('../../.opencode/plugins/helpers/append-to-session');
+      jest.unmock('../../.opencode/plugins/helpers/default-handlers');
+      jest.unmock('../../.opencode/plugins/helpers/events');
 
-      jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
           enabled: true,
           events: {
@@ -636,12 +671,12 @@ describe('opencode-hooks - plugin hooks', () => {
       }));
 
       const mockRunScriptFn2 = jest.fn().mockResolvedValue('Script executed');
-      jest.doMock('../.opencode/plugins/helpers/run-script', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/run-script', () => ({
         runScript: mockRunScriptFn2,
       }));
 
       const { OpencodeHooks: FreshPlugin2 } =
-        await import('../.opencode/plugins/opencode-hooks');
+        await import('../../.opencode/plugins/opencode-hooks');
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await FreshPlugin2(ctx);
 
@@ -665,6 +700,312 @@ describe('opencode-hooks - plugin hooks', () => {
       expect(mockClient.tui.showToast.mock.calls.length).toBe(
         toastCountAfterFirst + 1
       );
+    });
+  });
+
+  describe('new hooks - chat.message', () => {
+    it('should handle chat.message hook', async () => {
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await OpencodeHooks(ctx);
+      const input = {
+        sessionID: 'chat-session-123',
+        agent: 'coder',
+        model: { providerID: 'anthropic', modelID: 'claude-3-5-sonnet' },
+        messageID: 'msg-456',
+      };
+      const output = { message: {}, parts: [] };
+
+      await plugin['chat.message'](input, output);
+
+      expect(saveToFile).toHaveBeenCalled();
+    });
+  });
+
+  describe('new hooks - chat.params', () => {
+    it('should handle chat.params hook', async () => {
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await OpencodeHooks(ctx);
+      const input = {
+        sessionID: 'params-session-123',
+        agent: 'coder',
+        model: { providerID: 'anthropic', modelID: 'claude-3-5-sonnet' },
+        provider: { source: 'config', info: {} },
+        message: {},
+      };
+      const output = { temperature: 1.0, topP: 0.9, topK: 40, options: {} };
+
+      await plugin['chat.params'](input, output);
+
+      expect(saveToFile).toHaveBeenCalled();
+    });
+  });
+
+  describe('new hooks - chat.headers', () => {
+    it('should handle chat.headers hook', async () => {
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await OpencodeHooks(ctx);
+      const input = {
+        sessionID: 'headers-session-123',
+        agent: 'coder',
+        model: { providerID: 'anthropic', modelID: 'claude-3-5-sonnet' },
+        provider: { source: 'config', info: {} },
+        message: {},
+      };
+      const output = { headers: {} };
+
+      await plugin['chat.headers'](input, output);
+
+      expect(saveToFile).toHaveBeenCalled();
+    });
+  });
+
+  describe('new hooks - permission.ask', () => {
+    it('should handle permission.ask hook', async () => {
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await OpencodeHooks(ctx);
+      const input = { sessionID: 'perm-session-123', tool: 'shell' };
+      const output = { status: 'ask' as const };
+
+      await plugin['permission.ask'](input, output);
+
+      expect(saveToFile).toHaveBeenCalled();
+    });
+  });
+
+  describe('new hooks - command.execute.before', () => {
+    it('should handle command.execute.before hook', async () => {
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await OpencodeHooks(ctx);
+      const input = {
+        command: 'npm test',
+        sessionID: 'cmd-session-123',
+        arguments: '',
+      };
+      const output = { parts: [] };
+
+      await plugin['command.execute.before'](input, output);
+
+      expect(saveToFile).toHaveBeenCalled();
+    });
+  });
+
+  describe('new hooks - experimental.chat.messages.transform', () => {
+    it('should handle experimental.chat.messages.transform hook', async () => {
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await OpencodeHooks(ctx);
+      const input = {};
+      const output = { messages: [] };
+
+      await plugin['experimental.chat.messages.transform'](input, output);
+
+      expect(saveToFile).toHaveBeenCalled();
+    });
+  });
+
+  describe('new hooks - experimental.chat.system.transform', () => {
+    it('should handle experimental.chat.system.transform hook', async () => {
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await OpencodeHooks(ctx);
+      const input = {
+        sessionID: 'system-session-123',
+        model: { modelID: 'claude' },
+      };
+      const output = { system: [] };
+
+      await plugin['experimental.chat.system.transform'](input, output);
+
+      expect(saveToFile).toHaveBeenCalled();
+    });
+  });
+
+  describe('new hooks - experimental.session.compacting', () => {
+    it('should handle experimental.session.compacting hook', async () => {
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await OpencodeHooks(ctx);
+      const input = { sessionID: 'compacting-session-123' };
+      const output = { context: [] };
+
+      await plugin['experimental.session.compacting'](input, output);
+
+      expect(saveToFile).toHaveBeenCalled();
+    });
+  });
+
+  describe('new hooks - experimental.text.complete', () => {
+    it('should handle experimental.text.complete hook', async () => {
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await OpencodeHooks(ctx);
+      const input = {
+        sessionID: 'text-session-123',
+        messageID: 'msg-789',
+        partID: 'part-111',
+      };
+      const output = { text: 'completed' };
+
+      await plugin['experimental.text.complete'](input, output);
+
+      expect(saveToFile).toHaveBeenCalled();
+    });
+  });
+
+  describe('new hooks - tool.definition', () => {
+    it('should handle tool.definition hook', async () => {
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await OpencodeHooks(ctx);
+      const input = { toolID: 'custom-tool' };
+      const output = { description: 'Custom tool', parameters: {} };
+
+      await plugin['tool.definition'](input, output);
+
+      expect(saveToFile).toHaveBeenCalled();
+    });
+  });
+
+  describe('new hooks - config', () => {
+    it('should handle config hook', async () => {
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await OpencodeHooks(ctx);
+      const input = { model: { providerID: 'anthropic' } };
+
+      await plugin.config(input);
+
+      expect(saveToFile).toHaveBeenCalled();
+    });
+  });
+
+  describe('executeHook - debug mode', () => {
+    it('should call handleDebugLog when debug is enabled in executeHook', async () => {
+      jest.resetModules();
+      jest.unmock('../../.opencode/plugins/helpers/user-events.config');
+      jest.unmock('../../.opencode/plugins/helpers/default-handlers');
+      jest.unmock('../../.opencode/plugins/helpers/events');
+      jest.unmock('../../.opencode/plugins/helpers/debug');
+
+      jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+        userConfig: {
+          enabled: true,
+          events: {
+            'shell.env': { debug: true, runScripts: false },
+          },
+          tools: {},
+        },
+      }));
+
+      jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
+        handlers: {
+          'shell.env': {
+            title: '====SHELL ENV====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'shell-env.sh',
+            buildMessage: () => 'shell env',
+          },
+        },
+      }));
+
+      const mockHandleDebugLog = jest.fn().mockResolvedValue(undefined);
+      jest.doMock('../../.opencode/plugins/helpers/debug', () => ({
+        handleDebugLog: mockHandleDebugLog,
+      }));
+
+      const { OpencodeHooks: DebugPlugin } =
+        await import('../../.opencode/plugins/opencode-hooks');
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await DebugPlugin(ctx);
+
+      const input = { cwd: '/test/dir' };
+      const output = { env: {} };
+      await plugin['shell.env'](input as any, output as any);
+
+      expect(mockHandleDebugLog).toHaveBeenCalled();
+    });
+
+    it('should call handleDebugLog when debug is enabled in event handler', async () => {
+      jest.setTimeout(30000);
+      jest.resetModules();
+      jest.unmock('../../.opencode/plugins/helpers/user-events.config');
+      jest.unmock('../../.opencode/plugins/helpers/default-handlers');
+      jest.unmock('../../.opencode/plugins/helpers/events');
+      jest.unmock('../../.opencode/plugins/helpers/debug');
+
+      jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+        userConfig: {
+          enabled: true,
+          events: {
+            'session.created': { debug: true, runScripts: false },
+          },
+          tools: {},
+        },
+      }));
+
+      jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
+        handlers: {
+          'session.created': {
+            title: '====SESSION CREATED====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'session-created.sh',
+            buildMessage: () => 'session created',
+          },
+        },
+      }));
+
+      const mockHandleDebugLog = jest.fn().mockResolvedValue(undefined);
+      jest.doMock('../../.opencode/plugins/helpers/debug', () => ({
+        handleDebugLog: mockHandleDebugLog,
+      }));
+
+      const { OpencodeHooks: DebugPlugin } =
+        await import('../../.opencode/plugins/opencode-hooks');
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await DebugPlugin(ctx);
+
+      const event = {
+        type: 'session.created',
+        properties: { info: { id: 'test-session', title: 'Test' } },
+      };
+      await plugin.event({ event: event as any });
+
+      expect(mockHandleDebugLog).toHaveBeenCalled();
+    });
+  });
+
+  describe('tool.execute.before - debug mode', () => {
+    it('should call handleDebugLog when debug is enabled for tool', async () => {
+      jest.setTimeout(30000);
+      jest.resetModules();
+      jest.unmock('../../.opencode/plugins/helpers/user-events.config');
+      jest.unmock('../../.opencode/plugins/helpers/debug');
+
+      jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+        userConfig: {
+          enabled: true,
+          events: {
+            'tool.execute.before': { debug: true, runScripts: false },
+          },
+          tools: {
+            'tool.execute.before': {
+              read: { debug: true, runScripts: false },
+            },
+          },
+        },
+      }));
+
+      const mockHandleDebugLog = jest.fn().mockResolvedValue(undefined);
+      jest.doMock('../../.opencode/plugins/helpers/debug', () => ({
+        handleDebugLog: mockHandleDebugLog,
+      }));
+
+      const { OpencodeHooks: DebugPlugin } =
+        await import('../../.opencode/plugins/opencode-hooks');
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await DebugPlugin(ctx);
+
+      const input = { tool: 'read', sessionID: 'test-session' };
+      const output = {};
+      await plugin['tool.execute.before'](input as any, output as any);
+
+      expect(mockHandleDebugLog).toHaveBeenCalled();
     });
   });
 });

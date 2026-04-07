@@ -1,82 +1,71 @@
-import { TOAST_DURATION } from './constants';
-import { EventType } from './config';
-import type { UserEventsConfig } from './config';
+import { TOAST_DURATION } from '../../../.opencode/plugins/helpers/constants';
+import { EventType } from '../../../.opencode/plugins/helpers/config';
+import type { UserEventsConfig } from '../../../.opencode/plugins/helpers/config';
 
 export const userConfig: UserEventsConfig = {
   enabled: true,
 
   default: {
-    debug: false,
-    toast: false,
+    debug: true,
+    toast: true,
     runScripts: false,
     runOnlyOnce: false,
-    saveToFile: false,
+    saveToFile: true,
     appendToSession: false,
   },
 
   events: {
-    [EventType.TOOL_EXECUTE_AFTER]: false,
-    [EventType.TOOL_EXECUTE_BEFORE]: false,
-
-    [EventType.SERVER_CONNECTED]: { toast: { variant: 'success' } },
-    [EventType.SERVER_INSTANCE_DISPOSED]: { scripts: ['session-closed.sh'] },
-
     [EventType.SESSION_CREATED]: {
       toast: { variant: 'success' },
       runScripts: true,
-      runOnlyOnce: true,
-      saveToFile: true,
+      runOnlyOnce: false,
       appendToSession: true,
+      scripts: ['session-created.sh'],
     },
     [EventType.SESSION_COMPACTED]: {
       toast: { duration: TOAST_DURATION.FIVE_SECONDS, variant: 'warning' },
-      scripts: ['pre-compact.sh'],
-      runScripts: true,
-      saveToFile: true,
     },
-    [EventType.SESSION_DELETED]: { enabled: false },
-    [EventType.SESSION_DIFF]: { enabled: false },
-    [EventType.SESSION_ERROR]: {},
-    [EventType.SESSION_IDLE]: { enabled: false },
-    [EventType.SESSION_STATUS]: { enabled: false },
-    [EventType.SESSION_UPDATED]: { enabled: false },
+    [EventType.SESSION_DELETED]: { toast: { variant: 'error' } },
+    [EventType.SESSION_ERROR]: { toast: { variant: 'error' } },
+    [EventType.SESSION_IDLE]: { toast: true },
+    [EventType.SESSION_STATUS]: { toast: true },
+    [EventType.SESSION_UPDATED]: { toast: true },
+    [EventType.SESSION_DIFF]: { toast: { variant: 'warning' } },
 
-    [EventType.MESSAGE_PART_DELTA]: { enabled: false },
-    [EventType.MESSAGE_PART_REMOVED]: { enabled: false },
-    [EventType.MESSAGE_PART_UPDATED]: { enabled: false },
-    [EventType.MESSAGE_REMOVED]: { enabled: false },
-    [EventType.MESSAGE_UPDATED]: { enabled: false },
+    [EventType.MESSAGE_PART_DELTA]: { toast: false },
+    [EventType.MESSAGE_PART_REMOVED]: { toast: { variant: 'warning' } },
+    [EventType.MESSAGE_PART_UPDATED]: { toast: true },
+    [EventType.MESSAGE_REMOVED]: { toast: { variant: 'warning' } },
+    [EventType.MESSAGE_UPDATED]: { toast: true },
 
-    [EventType.FILE_EDITED]: { enabled: false },
-    [EventType.FILE_WATCHER_UPDATED]: { enabled: false },
+    [EventType.FILE_EDITED]: { toast: true },
+    [EventType.FILE_WATCHER_UPDATED]: { toast: true },
 
-    [EventType.PERMISSION_ASKED]: { enabled: false },
-    [EventType.PERMISSION_REPLIED]: { enabled: false },
+    [EventType.PERMISSION_ASKED]: { toast: { variant: 'warning' } },
+    [EventType.PERMISSION_REPLIED]: { toast: { variant: 'warning' } },
 
-    [EventType.COMMAND_EXECUTED]: { enabled: false },
+    [EventType.SERVER_CONNECTED]: { toast: { variant: 'success' } },
 
-    [EventType.LSP_CLIENT_DIAGNOSTICS]: { enabled: false },
-    [EventType.LSP_UPDATED]: { enabled: false },
+    [EventType.SERVER_INSTANCE_DISPOSED]: { toast: { variant: 'info' } },
 
-    [EventType.INSTALLATION_UPDATED]: { enabled: false },
+    [EventType.COMMAND_EXECUTED]: { toast: { variant: 'success' } },
 
-    [EventType.TODO_UPDATED]: { enabled: false },
+    [EventType.LSP_CLIENT_DIAGNOSTICS]: { toast: { variant: 'warning' } },
+    [EventType.LSP_UPDATED]: { toast: true },
 
-    [EventType.SHELL_ENV]: { enabled: false },
+    [EventType.INSTALLATION_UPDATED]: { toast: { variant: 'success' } },
+
+    [EventType.TODO_UPDATED]: { toast: true },
+
+    [EventType.SHELL_ENV]: { toast: true },
 
     [EventType.TUI_PROMPT_APPEND]: { toast: false },
-    [EventType.TUI_COMMAND_EXECUTE]: { enabled: false },
+    [EventType.TUI_COMMAND_EXECUTE]: { toast: true },
     [EventType.TUI_TOAST_SHOW]: { enabled: false },
 
-    [EventType.EXPERIMENTAL_SESSION_COMPACTING]: { runScripts: true },
-
-    [EventType.CHAT_MESSAGE]: { enabled: false },
-    [EventType.CHAT_PARAMS]: { enabled: false },
-    [EventType.CHAT_HEADERS]: { enabled: false },
-    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: { enabled: false },
-    [EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: { enabled: false },
-    [EventType.EXPERIMENTAL_TEXT_COMPLETE]: { enabled: false },
-    [EventType.SESSION_UNKNOWN]: { enabled: false },
+    [EventType.EXPERIMENTAL_SESSION_COMPACTING]: {
+      toast: { variant: 'warning' },
+    },
   },
 
   tools: {
@@ -85,10 +74,10 @@ export const userConfig: UserEventsConfig = {
         enabled: true,
         toast: {
           enabled: true,
-          title: '====TOOL====',
+          title: '====TASK====',
           duration: TOAST_DURATION.FIVE_SECONDS,
         },
-        saveToFile: true,
+        runScripts: false,
       },
       skill: {
         enabled: true,
@@ -97,9 +86,7 @@ export const userConfig: UserEventsConfig = {
           title: '====SKILL====',
           duration: TOAST_DURATION.FIVE_SECONDS,
         },
-        scripts: ['log-skill.sh'],
-        runScripts: true,
-        saveToFile: true,
+        runScripts: false,
       },
       chat: { toast: { title: '====CHAT====' } },
       read: { toast: { title: '====FILE READ====' } },
@@ -128,22 +115,25 @@ export const userConfig: UserEventsConfig = {
       filesystem_get_file_info: { toast: { title: '====FS STAT====' } },
       gh_grep_searchGitHub: { toast: { title: '====GH SEARCH====' } },
     },
-    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
+    [EventType.TOOL_EXECUTE_BEFORE]: {
       task: {
         enabled: true,
         toast: {
           enabled: true,
-          title: '====SUBAGENT====',
+          title: '====TASK====',
           duration: TOAST_DURATION.FIVE_SECONDS,
         },
-        scripts: ['log-agent.sh'],
-        runScripts: true,
-        saveToFile: true,
+        runScripts: false,
       },
-    },
-    [EventType.TOOL_EXECUTE_BEFORE]: {
-      task: { toast: { title: '====TOOL====' } },
-      skill: { toast: { title: '====SKILL====' } },
+      skill: {
+        enabled: true,
+        toast: {
+          enabled: true,
+          title: '====SKILL====',
+          duration: TOAST_DURATION.FIVE_SECONDS,
+        },
+        runScripts: false,
+      },
       chat: { toast: { title: '====CHAT====' } },
       read: { toast: { title: '====FILE READ====' } },
       write: { toast: { title: '====FILE WRITE====' } },

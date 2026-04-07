@@ -6,8 +6,12 @@
   "scripts": {
     "start": "node .",
     "build": "tsc",
-    "test:e2e": "bash test/e2e/session-lifecycle.sh",
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
+    "test:unit": "NODE_OPTIONS='--experimental-vm-modules' jest --testPathIgnorePatterns='test/integration|test/unit/benchmark' --passWithNoTests",
+    "test:benchmark": "NODE_OPTIONS='--experimental-vm-modules' jest test/unit/benchmark --passWithNoTests",
+    "test:integration": "NODE_OPTIONS='--experimental-vm-modules' jest test/integration --passWithNoTests",
+    "test:e2e": "bash test/e2e/session-lifecycle.sh && bash test/e2e/tool-execution.sh",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:cov": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
     "coverage:report": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage --coverageReporters=text-summary --coverageReporters=html",
     "lint": "eslint \"**/*.ts\" --ignore-pattern \"node_modules/**\" --ignore-pattern \"dist/**\" --ignore-pattern \"coverage/**\"",

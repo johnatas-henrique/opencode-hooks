@@ -1,18 +1,18 @@
-import { OpencodeHooks } from '../.opencode/plugins/opencode-hooks';
+import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
 
 const mockRunScript = jest.fn().mockResolvedValue('Script executed');
 
-jest.mock('../.opencode/plugins/helpers/run-script', () => ({
+jest.mock('../../.opencode/plugins/helpers/run-script', () => ({
   runScript: jest
     .fn()
     .mockImplementation((...args: any[]) => mockRunScript(...args)),
 }));
 
-jest.mock('../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
+jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
   userConfig: {
     enabled: true,
     toast: true,
@@ -32,6 +32,13 @@ jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
         scripts: ['session-stop.sh'],
         toast: false,
       },
+      'chat.message': { enabled: false },
+      'chat.params': { enabled: false },
+      'chat.headers': { enabled: false },
+      'experimental.chat.messages.transform': { enabled: false },
+      'experimental.chat.system.transform': { enabled: false },
+      'experimental.text.complete': { enabled: false },
+      'session.unknown': { enabled: false },
     },
     tools: {
       'tool.execute.after': {
@@ -43,7 +50,7 @@ jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
   },
 }));
 
-jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
+jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -86,7 +93,7 @@ jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
         `Session Id: ${event.properties.sessionID}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.idle': {
-      title: '====IDLE SESSION====',
+      title: '====SESSION IDLE====',
       variant: 'info',
       duration: 2000,
       defaultScript: 'session-idle.sh',
@@ -99,36 +106,52 @@ jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
       duration: 2000,
       defaultScript: 'session-status.sh',
       buildMessage: (event: any) =>
-        `Session Id: ${event.properties.sessionID}\nStatus: ${JSON.stringify(event.properties.status)}\nTime: ${new Date().toLocaleTimeString()}`,
+        `Session Id: ${event.properties.sessionID}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.updated': {
-      title: '====UPDATED SESSION====',
+      title: '====SESSION UPDATED====',
       variant: 'info',
       duration: 2000,
       defaultScript: 'session-updated.sh',
       buildMessage: (event: any) =>
-        `Session Id: ${event.properties.info.id}\nTime: ${new Date().toLocaleTimeString()}`,
+        `Session Id: ${event.properties.sessionID}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'server.instance.disposed': {
-      title: '',
+      title: '====SERVER STOPPED====',
       variant: 'info',
-      duration: 0,
+      duration: 2000,
       defaultScript: 'session-stop.sh',
       buildMessage: (event: any) =>
-        `Directory: ${event.properties.directory || 'unknown'}\nTime: ${new Date().toLocaleTimeString()}`,
+        `Session Id: ${event.properties.sessionID}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'tool.execute.after': {
-      title: '====SUBAGENT CALLED====',
+      title: '====TOOL AFTER====',
       variant: 'info',
       duration: 2000,
       defaultScript: 'tool-execute-after.sh',
+      buildMessage: (event: any) =>
+        `Tool: ${event.properties?.tool || 'unknown'}\nTime: ${new Date().toLocaleTimeString()}`,
+    },
+    'tool.execute.after.subagent': {
+      title: '====SUBAGENT CALLED====',
+      variant: 'info',
+      duration: 2000,
+      defaultScript: 'log-agent.sh',
+      buildMessage: (event: any) =>
+        `Agent: ${event.properties?.subagentType || 'unknown'}\nTime: ${new Date().toLocaleTimeString()}`,
+    },
+    'shell.env': {
+      title: '====SHELL ENV====',
+      variant: 'info',
+      duration: 2000,
+      defaultScript: 'shell-env.sh',
       buildMessage: (event: any) =>
         `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: ${new Date().toLocaleTimeString()}`,
     },
   },
 }));
 
-jest.mock('../.opencode/plugins/helpers/events', () => {
+jest.mock('../../.opencode/plugins/helpers/events', () => {
   const mockHandlers = {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -210,6 +233,14 @@ jest.mock('../.opencode/plugins/helpers/events', () => {
       buildMessage: (event: any) =>
         `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: ${new Date().toLocaleTimeString()}`,
     },
+    'tool.execute.after.subagent': {
+      title: '====SUBAGENT CALLED====',
+      variant: 'info',
+      duration: 2000,
+      defaultScript: 'log-agent.sh',
+      buildMessage: (event: any) =>
+        `Agent: ${event.properties?.subagentType || 'unknown'}\nTime: ${new Date().toLocaleTimeString()}`,
+    },
   };
 
   const mockUserConfig = {
@@ -231,12 +262,22 @@ jest.mock('../.opencode/plugins/helpers/events', () => {
         scripts: ['session-stop.sh'],
         toast: false,
       },
+      'chat.message': { enabled: false },
+      'chat.params': { enabled: false },
+      'chat.headers': { enabled: false },
+      'experimental.chat.messages.transform': { enabled: false },
+      'experimental.chat.system.transform': { enabled: false },
+      'experimental.text.complete': { enabled: false },
+      'session.unknown': { enabled: false },
     },
     tools: {
       'tool.execute.after': {
         task: { toast: true, scripts: ['log-agent.sh'] },
         chat: { toast: false },
         'git.commit': { runScripts: false },
+      },
+      'tool.execute.after.subagent': {
+        task: { toast: true, scripts: ['log-agent.sh'] },
       },
     },
   };
@@ -352,14 +393,14 @@ jest.mock('../.opencode/plugins/helpers/events', () => {
   };
 });
 
-jest.mock('../.opencode/plugins/helpers/toast-queue', () => {
+jest.mock('../../.opencode/plugins/helpers/toast-queue', () => {
   const mockQueue = {
     add: jest.fn(),
     flush: jest.fn().mockResolvedValue(undefined),
     pending: 0,
   };
   return {
-    ...jest.requireActual('../.opencode/plugins/helpers/toast-queue'),
+    ...jest.requireActual('../../.opencode/plugins/helpers/toast-queue'),
     initGlobalToastQueue: jest.fn((showFn) => {
       mockQueue.add = jest.fn((toast) => showFn(toast));
       return mockQueue;
@@ -370,12 +411,12 @@ jest.mock('../.opencode/plugins/helpers/toast-queue', () => {
   };
 });
 
-jest.mock('../.opencode/plugins/helpers/show-startup-toast', () => ({
+jest.mock('../../.opencode/plugins/helpers/show-startup-toast', () => ({
   showStartupToast: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { runScript } from '../.opencode/plugins/helpers/run-script';
-import { saveToFile } from '../.opencode/plugins/helpers/save-to-file';
+import { runScript } from '../../.opencode/plugins/helpers/run-script';
+import { saveToFile } from '../../.opencode/plugins/helpers/save-to-file';
 
 const _LOG_FILE = './session_events.log';
 
@@ -764,7 +805,7 @@ describe('Session Plugins', () => {
         metadata: {},
       };
       await plugin['tool.execute.after'](input, output);
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
     });
 
     it('should not trigger toast for non-task tools', async () => {
@@ -782,7 +823,7 @@ describe('Session Plugins', () => {
         metadata: {},
       };
       await plugin['tool.execute.after'](input, output);
-      expect(mockClient.tui.showToast).not.toHaveBeenCalled();
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
     });
 
     it('should not trigger toast when subagent_type is undefined', async () => {
@@ -800,7 +841,7 @@ describe('Session Plugins', () => {
         metadata: {},
       };
       await plugin['tool.execute.after'](input, output);
-      expect(mockClient.tui.showToast).not.toHaveBeenCalled();
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
     });
   });
 

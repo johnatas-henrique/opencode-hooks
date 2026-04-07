@@ -1,13 +1,38 @@
 import {
   logEventConfig,
   logScriptOutput,
-} from '../.opencode/plugins/helpers/log-event';
+} from '../../.opencode/plugins/helpers/log-event';
 
-jest.mock('../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../.opencode/plugins/helpers/toast-queue', () => {
+jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
+  userConfig: {
+    enabled: true,
+    default: {
+      debug: false,
+      toast: false,
+      runScripts: false,
+      runOnlyOnce: false,
+      saveToFile: false,
+      appendToSession: false,
+    },
+    events: {
+      'session.created': { saveToFile: true },
+      'chat.message': { enabled: false },
+      'chat.params': { enabled: false },
+      'chat.headers': { enabled: false },
+      'experimental.chat.messages.transform': { enabled: false },
+      'experimental.chat.system.transform': { enabled: false },
+      'experimental.text.complete': { enabled: false },
+      'session.unknown': { enabled: false },
+    },
+    tools: {},
+  },
+}));
+
+jest.mock('../../.opencode/plugins/helpers/toast-queue', () => {
   const mockQueue = {
     add: jest.fn(),
     addMultiple: jest.fn(),
@@ -25,14 +50,14 @@ jest.mock('../.opencode/plugins/helpers/toast-queue', () => {
 });
 
 const mockSaveToFile =
-  require('../.opencode/plugins/helpers/save-to-file').saveToFile;
+  require('../../.opencode/plugins/helpers/save-to-file').saveToFile;
 
 describe('logEventConfig', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     const {
       resetGlobalToastQueue,
-    } = require('../.opencode/plugins/helpers/toast-queue');
+    } = require('../../.opencode/plugins/helpers/toast-queue');
     resetGlobalToastQueue();
   });
   it('should save config when saveToFile is true', async () => {
@@ -53,6 +78,7 @@ describe('logEventConfig', () => {
     await logEventConfig(
       '2026-04-04T22:00:00.000Z',
       'session.created',
+      {},
       resolved
     );
 
@@ -80,6 +106,7 @@ describe('logEventConfig', () => {
     await logEventConfig(
       '2026-04-04T22:00:00.000Z',
       'session.created',
+      {},
       resolved
     );
 
@@ -104,6 +131,7 @@ describe('logEventConfig', () => {
     await logEventConfig(
       '2026-04-04T22:00:00.000Z',
       'message.created',
+      {},
       resolved
     );
 

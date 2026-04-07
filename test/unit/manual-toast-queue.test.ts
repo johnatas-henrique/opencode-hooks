@@ -3,7 +3,7 @@ import {
   useGlobalToastQueue,
   resetGlobalToastQueue,
   createToastQueue,
-} from '../.opencode/plugins/helpers/toast-queue';
+} from '../../.opencode/plugins/helpers/toast-queue';
 
 describe('Global Toast Queue', () => {
   beforeEach(() => {

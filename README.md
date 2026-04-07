@@ -239,13 +239,25 @@ tools: {
 
 ```bash
 npm run build          # Compile TypeScript
-npm test               # Run unit tests
-npm run test:ci        # Run tests with coverage
-npm run coverage       # Full coverage report
+npm run test:unit      # Run unit tests
+npm run test:cov       # Run tests with coverage
+npm run test:integration  # Run integration tests
+npm run test:e2e       # Run E2E tests
+npm run test:all       # Run all tests (unit + integration + e2e)
+npm run coverage:report # Full coverage report (HTML)
 npm run lint           # Run ESLint
 npm run lint:fix       # Fix ESLint errors
 npm run format         # Run Prettier
 npm run format:check   # Check formatting
+```
+
+### Test Coverage
+
+Current coverage: **98%+ statements, 88%+ branches, 79%+ functions, 99%+ lines**
+
+```bash
+npm run test:cov       # Terminal coverage summary
+npm run coverage:report # HTML report in coverage/lcov-report/index.html
 ```
 
 ### Project Structure
@@ -254,36 +266,48 @@ npm run format:check   # Check formatting
 .opencode/plugins/
 ├── opencode-hooks.ts           # Main plugin entry point
 ├── types/
-│   ├── opencode-hooks.ts       # OpenCode event type definitions
-│   └── event-properties.ts     # Event property type definitions
+│   └── *.ts                    # OpenCode event type definitions
 └── helpers/
+    ├── index.ts                # Barrel exports
     ├── event-types.ts          # EventType enum and interfaces
-    ├── handlers.ts             # Default handlers with message builders
+    ├── default-handlers.ts     # Default handlers with message builders
     ├── events.ts               # Config resolution logic
     ├── user-events.config.ts   # User configuration (edit this file)
     ├── toast-queue.ts          # Staggered toast notification queue
     ├── run-script.ts           # Shell script execution
+    ├── run-script-handler.ts   # Script execution with error handling
     ├── save-to-file.ts         # File persistence utility
     ├── append-to-session.ts    # Session context appending
+    ├── session.ts              # Session tracking utilities
+    ├── debug.ts                # Debug logging
+    ├── plugin-status.ts        # Plugin status management
     └── constants.ts            # Shared constants
-test/                           # Jest test files
+
+test/
+├── unit/                       # Unit tests (Jest)
+├── integration/               # Integration tests
+├── e2e/                       # End-to-end tests
+└── __mocks__/                 # Test mocks
 ```
 
 ### Adding a New Event Handler
 
-1. Add the event to `EventType` enum in `event-types.ts`
-2. Add a handler entry in `handlers.ts` with title, variant, duration, defaultScript, and buildMessage
-3. Add the event to `user-events.config.ts` with desired configuration
-4. Write tests in `test/handlers.test.ts` and `test/events.test.ts`
+1. Add the event to `EventType` enum in `helpers/event-types.ts`
+2. Add a handler entry in `helpers/default-handlers.ts` with title, variant, duration, defaultScript, and buildMessage
+3. Add the event to `helpers/user-events.config.ts` with desired configuration
+4. Write tests in `test/unit/handlers.test.ts` and `test/unit/events.test.ts`
+
+The `opencode-hooks.ts` plugin uses `executeHook()` to handle all events consistently.
 
 ## Architecture
 
 The plugin uses a modular, layered architecture:
 
-1. **User Config** (`user-events.config.ts`) — User edits only this file
-2. **Handlers** (`handlers.ts`) — Base defaults for each event
-3. **Events** (`events.ts`) — Merges user config with handler defaults
-4. **Plugin** (`opencode-hooks.ts`) — Orchestrates toasts, scripts, and file operations
+1. **User Config** (`helpers/user-events.config.ts`) — User edits only this file
+2. **Handlers** (`helpers/default-handlers.ts`) — Base defaults for each event
+3. **Events** (`helpers/events.ts`) — Merges user config with handler defaults
+4. **Execute Hook** (`helpers/run-script-handler.ts`) — Generic script execution with error handling
+5. **Plugin** (`opencode-hooks.ts`) — Orchestrates toasts, scripts, and file operations
 
 Events not listed in the config use global defaults. Setting an event to `false` disables it entirely.
 

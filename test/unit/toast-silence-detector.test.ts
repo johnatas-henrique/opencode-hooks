@@ -1,7 +1,7 @@
 import {
   waitForToastSilence,
   countToastsInLog,
-} from '../.opencode/plugins/helpers/toast-silence-detector';
+} from '../../.opencode/plugins/helpers/toast-silence-detector';
 
 jest.mock('fs/promises', () => ({
   readFile: jest.fn(),

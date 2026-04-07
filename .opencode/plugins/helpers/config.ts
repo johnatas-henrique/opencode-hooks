@@ -16,6 +16,7 @@ export enum EventType {
 
   TOOL_EXECUTE_BEFORE = 'tool.execute.before',
   TOOL_EXECUTE_AFTER = 'tool.execute.after',
+  TOOL_EXECUTE_AFTER_SUBAGENT = 'tool.execute.after.subagent',
 
   FILE_EDITED = 'file.edited',
   FILE_WATCHER_UPDATED = 'file.watcher.updated',
@@ -42,6 +43,14 @@ export enum EventType {
   TUI_TOAST_SHOW = 'tui.toast.show',
 
   EXPERIMENTAL_SESSION_COMPACTING = 'experimental.session.compacting',
+
+  CHAT_MESSAGE = 'chat.message',
+  CHAT_PARAMS = 'chat.params',
+  CHAT_HEADERS = 'chat.headers',
+  EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM = 'experimental.chat.messages.transform',
+  EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM = 'experimental.chat.system.transform',
+  EXPERIMENTAL_TEXT_COMPLETE = 'experimental.text.complete',
+  SESSION_UNKNOWN = 'session.unknown',
 }
 
 export type EventVariant = 'success' | 'warning' | 'error' | 'info';
@@ -85,6 +94,7 @@ export interface UserEventsConfig {
   events: Partial<Record<EventType, EventConfig>>;
   tools: {
     [EventType.TOOL_EXECUTE_AFTER]?: Record<string, ToolConfig>;
+    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]?: Record<string, ToolConfig>;
     [EventType.TOOL_EXECUTE_BEFORE]?: Record<string, ToolOverride>;
   };
 }

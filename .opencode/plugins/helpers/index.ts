@@ -12,7 +12,7 @@ import {
   resetGlobalToastQueue,
   type ToastQueue,
 } from './toast-queue';
-import { handlers, getProp, type EventHandler } from './default-handlers';
+import { handlers, type EventHandler } from './default-handlers';
 import {
   resolveEventConfig,
   resolveToolConfig,
@@ -27,7 +27,7 @@ import {
   type EventConfig,
   type ToolConfig,
   type UserEventsConfig,
-} from './event-types';
+} from './config';
 import { showActivePluginsToast } from './show-active-plugins';
 import {
   waitForToastSilence,
@@ -40,7 +40,7 @@ import {
   getPrimarySessionId,
   resetSessionTracking,
 } from './session';
-import type { RunScriptConfig } from './run-script-types';
+import type { RunScriptConfig } from './script-config';
 
 export {
   saveToFile,
@@ -55,7 +55,6 @@ export {
   getGlobalToastQueue,
   resetGlobalToastQueue,
   handlers,
-  getProp,
   resolveEventConfig,
   resolveToolConfig,
   getHandler,
