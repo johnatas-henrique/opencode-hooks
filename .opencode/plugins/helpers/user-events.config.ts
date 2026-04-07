@@ -10,7 +10,7 @@ export const userConfig: UserEventsConfig = {
     toast: false,
     runScripts: false,
     runOnlyOnce: false,
-    saveToFile: true,
+    saveToFile: false,
     appendToSession: false,
   },
 
@@ -25,12 +25,14 @@ export const userConfig: UserEventsConfig = {
       toast: { variant: 'success' },
       runScripts: true,
       runOnlyOnce: true,
+      saveToFile: true,
       appendToSession: true,
     },
     [EventType.SESSION_COMPACTED]: {
       toast: { duration: TOAST_DURATION.FIVE_SECONDS, variant: 'warning' },
       scripts: ['pre-compact.sh'],
       runScripts: true,
+      saveToFile: true,
     },
     [EventType.SESSION_DELETED]: { enabled: false },
     [EventType.SESSION_DIFF]: { enabled: false },
@@ -45,11 +47,11 @@ export const userConfig: UserEventsConfig = {
     [EventType.MESSAGE_REMOVED]: { enabled: false },
     [EventType.MESSAGE_UPDATED]: { enabled: false },
 
-    [EventType.FILE_EDITED]: { enabled: true },
-    [EventType.FILE_WATCHER_UPDATED]: { enabled: true },
+    [EventType.FILE_EDITED]: { enabled: false },
+    [EventType.FILE_WATCHER_UPDATED]: { enabled: false },
 
-    [EventType.PERMISSION_ASKED]: { enabled: true },
-    [EventType.PERMISSION_REPLIED]: { enabled: true },
+    [EventType.PERMISSION_ASKED]: { enabled: false },
+    [EventType.PERMISSION_REPLIED]: { enabled: false },
 
     [EventType.COMMAND_EXECUTED]: { enabled: false },
 
@@ -64,9 +66,17 @@ export const userConfig: UserEventsConfig = {
 
     [EventType.TUI_PROMPT_APPEND]: { toast: false },
     [EventType.TUI_COMMAND_EXECUTE]: { enabled: false },
-    [EventType.TUI_TOAST_SHOW]: { runScripts: false, toast: false },
+    [EventType.TUI_TOAST_SHOW]: { enabled: false },
 
     [EventType.EXPERIMENTAL_SESSION_COMPACTING]: { runScripts: true },
+
+    [EventType.CHAT_MESSAGE]: { enabled: false },
+    [EventType.CHAT_PARAMS]: { enabled: false },
+    [EventType.CHAT_HEADERS]: { enabled: false },
+    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: { enabled: false },
+    [EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: { enabled: false },
+    [EventType.EXPERIMENTAL_TEXT_COMPLETE]: { enabled: false },
+    [EventType.SESSION_UNKNOWN]: { enabled: false },
   },
 
   tools: {
@@ -75,11 +85,10 @@ export const userConfig: UserEventsConfig = {
         enabled: true,
         toast: {
           enabled: true,
-          title: '====SUBAGENT====',
+          title: '====TOOL====',
           duration: TOAST_DURATION.FIVE_SECONDS,
         },
-        scripts: ['log-agent.sh'],
-        runScripts: true,
+        saveToFile: true,
       },
       skill: {
         enabled: true,
@@ -88,8 +97,9 @@ export const userConfig: UserEventsConfig = {
           title: '====SKILL====',
           duration: TOAST_DURATION.FIVE_SECONDS,
         },
-        scripts: ['log-agent.sh'],
+        scripts: ['log-skill.sh'],
         runScripts: true,
+        saveToFile: true,
       },
       chat: { toast: { title: '====CHAT====' } },
       read: { toast: { title: '====FILE READ====' } },
@@ -118,7 +128,7 @@ export const userConfig: UserEventsConfig = {
       filesystem_get_file_info: { toast: { title: '====FS STAT====' } },
       gh_grep_searchGitHub: { toast: { title: '====GH SEARCH====' } },
     },
-    [EventType.TOOL_EXECUTE_BEFORE]: {
+    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
       task: {
         enabled: true,
         toast: {
@@ -128,17 +138,12 @@ export const userConfig: UserEventsConfig = {
         },
         scripts: ['log-agent.sh'],
         runScripts: true,
+        saveToFile: true,
       },
-      skill: {
-        enabled: true,
-        toast: {
-          enabled: true,
-          title: '====SKILL====',
-          duration: TOAST_DURATION.FIVE_SECONDS,
-        },
-        scripts: ['log-agent.sh'],
-        runScripts: true,
-      },
+    },
+    [EventType.TOOL_EXECUTE_BEFORE]: {
+      task: { toast: { title: '====TOOL====' } },
+      skill: { toast: { title: '====SKILL====' } },
       chat: { toast: { title: '====CHAT====' } },
       read: { toast: { title: '====FILE READ====' } },
       write: { toast: { title: '====FILE WRITE====' } },
