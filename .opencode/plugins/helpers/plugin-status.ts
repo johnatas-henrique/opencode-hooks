@@ -2,11 +2,13 @@ import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { DEFAULT_SESSION_ID } from './constants';
+import type { PluginStatusDisplayMode } from './config';
 
 export interface PluginStatus {
   name: string;
   status: 'active' | 'failed' | 'incompatible';
   error?: string;
+  source?: 'built-in' | 'user';
 }
 
 interface PluginEntry {
@@ -77,6 +79,10 @@ function extractPluginName(entry: PluginEntry): string {
   return entry.name || entry.path || entry.pkg || DEFAULT_SESSION_ID;
 }
 
+function isBuiltInPlugin(entry: PluginEntry): boolean {
+  return !!entry.name && entry.message.includes('internal plugin');
+}
+
 export function getPluginStatus(): PluginStatus[] {
   const logFile = getLatestLogFile();
   if (!logFile || !existsSync(logFile)) return [];
@@ -100,14 +106,16 @@ export function getPluginStatus(): PluginStatus[] {
 
   for (const entry of entries) {
     const name = extractPluginName(entry);
+    const isBuiltIn = isBuiltInPlugin(entry);
+    const source: 'built-in' | 'user' = isBuiltIn ? 'built-in' : 'user';
 
     if (entry.level === 'INFO' && entry.message.includes('loading')) {
       if (!pluginMap.has(name)) {
-        pluginMap.set(name, { name, status: 'active' });
+        pluginMap.set(name, { name, status: 'active', source });
       }
     } else if (entry.level === 'ERROR') {
       const errorMsg = entry.error || entry.message;
-      pluginMap.set(name, { name, status: 'failed', error: errorMsg });
+      pluginMap.set(name, { name, status: 'failed', error: errorMsg, source });
     } else if (
       entry.level === 'WARN' &&
       entry.message.includes('incompatible')
@@ -116,6 +124,7 @@ export function getPluginStatus(): PluginStatus[] {
         name,
         status: 'incompatible',
         error: entry.message,
+        source,
       });
     }
   }
@@ -123,39 +132,119 @@ export function getPluginStatus(): PluginStatus[] {
   return Array.from(pluginMap.values());
 }
 
-export function formatPluginStatus(statuses: PluginStatus[]): string {
+export function formatPluginStatus(
+  statuses: PluginStatus[],
+  displayMode: PluginStatusDisplayMode = 'user-only'
+): string {
   if (statuses.length === 0) return 'No plugins detected in logs';
+
+  const userStatuses = statuses.filter((s) => s.source === 'user');
+  const _builtInStatuses = statuses.filter((s) => s.source === 'built-in');
 
   const active = statuses.filter((s) => s.status === 'active');
   const failed = statuses.filter((s) => s.status === 'failed');
   const incompatible = statuses.filter((s) => s.status === 'incompatible');
 
+  const activeUser = active.filter((s) => s.source === 'user');
+  const activeBuiltIn = active.filter((s) => s.source === 'built-in');
+
   const lines: string[] = [];
-  lines.push(
-    `Plugins: ${active.length} active, ${failed.length} failed, ${incompatible.length} incompatible`
-  );
 
-  if (active.length > 0) {
-    lines.push('');
-    lines.push('Active:');
-    for (const p of active) {
-      lines.push(`  ✓ ${p.name}`);
+  if (displayMode === 'user-only') {
+    lines.push(
+      `Plugins: ${userStatuses.length} active, ${failed.filter((f) => f.source === 'user').length} failed, ${incompatible.filter((i) => i.source === 'user').length} incompatible`
+    );
+
+    if (activeUser.length > 0) {
+      lines.push('');
+      lines.push('Active:');
+      for (const p of activeUser) {
+        lines.push(`  ✓ ${p.name}`);
+      }
     }
-  }
 
-  if (failed.length > 0) {
-    lines.push('');
-    lines.push('Failed:');
-    for (const p of failed) {
-      lines.push(`  ✗ ${p.name}${p.error ? ` (${p.error})` : ''}`);
+    if (failed.filter((f) => f.source === 'user').length > 0) {
+      lines.push('');
+      lines.push('Failed:');
+      for (const p of failed.filter((f) => f.source === 'user')) {
+        lines.push(`  ✗ ${p.name}${p.error ? ` (${p.error})` : ''}`);
+      }
     }
-  }
 
-  if (incompatible.length > 0) {
-    lines.push('');
-    lines.push('Incompatible:');
-    for (const p of incompatible) {
-      lines.push(`  ⚠ ${p.name}`);
+    if (incompatible.filter((i) => i.source === 'user').length > 0) {
+      lines.push('');
+      lines.push('Incompatible:');
+      for (const p of incompatible.filter((i) => i.source === 'user')) {
+        lines.push(`  ⚠ ${p.name}`);
+      }
+    }
+  } else if (displayMode === 'user-separated') {
+    lines.push(
+      `Plugins: ${active.length} active, ${failed.length} failed, ${incompatible.length} incompatible`
+    );
+
+    if (activeUser.length > 0) {
+      lines.push('');
+      lines.push('Active (user):');
+      for (const p of activeUser) {
+        lines.push(`  ✓ ${p.name}`);
+      }
+    }
+
+    if (activeBuiltIn.length > 0) {
+      lines.push('');
+      lines.push('Active (built-in):');
+      for (const p of activeBuiltIn) {
+        lines.push(`  ✓ ${p.name}`);
+      }
+    }
+
+    if (failed.length > 0) {
+      lines.push('');
+      lines.push('Failed:');
+      for (const p of failed) {
+        lines.push(`  ✗ ${p.name}${p.error ? ` (${p.error})` : ''}`);
+      }
+    }
+
+    if (incompatible.length > 0) {
+      lines.push('');
+      lines.push('Incompatible:');
+      for (const p of incompatible) {
+        lines.push(`  ⚠ ${p.name}`);
+      }
+    }
+  } else {
+    lines.push(
+      `Plugins: ${active.length} active, ${failed.length} failed, ${incompatible.length} incompatible`
+    );
+
+    const allActive = [...activeUser, ...activeBuiltIn];
+    if (allActive.length > 0) {
+      lines.push('');
+      lines.push('Active:');
+      for (const p of allActive) {
+        const label = p.source === 'built-in' ? '(built-in)' : '(user)';
+        lines.push(`  ✓ ${p.name} ${label}`);
+      }
+    }
+
+    if (failed.length > 0) {
+      lines.push('');
+      lines.push('Failed:');
+      for (const p of failed) {
+        const label = p.source === 'built-in' ? '(built-in)' : '(user)';
+        lines.push(`  ✗ ${p.name}${p.error ? ` (${p.error})` : ''} ${label}`);
+      }
+    }
+
+    if (incompatible.length > 0) {
+      lines.push('');
+      lines.push('Incompatible:');
+      for (const p of incompatible) {
+        const label = p.source === 'built-in' ? '(built-in)' : '(user)';
+        lines.push(`  ⚠ ${p.name} ${label}`);
+      }
     }
   }
 
