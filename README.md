@@ -50,6 +50,12 @@ export const userConfig: UserEventsConfig = {
   appendToSession: true,
   runScripts: true,
 
+  // Plugin status toast configuration (one-shot at startup)
+  pluginStatus: {
+    enabled: true, // Show/hide the status toast
+    displayMode: 'user-only' | 'user-separated' | 'all-labeled', // How to display
+  },
+
   // Per-event configuration
   events: {
     [EventType.SESSION_CREATED]: true,
@@ -66,6 +72,59 @@ export const userConfig: UserEventsConfig = {
     },
   },
 };
+```
+
+### Plugin Status Display
+
+At startup, the plugin displays a toast showing loaded plugins. You can configure what to show:
+
+```typescript
+export const userConfig: UserEventsConfig = {
+  enabled: true,
+
+  // Plugin status toast configuration (one-shot at startup)
+  pluginStatus: {
+    enabled: true, // Show/hide the status toast
+    displayMode: 'user-only' | 'user-separated' | 'all-labeled', // How to display
+  },
+
+  // ... rest of config
+};
+```
+
+#### Display Modes
+
+| Mode             | Description                                                          |
+| ---------------- | -------------------------------------------------------------------- |
+| `user-only`      | Shows only user-configured plugins (default)                         |
+| `user-separated` | Groups plugins into "Active (user)" and "Active (built-in)" sections |
+| `all-labeled`    | Shows all plugins with "(user)" or "(built-in)" labels               |
+
+#### Example Output
+
+**user-only** (default):
+
+```
+Plugins: 5 active, 0 failed, 0 incompatible
+
+Active:
+  ✓ @gotgenes/opencode-agent-identity
+  ✓ opencode-handoff
+  ✓ true-mem
+```
+
+**user-separated**:
+
+```
+Plugins: 11 active, 0 failed, 0 incompatible
+
+Active (user):
+  ✓ @gotgenes/opencode-agent-identity
+  ✓ opencode-handoff
+
+Active (built-in):
+  ✓ CodexAuthPlugin
+  ✓ CopilotAuthPlugin
 ```
 
 ### Event Configuration Options

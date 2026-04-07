@@ -5,6 +5,11 @@ import type { UserEventsConfig } from '../../../.opencode/plugins/helpers/config
 export const userConfig: UserEventsConfig = {
   enabled: true,
 
+  pluginStatus: {
+    enabled: true,
+    displayMode: 'user-only',
+  },
+
   default: {
     debug: true,
     toast: true,
