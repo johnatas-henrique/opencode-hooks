@@ -5,6 +5,11 @@ import type { UserEventsConfig } from './config';
 export const userConfig: UserEventsConfig = {
   enabled: true,
 
+  pluginStatus: {
+    enabled: true,
+    displayMode: 'user-only',
+  },
+
   default: {
     debug: false,
     toast: false,
