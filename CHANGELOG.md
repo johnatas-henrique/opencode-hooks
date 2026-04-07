@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.0](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.2.0...opencode-hooks-v0.3.0) (2026-04-07)
+
+
+### Features
+
+* **events:** add TOOL_EXECUTE_AFTER_SUBAGENT event type ([056f965](https://github.com/johnatas-henrique/opencode-hooks/commit/056f965dd5eba5c924136330763b329b7c90ed1b))
+* **scripts:** add log-skill.sh script ([f2d3e66](https://github.com/johnatas-henrique/opencode-hooks/commit/f2d3e664ba4617c3529bddaeadc8e36996a18025))
+
+
+### Bug Fixes
+
+* add sanitization for sensitive data in debug logs ([bbbd9e5](https://github.com/johnatas-henrique/opencode-hooks/commit/bbbd9e5aaec9eec53f316d1f6e9aff7d34f2cc3c))
+* **events:** disable unconfigured events to silence warnings ([d955558](https://github.com/johnatas-henrique/opencode-hooks/commit/d955558c90d8df49dfdd21234e9a98d455a87892))
+
+
+### Maintenance
+
+* remove old type files after rename ([986e5dc](https://github.com/johnatas-henrique/opencode-hooks/commit/986e5dc7c586f5cebd92cb53069d832706b3c2a2))
+
 ## [0.2.0](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.1.0...opencode-hooks-v0.2.0) (2026-04-06)
 
 
