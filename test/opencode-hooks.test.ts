@@ -55,6 +55,14 @@ jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
       buildMessage: (event: any) =>
         `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: now`,
     },
+    'tool.execute.after.subagent': {
+      title: '====SUBAGENT CALLED====',
+      variant: 'info',
+      duration: 2000,
+      defaultScript: 'log-agent.sh',
+      buildMessage: (event: any) =>
+        `Agent: ${event.properties?.subagentType || 'unknown'}\nTime: now`,
+    },
     'shell.env': {
       title: '====SHELL ENV====',
       variant: 'info',
@@ -82,11 +90,21 @@ jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
     events: {
       'session.created': { runOnlyOnce: true },
       'shell.env': { runScripts: true, scripts: ['shell-env.sh'] },
+      'chat.message': { enabled: false },
+      'chat.params': { enabled: false },
+      'chat.headers': { enabled: false },
+      'experimental.chat.messages.transform': { enabled: false },
+      'experimental.chat.system.transform': { enabled: false },
+      'experimental.text.complete': { enabled: false },
+      'session.unknown': { enabled: false },
     },
     tools: {
       'tool.execute.after': {
         task: { toast: true, scripts: ['log-agent.sh'] },
         chat: { toast: false },
+      },
+      'tool.execute.after.subagent': {
+        task: { toast: true, scripts: ['log-agent.sh'] },
       },
       'tool.execute.before': {
         read: { toast: true, scripts: ['before-read.sh'] },
@@ -123,6 +141,14 @@ jest.mock('../.opencode/plugins/helpers/events', () => {
       buildMessage: (event: any) =>
         `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: now`,
     },
+    'tool.execute.after.subagent': {
+      title: '====SUBAGENT CALLED====',
+      variant: 'info',
+      duration: 2000,
+      defaultScript: 'log-agent.sh',
+      buildMessage: (event: any) =>
+        `Agent: ${event.properties?.subagentType || 'unknown'}\nTime: now`,
+    },
     'shell.env': {
       title: '====SHELL ENV====',
       variant: 'info',
@@ -154,6 +180,9 @@ jest.mock('../.opencode/plugins/helpers/events', () => {
       'tool.execute.after': {
         task: { toast: true, scripts: ['log-agent.sh'] },
         chat: { toast: false },
+      },
+      'tool.execute.after.subagent': {
+        task: { toast: true, scripts: ['log-agent.sh'] },
       },
       'tool.execute.before': {
         read: { toast: true, scripts: ['before-read.sh'] },
@@ -502,7 +531,7 @@ describe('opencode-hooks - plugin hooks', () => {
       };
       await plugin['tool.execute.after'](input, output);
 
-      expect(mockClient.tui.showToast).not.toHaveBeenCalled();
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
     });
 
     it('should not trigger toast when subagent_type is undefined', async () => {
@@ -521,7 +550,7 @@ describe('opencode-hooks - plugin hooks', () => {
       };
       await plugin['tool.execute.after'](input, output);
 
-      expect(mockClient.tui.showToast).not.toHaveBeenCalled();
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
     });
 
     it('should show error toast when script fails', async () => {
@@ -548,7 +577,9 @@ describe('opencode-hooks - plugin hooks', () => {
 
       expect(errorToastCall).toBeDefined();
       expect(errorToastCall[0].body.title).toBe('====SCRIPT ERROR====');
-      expect(errorToastCall[0].body.message).toContain('log-agent.sh');
+      expect(errorToastCall[0].body.message).toContain(
+        'Error: Agent script failed'
+      );
     });
   });
 
