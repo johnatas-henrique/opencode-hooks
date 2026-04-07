@@ -24,6 +24,7 @@ import {
   logEventConfig,
   handleDebugLog,
   runScriptAndHandle,
+  EventType,
 } from './helpers';
 import { userConfig } from './helpers/user-events.config';
 import {
@@ -57,19 +58,8 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     output,
     toolName,
     scriptArg,
-    showToast = true,
   } = params;
   const timestamp = new Date().toISOString();
-
-  await saveToFile({
-    content: `
-|=================================Hook Triggered=================================|
-[${timestamp}] - Hook: ${eventType}
-Arguments: ${JSON.stringify(input, null, 2)}
-Resolved Config: ${JSON.stringify(resolved, null, 2)}
-
-`,
-  });
 
   if (resolved.debug) {
     await handleDebugLog(timestamp, `DEBUG ${eventType.toUpperCase()}`, {
@@ -87,9 +77,9 @@ Resolved Config: ${JSON.stringify(resolved, null, 2)}
     return;
   }
 
-  await logEventConfig(timestamp, eventType, resolved);
+  await logEventConfig(timestamp, eventType, input, resolved);
 
-  if (resolved.toast && showToast) {
+  if (resolved.toast) {
     const handler = handlers[eventType];
     const message =
       resolved.toastMessage ??
@@ -160,11 +150,7 @@ export const OpencodeHooks: Plugin = async (
   });
 
   await saveToFile({
-    content: `
-|=================================OpencodeHooks plugin initialized=================================|
-[${new Date().toISOString()}] - Configuration loaded from user-events.config.ts
-
-`,
+    content: `|=================================OpencodeHooks plugin initialized=================================|\n[${new Date().toISOString()}] - Configuration loaded from user-events.config.ts\n`,
   });
 
   if (!hasShownToast) {
@@ -179,8 +165,7 @@ export const OpencodeHooks: Plugin = async (
 
       if (!isKnownEvent) {
         await saveToFile({
-          content: `===================UNKNOWN EVENT======================\n
-[${timestamp}] - [WARN] Event: ${event.type} is not configured.\n${JSON.stringify(event, null, 2)}\n\n`,
+          content: `===================UNKNOWN EVENT======================\n[${timestamp}] - [WARN] Event: ${event.type} is not configured.\n${JSON.stringify(event, null, 2)}\n`,
           showToast: useGlobalToastQueue().add,
           filename: UNKNOWN_EVENT_LOG_FILE,
         });
@@ -220,31 +205,67 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    'tool.execute.after': async (
+    [EventType.TOOL_EXECUTE_AFTER]: async (
       input: ToolExecuteAfterInput,
       output: ToolExecuteAfterOutput
     ) => {
-      const resolved = resolveToolConfig('tool.execute.after', input.tool);
-
       const isTaskTool = input.tool === TASK_TOOL_NAME;
-      const subagentType =
-        isTaskTool && typeof input.args[SUBAGENT_TYPE_ARG] === 'string'
-          ? input.args[SUBAGENT_TYPE_ARG]
-          : '';
+      if (isTaskTool) {
+        const timestamp = new Date().toISOString();
+        const subagentType =
+          isTaskTool && typeof input.args[SUBAGENT_TYPE_ARG] === 'string'
+            ? input.args[SUBAGENT_TYPE_ARG]
+            : '';
 
-      const showToast = isTaskTool && !!subagentType;
+        const rightTool = subagentType
+          ? 'tool.execute.after.subagent'
+          : 'tool.execute.after';
+        const resolved = resolveToolConfig(rightTool, input.tool);
 
-      await executeHook({
-        ctx,
-        eventType: 'tool.execute.after',
-        resolved,
-        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
-        input: { ...input, subagentType } as unknown as Record<string, unknown>,
-        output: output as unknown as Record<string, unknown>,
-        toolName: input.tool,
-        scriptArg: subagentType || input.tool,
-        showToast,
-      });
+        await handleDebugLog(timestamp, `DEBUG ${rightTool.toUpperCase()}`, {
+          input,
+          output,
+          resolved,
+        });
+        resolved.toastMessage = `Task executed: ${input.args['name'] ?? ''}`;
+
+        await executeHook({
+          ctx,
+          eventType: 'tool.execute.after',
+          resolved: resolved,
+          sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+          input: { ...input, subagentType } as unknown as Record<
+            string,
+            unknown
+          >,
+          output: output as unknown as Record<string, unknown>,
+          toolName: input.tool,
+          scriptArg: subagentType || input.tool,
+        });
+      } else {
+        const resolved = resolveToolConfig('tool.execute.after', input.tool);
+
+        const isSkillTool = input.tool === 'skill';
+        const skillType =
+          isSkillTool && typeof input.args['name'] === 'string'
+            ? input.args['name']
+            : '';
+
+        if (isSkillTool) {
+          resolved.toastMessage = `Skill executed: ${input.args['name'] ?? ''}`;
+        }
+
+        await executeHook({
+          ctx,
+          eventType: 'tool.execute.after',
+          resolved,
+          sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+          input: { ...input, skillType } as unknown as Record<string, unknown>,
+          output: output as unknown as Record<string, unknown>,
+          toolName: input.tool,
+          scriptArg: skillType || input.tool,
+        });
+      }
     },
 
     'shell.env': async (
