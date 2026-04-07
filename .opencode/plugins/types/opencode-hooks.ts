@@ -38,6 +38,7 @@ export const OpenCodeEvents = {
   SHELL_ENV: 'shell.env',
 
   TOOL_EXECUTE_AFTER: 'tool.execute.after',
+  TOOL_EXECUTE_AFTER_SUBAGENT: 'tool.execute.after.subagent',
   TOOL_EXECUTE_BEFORE: 'tool.execute.before',
 
   TUI_PROMPT_APPEND: 'tui.prompt.append',
@@ -95,6 +96,9 @@ export type OpenCodeEventMap = {
   [OpenCodeEvents.TODO_UPDATED]: Event & { type: 'todo.updated' };
   [OpenCodeEvents.SHELL_ENV]: Event & { type: 'shell.env' };
   [OpenCodeEvents.TOOL_EXECUTE_AFTER]: Event & { type: 'tool.execute.after' };
+  [OpenCodeEvents.TOOL_EXECUTE_AFTER_SUBAGENT]: Event & {
+    type: 'tool.execute.after.subagent';
+  };
   [OpenCodeEvents.TOOL_EXECUTE_BEFORE]: Event & { type: 'tool.execute.before' };
   [OpenCodeEvents.TUI_PROMPT_APPEND]: Event & { type: 'tui.prompt.append' };
   [OpenCodeEvents.TUI_COMMAND_EXECUTE]: Event & { type: 'tui.command.execute' };

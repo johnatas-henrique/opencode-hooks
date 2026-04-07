@@ -203,6 +203,14 @@ export const handlers: Record<string, EventHandler> = {
     props: { 'Session Id': SESSION_ID, Tool: 'properties.tool' },
   }),
 
+  'tool.execute.after.subagent': createHandler({
+    title: '====TOOL EXECUTE AFTER====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'tool-execute-after.subagent.sh',
+    props: { 'Session Id': SESSION_ID, Tool: 'properties.tool' },
+  }),
+
   'file.edited': createHandler({
     title: '====FILE EDITED====',
     variant: 'info',
