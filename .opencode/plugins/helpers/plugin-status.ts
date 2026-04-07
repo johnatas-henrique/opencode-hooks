@@ -4,6 +4,12 @@ import { homedir } from 'os';
 import { DEFAULT_SESSION_ID } from './constants';
 import type { PluginStatusDisplayMode } from './config';
 
+const LINE_REGEX = /^(INFO|WARN|ERROR|DEBUG)\s+\S+\s+\+\d+ms\s+(.+)$/;
+const TAG_REGEX = /^(\w+)=(.+)$/;
+const INTERNAL_PLUGIN_MARKER = 'internal plugin';
+const LOADING_MARKER = 'loading';
+const INCOMPATIBLE_MARKER = 'incompatible';
+
 export interface PluginStatus {
   name: string;
   status: 'active' | 'failed' | 'incompatible';
@@ -30,10 +36,10 @@ export function getLatestLogFile(): string | null {
   const logDir = getLogDirectory();
   if (!existsSync(logDir)) return null;
 
-  const files = readdirSync(logDir).filter((f: string) => f.endsWith('.log'));
+  const files = readdirSync(logDir).filter((f) => f.endsWith('.log'));
   if (files.length === 0) return null;
 
-  const sorted = files.sort((a: string, b: string) => {
+  const sorted = files.sort((a, b) => {
     if (a === 'dev.log') return 1;
     if (b === 'dev.log') return -1;
     return b.localeCompare(a);
@@ -43,7 +49,7 @@ export function getLatestLogFile(): string | null {
 }
 
 function parseLogLine(line: string): PluginEntry | null {
-  const match = line.match(/^(INFO|WARN|ERROR|DEBUG)\s+\S+\s+\+\d+ms\s+(.+)$/);
+  const match = line.match(LINE_REGEX);
   if (!match) return null;
 
   const [, level, rest] = match;
@@ -53,7 +59,7 @@ function parseLogLine(line: string): PluginEntry | null {
   const parts = rest.split(/\s+/);
   let i = 0;
   while (i < parts.length) {
-    const tagMatch = parts[i].match(/^(\w+)=(.+)$/);
+    const tagMatch = parts[i].match(TAG_REGEX);
     if (tagMatch) {
       tags[tagMatch[1]] = tagMatch[2];
       i++;
@@ -80,7 +86,7 @@ function extractPluginName(entry: PluginEntry): string {
 }
 
 function isBuiltInPlugin(entry: PluginEntry): boolean {
-  return !!entry.name && entry.message.includes('internal plugin');
+  return !!entry.name && entry.message.includes(INTERNAL_PLUGIN_MARKER);
 }
 
 export function getPluginStatus(): PluginStatus[] {
@@ -109,7 +115,7 @@ export function getPluginStatus(): PluginStatus[] {
     const isBuiltIn = isBuiltInPlugin(entry);
     const source: 'built-in' | 'user' = isBuiltIn ? 'built-in' : 'user';
 
-    if (entry.level === 'INFO' && entry.message.includes('loading')) {
+    if (entry.level === 'INFO' && entry.message.includes(LOADING_MARKER)) {
       if (!pluginMap.has(name)) {
         pluginMap.set(name, { name, status: 'active', source });
       }
@@ -118,7 +124,7 @@ export function getPluginStatus(): PluginStatus[] {
       pluginMap.set(name, { name, status: 'failed', error: errorMsg, source });
     } else if (
       entry.level === 'WARN' &&
-      entry.message.includes('incompatible')
+      entry.message.includes(INCOMPATIBLE_MARKER)
     ) {
       pluginMap.set(name, {
         name,
@@ -139,7 +145,6 @@ export function formatPluginStatus(
   if (statuses.length === 0) return 'No plugins detected in logs';
 
   const userStatuses = statuses.filter((s) => s.source === 'user');
-  const _builtInStatuses = statuses.filter((s) => s.source === 'built-in');
 
   const active = statuses.filter((s) => s.status === 'active');
   const failed = statuses.filter((s) => s.status === 'failed');
@@ -148,11 +153,14 @@ export function formatPluginStatus(
   const activeUser = active.filter((s) => s.source === 'user');
   const activeBuiltIn = active.filter((s) => s.source === 'built-in');
 
+  const failedUser = failed.filter((f) => f.source === 'user');
+  const incompatibleUser = incompatible.filter((i) => i.source === 'user');
+
   const lines: string[] = [];
 
   if (displayMode === 'user-only') {
     lines.push(
-      `Plugins: ${userStatuses.length} active, ${failed.filter((f) => f.source === 'user').length} failed, ${incompatible.filter((i) => i.source === 'user').length} incompatible`
+      `Plugins: ${userStatuses.length} active, ${failedUser.length} failed, ${incompatibleUser.length} incompatible`
     );
 
     if (activeUser.length > 0) {
@@ -163,18 +171,18 @@ export function formatPluginStatus(
       }
     }
 
-    if (failed.filter((f) => f.source === 'user').length > 0) {
+    if (failedUser.length > 0) {
       lines.push('');
       lines.push('Failed:');
-      for (const p of failed.filter((f) => f.source === 'user')) {
+      for (const p of failedUser) {
         lines.push(`  ✗ ${p.name}${p.error ? ` (${p.error})` : ''}`);
       }
     }
 
-    if (incompatible.filter((i) => i.source === 'user').length > 0) {
+    if (incompatibleUser.length > 0) {
       lines.push('');
       lines.push('Incompatible:');
-      for (const p of incompatible.filter((i) => i.source === 'user')) {
+      for (const p of incompatibleUser) {
         lines.push(`  ⚠ ${p.name}`);
       }
     }
