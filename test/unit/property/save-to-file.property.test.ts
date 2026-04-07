@@ -1,4 +1,4 @@
-import { saveToFile } from '../.opencode/plugins/helpers/save-to-file';
+import { saveToFile } from '../../../.opencode/plugins/helpers/save-to-file';
 import * as fs from 'fs/promises';
 
 jest.mock('fs/promises', () => ({

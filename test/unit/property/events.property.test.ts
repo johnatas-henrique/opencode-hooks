@@ -1,9 +1,9 @@
 import {
   resolveEventConfig,
   resolveToolConfig,
-} from '../.opencode/plugins/helpers/events';
+} from '../../../.opencode/plugins/helpers/events';
 
-jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
+jest.mock('../../../.opencode/plugins/helpers/default-handlers', () => ({
   handlers: {
     'session.created': {
       title: '====TEST====',
@@ -29,7 +29,7 @@ jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
   },
 }));
 
-jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
+jest.mock('../../../.opencode/plugins/helpers/user-events.config', () => ({
   userConfig: {
     enabled: true,
     default: {

@@ -3,7 +3,7 @@ import {
   useGlobalToastQueue,
   resetGlobalToastQueue,
   createToastQueue,
-} from '../.opencode/plugins/helpers/toast-queue';
+} from '../../.opencode/plugins/helpers/toast-queue';
 
 describe('Global Toast Queue', () => {
   beforeEach(() => {
@@ -13,6 +13,7 @@ describe('Global Toast Queue', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    jest.runAllTimers();
   });
 
   it('should initialize and use global queue', async () => {

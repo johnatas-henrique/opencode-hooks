@@ -5,7 +5,7 @@ import {
   showToastStaggered,
   useGlobalToastQueue,
   initGlobalToastQueue,
-} from '../.opencode/plugins/helpers/toast-queue';
+} from '../../.opencode/plugins/helpers/toast-queue';
 
 describe('toast-queue', () => {
   beforeEach(() => {
@@ -15,6 +15,7 @@ describe('toast-queue', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    jest.runAllTimers();
   });
 
   describe('createToastQueue', () => {

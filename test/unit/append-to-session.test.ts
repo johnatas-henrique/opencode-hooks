@@ -1,5 +1,5 @@
-import { appendToSession } from '../.opencode/plugins/helpers/append-to-session';
-import { MAX_PROMPT_LENGTH } from '../.opencode/plugins/helpers/constants';
+import { appendToSession } from '../../.opencode/plugins/helpers/append-to-session';
+import { MAX_PROMPT_LENGTH } from '../../.opencode/plugins/helpers/constants';
 
 describe('append-to-session', () => {
   let mockClient: any;

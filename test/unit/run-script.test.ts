@@ -1,6 +1,6 @@
-import { runScript } from '../.opencode/plugins/helpers/run-script';
+import { runScript } from '../../.opencode/plugins/helpers/run-script';
 
-jest.mock('../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 

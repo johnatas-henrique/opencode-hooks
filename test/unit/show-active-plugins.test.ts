@@ -1,7 +1,7 @@
-import { showActivePluginsToast } from '../.opencode/plugins/helpers/show-active-plugins';
-import { getPluginStatus } from '../.opencode/plugins/helpers/plugin-status';
+import { showActivePluginsToast } from '../../.opencode/plugins/helpers/show-active-plugins';
+import { getPluginStatus } from '../../.opencode/plugins/helpers/plugin-status';
 
-jest.mock('../.opencode/plugins/helpers/plugin-status', () => ({
+jest.mock('../../.opencode/plugins/helpers/plugin-status', () => ({
   getPluginStatus: jest.fn(),
   formatPluginStatus: jest.fn(),
 }));
@@ -10,7 +10,7 @@ const mockGetPluginStatus = getPluginStatus as jest.MockedFunction<
   typeof getPluginStatus
 >;
 const mockFormatPluginStatus = jest.requireMock(
-  '../.opencode/plugins/helpers/plugin-status'
+  '../../.opencode/plugins/helpers/plugin-status'
 ).formatPluginStatus;
 
 describe('showActivePluginsToast', () => {

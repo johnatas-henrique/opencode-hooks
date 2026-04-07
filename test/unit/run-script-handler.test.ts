@@ -1,39 +1,39 @@
 import {
   runScriptAndHandle,
   resetRunOnceTracker,
-} from '../.opencode/plugins/helpers/run-script-handler';
+} from '../../.opencode/plugins/helpers/run-script-handler';
 
-jest.mock('../.opencode/plugins/helpers/run-script', () => ({
+jest.mock('../../.opencode/plugins/helpers/run-script', () => ({
   runScript: jest.fn(),
 }));
 
-jest.mock('../.opencode/plugins/helpers/append-to-session', () => ({
+jest.mock('../../.opencode/plugins/helpers/append-to-session', () => ({
   appendToSession: jest.fn(),
 }));
 
-jest.mock('../.opencode/plugins/helpers/log-event', () => ({
+jest.mock('../../.opencode/plugins/helpers/log-event', () => ({
   logScriptOutput: jest.fn(),
 }));
 
-jest.mock('../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
   saveToFile: jest.fn(),
 }));
 
-jest.mock('../.opencode/plugins/helpers/toast-queue', () => ({
+jest.mock('../../.opencode/plugins/helpers/toast-queue', () => ({
   useGlobalToastQueue: jest.fn(() => ({
     add: jest.fn(),
   })),
 }));
 
-jest.mock('../.opencode/plugins/helpers/session', () => ({
+jest.mock('../../.opencode/plugins/helpers/session', () => ({
   isPrimarySession: jest.fn(),
   resetSessionTracking: jest.fn(),
 }));
 
-import { runScript } from '../.opencode/plugins/helpers/run-script';
-import { appendToSession } from '../.opencode/plugins/helpers/append-to-session';
-import { isPrimarySession } from '../.opencode/plugins/helpers/session';
-import type { ResolvedEventConfig } from '../.opencode/plugins/helpers/event-types';
+import { runScript } from '../../.opencode/plugins/helpers/run-script';
+import { appendToSession } from '../../.opencode/plugins/helpers/append-to-session';
+import { isPrimarySession } from '../../.opencode/plugins/helpers/session';
+import type { ResolvedEventConfig } from '../../.opencode/plugins/helpers/event-types';
 
 const createResolvedConfig = (
   overrides: Partial<ResolvedEventConfig> = {}

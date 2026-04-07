@@ -1,7 +1,7 @@
 import {
   getPluginStatus,
   formatPluginStatus,
-} from '../.opencode/plugins/helpers/plugin-status';
+} from '../../.opencode/plugins/helpers/plugin-status';
 
 jest.mock('fs', () => ({
   readFileSync: jest.fn(),

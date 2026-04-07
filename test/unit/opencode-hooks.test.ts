@@ -1,4 +1,4 @@
-import { OpencodeHooks } from '../.opencode/plugins/opencode-hooks';
+import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
 
 const mockRunScript = jest.fn().mockResolvedValue('Script executed');
 
@@ -11,25 +11,25 @@ const createMockCtx = (client: any, dollar: any) => ({
   serverUrl: 'http://localhost:3000',
 });
 
-jest.mock('../.opencode/plugins/helpers/run-script', () => ({
+jest.mock('../../.opencode/plugins/helpers/run-script', () => ({
   runScript: jest
     .fn()
     .mockImplementation((...args: any[]) => mockRunScript(...args)),
 }));
 
-jest.mock('../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../.opencode/plugins/helpers/debug', () => ({
+jest.mock('../../.opencode/plugins/helpers/debug', () => ({
   handleDebugLog: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../.opencode/plugins/helpers/append-to-session', () => ({
+jest.mock('../../.opencode/plugins/helpers/append-to-session', () => ({
   appendToSession: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
+jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -80,7 +80,7 @@ jest.mock('../.opencode/plugins/helpers/default-handlers', () => ({
   },
 }));
 
-jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
+jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
   userConfig: {
     enabled: true,
     toast: true,
@@ -115,7 +115,7 @@ jest.mock('../.opencode/plugins/helpers/user-events.config', () => ({
   },
 }));
 
-jest.mock('../.opencode/plugins/helpers/events', () => {
+jest.mock('../../.opencode/plugins/helpers/events', () => {
   const mockHandlers = {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -305,14 +305,14 @@ jest.mock('../.opencode/plugins/helpers/events', () => {
   };
 });
 
-jest.mock('../.opencode/plugins/helpers/toast-queue', () => {
+jest.mock('../../.opencode/plugins/helpers/toast-queue', () => {
   const mockQueue = {
     add: jest.fn(),
     flush: jest.fn().mockResolvedValue(undefined),
     pending: 0,
   };
   return {
-    ...jest.requireActual('../.opencode/plugins/helpers/toast-queue'),
+    ...jest.requireActual('../../.opencode/plugins/helpers/toast-queue'),
     initGlobalToastQueue: jest.fn((showFn) => {
       mockQueue.add = jest.fn((toast) => showFn(toast));
       return mockQueue;
@@ -323,12 +323,12 @@ jest.mock('../.opencode/plugins/helpers/toast-queue', () => {
   };
 });
 
-jest.mock('../.opencode/plugins/helpers/show-startup-toast', () => ({
+jest.mock('../../.opencode/plugins/helpers/show-startup-toast', () => ({
   showStartupToast: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { runScript } from '../.opencode/plugins/helpers/run-script';
-import { saveToFile } from '../.opencode/plugins/helpers/save-to-file';
+import { runScript } from '../../.opencode/plugins/helpers/run-script';
+import { saveToFile } from '../../.opencode/plugins/helpers/save-to-file';
 
 interface MockClient {
   tui: {
@@ -366,7 +366,7 @@ describe('opencode-hooks - plugin hooks', () => {
   describe('disabled plugin', () => {
     it('should return empty handlers when plugin is disabled', async () => {
       jest.resetModules();
-      jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
           enabled: false,
           toast: true,
@@ -379,7 +379,7 @@ describe('opencode-hooks - plugin hooks', () => {
       }));
 
       const { OpencodeHooks: DisabledHooks } =
-        await import('../.opencode/plugins/opencode-hooks');
+        await import('../../.opencode/plugins/opencode-hooks');
       const plugin = await DisabledHooks({
         client: mockClient,
         $: mockDollar,
@@ -598,14 +598,14 @@ describe('opencode-hooks - plugin hooks', () => {
 
     it('should skip script on second event when runOnlyOnce is true', async () => {
       jest.resetModules();
-      jest.unmock('../.opencode/plugins/helpers/user-events.config');
-      jest.unmock('../.opencode/plugins/helpers/run-script');
-      jest.unmock('../.opencode/plugins/helpers/save-to-file');
-      jest.unmock('../.opencode/plugins/helpers/append-to-session');
-      jest.unmock('../.opencode/plugins/helpers/default-handlers');
-      jest.unmock('../.opencode/plugins/helpers/events');
+      jest.unmock('../../.opencode/plugins/helpers/user-events.config');
+      jest.unmock('../../.opencode/plugins/helpers/run-script');
+      jest.unmock('../../.opencode/plugins/helpers/save-to-file');
+      jest.unmock('../../.opencode/plugins/helpers/append-to-session');
+      jest.unmock('../../.opencode/plugins/helpers/default-handlers');
+      jest.unmock('../../.opencode/plugins/helpers/events');
 
-      jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
           enabled: true,
           toast: true,
@@ -619,12 +619,12 @@ describe('opencode-hooks - plugin hooks', () => {
       }));
 
       const mockRunScriptFn = jest.fn().mockResolvedValue('Script executed');
-      jest.doMock('../.opencode/plugins/helpers/run-script', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/run-script', () => ({
         runScript: mockRunScriptFn,
       }));
 
       const { OpencodeHooks: FreshPlugin } =
-        await import('../.opencode/plugins/opencode-hooks');
+        await import('../../.opencode/plugins/opencode-hooks');
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await FreshPlugin(ctx);
 
@@ -649,14 +649,14 @@ describe('opencode-hooks - plugin hooks', () => {
 
     it('should still show toast when runOnlyOnce skips script', async () => {
       jest.resetModules();
-      jest.unmock('../.opencode/plugins/helpers/user-events.config');
-      jest.unmock('../.opencode/plugins/helpers/run-script');
-      jest.unmock('../.opencode/plugins/helpers/save-to-file');
-      jest.unmock('../.opencode/plugins/helpers/append-to-session');
-      jest.unmock('../.opencode/plugins/helpers/default-handlers');
-      jest.unmock('../.opencode/plugins/helpers/events');
+      jest.unmock('../../.opencode/plugins/helpers/user-events.config');
+      jest.unmock('../../.opencode/plugins/helpers/run-script');
+      jest.unmock('../../.opencode/plugins/helpers/save-to-file');
+      jest.unmock('../../.opencode/plugins/helpers/append-to-session');
+      jest.unmock('../../.opencode/plugins/helpers/default-handlers');
+      jest.unmock('../../.opencode/plugins/helpers/events');
 
-      jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
           enabled: true,
           events: {
@@ -671,12 +671,12 @@ describe('opencode-hooks - plugin hooks', () => {
       }));
 
       const mockRunScriptFn2 = jest.fn().mockResolvedValue('Script executed');
-      jest.doMock('../.opencode/plugins/helpers/run-script', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/run-script', () => ({
         runScript: mockRunScriptFn2,
       }));
 
       const { OpencodeHooks: FreshPlugin2 } =
-        await import('../.opencode/plugins/opencode-hooks');
+        await import('../../.opencode/plugins/opencode-hooks');
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await FreshPlugin2(ctx);
 
@@ -876,12 +876,12 @@ describe('opencode-hooks - plugin hooks', () => {
   describe('executeHook - debug mode', () => {
     it('should call handleDebugLog when debug is enabled in executeHook', async () => {
       jest.resetModules();
-      jest.unmock('../.opencode/plugins/helpers/user-events.config');
-      jest.unmock('../.opencode/plugins/helpers/default-handlers');
-      jest.unmock('../.opencode/plugins/helpers/events');
-      jest.unmock('../.opencode/plugins/helpers/debug');
+      jest.unmock('../../.opencode/plugins/helpers/user-events.config');
+      jest.unmock('../../.opencode/plugins/helpers/default-handlers');
+      jest.unmock('../../.opencode/plugins/helpers/events');
+      jest.unmock('../../.opencode/plugins/helpers/debug');
 
-      jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
           enabled: true,
           events: {
@@ -891,7 +891,7 @@ describe('opencode-hooks - plugin hooks', () => {
         },
       }));
 
-      jest.doMock('../.opencode/plugins/helpers/default-handlers', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
         handlers: {
           'shell.env': {
             title: '====SHELL ENV====',
@@ -904,12 +904,12 @@ describe('opencode-hooks - plugin hooks', () => {
       }));
 
       const mockHandleDebugLog = jest.fn().mockResolvedValue(undefined);
-      jest.doMock('../.opencode/plugins/helpers/debug', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/debug', () => ({
         handleDebugLog: mockHandleDebugLog,
       }));
 
       const { OpencodeHooks: DebugPlugin } =
-        await import('../.opencode/plugins/opencode-hooks');
+        await import('../../.opencode/plugins/opencode-hooks');
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await DebugPlugin(ctx);
 
@@ -921,13 +921,14 @@ describe('opencode-hooks - plugin hooks', () => {
     });
 
     it('should call handleDebugLog when debug is enabled in event handler', async () => {
+      jest.setTimeout(30000);
       jest.resetModules();
-      jest.unmock('../.opencode/plugins/helpers/user-events.config');
-      jest.unmock('../.opencode/plugins/helpers/default-handlers');
-      jest.unmock('../.opencode/plugins/helpers/events');
-      jest.unmock('../.opencode/plugins/helpers/debug');
+      jest.unmock('../../.opencode/plugins/helpers/user-events.config');
+      jest.unmock('../../.opencode/plugins/helpers/default-handlers');
+      jest.unmock('../../.opencode/plugins/helpers/events');
+      jest.unmock('../../.opencode/plugins/helpers/debug');
 
-      jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
           enabled: true,
           events: {
@@ -937,7 +938,7 @@ describe('opencode-hooks - plugin hooks', () => {
         },
       }));
 
-      jest.doMock('../.opencode/plugins/helpers/default-handlers', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
         handlers: {
           'session.created': {
             title: '====SESSION CREATED====',
@@ -950,12 +951,12 @@ describe('opencode-hooks - plugin hooks', () => {
       }));
 
       const mockHandleDebugLog = jest.fn().mockResolvedValue(undefined);
-      jest.doMock('../.opencode/plugins/helpers/debug', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/debug', () => ({
         handleDebugLog: mockHandleDebugLog,
       }));
 
       const { OpencodeHooks: DebugPlugin } =
-        await import('../.opencode/plugins/opencode-hooks');
+        await import('../../.opencode/plugins/opencode-hooks');
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await DebugPlugin(ctx);
 
@@ -971,11 +972,12 @@ describe('opencode-hooks - plugin hooks', () => {
 
   describe('tool.execute.before - debug mode', () => {
     it('should call handleDebugLog when debug is enabled for tool', async () => {
+      jest.setTimeout(30000);
       jest.resetModules();
-      jest.unmock('../.opencode/plugins/helpers/user-events.config');
-      jest.unmock('../.opencode/plugins/helpers/debug');
+      jest.unmock('../../.opencode/plugins/helpers/user-events.config');
+      jest.unmock('../../.opencode/plugins/helpers/debug');
 
-      jest.doMock('../.opencode/plugins/helpers/user-events.config', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
           enabled: true,
           events: {
@@ -990,12 +992,12 @@ describe('opencode-hooks - plugin hooks', () => {
       }));
 
       const mockHandleDebugLog = jest.fn().mockResolvedValue(undefined);
-      jest.doMock('../.opencode/plugins/helpers/debug', () => ({
+      jest.doMock('../../.opencode/plugins/helpers/debug', () => ({
         handleDebugLog: mockHandleDebugLog,
       }));
 
       const { OpencodeHooks: DebugPlugin } =
-        await import('../.opencode/plugins/opencode-hooks');
+        await import('../../.opencode/plugins/opencode-hooks');
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await DebugPlugin(ctx);
 

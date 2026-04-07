@@ -1,4 +1,4 @@
-import { handlers } from '../.opencode/plugins/helpers/default-handlers';
+import { handlers } from '../../.opencode/plugins/helpers/default-handlers';
 
 describe('handlers - buildMessage', () => {
   describe('session.created', () => {
