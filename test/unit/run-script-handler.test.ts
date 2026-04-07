@@ -33,7 +33,7 @@ jest.mock('../../.opencode/plugins/helpers/session', () => ({
 import { runScript } from '../../.opencode/plugins/helpers/run-script';
 import { appendToSession } from '../../.opencode/plugins/helpers/append-to-session';
 import { isPrimarySession } from '../../.opencode/plugins/helpers/session';
-import type { ResolvedEventConfig } from '../../.opencode/plugins/helpers/event-types';
+import type { ResolvedEventConfig } from '../../.opencode/plugins/helpers/config';
 
 const createResolvedConfig = (
   overrides: Partial<ResolvedEventConfig> = {}

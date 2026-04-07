@@ -1,6 +1,6 @@
 import { TOAST_DURATION } from './constants';
-import { EventType } from './event-types';
-import type { UserEventsConfig } from './event-types';
+import { EventType } from './config';
+import type { UserEventsConfig } from './config';
 
 export const userConfig: UserEventsConfig = {
   enabled: true,

@@ -1,6 +1,6 @@
 import { saveToFile } from './save-to-file';
 import { useGlobalToastQueue } from './toast-queue';
-import type { ResolvedEventConfig } from './event-types';
+import type { ResolvedEventConfig } from './config';
 
 export async function logEventConfig(
   timestamp: string,

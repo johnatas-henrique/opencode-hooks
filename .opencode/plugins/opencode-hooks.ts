@@ -31,7 +31,7 @@ import {
   UNKNOWN_EVENT_LOG_FILE,
   DEFAULT_SESSION_ID,
 } from './helpers/constants';
-import type { ResolvedEventConfig } from './helpers/event-types';
+import type { ResolvedEventConfig } from './helpers/config';
 
 const TASK_TOOL_NAME = 'task';
 const SUBAGENT_TYPE_ARG = 'subagent_type';
