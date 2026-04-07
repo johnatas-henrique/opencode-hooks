@@ -1,5 +1,7 @@
 # Plan: Add Hooks Type Annotation to Plugin Return
 
+**Status:** Completed
+
 ## Execution
 
 | Step                                           | Status | Timestamp        |
