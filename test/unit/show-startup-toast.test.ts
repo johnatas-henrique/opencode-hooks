@@ -111,7 +111,7 @@ describe('showStartupToast', () => {
     expect(mockShowActivePluginsToast).toHaveBeenCalledWith(mockQueue, {
       duration: 5000,
     });
-    jest.useRealTimers();
+    jest.runAllTimers();
   });
 
   it('should save error to file when showActivePluginsToast throws', async () => {
@@ -136,7 +136,7 @@ describe('showStartupToast', () => {
         content: expect.stringContaining('Startup toast error'),
       })
     );
-    jest.useRealTimers();
+    jest.runAllTimers();
   });
 
   it('should use custom getLogFile when provided', async () => {
@@ -153,9 +153,4 @@ describe('showStartupToast', () => {
     expect(customGetLogFile).toHaveBeenCalled();
     expect(mockGetLatestLogFile).not.toHaveBeenCalled();
   });
-});
-
-afterEach(() => {
-  jest.useRealTimers();
-  jest.runAllTimers();
 });

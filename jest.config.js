@@ -12,6 +12,9 @@ module.exports = {
     '^.+\\.tsx?$': ['ts-jest', { tsconfig: '<rootDir>/test/tsconfig.json' }],
   },
   clearMocks: true,
+  fakeTimers: {
+    enableGlobally: false,
+  },
   collectCoverageFrom: [
     '.opencode/plugins/opencode-hooks.ts',
     '.opencode/plugins/helpers/**/*.ts',
