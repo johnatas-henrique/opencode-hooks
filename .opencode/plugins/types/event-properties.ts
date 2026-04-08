@@ -28,6 +28,15 @@ export interface EventProperties {
   };
   status?: Record<string, unknown>;
   diff?: Array<Record<string, unknown>>;
+  agent?: string;
+  model?: {
+    providerID?: string;
+    modelID?: string;
+  };
+  callID?: string;
+  args?: Record<string, unknown>;
+  output?: unknown;
+  metadata?: Record<string, unknown>;
 }
 
 export interface OpenCodeEvent<T extends string = string> {
@@ -59,3 +68,24 @@ export type EventTuiCommandExecute = OpenCodeEvent<'tui.command.execute'>;
 export type EventTuiToastShow = OpenCodeEvent<'tui.toast.show'>;
 export type EventExperimentalSessionCompacting =
   OpenCodeEvent<'experimental.session.compacting'>;
+export type EventChatMessage = OpenCodeEvent<'chat.message'>;
+export type EventChatParams = OpenCodeEvent<'chat.params'>;
+export type EventChatHeaders = OpenCodeEvent<'chat.headers'>;
+export type EventPermissionAsk = OpenCodeEvent<'permission.ask'>;
+export type EventCommandExecuteBefore = OpenCodeEvent<'command.execute.before'>;
+export type EventExperimentalChatMessagesTransform =
+  OpenCodeEvent<'experimental.chat.messages.transform'>;
+export type EventExperimentalChatSystemTransform =
+  OpenCodeEvent<'experimental.chat.system.transform'>;
+export type EventExperimentalTextComplete =
+  OpenCodeEvent<'experimental.text.complete'>;
+export type EventToolDefinition = OpenCodeEvent<'tool.definition'>;
+export type EventMessagePartDelta = OpenCodeEvent<'message.part.delta'>;
+export type EventSessionCreated = OpenCodeEvent<'session.created'>;
+export type EventSessionCompacted = OpenCodeEvent<'session.compacted'>;
+export type EventSessionDeleted = OpenCodeEvent<'session.deleted'>;
+export type EventSessionDiff = OpenCodeEvent<'session.diff'>;
+export type EventSessionError = OpenCodeEvent<'session.error'>;
+export type EventSessionIdle = OpenCodeEvent<'session.idle'>;
+export type EventSessionStatus = OpenCodeEvent<'session.status'>;
+export type EventSessionUpdated = OpenCodeEvent<'session.updated'>;
