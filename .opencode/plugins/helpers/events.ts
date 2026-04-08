@@ -164,7 +164,7 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
       toast: getWithDefault(true, defaultCfg, 'toast', false),
       toastTitle: handler?.title ?? '',
       toastMessage: undefined,
-      toastVariant: handler?.variant ?? 'info',
+      toastVariant: handler?.variant || 'info',
       toastDuration: handler?.duration ?? 2000,
       scripts: [],
       saveToFile: getWithDefault(true, defaultCfg, 'saveToFile', false),
@@ -195,7 +195,7 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
     toast: getWithDefault(userEventConfig, defaultCfg, 'toast', false),
     toastTitle: toastCfg?.title ?? handler?.title ?? '',
     toastMessage: toastCfg?.message,
-    toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
+    toastVariant: toastCfg?.variant || handler?.variant || 'info',
     toastDuration: toastCfg?.duration ?? handler?.duration ?? 2000,
     scripts,
     saveToFile: getWithDefault(
@@ -273,7 +273,7 @@ export function resolveToolConfig(
     toastTitle: toastCfg?.title ?? handler?.title ?? eventBase.toastTitle,
     toastMessage: toastCfg?.message ?? eventBase.toastMessage,
     toastVariant:
-      toastCfg?.variant ?? handler?.variant ?? eventBase.toastVariant,
+      toastCfg?.variant || handler?.variant || eventBase.toastVariant,
     toastDuration:
       toastCfg?.duration ?? handler?.duration ?? eventBase.toastDuration,
     scripts,
