@@ -101,6 +101,15 @@ export const userConfig: UserEventsConfig = {
   },
 
   tools: {
+    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
+      task: {
+        enabled: true,
+        toast: { enabled: true, title: '====SUBAGENT====' },
+        scripts: ['log-agent.sh'],
+        runScripts: true,
+        saveToFile: true,
+      },
+    },
     [EventType.TOOL_EXECUTE_AFTER]: {
       task: {
         enabled: true,
@@ -139,15 +148,6 @@ export const userConfig: UserEventsConfig = {
       filesystem_move_file: { toast: { title: '====FS MOVE====' } },
       filesystem_get_file_info: { toast: { title: '====FS STAT====' } },
       gh_grep_searchGitHub: { toast: { title: '====GH SEARCH====' } },
-    },
-    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
-      task: {
-        enabled: true,
-        toast: { enabled: true, title: '====SUBAGENT====' },
-        scripts: ['log-agent.sh'],
-        runScripts: true,
-        saveToFile: true,
-      },
     },
     [EventType.TOOL_EXECUTE_BEFORE]: {
       task: { toast: { title: '====TOOL====' } },
