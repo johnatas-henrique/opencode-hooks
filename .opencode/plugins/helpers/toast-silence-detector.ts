@@ -21,6 +21,7 @@ export function waitForToastSilence(
         pollTimer = null;
         check();
       }, pollMs);
+      pollTimer.unref();
     };
 
     const check = async () => {
@@ -35,6 +36,7 @@ export function waitForToastSilence(
           lastCount = count;
           if (silenceTimer) clearTimeout(silenceTimer);
           silenceTimer = setTimeout(check, silenceMs);
+          silenceTimer.unref();
         } else {
           resolved = true;
           if (pollTimer) clearTimeout(pollTimer);
