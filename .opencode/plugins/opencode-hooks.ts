@@ -221,7 +221,7 @@ export const OpencodeHooks: Plugin = async (
           : 'tool.execute.after';
         const resolved = resolveToolConfig(rightTool, input.tool);
 
-        resolved.toastMessage = `Agent invoked: ${input.args[subagentType]}`;
+        resolved.toastMessage = `Agent invoked: ${subagentType}`;
 
         await executeHook({
           ctx,
