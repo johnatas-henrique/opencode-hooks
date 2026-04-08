@@ -104,6 +104,9 @@ describe('showActivePluginsToast', () => {
   it('should call formatPluginStatus with plugin statuses', async () => {
     await showActivePluginsToast(mockQueue);
 
-    expect(mockFormatPluginStatus).toHaveBeenCalledWith(mockStatuses);
+    expect(mockFormatPluginStatus).toHaveBeenCalledWith(
+      mockStatuses,
+      'user-only'
+    );
   });
 });

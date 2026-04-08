@@ -337,6 +337,69 @@ Time: <timestamp>
 
 ---
 
+## 8. Plugin Status Display Tests
+
+### 8.1 Verify Plugin Status Toast
+
+**Agent verification:** Read `session_events.log` and look for:
+
+- `Plugin Status` title
+- Active plugin count
+
+### 8.2 Test pluginStatus.enabled = false
+
+**User action:** Update config to:
+
+```typescript
+pluginStatus: {
+  enabled: false,
+  displayMode: 'user-only',
+}
+```
+
+**Restart opencode** and verify no "Plugin Status" toast appears.
+
+### 8.3 Test displayMode: 'user-only'
+
+**Config:**
+
+```typescript
+pluginStatus: {
+  enabled: true,
+  displayMode: 'user-only',
+}
+```
+
+**Expected in logs:** Only user plugins (not built-in)
+
+### 8.4 Test displayMode: 'user-separated'
+
+**Config:**
+
+```typescript
+pluginStatus: {
+  enabled: true,
+  displayMode: 'user-separated',
+}
+```
+
+**Expected:** Sections "Active (user):" and "Active (built-in):"
+
+### 8.5 Test displayMode: 'all-labeled'
+
+**Config:**
+
+```typescript
+pluginStatus: {
+  enabled: true,
+  displayMode: 'all-labeled',
+}
+```
+
+**Expected:** Plugins with labels like "(user)" or "(built-in)"
+
+---
+
 ## Useful Commands
 
 ```bash

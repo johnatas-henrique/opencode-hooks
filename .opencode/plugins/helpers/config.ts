@@ -88,9 +88,20 @@ export interface ToolOverride {
 export type EventConfig = boolean | EventOverride;
 export type ToolConfig = boolean | ToolOverride;
 
+export type PluginStatusDisplayMode =
+  | 'user-only'
+  | 'user-separated'
+  | 'all-labeled';
+
+export interface PluginStatusConfig {
+  enabled: boolean;
+  displayMode: PluginStatusDisplayMode;
+}
+
 export interface UserEventsConfig {
   enabled: boolean;
   default?: EventOverride;
+  pluginStatus: PluginStatusConfig;
   events: Partial<Record<EventType, EventConfig>>;
   tools: {
     [EventType.TOOL_EXECUTE_AFTER]?: Record<string, ToolConfig>;
