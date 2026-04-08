@@ -278,7 +278,7 @@ export const handlers: Record<string, EventHandler> = {
         | undefined;
       return (
         `File: ${toStr(getProp(event, 'properties.uri'))}\n` +
-        `Diagnostics: ${diagnostics?.length ?? 0}\n` +
+        `Diagnostics: ${diagnostics ? diagnostics.length : 0}\n` +
         `Time: ${formatTime()}`
       );
     },
