@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.0](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.3.0...opencode-hooks-v0.4.0) (2026-04-08)
+
+
+### Features
+
+* add plugin status display mode with user/plugin separation ([eb220d6](https://github.com/johnatas-henrique/opencode-hooks/commit/eb220d604bc86d5cc38480484f6eced9bdc80649))
+* add PluginStatusConfig interface ([9766e82](https://github.com/johnatas-henrique/opencode-hooks/commit/9766e82b1dca03f3dda22378b552a3e2aa302747))
+* enhance EXPERIMENTAL_SESSION_COMPACTING config ([ec7bc4b](https://github.com/johnatas-henrique/opencode-hooks/commit/ec7bc4b1acca1c322e524959d40710a231ecde71))
+* implement plugin detection and display modes ([408c51b](https://github.com/johnatas-henrique/opencode-hooks/commit/408c51bfd2d1cc7b4d2ec44e7891a3f7885e88ea))
+* wire pluginStatus config to show-active-plugins ([d81fe10](https://github.com/johnatas-henrique/opencode-hooks/commit/d81fe10d71daeb2863b53816542764836f9929a7))
+
 ## [0.3.0](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.2.0...opencode-hooks-v0.3.0) (2026-04-07)
 
 
