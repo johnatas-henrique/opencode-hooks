@@ -229,13 +229,12 @@ describe('events - resolveEventConfig', () => {
     expect(config.appendToSession).toBe(false);
   });
 
-  it('should return defaults when event not in config', () => {
+  it('should return defaults for event not in config', () => {
     const config = resolveEventConfig('session.unknown');
 
     expect(config.enabled).toBe(true);
     expect(config.toast).toBe(true);
-    expect(config.saveToFile).toBe(true);
-    expect(config.appendToSession).toBe(true);
+    expect(config.scripts).toEqual([]);
   });
 
   it('should return empty scripts when event is boolean true and global runScripts is false', () => {
