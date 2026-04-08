@@ -211,7 +211,6 @@ export const OpencodeHooks: Plugin = async (
     ) => {
       const isTaskTool = input.tool === TASK_TOOL_NAME;
       if (isTaskTool) {
-        const timestamp = new Date().toISOString();
         const subagentType =
           isTaskTool && typeof input.args[SUBAGENT_TYPE_ARG] === 'string'
             ? input.args[SUBAGENT_TYPE_ARG]
@@ -222,16 +221,11 @@ export const OpencodeHooks: Plugin = async (
           : 'tool.execute.after';
         const resolved = resolveToolConfig(rightTool, input.tool);
 
-        await handleDebugLog(timestamp, `DEBUG ${rightTool.toUpperCase()}`, {
-          input,
-          output,
-          resolved,
-        });
-        resolved.toastMessage = `Task executed: ${input.args['name'] ?? ''}`;
+        resolved.toastMessage = `Agent invoked: ${input.args[subagentType]}`;
 
         await executeHook({
           ctx,
-          eventType: 'tool.execute.after',
+          eventType: rightTool,
           resolved: resolved,
           sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
           input: { ...input, subagentType } as unknown as Record<
