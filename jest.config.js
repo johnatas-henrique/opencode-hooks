@@ -15,6 +15,7 @@ module.exports = {
   fakeTimers: {
     enableGlobally: false,
   },
+  detectOpenHandles: true,
   collectCoverageFrom: [
     '.opencode/plugins/opencode-hooks.ts',
     '.opencode/plugins/helpers/**/*.ts',

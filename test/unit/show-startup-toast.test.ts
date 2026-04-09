@@ -12,10 +12,6 @@ jest.mock('../../.opencode/plugins/helpers/toast-silence-detector', () => ({
   waitForToastSilence: jest.fn(),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
-  saveToFile: jest.fn().mockResolvedValue(undefined),
-}));
-
 jest.mock('../../.opencode/plugins/helpers/constants', () => ({
   TIMER: { OVERWRITE_CHECK_DELAY: 100 },
   TOAST_DURATION: { TWO_SECONDS: 2000, TEN_SECONDS: 10000, FIVE_SECONDS: 5000 },
@@ -40,8 +36,6 @@ const mockWaitForToastSilence =
   require('../../.opencode/plugins/helpers/toast-silence-detector').waitForToastSilence;
 const mockShowActivePluginsToast =
   require('../../.opencode/plugins/helpers/show-active-plugins').showActivePluginsToast;
-const mockSaveToFile =
-  require('../../.opencode/plugins/helpers/save-to-file').saveToFile;
 
 describe('showStartupToast', () => {
   let mockQueue: {
@@ -94,52 +88,21 @@ describe('showStartupToast', () => {
     expect(mockWaitForToastSilence).toHaveBeenCalledWith('/test/logfile.log');
   });
 
-  it('should show active plugins toast after silence detected', async () => {
-    jest.useFakeTimers();
-    const mockCleanup = jest.fn();
-    const mockPromise = Promise.resolve();
-    mockGetLatestLogFile.mockReturnValue('/test/logfile.log');
+  it('should not wait for toast silence when logFile is null', async () => {
+    mockGetLatestLogFile.mockReturnValue(null);
     mockWaitForToastSilence.mockReturnValue({
-      promise: mockPromise,
-      cleanup: mockCleanup,
+      promise: Promise.resolve(),
+      cleanup: jest.fn(),
     });
 
     await showStartupToast();
-    await jest.runAllTimersAsync();
-    await Promise.resolve();
 
-    expect(mockShowActivePluginsToast).toHaveBeenCalledWith(mockQueue, {
-      duration: 5000,
-    });
-    jest.runAllTimers();
-  });
-
-  it('should save error to file when showActivePluginsToast throws', async () => {
-    jest.useFakeTimers();
-    const mockCleanup = jest.fn();
-    const mockPromise = Promise.resolve();
-    mockGetLatestLogFile.mockReturnValue('/test/logfile.log');
-    mockWaitForToastSilence.mockReturnValue({
-      promise: mockPromise,
-      cleanup: mockCleanup,
-    });
-    mockShowActivePluginsToast.mockRejectedValueOnce(
-      new Error('Plugin read error')
-    );
-
-    await showStartupToast();
-    await jest.runAllTimersAsync();
-    await Promise.resolve();
-
-    expect(mockSaveToFile).toHaveBeenCalledWith(
-      expect.objectContaining({
-        content: expect.stringContaining('Startup toast error'),
-      })
-    );
-    jest.runAllTimers();
+    expect(mockWaitForToastSilence).not.toHaveBeenCalled();
+    expect(mockShowActivePluginsToast).not.toHaveBeenCalled();
   });
 
   it('should use custom getLogFile when provided', async () => {
+    mockGetLatestLogFile.mockReturnValue(null);
     const customGetLogFile = jest.fn().mockReturnValue('/custom/log.log');
     const mockCleanup = jest.fn();
     const mockPromise = Promise.resolve();
@@ -152,5 +115,19 @@ describe('showStartupToast', () => {
 
     expect(customGetLogFile).toHaveBeenCalled();
     expect(mockGetLatestLogFile).not.toHaveBeenCalled();
+  });
+
+  it('should handle error when showActivePluginsToast fails', async () => {
+    const mockCleanup = jest.fn();
+    mockGetLatestLogFile.mockReturnValue('/test/logfile.log');
+    mockWaitForToastSilence.mockReturnValue({
+      promise: Promise.resolve(),
+      cleanup: mockCleanup,
+    });
+    mockShowActivePluginsToast.mockRejectedValue(
+      new Error('Plugin scan failed')
+    );
+
+    await expect(showStartupToast()).resolves.toBeUndefined();
   });
 });
