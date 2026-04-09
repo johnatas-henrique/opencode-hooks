@@ -116,28 +116,6 @@ export const OpencodeHooks: Plugin = async (
 ): Promise<Hooks> => {
   const { client } = ctx;
 
-  if (!userConfig.enabled) {
-    return {
-      event: async () => {},
-      [EventType.TOOL_EXECUTE_BEFORE]: async () => {},
-      [EventType.TOOL_EXECUTE_AFTER]: async () => {},
-      [EventType.SHELL_ENV]: async () => {},
-      [EventType.CHAT_MESSAGE]: async () => {},
-      [EventType.CHAT_PARAMS]: async () => {},
-      [EventType.CHAT_HEADERS]: async () => {},
-      [EventType.PERMISSION_ASK]: async () => {},
-      [EventType.COMMAND_EXECUTE_BEFORE]: async () => {},
-      [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: async () => {},
-      [EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: async () => {},
-      [EventType.EXPERIMENTAL_SESSION_COMPACTING]: async () => {},
-      [EventType.EXPERIMENTAL_TEXT_COMPLETE]: async () => {},
-      [EventType.TOOL_DEFINITION]: async () => {},
-      config: async () => {},
-      auth: undefined,
-      tool: undefined,
-    };
-  }
-
   initGlobalToastQueue((toast) => {
     client.tui.showToast({
       body: {
@@ -156,6 +134,10 @@ export const OpencodeHooks: Plugin = async (
   if (!hasShownToast) {
     hasShownToast = true;
     await showStartupToast();
+  }
+
+  if (!userConfig.enabled) {
+    return {};
   }
 
   const hooks: Hooks = {
