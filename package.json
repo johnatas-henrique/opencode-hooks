@@ -1,6 +1,6 @@
 {
   "name": "opencode-hooks",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "TypeScript plugin system for OpenCode AI providing event-driven hooks",
   "main": "./dist/index.js",
   "scripts": {
