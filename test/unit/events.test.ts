@@ -201,6 +201,63 @@ describe('events - resolveEventConfig', () => {
     expect(config.scripts).toEqual([]);
   });
 
+  it('should return empty array when event config is boolean false', () => {
+    jest.resetModules();
+    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
+      handlers: {},
+    }));
+    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+      userConfig: {
+        enabled: true,
+        default: {},
+        events: {
+          'session.test': false,
+        },
+        tools: {},
+      },
+    }));
+
+    const {
+      resolveEventConfig: rec,
+    } = require('../../.opencode/plugins/helpers/events');
+    const config = rec('session.test');
+
+    expect(config.scripts).toEqual([]);
+  });
+
+  it('should return toast: false when default toast is object with enabled: false', () => {
+    jest.resetModules();
+    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
+      handlers: {
+        'session.test': {
+          title: 'Test',
+          variant: 'info',
+          duration: 2000,
+          buildMessage: () => 'test',
+        },
+      },
+    }));
+    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+      userConfig: {
+        enabled: true,
+        default: {
+          toast: { enabled: false },
+        },
+        events: {
+          'session.test': true,
+        },
+        tools: {},
+      },
+    }));
+
+    const {
+      resolveEventConfig: rec,
+    } = require('../../.opencode/plugins/helpers/events');
+    const config = rec('session.test');
+
+    expect(config.toast).toBe(false);
+  });
+
   it('should return toast: false for event with toast: false', () => {
     const config = resolveEventConfig('session.toast-off');
 
