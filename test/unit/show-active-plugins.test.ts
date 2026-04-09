@@ -6,6 +6,15 @@ jest.mock('../../.opencode/plugins/helpers/plugin-status', () => ({
   formatPluginStatus: jest.fn(),
 }));
 
+jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
+  userConfig: {
+    pluginStatus: {
+      enabled: true,
+      displayMode: 'user-only',
+    },
+  },
+}));
+
 const mockGetPluginStatus = getPluginStatus as jest.MockedFunction<
   typeof getPluginStatus
 >;
@@ -108,5 +117,24 @@ describe('showActivePluginsToast', () => {
       mockStatuses,
       'user-only'
     );
+  });
+});
+
+describe('when pluginStatus is disabled', () => {
+  let mockQueue: { add: jest.Mock };
+
+  beforeEach(() => {
+    mockQueue = { add: jest.fn() };
+  });
+
+  it('should return early and not add toast', async () => {
+    const { userConfig: userConfigMock } =
+      await import('../../.opencode/plugins/helpers/user-events.config');
+    userConfigMock.pluginStatus.enabled = false;
+
+    await showActivePluginsToast(mockQueue);
+
+    expect(mockQueue.add).not.toHaveBeenCalled();
+    userConfigMock.pluginStatus.enabled = true;
   });
 });
