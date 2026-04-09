@@ -104,7 +104,12 @@ export const userConfig: UserEventsConfig = {
     [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
       task: {
         enabled: true,
-        toast: { enabled: true, title: '====SUBAGENT====' },
+        toast: {
+          enabled: true,
+          title: '====SUBAGENT====',
+          duration: TOAST_DURATION.TEN_SECONDS,
+          variant: 'success',
+        },
         scripts: ['log-agent.sh'],
         runScripts: true,
         saveToFile: true,
@@ -117,7 +122,12 @@ export const userConfig: UserEventsConfig = {
       },
       skill: {
         enabled: true,
-        toast: { enabled: true, title: '====SKILL====' },
+        toast: {
+          enabled: true,
+          title: '====SKILL====',
+          duration: TOAST_DURATION.TEN_SECONDS,
+          variant: 'success',
+        },
         scripts: ['log-skill.sh'],
         runScripts: true,
         saveToFile: true,
