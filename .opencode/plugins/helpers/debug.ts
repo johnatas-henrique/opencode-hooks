@@ -17,13 +17,13 @@ const SENSITIVE_KEYS = [
   'access_token',
 ];
 
-function sanitizeData(data: unknown): unknown {
+export function sanitizeData(data: unknown): unknown {
   if (data === null || data === undefined) {
     return data;
   }
 
   if (Array.isArray(data)) {
-    return data.map(sanitizeData);
+    return data.map((item) => sanitizeData(item));
   }
 
   if (typeof data === 'object') {
@@ -35,6 +35,8 @@ function sanitizeData(data: unknown): unknown {
         )
       ) {
         sanitized[key] = '[REDACTED]';
+      } else if (Array.isArray(value)) {
+        sanitized[key] = value.map((item) => sanitizeData(item));
       } else if (typeof value === 'object' && value !== null) {
         sanitized[key] = sanitizeData(value);
       } else {

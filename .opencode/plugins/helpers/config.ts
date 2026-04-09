@@ -23,11 +23,13 @@ export enum EventType {
 
   PERMISSION_ASKED = 'permission.asked',
   PERMISSION_REPLIED = 'permission.replied',
+  PERMISSION_ASK = 'permission.ask',
 
   SERVER_CONNECTED = 'server.connected',
   SERVER_INSTANCE_DISPOSED = 'server.instance.disposed',
 
   COMMAND_EXECUTED = 'command.executed',
+  COMMAND_EXECUTE_BEFORE = 'command.execute.before',
 
   LSP_CLIENT_DIAGNOSTICS = 'lsp.client.diagnostics',
   LSP_UPDATED = 'lsp.updated',
@@ -50,6 +52,7 @@ export enum EventType {
   EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM = 'experimental.chat.messages.transform',
   EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM = 'experimental.chat.system.transform',
   EXPERIMENTAL_TEXT_COMPLETE = 'experimental.text.complete',
+  TOOL_DEFINITION = 'tool.definition',
   SESSION_UNKNOWN = 'session.unknown',
 }
 

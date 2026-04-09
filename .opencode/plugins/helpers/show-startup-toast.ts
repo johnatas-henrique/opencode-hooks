@@ -30,15 +30,17 @@ export async function showStartupToast(
     let timeoutTimer: ReturnType<typeof setTimeout>;
     const timeout = new Promise<void>((resolve) => {
       timeoutTimer = setTimeout(resolve, TOAST_DURATION.TEN_SECONDS);
+      timeoutTimer.unref();
     });
 
     Promise.race([promise, timeout]).then(async () => {
       clearTimeout(timeoutTimer!);
       cleanup();
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, TIMER.OVERWRITE_CHECK_DELAY)
-      );
+      await new Promise((resolve) => {
+        const delayTimer = setTimeout(resolve, TIMER.OVERWRITE_CHECK_DELAY);
+        delayTimer.unref();
+      });
 
       try {
         await showActivePluginsToast(toastQueue, {

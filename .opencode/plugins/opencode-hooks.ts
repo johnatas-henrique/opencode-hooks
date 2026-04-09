@@ -116,28 +116,6 @@ export const OpencodeHooks: Plugin = async (
 ): Promise<Hooks> => {
   const { client } = ctx;
 
-  if (!userConfig.enabled) {
-    return {
-      event: async () => {},
-      'tool.execute.before': async () => {},
-      'tool.execute.after': async () => {},
-      'shell.env': async () => {},
-      'chat.message': async () => {},
-      'chat.params': async () => {},
-      'chat.headers': async () => {},
-      'permission.ask': async () => {},
-      'command.execute.before': async () => {},
-      'experimental.chat.messages.transform': async () => {},
-      'experimental.chat.system.transform': async () => {},
-      'experimental.session.compacting': async () => {},
-      'experimental.text.complete': async () => {},
-      'tool.definition': async () => {},
-      config: async () => {},
-      auth: undefined,
-      tool: undefined,
-    };
-  }
-
   initGlobalToastQueue((toast) => {
     client.tui.showToast({
       body: {
@@ -156,6 +134,10 @@ export const OpencodeHooks: Plugin = async (
   if (!hasShownToast) {
     hasShownToast = true;
     await showStartupToast();
+  }
+
+  if (!userConfig.enabled) {
+    return {};
   }
 
   const hooks: Hooks = {
@@ -197,7 +179,7 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: 'tool.execute.before',
         resolved,
-        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+        sessionId: input.sessionID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
         toolName: input.tool,
@@ -211,7 +193,6 @@ export const OpencodeHooks: Plugin = async (
     ) => {
       const isTaskTool = input.tool === TASK_TOOL_NAME;
       if (isTaskTool) {
-        const timestamp = new Date().toISOString();
         const subagentType =
           isTaskTool && typeof input.args[SUBAGENT_TYPE_ARG] === 'string'
             ? input.args[SUBAGENT_TYPE_ARG]
@@ -222,18 +203,15 @@ export const OpencodeHooks: Plugin = async (
           : 'tool.execute.after';
         const resolved = resolveToolConfig(rightTool, input.tool);
 
-        await handleDebugLog(timestamp, `DEBUG ${rightTool.toUpperCase()}`, {
-          input,
-          output,
-          resolved,
-        });
-        resolved.toastMessage = `Task executed: ${input.args['name'] ?? ''}`;
+        if (subagentType) {
+          resolved.toastMessage = `Agent invoked: ${subagentType}`;
+        }
 
         await executeHook({
           ctx,
-          eventType: 'tool.execute.after',
+          eventType: rightTool,
           resolved: resolved,
-          sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+          sessionId: input.sessionID,
           input: { ...input, subagentType } as unknown as Record<
             string,
             unknown
@@ -259,7 +237,7 @@ export const OpencodeHooks: Plugin = async (
           ctx,
           eventType: 'tool.execute.after',
           resolved,
-          sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+          sessionId: input.sessionID,
           input: { ...input, skillType } as unknown as Record<string, unknown>,
           output: output as unknown as Record<string, unknown>,
           toolName: input.tool,
@@ -268,24 +246,24 @@ export const OpencodeHooks: Plugin = async (
       }
     },
 
-    'shell.env': async (
+    [EventType.SHELL_ENV]: async (
       input: { cwd: string; sessionID?: string; callID?: string },
       output: { env: Record<string, string> }
     ) => {
-      const resolved = resolveEventConfig('shell.env');
+      const resolved = resolveEventConfig(EventType.SHELL_ENV);
 
       await executeHook({
         ctx,
-        eventType: 'shell.env',
+        eventType: EventType.SHELL_ENV,
         resolved,
         sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
-        toolName: 'shell.env',
+        toolName: EventType.SHELL_ENV,
       });
     },
 
-    'chat.message': async (
+    [EventType.CHAT_MESSAGE]: async (
       input: {
         sessionID: string;
         agent?: string;
@@ -295,19 +273,19 @@ export const OpencodeHooks: Plugin = async (
       },
       output: { message: Record<string, unknown>; parts: unknown[] }
     ) => {
-      const resolved = resolveEventConfig('chat.message');
+      const resolved = resolveEventConfig(EventType.CHAT_MESSAGE);
 
       await executeHook({
         ctx,
-        eventType: 'chat.message',
+        eventType: EventType.CHAT_MESSAGE,
         resolved,
-        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+        sessionId: input.sessionID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
       });
     },
 
-    'chat.params': async (
+    [EventType.CHAT_PARAMS]: async (
       input: {
         sessionID: string;
         agent: string;
@@ -322,19 +300,19 @@ export const OpencodeHooks: Plugin = async (
         options: Record<string, unknown>;
       }
     ) => {
-      const resolved = resolveEventConfig('chat.params');
+      const resolved = resolveEventConfig(EventType.CHAT_PARAMS);
 
       await executeHook({
         ctx,
-        eventType: 'chat.params',
+        eventType: EventType.CHAT_PARAMS,
         resolved,
-        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+        sessionId: input.sessionID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
       });
     },
 
-    'chat.headers': async (
+    [EventType.CHAT_HEADERS]: async (
       input: {
         sessionID: string;
         agent: string;
@@ -344,27 +322,27 @@ export const OpencodeHooks: Plugin = async (
       },
       output: { headers: Record<string, string> }
     ) => {
-      const resolved = resolveEventConfig('chat.headers');
+      const resolved = resolveEventConfig(EventType.CHAT_HEADERS);
 
       await executeHook({
         ctx,
-        eventType: 'chat.headers',
+        eventType: EventType.CHAT_HEADERS,
         resolved,
-        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+        sessionId: input.sessionID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
       });
     },
 
-    'permission.ask': async (
+    [EventType.PERMISSION_ASK]: async (
       input: { sessionID?: string; tool?: string; [key: string]: unknown },
       output: { status: 'ask' | 'deny' | 'allow' }
     ) => {
-      const resolved = resolveEventConfig('permission.ask');
+      const resolved = resolveEventConfig(EventType.PERMISSION_ASK);
 
       await executeHook({
         ctx,
-        eventType: 'permission.ask',
+        eventType: EventType.PERMISSION_ASK,
         resolved,
         sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
         input: input as unknown as Record<string, unknown>,
@@ -372,33 +350,33 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    'command.execute.before': async (
+    [EventType.COMMAND_EXECUTE_BEFORE]: async (
       input: { command: string; sessionID: string; arguments: string },
       output: { parts: unknown[] }
     ) => {
-      const resolved = resolveEventConfig('command.execute.before');
+      const resolved = resolveEventConfig(EventType.COMMAND_EXECUTE_BEFORE);
 
       await executeHook({
         ctx,
-        eventType: 'command.execute.before',
+        eventType: EventType.COMMAND_EXECUTE_BEFORE,
         resolved,
-        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+        sessionId: input.sessionID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
       });
     },
 
-    'experimental.chat.messages.transform': async (
+    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: async (
       input: Record<string, unknown>,
       output: { messages: unknown[] }
     ) => {
       const resolved = resolveEventConfig(
-        'experimental.chat.messages.transform'
+        EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM
       );
 
       await executeHook({
         ctx,
-        eventType: 'experimental.chat.messages.transform',
+        eventType: EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM,
         resolved,
         sessionId: DEFAULT_SESSION_ID,
         input,
@@ -406,11 +384,13 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    'experimental.chat.system.transform': async (
+    [EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: async (
       input: { sessionID?: string; model: Model },
       output: { system: string[] }
     ) => {
-      const resolved = resolveEventConfig('experimental.chat.system.transform');
+      const resolved = resolveEventConfig(
+        EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM
+      );
 
       await executeHook({
         ctx,
@@ -422,43 +402,45 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    'experimental.session.compacting': async (
+    [EventType.EXPERIMENTAL_SESSION_COMPACTING]: async (
       input: { sessionID: string },
       output: { context: string[]; prompt?: string }
     ) => {
-      const resolved = resolveEventConfig('experimental.session.compacting');
+      const resolved = resolveEventConfig(
+        EventType.EXPERIMENTAL_SESSION_COMPACTING
+      );
 
       await executeHook({
         ctx,
-        eventType: 'experimental.session.compacting',
+        eventType: EventType.EXPERIMENTAL_SESSION_COMPACTING,
         resolved,
-        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+        sessionId: input.sessionID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
       });
     },
 
-    'experimental.text.complete': async (
+    [EventType.EXPERIMENTAL_TEXT_COMPLETE]: async (
       input: { sessionID: string; messageID: string; partID: string },
       output: { text: string }
     ) => {
-      const resolved = resolveEventConfig('experimental.text.complete');
+      const resolved = resolveEventConfig(EventType.EXPERIMENTAL_TEXT_COMPLETE);
 
       await executeHook({
         ctx,
-        eventType: 'experimental.text.complete',
+        eventType: EventType.EXPERIMENTAL_TEXT_COMPLETE,
         resolved,
-        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+        sessionId: input.sessionID,
         input: input as unknown as Record<string, unknown>,
         output: output as unknown as Record<string, unknown>,
       });
     },
 
-    'tool.definition': async (
+    [EventType.TOOL_DEFINITION]: async (
       input: { toolID: string },
       output: { description: string; parameters: unknown }
     ) => {
-      const resolved = resolveEventConfig('tool.definition');
+      const resolved = resolveEventConfig(EventType.TOOL_DEFINITION);
 
       await executeHook({
         ctx,

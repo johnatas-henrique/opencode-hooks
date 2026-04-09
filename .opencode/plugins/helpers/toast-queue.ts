@@ -18,11 +18,17 @@ export async function showToastStaggered(
 
   if (stagger && activeToast) {
     await activeToast;
-    await new Promise((resolve) => setTimeout(resolve, STAGGER_MS.DEFAULT));
+    await new Promise((resolve) => {
+      const t = setTimeout(resolve, STAGGER_MS.DEFAULT);
+      t.unref();
+    });
   }
 
   if (delay > 0) {
-    await new Promise((resolve) => setTimeout(resolve, delay));
+    await new Promise((resolve) => {
+      const t = setTimeout(resolve, delay);
+      t.unref();
+    });
   }
 
   activeToast = Promise.resolve(showFn(toast));
@@ -57,11 +63,13 @@ export function createToastQueue(
           const duration = toast.duration ?? TOAST_DURATION.FIVE_SECONDS;
           await new Promise<void>((resolve) => {
             const t = setTimeout(resolve, staggerMs);
+            t.unref();
             activeTimers.push(t);
           });
           await Promise.resolve(showFn(toast));
           await new Promise<void>((resolve) => {
-            setTimeout(resolve, duration);
+            const t = setTimeout(resolve, duration);
+            t.unref();
           });
           if (activeTimers.length > 0) {
             activeTimers.shift();

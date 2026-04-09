@@ -805,7 +805,7 @@ describe('Session Plugins', () => {
         metadata: {},
       };
       await plugin['tool.execute.after'](input, output);
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
     });
 
     it('should not trigger toast for non-task tools', async () => {
@@ -841,7 +841,7 @@ describe('Session Plugins', () => {
         metadata: {},
       };
       await plugin['tool.execute.after'](input, output);
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
     });
   });
 

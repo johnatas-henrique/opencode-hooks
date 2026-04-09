@@ -24,9 +24,15 @@ export const userConfig: UserEventsConfig = {
     [EventType.TOOL_EXECUTE_BEFORE]: false,
 
     [EventType.SERVER_CONNECTED]: { toast: { variant: 'success' } },
-    [EventType.SERVER_INSTANCE_DISPOSED]: { scripts: ['session-closed.sh'] },
+    [EventType.SERVER_INSTANCE_DISPOSED]: {
+      enabled: true,
+      scripts: ['session-closed.sh'],
+      runScripts: true,
+      saveToFile: true,
+    },
 
     [EventType.SESSION_CREATED]: {
+      enabled: true,
       toast: { variant: 'success' },
       runScripts: true,
       runOnlyOnce: true,
@@ -34,14 +40,18 @@ export const userConfig: UserEventsConfig = {
       appendToSession: true,
     },
     [EventType.SESSION_COMPACTED]: {
-      toast: { duration: TOAST_DURATION.FIVE_SECONDS, variant: 'warning' },
+      enabled: true,
+      toast: { variant: 'warning' },
       scripts: ['pre-compact.sh'],
       runScripts: true,
       saveToFile: true,
     },
     [EventType.SESSION_DELETED]: { enabled: false },
     [EventType.SESSION_DIFF]: { enabled: false },
-    [EventType.SESSION_ERROR]: {},
+    [EventType.SESSION_ERROR]: {
+      enabled: true,
+      toast: { duration: TOAST_DURATION.THIRTY_SECONDS, variant: 'error' },
+    },
     [EventType.SESSION_IDLE]: { enabled: false },
     [EventType.SESSION_STATUS]: { enabled: false },
     [EventType.SESSION_UPDATED]: { enabled: false },
@@ -74,7 +84,8 @@ export const userConfig: UserEventsConfig = {
     [EventType.TUI_TOAST_SHOW]: { enabled: false },
 
     [EventType.EXPERIMENTAL_SESSION_COMPACTING]: {
-      toast: { duration: TOAST_DURATION.FIVE_SECONDS, variant: 'warning' },
+      enabled: true,
+      toast: { variant: 'warning' },
       scripts: ['pre-compact.sh'],
       runScripts: true,
       saveToFile: true,
@@ -90,22 +101,32 @@ export const userConfig: UserEventsConfig = {
   },
 
   tools: {
-    [EventType.TOOL_EXECUTE_AFTER]: {
+    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
       task: {
         enabled: true,
         toast: {
           enabled: true,
-          title: '====TOOL====',
-          duration: TOAST_DURATION.FIVE_SECONDS,
+          title: '====SUBAGENT====',
+          duration: TOAST_DURATION.TEN_SECONDS,
+          variant: 'success',
         },
+        scripts: ['log-agent.sh'],
+        runScripts: true,
         saveToFile: true,
+      },
+    },
+    [EventType.TOOL_EXECUTE_AFTER]: {
+      task: {
+        enabled: true,
+        toast: { enabled: true, title: '====TOOL====' },
       },
       skill: {
         enabled: true,
         toast: {
           enabled: true,
           title: '====SKILL====',
-          duration: TOAST_DURATION.FIVE_SECONDS,
+          duration: TOAST_DURATION.TEN_SECONDS,
+          variant: 'success',
         },
         scripts: ['log-skill.sh'],
         runScripts: true,
@@ -137,19 +158,6 @@ export const userConfig: UserEventsConfig = {
       filesystem_move_file: { toast: { title: '====FS MOVE====' } },
       filesystem_get_file_info: { toast: { title: '====FS STAT====' } },
       gh_grep_searchGitHub: { toast: { title: '====GH SEARCH====' } },
-    },
-    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
-      task: {
-        enabled: true,
-        toast: {
-          enabled: true,
-          title: '====SUBAGENT====',
-          duration: TOAST_DURATION.FIVE_SECONDS,
-        },
-        scripts: ['log-agent.sh'],
-        runScripts: true,
-        saveToFile: true,
-      },
     },
     [EventType.TOOL_EXECUTE_BEFORE]: {
       task: { toast: { title: '====TOOL====' } },

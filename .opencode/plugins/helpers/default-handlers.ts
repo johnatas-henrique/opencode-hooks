@@ -92,7 +92,7 @@ export const handlers: Record<string, EventHandler> = {
   'session.error': {
     title: '====SESSION ERROR====',
     variant: 'error',
-    duration: TOAST_DURATION.THIRTY_SECONDS,
+    duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-error.sh',
     buildMessage: (event) => {
       const error = getProp(event, 'properties.error') as
@@ -278,7 +278,7 @@ export const handlers: Record<string, EventHandler> = {
         | undefined;
       return (
         `File: ${toStr(getProp(event, 'properties.uri'))}\n` +
-        `Diagnostics: ${diagnostics?.length ?? 0}\n` +
+        `Diagnostics: ${diagnostics ? diagnostics.length : 0}\n` +
         `Time: ${formatTime()}`
       );
     },
