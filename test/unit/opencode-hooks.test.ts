@@ -364,7 +364,7 @@ describe('opencode-hooks - plugin hooks', () => {
   });
 
   describe('disabled plugin', () => {
-    it('should return empty handlers when plugin is disabled', async () => {
+    it('should return empty object when plugin is disabled', async () => {
       jest.resetModules();
       jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
@@ -385,10 +385,7 @@ describe('opencode-hooks - plugin hooks', () => {
         $: mockDollar,
       } as any);
 
-      expect(plugin.event).toBeDefined();
-      expect(plugin['tool.execute.before']).toBeDefined();
-      expect(plugin['tool.execute.after']).toBeDefined();
-      expect(plugin['shell.env']).toBeDefined();
+      expect(plugin).toEqual({});
     });
   });
 
