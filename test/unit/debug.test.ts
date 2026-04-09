@@ -180,4 +180,12 @@ describe('sanitizeData', () => {
     const result = sanitizeData(input) as Record<string, unknown>;
     expect(result).toEqual(input);
   });
+
+  it('should handle top-level array', () => {
+    const input = [{ key: 'value1' }, { key: 'value2' }];
+    const result = sanitizeData(input) as Array<Record<string, unknown>>;
+    expect(result).toHaveLength(2);
+    expect(result[0].key).toBe('value1');
+    expect(result[1].key).toBe('value2');
+  });
 });
