@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.1](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.4.0...opencode-hooks-v0.4.1) (2026-04-09)
+
+
+### Bug Fixes
+
+* add timestamp to unknown events log ([d158fae](https://github.com/johnatas-henrique/opencode-hooks/commit/d158fae59136588e3500c0046ade093e9a113cc0))
+* change toast.enabled default from true to false ([1dd83f7](https://github.com/johnatas-henrique/opencode-hooks/commit/1dd83f79b6e17ffaf3aec9d45a21cda4cf7a0f68))
+* correct path to subagentType on toast message ([5aa733e](https://github.com/johnatas-henrique/opencode-hooks/commit/5aa733e28bfa578bab051c2495aae4ad9f659238))
+* correct toast count expectations in session-plugins tests ([9a38a15](https://github.com/johnatas-henrique/opencode-hooks/commit/9a38a157272c4dcf4d5df05a3797d31db7b2c8f3))
+* reduce session.error toast duration to 5s ([f027932](https://github.com/johnatas-henrique/opencode-hooks/commit/f027932f76aa8810e9887d5024d64976a37332ac))
+* resolve Jest worker process warning ([4ea9be8](https://github.com/johnatas-henrique/opencode-hooks/commit/4ea9be8425e4d5d5ddecf630bb56a670fe1fd66f))
+* use correct eventType for subagent tool execution ([67c69b9](https://github.com/johnatas-henrique/opencode-hooks/commit/67c69b9d887319cccff35af26668c44e01bfd8e4))
+
 ## [0.4.0](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.3.0...opencode-hooks-v0.4.0) (2026-04-08)
 
 
