@@ -221,7 +221,7 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
 
 /**
  * Resolves the tool configuration for a given tool event and tool name.
- * Merges event base config with tool-specific overrides.
+ * Merges tool-specific overrides directly from userConfig.default, bypassing event config unless explicitly defined.
  */
 export function resolveToolConfig(
   toolEventType: string,
@@ -244,7 +244,13 @@ export function resolveToolConfig(
     return DISABLED_CONFIG;
   }
 
-  const eventBase = resolveEventConfig(toolEventType);
+  // Determine event base config: use resolveEventConfig if event is defined,
+  // otherwise fall back directly to userConfig.default via getDefaultConfig
+  const eventBase: ResolvedEventConfig =
+    userConfig.events[toolEventType as keyof typeof userConfig.events] !==
+    undefined
+      ? resolveEventConfig(toolEventType)
+      : getDefaultConfig(toolEventType);
 
   if (!toolConfig || isEmptyObject(toolConfig)) {
     return eventBase;
@@ -295,5 +301,24 @@ export function resolveToolConfig(
       'runOnlyOnce',
       eventBase.runOnlyOnce
     ),
+  };
+}
+
+function getDefaultConfig(toolEventType: string): ResolvedEventConfig {
+  const handler = handlers[toolEventType];
+  const defaultCfg = userConfig.default;
+
+  return {
+    enabled: true,
+    debug: getWithDefault(true, defaultCfg, 'debug', false),
+    toast: getWithDefault(true, defaultCfg, 'toast', false),
+    toastTitle: handler?.title ?? '',
+    toastMessage: undefined,
+    toastVariant: handler?.variant ?? 'info',
+    toastDuration: handler?.duration ?? 2000,
+    scripts: [],
+    saveToFile: getWithDefault(true, defaultCfg, 'saveToFile', false),
+    appendToSession: getWithDefault(true, defaultCfg, 'appendToSession', false),
+    runOnlyOnce: false,
   };
 }
