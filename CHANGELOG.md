@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.4.1...opencode-hooks-v0.4.2) (2026-04-10)
+
+
+### Maintenance
+
+* update .gitignore to exclude unnecessary files ([218897d](https://github.com/johnatas-henrique/opencode-hooks/commit/218897d127ec24ad6e6fdd0b7a77d31fd421c01c))
+
 ## [0.4.1](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.4.0...opencode-hooks-v0.4.1) (2026-04-09)
 
 
