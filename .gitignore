@@ -5,3 +5,4 @@ config.json
 coverage/
 production/session-logs/
 .env
+.vscode/
