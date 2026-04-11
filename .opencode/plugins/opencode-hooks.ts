@@ -71,6 +71,9 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
   }
 
   if (!resolved.enabled) {
+    if (!userConfig.logDisabledEvents) {
+      return;
+    }
     await saveToFile({
       content: JSON.stringify({
         timestamp,

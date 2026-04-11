@@ -96,20 +96,17 @@ export type PluginStatusDisplayMode =
   | 'user-separated'
   | 'all-labeled';
 
-export interface PluginStatusConfig {
-  enabled: boolean;
-  displayMode: PluginStatusDisplayMode;
-}
-
 export interface UserEventsConfig {
   enabled: boolean;
-  default?: EventOverride;
-  pluginStatus: PluginStatusConfig;
+  logDisabledEvents: boolean;
+  showPluginStatus: boolean;
+  pluginStatusDisplayMode: PluginStatusDisplayMode;
+  default: EventOverride;
   events: Partial<Record<EventType, EventConfig>>;
   tools: {
-    [EventType.TOOL_EXECUTE_AFTER]?: Record<string, ToolConfig>;
-    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]?: Record<string, ToolConfig>;
-    [EventType.TOOL_EXECUTE_BEFORE]?: Record<string, ToolOverride>;
+    [EventType.TOOL_EXECUTE_AFTER]: Record<string, ToolConfig>;
+    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: Record<string, ToolConfig>;
+    [EventType.TOOL_EXECUTE_BEFORE]: Record<string, ToolOverride>;
   };
 }
 

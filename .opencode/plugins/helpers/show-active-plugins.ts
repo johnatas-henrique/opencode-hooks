@@ -10,13 +10,14 @@ export async function showActivePluginsToast(
   queue: ToastQueue,
   options: { duration?: number } = {}
 ): Promise<void> {
-  const statuses = getPluginStatus();
-  const displayMode = userConfig.pluginStatus.displayMode;
-  const message = formatPluginStatus(statuses, displayMode);
-
-  if (!userConfig.pluginStatus.enabled) {
+  const showStatus = userConfig.showPluginStatus;
+  if (!showStatus) {
     return;
   }
+
+  const statuses = getPluginStatus();
+  const displayMode = userConfig.pluginStatusDisplayMode;
+  const message = formatPluginStatus(statuses, displayMode);
 
   const hasIssues = statuses.some(
     (s) => s.status === 'failed' || s.status === 'incompatible'
