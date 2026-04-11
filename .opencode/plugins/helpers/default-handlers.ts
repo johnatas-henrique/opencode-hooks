@@ -434,4 +434,232 @@ export const handlers: Record<string, EventHandler> = {
     defaultScript: 'tool-definition.sh',
     props: { 'Tool Id': 'toolID' },
   }),
+
+  'tool:task': createHandler({
+    title: '====SUBAGENT====',
+    variant: 'success',
+    duration: TOAST_DURATION.TEN_SECONDS,
+    defaultScript: 'tool-execute-task.sh',
+    props: { 'Session Id': SESSION_ID, 'Subagent Id': 'properties.sessionID' },
+  }),
+
+  'tool:skill': createHandler({
+    title: '====SKILL====',
+    variant: 'success',
+    duration: TOAST_DURATION.TEN_SECONDS,
+    defaultScript: 'tool-execute-skill.sh',
+    props: { 'Session Id': SESSION_ID, 'Skill Id': 'properties.tool.input' },
+  }),
+
+  'tool:bash': createHandler({
+    title: '====TERMINAL COMMAND====',
+    variant: 'info',
+    duration: TOAST_DURATION.FIVE_SECONDS,
+    defaultScript: 'tool-execute-bash.sh',
+    props: { 'Session Id': SESSION_ID, Command: 'properties.tool.input' },
+  }),
+
+  'tool:write': createHandler({
+    title: '====FILE WRITE====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-write.sh',
+    props: { 'Session Id': SESSION_ID, File: 'properties.path' },
+  }),
+
+  'tool:edit': createHandler({
+    title: '====FILE EDIT====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-edit.sh',
+    props: { 'Session Id': SESSION_ID, File: 'properties.path' },
+  }),
+
+  'tool:chat': createHandler({
+    title: '====CHAT====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-chat.sh',
+    props: { 'Session Id': SESSION_ID },
+  }),
+
+  'tool:read': createHandler({
+    title: '====FILE READ====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-read.sh',
+    props: { 'Session Id': SESSION_ID, File: 'properties.path' },
+  }),
+
+  'tool:glob': createHandler({
+    title: '====FILE SEARCH====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-glob.sh',
+    props: { 'Session Id': SESSION_ID, Pattern: 'properties.tool.input' },
+  }),
+
+  'tool:grep': createHandler({
+    title: '====TEXT SEARCH====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-grep.sh',
+    props: { 'Session Id': SESSION_ID, Pattern: 'properties.tool.input' },
+  }),
+
+  'tool:list': createHandler({
+    title: '====DIRECTORY LIST====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-list.sh',
+    props: { 'Session Id': SESSION_ID, Directory: 'properties.path' },
+  }),
+
+  'tool:patch': createHandler({
+    title: '====PATCH====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-patch.sh',
+    props: { 'Session Id': SESSION_ID, File: 'properties.path' },
+  }),
+
+  'tool:webfetch': createHandler({
+    title: '====WEB FETCH====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-webfetch.sh',
+    props: { 'Session Id': SESSION_ID, URL: 'properties.tool.input' },
+  }),
+
+  'tool:websearch': createHandler({
+    title: '====WEB SEARCH====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-websearch.sh',
+    props: { 'Session Id': SESSION_ID, Query: 'properties.tool.input' },
+  }),
+
+  'tool:codesearch': createHandler({
+    title: '====CODE SEARCH====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-codesearch.sh',
+    props: { 'Session Id': SESSION_ID, Query: 'properties.tool.input' },
+  }),
+
+  'tool:todowrite': createHandler({
+    title: '====TODO WRITE====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-todowrite.sh',
+    props: { 'Session Id': SESSION_ID },
+  }),
+
+  'tool:todoread': createHandler({
+    title: '====TODO READ====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-todoread.sh',
+    props: { 'Session Id': SESSION_ID },
+  }),
+
+  'tool:question': createHandler({
+    title: '====QUESTION====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-question.sh',
+    props: { 'Session Id': SESSION_ID },
+  }),
+
+  'tool:git.commit': createHandler({
+    title: '====GIT COMMIT====',
+    variant: 'success',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-git-commit.sh',
+    props: { 'Session Id': SESSION_ID, Message: 'properties.tool.input' },
+  }),
+
+  'tool:git.push': createHandler({
+    title: '====GIT PUSH====',
+    variant: 'warning',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-git-push.sh',
+    props: { 'Session Id': SESSION_ID },
+  }),
+
+  'tool:git.pull': createHandler({
+    title: '====GIT PULL====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-git-pull.sh',
+    props: { 'Session Id': SESSION_ID },
+  }),
+
+  'tool:filesystem_read_file': createHandler({
+    title: '====FS READ====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-filesystem-read.sh',
+    props: { 'Session Id': SESSION_ID, File: 'properties.path' },
+  }),
+
+  'tool:filesystem_write_file': createHandler({
+    title: '====FS WRITE====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-filesystem-write.sh',
+    props: { 'Session Id': SESSION_ID, File: 'properties.path' },
+  }),
+
+  'tool:filesystem_list_directory': createHandler({
+    title: '====FS LIST====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-filesystem-list.sh',
+    props: { 'Session Id': SESSION_ID, Directory: 'properties.path' },
+  }),
+
+  'tool:filesystem_search_files': createHandler({
+    title: '====FS SEARCH====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-filesystem-search.sh',
+    props: { 'Session Id': SESSION_ID, Pattern: 'properties.pattern' },
+  }),
+
+  'tool:filesystem_create_directory': createHandler({
+    title: '====FS MKDIR====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-filesystem-mkdir.sh',
+    props: { 'Session Id': SESSION_ID, Directory: 'properties.path' },
+  }),
+
+  'tool:filesystem_move_file': createHandler({
+    title: '====FS MOVE====',
+    variant: 'warning',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-filesystem-move.sh',
+    props: {
+      'Session Id': SESSION_ID,
+      From: 'properties.source',
+      To: 'properties.destination',
+    },
+  }),
+
+  'tool:filesystem_get_file_info': createHandler({
+    title: '====FS STAT====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-filesystem-stat.sh',
+    props: { 'Session Id': SESSION_ID, File: 'properties.path' },
+  }),
+
+  'tool:gh_grep_searchGitHub': createHandler({
+    title: '====GH SEARCH====',
+    variant: 'info',
+    duration: TOAST_DURATION.TWO_SECONDS,
+    defaultScript: 'tool-execute-gh-search.sh',
+    props: { 'Session Id': SESSION_ID, Query: 'properties.tool.input' },
+  }),
 };
