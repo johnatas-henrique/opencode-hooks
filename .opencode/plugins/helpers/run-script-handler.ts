@@ -3,11 +3,22 @@ import { appendToSession } from './append-to-session';
 import { logScriptOutput } from './log-event';
 import { useGlobalToastQueue } from './toast-queue';
 import { TOAST_DURATION, DEFAULT_SESSION_ID } from './constants';
-import { isPrimarySession as isSessionPrimary } from './session';
 import type { RunScriptConfig } from './script-config';
 import { saveToFile } from './save-to-file';
 
-const runOnceTracker = new Map<string, boolean>();
+const subagentSessionIds = new Set<string>();
+
+export function isSubagent(sessionId: string | undefined): boolean {
+  return !!sessionId && subagentSessionIds.has(sessionId);
+}
+
+export function addSubagentSession(sessionId: string): void {
+  subagentSessionIds.add(sessionId);
+}
+
+export function resetSubagentTracking(): void {
+  subagentSessionIds.clear();
+}
 
 /**
  * Runs a script and handles its output, logging, and error management.
@@ -21,22 +32,17 @@ export async function runScriptAndHandle(
     script,
     scriptArg = '',
     timestamp,
-    eventType,
+    eventType: _eventType,
     resolved,
     sessionId = DEFAULT_SESSION_ID,
   } = config;
 
   const { $ } = ctx;
-  const runOnceKey = `${eventType}:${script}`;
 
   if (resolved.runOnlyOnce) {
-    if (!isSessionPrimary(sessionId)) {
+    if (isSubagent(sessionId)) {
       return;
     }
-    if (runOnceTracker.has(runOnceKey)) {
-      return;
-    }
-    runOnceTracker.set(runOnceKey, true);
   }
 
   try {
@@ -73,8 +79,4 @@ export async function runScriptAndHandle(
       duration: TOAST_DURATION.FIVE_SECONDS,
     });
   }
-}
-
-export function resetRunOnceTracker(): void {
-  runOnceTracker.clear();
 }

@@ -24,6 +24,7 @@ import {
   logEventConfig,
   handleDebugLog,
   runScriptAndHandle,
+  addSubagentSession,
   EventType,
 } from './helpers';
 import { userConfig } from './helpers/user-events.config';
@@ -181,6 +182,10 @@ export const OpencodeHooks: Plugin = async (
       const info = props?.info as Record<string, unknown> | undefined;
       const rawId = info?.id ?? props?.sessionID;
       const sessionId = typeof rawId === 'string' ? rawId : DEFAULT_SESSION_ID;
+
+      if (event.type === EventType.SESSION_CREATED && info?.parentID) {
+        addSubagentSession(sessionId);
+      }
 
       await executeHook({
         ctx,

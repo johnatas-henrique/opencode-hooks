@@ -1,6 +1,6 @@
 import { saveToFile, type ToastCallback } from './save-to-file';
 import { runScript } from './run-script';
-import { runScriptAndHandle } from './run-script-handler';
+import { runScriptAndHandle, addSubagentSession } from './run-script-handler';
 import { appendToSession } from './append-to-session';
 import { handleDebugLog } from './debug';
 import {
@@ -68,6 +68,7 @@ export {
   isSessionPrimary,
   getPrimarySessionId,
   resetSessionTracking,
+  addSubagentSession,
 };
 export type {
   EventHandler,
