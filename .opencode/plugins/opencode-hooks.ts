@@ -84,9 +84,16 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
   await logEventConfig(timestamp, eventType, input, resolved);
 
   if (resolved.toast) {
-    const handler = handlers[eventType];
+    let handler = handlers[eventType];
+    if (toolName) {
+      const toolHandler = handlers[`tool:${toolName}`];
+      if (toolHandler) {
+        handler = toolHandler;
+      }
+    }
+
     const message =
-      resolved.toastMessage ??
+      resolved.toastMessage ||
       (handler
         ? handler.buildMessage((input ?? {}) as Record<string, unknown>)
         : eventType);
@@ -165,7 +172,10 @@ export const OpencodeHooks: Plugin = async (
         });
       }
 
-      const resolved = resolveEventConfig(event.type);
+      const resolved = resolveEventConfig(
+        event.type,
+        event as unknown as Record<string, unknown>
+      );
 
       const props = event.properties as Record<string, unknown>;
       const info = props?.info as Record<string, unknown> | undefined;
@@ -185,7 +195,11 @@ export const OpencodeHooks: Plugin = async (
       input: ToolExecuteBeforeInput,
       output: ToolExecuteBeforeOutput
     ) => {
-      const resolved = resolveToolConfig('tool.execute.before', input.tool);
+      const resolved = resolveToolConfig(
+        'tool.execute.before',
+        input.tool,
+        input as unknown as Record<string, unknown>
+      );
 
       await executeHook({
         ctx,
@@ -213,7 +227,10 @@ export const OpencodeHooks: Plugin = async (
         const rightTool = subagentType
           ? 'tool.execute.after.subagent'
           : 'tool.execute.after';
-        const resolved = resolveToolConfig(rightTool, input.tool);
+        const resolved = resolveToolConfig(rightTool, input.tool, {
+          ...input,
+          subagentType,
+        } as unknown as Record<string, unknown>);
 
         if (subagentType) {
           resolved.toastMessage = `Agent invoked: ${subagentType}`;
@@ -233,13 +250,16 @@ export const OpencodeHooks: Plugin = async (
           scriptArg: subagentType || input.tool,
         });
       } else {
-        const resolved = resolveToolConfig('tool.execute.after', input.tool);
-
         const isSkillTool = input.tool === 'skill';
         const skillType =
           isSkillTool && typeof input.args['name'] === 'string'
             ? input.args['name']
             : '';
+
+        const resolved = resolveToolConfig('tool.execute.after', input.tool, {
+          ...input,
+          skillType,
+        } as unknown as Record<string, unknown>);
 
         if (isSkillTool) {
           resolved.toastMessage = `Skill executed: ${input.args['name'] ?? ''}`;
@@ -262,7 +282,10 @@ export const OpencodeHooks: Plugin = async (
       input: { cwd: string; sessionID?: string; callID?: string },
       output: { env: Record<string, string> }
     ) => {
-      const resolved = resolveEventConfig(EventType.SHELL_ENV);
+      const resolved = resolveEventConfig(
+        EventType.SHELL_ENV,
+        input as unknown as Record<string, unknown>
+      );
 
       await executeHook({
         ctx,
@@ -285,7 +308,10 @@ export const OpencodeHooks: Plugin = async (
       },
       output: { message: Record<string, unknown>; parts: unknown[] }
     ) => {
-      const resolved = resolveEventConfig(EventType.CHAT_MESSAGE);
+      const resolved = resolveEventConfig(
+        EventType.CHAT_MESSAGE,
+        input as unknown as Record<string, unknown>
+      );
 
       await executeHook({
         ctx,
@@ -312,7 +338,10 @@ export const OpencodeHooks: Plugin = async (
         options: Record<string, unknown>;
       }
     ) => {
-      const resolved = resolveEventConfig(EventType.CHAT_PARAMS);
+      const resolved = resolveEventConfig(
+        EventType.CHAT_PARAMS,
+        input as unknown as Record<string, unknown>
+      );
 
       await executeHook({
         ctx,
@@ -334,7 +363,10 @@ export const OpencodeHooks: Plugin = async (
       },
       output: { headers: Record<string, string> }
     ) => {
-      const resolved = resolveEventConfig(EventType.CHAT_HEADERS);
+      const resolved = resolveEventConfig(
+        EventType.CHAT_HEADERS,
+        input as unknown as Record<string, unknown>
+      );
 
       await executeHook({
         ctx,
@@ -350,7 +382,10 @@ export const OpencodeHooks: Plugin = async (
       input: { sessionID?: string; tool?: string; [key: string]: unknown },
       output: { status: 'ask' | 'deny' | 'allow' }
     ) => {
-      const resolved = resolveEventConfig(EventType.PERMISSION_ASK);
+      const resolved = resolveEventConfig(
+        EventType.PERMISSION_ASK,
+        input as unknown as Record<string, unknown>
+      );
 
       await executeHook({
         ctx,
@@ -366,7 +401,10 @@ export const OpencodeHooks: Plugin = async (
       input: { command: string; sessionID: string; arguments: string },
       output: { parts: unknown[] }
     ) => {
-      const resolved = resolveEventConfig(EventType.COMMAND_EXECUTE_BEFORE);
+      const resolved = resolveEventConfig(
+        EventType.COMMAND_EXECUTE_BEFORE,
+        input as unknown as Record<string, unknown>
+      );
 
       await executeHook({
         ctx,
@@ -383,7 +421,8 @@ export const OpencodeHooks: Plugin = async (
       output: { messages: unknown[] }
     ) => {
       const resolved = resolveEventConfig(
-        EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM
+        EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM,
+        input
       );
 
       await executeHook({
@@ -401,7 +440,8 @@ export const OpencodeHooks: Plugin = async (
       output: { system: string[] }
     ) => {
       const resolved = resolveEventConfig(
-        EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM
+        EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM,
+        input as unknown as Record<string, unknown>
       );
 
       await executeHook({
@@ -419,7 +459,8 @@ export const OpencodeHooks: Plugin = async (
       output: { context: string[]; prompt?: string }
     ) => {
       const resolved = resolveEventConfig(
-        EventType.EXPERIMENTAL_SESSION_COMPACTING
+        EventType.EXPERIMENTAL_SESSION_COMPACTING,
+        input as unknown as Record<string, unknown>
       );
 
       await executeHook({
@@ -436,7 +477,10 @@ export const OpencodeHooks: Plugin = async (
       input: { sessionID: string; messageID: string; partID: string },
       output: { text: string }
     ) => {
-      const resolved = resolveEventConfig(EventType.EXPERIMENTAL_TEXT_COMPLETE);
+      const resolved = resolveEventConfig(
+        EventType.EXPERIMENTAL_TEXT_COMPLETE,
+        input as unknown as Record<string, unknown>
+      );
 
       await executeHook({
         ctx,
@@ -452,7 +496,10 @@ export const OpencodeHooks: Plugin = async (
       input: { toolID: string },
       output: { description: string; parameters: unknown }
     ) => {
-      const resolved = resolveEventConfig(EventType.TOOL_DEFINITION);
+      const resolved = resolveEventConfig(
+        EventType.TOOL_DEFINITION,
+        input as unknown as Record<string, unknown>
+      );
 
       await executeHook({
         ctx,
