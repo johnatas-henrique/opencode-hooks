@@ -41,7 +41,8 @@ interface HandlerConfig {
   variant: EventHandler['variant'];
   duration: number;
   defaultScript: string;
-  props: Record<string, string>;
+  props?: Record<string, string>;
+  buildMessage?: (event: Record<string, unknown>) => string;
 }
 
 const createHandler = (config: HandlerConfig): EventHandler => ({
@@ -49,12 +50,14 @@ const createHandler = (config: HandlerConfig): EventHandler => ({
   variant: config.variant,
   duration: config.duration,
   defaultScript: config.defaultScript,
-  buildMessage: (event) => {
-    const lines = Object.entries(config.props)
-      .map(([label, path]) => `${label}: ${toStr(getProp(event, path))}`)
-      .join('\n');
-    return `${lines}\nTime: ${formatTime()}`;
-  },
+  buildMessage:
+    config.buildMessage ??
+    ((event) => {
+      const lines = Object.entries(config.props ?? {})
+        .map(([label, path]) => `${label}: ${toStr(getProp(event, path))}`)
+        .join('\n');
+      return `${lines}\nTime: ${formatTime()}`;
+    }),
 });
 
 const SESSION_ID = 'properties.sessionID';
@@ -89,7 +92,7 @@ export const handlers: Record<string, EventHandler> = {
     props: { 'Session Id': INFO_ID },
   }),
 
-  'session.error': {
+  'session.error': createHandler({
     title: '====SESSION ERROR====',
     variant: 'error',
     duration: TOAST_DURATION.FIVE_SECONDS,
@@ -110,7 +113,7 @@ export const handlers: Record<string, EventHandler> = {
         `Time: ${formatTime()}`
       );
     },
-  },
+  }),
 
   'session.diff': createHandler({
     title: '====SESSION DIFF====',
@@ -128,7 +131,7 @@ export const handlers: Record<string, EventHandler> = {
     props: { 'Session Id': SESSION_ID },
   }),
 
-  'session.status': {
+  'session.status': createHandler({
     title: '====SESSION STATUS====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
@@ -137,7 +140,7 @@ export const handlers: Record<string, EventHandler> = {
       `Session Id: ${toStr(getProp(event, SESSION_ID))}\n` +
       `Status: ${JSON.stringify(getProp(event, 'properties.status'))}\n` +
       `Time: ${formatTime()}`,
-  },
+  }),
 
   'session.updated': createHandler({
     title: '====UPDATED SESSION====',
@@ -267,7 +270,7 @@ export const handlers: Record<string, EventHandler> = {
     props: { Command: 'properties.command' },
   }),
 
-  'lsp.client.diagnostics': {
+  'lsp.client.diagnostics': createHandler({
     title: '====LSP DIAGNOSTICS====',
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
@@ -282,7 +285,7 @@ export const handlers: Record<string, EventHandler> = {
         `Time: ${formatTime()}`
       );
     },
-  },
+  }),
 
   'lsp.updated': createHandler({
     title: '====LSP UPDATED====',
@@ -300,7 +303,7 @@ export const handlers: Record<string, EventHandler> = {
     props: { Version: 'properties.version' },
   }),
 
-  'todo.updated': {
+  'todo.updated': createHandler({
     title: '====TODO UPDATED====',
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
@@ -309,7 +312,7 @@ export const handlers: Record<string, EventHandler> = {
       `Session Id: ${toStr(getProp(event, SESSION_ID))}\n` +
       `Count: ${toStr(getProp(event, 'properties.count'), '0')}\n` +
       `Time: ${formatTime()}`,
-  },
+  }),
 
   'shell.env': createHandler({
     title: '====SHELL ENV====',
