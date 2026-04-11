@@ -7,16 +7,16 @@
 | **Fase 1** | 1.1  | Refactorar `resolveToolConfig` - herança direta de `default` | ✅     | 2026-04-10 14:35 UTC |
 |            | 1.2  | Corrigir herança de config vazia `{}`                        | ✅     | 2026-04-10 14:40 UTC |
 |            | 1.3  | Documentar debug granular por tool                           | ✅     | 2026-04-10 14:45 UTC |
-| **Fase 2** | 2.1  | Adicionar eventType/toolName em script errors                | ⏳     | -                    |
-|            | 2.2  | Melhorar formatação de exibição de erros                     | ⏳     | -                    |
-|            | 2.3  | Consolidar toasts de múltiplos scripts                       | ⏳     | -                    |
-| **Fase 3** | 3.1  | Implementar feature `runOnce`                                | ⏳     | -                    |
-|            | 3.2  | Criar sistema de teste para scripts                          | ⏳     | -                    |
-|            | 3.3  | Implementar novos hooks baseados no ECC                      | ⏳     | -                    |
-| **Fase 4** | 4.1  | Criar tool-specific handlers (read, write, bash, task, etc.) | ⏳     | -                    |
-|            | 4.2  | Modificar `resolveToolConfig` para usar handlers             | ⏳     | -                    |
-|            | 4.3  | Simplificar `user-events.config.ts`                          | ⏳     | -                    |
-|            | 4.4  | Atualizar testes e documentação                              | ⏳     | -                    |
+| **Fase 2** | 2.1  | Adicionar eventType/toolName em script errors                | ✅     | -                    |
+|            | 2.2  | Melhorar formatação de exibição de erros                     | ✅     | -                    |
+|            | 2.3  | Consolidar toasts de múltiplos scripts                       | ✅     | -                    |
+| **Fase 3** | 3.1  | Implementar feature `runOnce`                                | ✅     | -                    |
+|            | 3.2  | Criar sistema de teste para scripts                          | ✅     | -                    |
+|            | 3.3  | Implementar novos hooks baseados no ECC                      | ✅     | -                    |
+| **Fase 4** | 4.1  | Criar tool-specific handlers (read, write, bash, task, etc.) | ✅     | -                    |
+|            | 4.2  | Modificar `resolveToolConfig` para usar handlers             | ✅     | -                    |
+|            | 4.3  | Simplificar `user-events.config.ts`                          | ✅     | -                    |
+|            | 4.4  | Atualizar testes e documentação                              | ✅     | -                    |
 
 ---
 

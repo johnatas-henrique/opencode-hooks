@@ -5,6 +5,8 @@
 | 1. Update runScriptAndHandle to show only toolName for tool events | ⏳     |
 | 2. Test build and lint pass                                        | ⏳     |
 
+**Status**: Not Completed - Steps not implemented
+
 ## Problem
 
 Current SCRIPT ERROR display shows redundant event type for tool events:

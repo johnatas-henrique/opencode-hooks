@@ -1,7 +1,7 @@
 # Plan: Fix Handler Selection, runScripts, and toastMessage
 
 **Created**: 2026-04-10 22:45
-**Status**: Draft
+**Status**: Completed
 
 ## Problems Identified
 
@@ -36,14 +36,14 @@ Scripts run when `toast: true` because `defaultScript` auto-included without che
 
 | Step | Description                                             | Status | Timestamp |
 | ---- | ------------------------------------------------------- | ------ | --------- |
-| 1    | Modify createHandler to accept optional buildMessage    | ⏳     | -         |
-| 2    | Migrate 4 custom buildMessage handlers to createHandler | ⏳     | -         |
-| 3    | Add runScripts and toastMessage to ResolvedEventConfig  | ⏳     | -         |
-| 4    | Fix handler selection logic in opencode-hooks.ts        | ⏳     | -         |
-| 5    | Add runScripts to resolved config in events.ts          | ⏳     | -         |
-| 6    | Add runScripts and toastMessage to log output           | ⏳     | -         |
-| 7    | Update tests                                            | ⏳     | -         |
-| 8    | Run tests and verify                                    | ⏳     | -         |
+| 1    | Modify createHandler to accept optional buildMessage    | ✅     | -         |
+| 2    | Migrate 4 custom buildMessage handlers to createHandler | ✅     | -         |
+| 3    | Add runScripts and toastMessage to ResolvedEventConfig  | ✅     | -         |
+| 4    | Fix handler selection logic in opencode-hooks.ts        | ✅     | -         |
+| 5    | Add runScripts to resolved config in events.ts          | ✅     | -         |
+| 6    | Add runScripts and toastMessage to log output           | ✅     | -         |
+| 7    | Update tests                                            | ✅     | -         |
+| 8    | Run tests and verify                                    | ✅     | -         |
 
 ---
 

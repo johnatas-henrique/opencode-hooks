@@ -2,13 +2,15 @@
 
 | Step                                                                   | Status |
 | ---------------------------------------------------------------------- | ------ |
-| 1. Add event name parameter to runScriptAndHandle function             | ⏳     |
-| 2. Update tool.execute.before handler to pass event type and tool name | ⏳     |
-| 3. Update tool.execute.after handler to pass event type and tool name  | ⏳     |
-| 4. Update shell.env handler to pass event type                         | ⏳     |
-| 5. Add event name to script error toast and log                        | ⏳     |
+| 1. Add event name parameter to runScriptAndHandle function             | ✅     |
+| 2. Update tool.execute.before handler to pass event type and tool name | ✅     |
+| 3. Update tool.execute.after handler to pass event type and tool name  | ✅     |
+| 4. Update shell.env handler to pass event type                         | ✅     |
+| 5. Add event name to script error toast and log                        | ✅     |
 | 6. Increase error toast duration from 5000ms to 15000ms                | ⏳     |
 | 7. Verify build and tests pass                                         | ⏳     |
+
+**Status**: Not Completed - Step 6 and 7 not implemented
 
 ## Problem
 

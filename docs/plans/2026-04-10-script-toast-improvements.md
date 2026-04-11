@@ -4,12 +4,14 @@
 
 | Step                                                   | Status | Timestamp |
 | ------------------------------------------------------ | ------ | --------- |
-| 1. Modificar `runScriptAndHandle` para retornar output | ⏳     | -         |
+| 1. Modificar `runScriptAndHandle` para retornar output | ✅     | -         |
 | 2. Criar função `runAllScriptsAndCollect`              | ⏳     | -         |
 | 3. Agrupar outputs dos scripts em array                | ⏳     | -         |
 | 4. Disparar toast único com todos os outputs           | ⏳     | -         |
 | 5. Capturar e expor erro completo do script            | ⏳     | -         |
 | 6. Testar com scripts em erro                          | ⏳     | -         |
+
+**Status**: Not Completed - Steps 2-6 not implemented
 
 ## Problemas Atuais
 

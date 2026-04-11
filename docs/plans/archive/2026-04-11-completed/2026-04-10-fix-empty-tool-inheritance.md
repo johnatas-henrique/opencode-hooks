@@ -2,9 +2,9 @@
 
 | Step                                                                          | Status |
 | ----------------------------------------------------------------------------- | ------ |
-| 1. Update resolveToolConfig in events.ts to merge event base with tool config | ⏳     |
-| 2. Test that partial tool configs inherit missing fields from event base      | ⏳     |
-| 3. Verify build and tests pass                                                | ⏳     |
+| 1. Update resolveToolConfig in events.ts to merge event base with tool config | ✅     |
+| 2. Test that partial tool configs inherit missing fields from event base      | ✅     |
+| 3. Verify build and tests pass                                                | ✅     |
 
 ## Problem
 

@@ -4,13 +4,15 @@
 
 | Step                                                                     | Status |
 | ------------------------------------------------------------------------ | ------ |
-| 1. Add `runOnce` property to EventOverride and ToolOverride interfaces   | ⏳     |
-| 2. Add `runOnce` to ResolvedEventConfig interface                        | ⏳     |
-| 3. Update `resolveScripts` to propagate runOnce to resolved config       | ⏳     |
-| 4. Implement runOnce tracking with Map in plugin                         | ⏳     |
-| 5. Add logic to skip script execution when runOnce was already triggered | ⏳     |
-| 6. Update user-events.config.ts to demonstrate runOnce usage             | ⏳     |
-| 7. Run tests to verify changes                                           | ⏳     |
+| 1. Add `runOnce` property to EventOverride and ToolOverride interfaces   | ✅     |
+| 2. Add `runOnce` to ResolvedEventConfig interface                        | ✅     |
+| 3. Update `resolveScripts` to propagate runOnce to resolved config       | ✅     |
+| 4. Implement runOnce tracking with Map in plugin                         | ✅     |
+| 5. Add logic to skip script execution when runOnce was already triggered | ✅     |
+| 6. Update user-events.config.ts to demonstrate runOnce usage             | ✅     |
+| 7. Run tests to verify changes                                           | ✅     |
+
+**Status**: Needs Review - Not working as expected, needs investigation
 
 ---
 
