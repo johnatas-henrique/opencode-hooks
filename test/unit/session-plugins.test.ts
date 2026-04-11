@@ -15,6 +15,7 @@ jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
 jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
   userConfig: {
     enabled: true,
+    logDisabledEvents: true,
     toast: true,
     saveToFile: true,
     appendToSession: true,
@@ -869,6 +870,25 @@ describe('Session Plugins', () => {
         await plugin.event({ event });
       }
       expect(saveToFile).toHaveBeenCalledTimes(15);
+    });
+
+    describe('logDisabledEvents', () => {
+      it('should save EVENT_DISABLED when logDisabledEvents is true', async () => {
+        const ctx = createMockCtx(mockClient, mockDollar);
+        const plugin = await OpencodeHooks(ctx);
+        await plugin.event({
+          event: {
+            type: 'session.diff',
+            properties: { sessionID: '123', diff: [] },
+          },
+        });
+
+        expect(saveToFile).toHaveBeenCalledWith(
+          expect.objectContaining({
+            content: expect.stringContaining('EVENT_DISABLED'),
+          })
+        );
+      });
     });
   });
 
