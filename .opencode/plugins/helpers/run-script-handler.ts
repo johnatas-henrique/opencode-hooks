@@ -32,7 +32,8 @@ export async function runScriptAndHandle(
     script,
     scriptArg = '',
     timestamp,
-    eventType: _eventType,
+    eventType,
+    toolName,
     resolved,
     sessionId = DEFAULT_SESSION_ID,
   } = config;
@@ -63,18 +64,21 @@ export async function runScriptAndHandle(
       c.charCodeAt(0) < 32 ? '?' : c
     );
 
+    const eventInfo =
+      eventType.startsWith('tool.execute.') && toolName ? toolName : eventType;
+
     await saveToFile({
       content: JSON.stringify({
         timestamp,
         type: 'SCRIPT_ERROR',
-        data: { script, errorMessage },
+        data: { eventType, toolName, script, errorMessage },
       }),
       showToast: useGlobalToastQueue().add,
     });
 
     useGlobalToastQueue().add({
       title: '====SCRIPT ERROR====',
-      message: `Script: ${script}\nError: ${errorMessage}\nCheck user-events.config.ts`,
+      message: `Event: ${eventInfo}\nScript: ${script}\nError: ${errorMessage}\nCheck user-events.config.ts`,
       variant: 'error',
       duration: TOAST_DURATION.FIVE_SECONDS,
     });
