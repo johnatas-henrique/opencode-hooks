@@ -1,7 +1,7 @@
 # Fix: runOnce - Session Detection for Subagents
 
 **Date:** 2026-04-11  
-**Status:** Needs Implementation
+**Status:** Completed
 
 ## Current Problem
 
@@ -105,14 +105,16 @@ if (resolved.runOnlyOnce) {
 
 ## Execution
 
-| Step | Description                                         | Status | Timestamp |
-| ---- | --------------------------------------------------- | ------ | --------- |
-| 1    | Add subagentSessionIds Set in run-script-handler.ts | ⏳     | -         |
-| 2    | Update session.created handler to detect parentID   | ⏳     | -         |
-| 3    | Create isSubagent helper function                   | ⏳     | -         |
-| 4    | Update runOnce logic in runScriptAndHandle          | ⏳     | -         |
-| 5    | Add tests                                           | ⏳     | -         |
-| 6    | Build, lint, test                                   | ⏳     | -         |
+| Step | Description                                         | Status | Timestamp        |
+| ---- | --------------------------------------------------- | ------ | ---------------- |
+| 1    | Add subagentSessionIds Set in run-script-handler.ts | ✅     | 2026-04-11 15:45 |
+| 2    | Update session.created handler to detect parentID   | ✅     | 2026-04-11 15:45 |
+| 3    | Create isSubagent helper function                   | ✅     | 2026-04-11 15:45 |
+| 4    | Update runOnce logic in runScriptAndHandle          | ✅     | 2026-04-11 15:45 |
+| 5    | Fix grep tool normalization in events.ts            | ✅     | 2026-04-11 15:50 |
+| 6    | Remove runOnceTracker, use only subagent detection  | ✅     | 2026-04-11 15:55 |
+| 7    | Update tests                                        | ✅     | 2026-04-11 15:55 |
+| 8    | Build, lint, test                                   | ✅     | 2026-04-11 15:56 |
 
 ## Key Insight
 
