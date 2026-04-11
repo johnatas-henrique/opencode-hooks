@@ -593,7 +593,7 @@ describe('opencode-hooks - plugin hooks', () => {
       expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
     });
 
-    it('should skip script on second event when runOnlyOnce is true', async () => {
+    it('should skip script for subagent sessions when runOnlyOnce is true', async () => {
       jest.resetModules();
       jest.unmock('../../.opencode/plugins/helpers/user-events.config');
       jest.unmock('../../.opencode/plugins/helpers/run-script');
@@ -637,11 +637,67 @@ describe('opencode-hooks - plugin hooks', () => {
 
       const event2 = {
         type: 'session.created',
-        properties: { info: { id: 'session-2', title: 'Subagent' } },
+        properties: {
+          info: { id: 'session-2', parentID: 'session-1', title: 'Subagent' },
+        },
       };
       await plugin.event({ event: event2 });
 
       expect(mockRunScriptFn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should run script for multiple primary sessions when runOnlyOnce is true', async () => {
+      jest.resetModules();
+      jest.unmock('../../.opencode/plugins/helpers/user-events.config');
+      jest.unmock('../../.opencode/plugins/helpers/run-script');
+      jest.unmock('../../.opencode/plugins/helpers/save-to-file');
+      jest.unmock('../../.opencode/plugins/helpers/append-to-session');
+      jest.unmock('../../.opencode/plugins/helpers/default-handlers');
+      jest.unmock('../../.opencode/plugins/helpers/events');
+
+      jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+        userConfig: {
+          enabled: true,
+          toast: true,
+          saveToFile: true,
+          appendToSession: true,
+          events: {
+            'session.created': { runScripts: true, runOnlyOnce: true },
+          },
+          tools: {},
+        },
+      }));
+
+      const mockRunScriptFn = jest.fn().mockResolvedValue('Script executed');
+      jest.doMock('../../.opencode/plugins/helpers/run-script', () => ({
+        runScript: mockRunScriptFn,
+      }));
+
+      const { OpencodeHooks: FreshPlugin } =
+        await import('../../.opencode/plugins/opencode-hooks');
+      const ctx = createMockCtx(mockClient, mockDollar);
+      const plugin = await FreshPlugin(ctx);
+
+      mockRunScriptFn.mockClear();
+
+      const event1 = {
+        type: 'session.created',
+        properties: { info: { id: 'session-1', title: 'Main' } },
+      };
+      const event2 = {
+        type: 'session.created',
+        properties: { info: { id: 'session-2', title: 'Second' } },
+      };
+      const event3 = {
+        type: 'session.created',
+        properties: { info: { id: 'session-3', title: 'Third' } },
+      };
+
+      await plugin.event({ event: event1 });
+      await plugin.event({ event: event2 });
+      await plugin.event({ event: event3 });
+
+      expect(mockRunScriptFn).toHaveBeenCalledTimes(3);
     });
 
     it('should still show toast when runOnlyOnce skips script', async () => {

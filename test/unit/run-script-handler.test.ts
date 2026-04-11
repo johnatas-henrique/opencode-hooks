@@ -1,6 +1,7 @@
 import {
   runScriptAndHandle,
-  resetRunOnceTracker,
+  addSubagentSession,
+  resetSubagentTracking,
 } from '../../.opencode/plugins/helpers/run-script-handler';
 
 jest.mock('../../.opencode/plugins/helpers/run-script', () => ({
@@ -25,14 +26,8 @@ jest.mock('../../.opencode/plugins/helpers/toast-queue', () => ({
   })),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/session', () => ({
-  isPrimarySession: jest.fn(),
-  resetSessionTracking: jest.fn(),
-}));
-
 import { runScript } from '../../.opencode/plugins/helpers/run-script';
 import { appendToSession } from '../../.opencode/plugins/helpers/append-to-session';
-import { isPrimarySession } from '../../.opencode/plugins/helpers/session';
 import { saveToFile } from '../../.opencode/plugins/helpers/save-to-file';
 import type { ResolvedEventConfig } from '../../.opencode/plugins/helpers/config';
 
@@ -66,10 +61,9 @@ const createMockCtx = () => ({
 describe('run-script-handler.ts', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    resetRunOnceTracker();
+    resetSubagentTracking();
     (runScript as jest.Mock).mockResolvedValue('output');
     (appendToSession as jest.Mock).mockResolvedValue(undefined);
-    (isPrimarySession as jest.Mock).mockReturnValue(true);
   });
 
   describe('runScriptAndHandle', () => {
@@ -97,7 +91,9 @@ describe('run-script-handler.ts', () => {
       );
     });
 
-    it('should skip if runOnlyOnce and already ran', async () => {
+    it('should skip if runOnlyOnce and session is subagent', async () => {
+      addSubagentSession('subagent-session');
+
       const config = {
         ctx: createMockCtx() as any,
         script: 'test-script.sh',
@@ -109,13 +105,32 @@ describe('run-script-handler.ts', () => {
           appendToSession: false,
           runOnlyOnce: true,
         }),
-        sessionId: 'session-1',
+        sessionId: 'subagent-session',
       };
 
       await runScriptAndHandle(config);
+
+      expect(runScript).not.toHaveBeenCalled();
+    });
+
+    it('should run if runOnlyOnce and session is primary', async () => {
+      const config = {
+        ctx: createMockCtx() as any,
+        script: 'test-script.sh',
+        scriptArg: 'arg1',
+        timestamp: '2026-01-01T00:00:00Z',
+        eventType: 'test.event',
+        resolved: createResolvedConfig({
+          saveToFile: false,
+          appendToSession: false,
+          runOnlyOnce: true,
+        }),
+        sessionId: 'primary-session',
+      };
+
       await runScriptAndHandle(config);
 
-      expect(runScript).toHaveBeenCalledTimes(1);
+      expect(runScript).toHaveBeenCalled();
     });
 
     it('should call appendToSession when configured', async () => {
@@ -165,34 +180,8 @@ describe('run-script-handler.ts', () => {
     });
   });
 
-  describe('resetRunOnceTracker', () => {
-    it('should reset the tracker', async () => {
-      const config = {
-        ctx: createMockCtx() as any,
-        script: 'test-script.sh',
-        scriptArg: 'arg1',
-        timestamp: '2026-01-01T00:00:00Z',
-        eventType: 'test.event',
-        resolved: createResolvedConfig({
-          saveToFile: false,
-          appendToSession: false,
-          runOnlyOnce: true,
-        }),
-        sessionId: 'session-1',
-      };
-
-      await runScriptAndHandle(config);
-      resetRunOnceTracker();
-      await runScriptAndHandle(config);
-
-      expect(runScript).toHaveBeenCalledTimes(2);
-    });
-
-    it('should reset tracker for different sessions independently', async () => {
-      (isPrimarySession as jest.Mock)
-        .mockReturnValueOnce(true)
-        .mockReturnValueOnce(false);
-
+  describe('resetSubagentTracking', () => {
+    it('should run for different primary sessions independently', async () => {
       const config1 = {
         ctx: createMockCtx() as any,
         script: 'test-script.sh',
@@ -204,16 +193,44 @@ describe('run-script-handler.ts', () => {
           appendToSession: false,
           runOnlyOnce: true,
         }),
-        sessionId: 'session-1',
+        sessionId: 'primary-session-1',
       };
 
       const config2 = {
         ...config1,
-        sessionId: 'session-2',
+        sessionId: 'primary-session-2',
       };
 
       await runScriptAndHandle(config1);
       await runScriptAndHandle(config2);
+
+      expect(runScript).toHaveBeenCalledTimes(2);
+    });
+
+    it('should skip subagent session but run for primary', async () => {
+      addSubagentSession('subagent-session');
+
+      const configPrimary = {
+        ctx: createMockCtx() as any,
+        script: 'test-script.sh',
+        scriptArg: 'arg1',
+        timestamp: '2026-01-01T00:00:00Z',
+        eventType: 'test.event',
+        resolved: createResolvedConfig({
+          saveToFile: false,
+          appendToSession: false,
+          runOnlyOnce: true,
+        }),
+        sessionId: 'primary-session',
+      };
+
+      const configSubagent = {
+        ...configPrimary,
+        sessionId: 'subagent-session',
+      };
+
+      await runScriptAndHandle(configPrimary);
+      await runScriptAndHandle(configSubagent);
 
       expect(runScript).toHaveBeenCalledTimes(1);
     });
