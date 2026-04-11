@@ -20,9 +20,10 @@ jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
   saveToFile: jest.fn(),
 }));
 
+const mockToastAdd = jest.fn();
 jest.mock('../../.opencode/plugins/helpers/toast-queue', () => ({
   useGlobalToastQueue: jest.fn(() => ({
-    add: jest.fn(),
+    add: mockToastAdd,
   })),
 }));
 
@@ -177,6 +178,79 @@ describe('run-script-handler.ts', () => {
       await runScriptAndHandle(config);
 
       expect(runScript).toHaveBeenCalled();
+    });
+
+    it('should include eventType in error toast message', async () => {
+      (runScript as jest.Mock).mockRejectedValue(new Error('Script failed'));
+
+      const config = {
+        ctx: createMockCtx() as any,
+        script: 'test-script.sh',
+        timestamp: '2026-01-01T00:00:00Z',
+        eventType: 'session.idle',
+        toolName: undefined,
+        resolved: createResolvedConfig({}),
+        sessionId: 'session-1',
+      };
+
+      await runScriptAndHandle(config);
+
+      const toastCalls = mockToastAdd.mock.calls;
+      const errorToastCall = toastCalls.find(
+        (call: any) => call[0]?.title === '====SCRIPT ERROR===='
+      );
+
+      expect(errorToastCall).toBeDefined();
+      expect(errorToastCall[0].message).toContain('Event: session.idle');
+      expect(errorToastCall[0].message).toContain('Script: test-script.sh');
+      expect(errorToastCall[0].message).toContain('Error: Script failed');
+    });
+
+    it('should show only toolName for tool.execute.* events', async () => {
+      (runScript as jest.Mock).mockRejectedValue(new Error('Script failed'));
+
+      const config = {
+        ctx: createMockCtx() as any,
+        script: 'test-script.sh',
+        timestamp: '2026-01-01T00:00:00Z',
+        eventType: 'tool.execute.after',
+        toolName: 'bash',
+        resolved: createResolvedConfig({}),
+        sessionId: 'session-1',
+      };
+
+      await runScriptAndHandle(config);
+
+      const toastCalls = mockToastAdd.mock.calls;
+      const errorToastCall = toastCalls.find(
+        (call: any) => call[0]?.title === '====SCRIPT ERROR===='
+      );
+
+      expect(errorToastCall).toBeDefined();
+      expect(errorToastCall[0].message).toContain('Event: bash');
+    });
+
+    it('should include eventType and toolName in error log', async () => {
+      (runScript as jest.Mock).mockRejectedValue(new Error('Script failed'));
+
+      const config = {
+        ctx: createMockCtx() as any,
+        script: 'test-script.sh',
+        timestamp: '2026-01-01T00:00:00Z',
+        eventType: 'tool.execute.after',
+        toolName: 'task',
+        resolved: createResolvedConfig({ saveToFile: true }),
+        sessionId: 'session-1',
+      };
+
+      await runScriptAndHandle(config);
+
+      expect(saveToFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: expect.stringContaining('"eventType":"tool.execute.after"'),
+          content: expect.stringContaining('"toolName":"task"'),
+        })
+      );
     });
   });
 
