@@ -118,10 +118,11 @@ export interface ResolvedEventConfig {
   debug: boolean;
   toast: boolean;
   toastTitle: string;
-  toastMessage?: string;
+  toastMessage: string;
   toastVariant: EventVariant;
   toastDuration: number;
   scripts: string[];
+  runScripts: boolean;
   saveToFile: boolean;
   appendToSession: boolean;
   runOnlyOnce: boolean;
