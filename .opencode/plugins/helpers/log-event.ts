@@ -10,7 +10,11 @@ export async function logEventConfig(
 ): Promise<void> {
   if (resolved.saveToFile && !eventType.startsWith('message.')) {
     await saveToFile({
-      content: `[${timestamp}] - Hook: ${eventType}\nArguments: ${JSON.stringify(input, null, 2)}\nResolved Config: ${JSON.stringify(resolved, null, 2)}\n------------------------------\n`,
+      content: `
+        [${timestamp}] - Hook: ${eventType}\n
+        ${JSON.stringify({ arguments: input, resolvedConfig: resolved }, null, 4)}\n
+        ------------------------------\n
+      `,
       showToast: useGlobalToastQueue().add,
     });
   }
