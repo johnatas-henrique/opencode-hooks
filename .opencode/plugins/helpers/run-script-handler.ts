@@ -58,7 +58,11 @@ export async function runScriptAndHandle(
     );
 
     await saveToFile({
-      content: `[${timestamp}] - Script error: ${script} - ${errorMessage}\n`,
+      content: JSON.stringify({
+        timestamp,
+        type: 'SCRIPT_ERROR',
+        data: { script, errorMessage },
+      }),
       showToast: useGlobalToastQueue().add,
     });
 

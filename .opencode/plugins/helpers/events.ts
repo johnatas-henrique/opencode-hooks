@@ -158,7 +158,11 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
     if (!isTool) {
       const timestamp = new Date().toISOString();
       saveToFile({
-        content: `[${timestamp}] [WARN] Event '${eventType}' not configured. Add it to events config or set to false to disable.\n`,
+        content: JSON.stringify({
+          timestamp,
+          type: 'UNKNOWN_EVENT_IN_RESOLVE',
+          data: eventType,
+        }),
         filename: UNKNOWN_EVENT_LOG_FILE,
       });
     }

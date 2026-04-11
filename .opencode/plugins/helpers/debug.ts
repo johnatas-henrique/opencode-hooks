@@ -65,7 +65,11 @@ export async function handleDebugLog(
   });
 
   await saveToFile({
-    content: `[${timestamp}] - ${title}\n${debugMessage}\n`,
+    content: JSON.stringify({
+      timestamp,
+      type: 'DEBUG',
+      data: sanitizedData,
+    }),
     filename: DEBUG_LOG_FILE,
     showToast: useGlobalToastQueue().add,
   });

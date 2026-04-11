@@ -85,7 +85,11 @@ export function createToastQueue(
 
   const logDroppedToast = (title: string) => {
     saveToFile({
-      content: `[WARN] Toast queue full, dropping: ${title}\n`,
+      content: JSON.stringify({
+        timestamp: new Date().toISOString(),
+        type: 'QUEUE_ERROR',
+        data: title,
+      }),
     });
   };
 

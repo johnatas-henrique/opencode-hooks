@@ -71,7 +71,11 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
 
   if (!resolved.enabled) {
     await saveToFile({
-      content: `[${timestamp}] - Skipping disabled hook: ${eventType}\n`,
+      content: JSON.stringify({
+        timestamp,
+        type: 'EVENT_DISABLED',
+        data: eventType,
+      }),
       showToast: useGlobalToastQueue().add,
     });
     return;
@@ -128,7 +132,11 @@ export const OpencodeHooks: Plugin = async (
   });
 
   await saveToFile({
-    content: `|=================================OpencodeHooks plugin initialized=================================|\n[${new Date().toISOString()}] - Configuration loaded from user-events.config.ts\n`,
+    content: JSON.stringify({
+      timestamp: new Date().toISOString(),
+      type: 'PLUGIN_START',
+      data: '|==========OpencodeHooks plugin initialized==========|',
+    }),
   });
 
   if (!hasShownToast) {
@@ -147,7 +155,11 @@ export const OpencodeHooks: Plugin = async (
 
       if (!isKnownEvent) {
         await saveToFile({
-          content: `===================UNKNOWN EVENT======================\n[${timestamp}] - [WARN] Event: ${event.type} is not configured.\n${JSON.stringify(event, null, 2)}\n`,
+          content: JSON.stringify({
+            timestamp,
+            type: 'UNKNOWN_EVENT',
+            data: event,
+          }),
           showToast: useGlobalToastQueue().add,
           filename: UNKNOWN_EVENT_LOG_FILE,
         });
@@ -453,8 +465,14 @@ export const OpencodeHooks: Plugin = async (
     },
 
     config: async (input: Record<string, unknown>) => {
+      const { agent, command, ...rest } = input;
+
       await saveToFile({
-        content: `[${new Date().toISOString()}] - Config hook triggered\n${JSON.stringify(input, null, 2)}\n\n`,
+        content: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          type: 'CONFIG_FILE',
+          data: rest,
+        }),
       });
     },
 
