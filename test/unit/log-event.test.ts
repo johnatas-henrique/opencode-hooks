@@ -143,18 +143,24 @@ describe('logScriptOutput', () => {
   it('should save script output', async () => {
     await logScriptOutput('2026-04-04T22:00:00.000Z', 'Script output');
 
-    expect(mockSaveToFile).toHaveBeenCalledWith({
-      content: '[2026-04-04T22:00:00.000Z] Script output\n',
-      showToast: expect.any(Function),
-    });
+    const call = mockSaveToFile.mock.calls.find((c) =>
+      c[0].content?.includes('SCRIPT_OUTPUT')
+    );
+    expect(call).toBeDefined();
+    const content = JSON.parse(call[0].content);
+    expect(content.type).toBe('SCRIPT_OUTPUT');
+    expect(content.data).toBe('Script output');
   });
 
   it('should save empty output', async () => {
     await logScriptOutput('2026-04-04T22:00:00.000Z', '');
 
-    expect(mockSaveToFile).toHaveBeenCalledWith({
-      content: '[2026-04-04T22:00:00.000Z] \n',
-      showToast: expect.any(Function),
-    });
+    const call = mockSaveToFile.mock.calls.find((c) =>
+      c[0].content?.includes('SCRIPT_OUTPUT')
+    );
+    expect(call).toBeDefined();
+    const content = JSON.parse(call[0].content);
+    expect(content.type).toBe('SCRIPT_OUTPUT');
+    expect(content.data).toBe('');
   });
 });

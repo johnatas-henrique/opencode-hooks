@@ -909,7 +909,7 @@ describe('Session Plugins', () => {
 
       expect(saveToFile).toHaveBeenCalledWith(
         expect.objectContaining({
-          content: expect.stringMatching(/Script error:.*Script not found/),
+          content: expect.stringContaining('"errorMessage":"Script not found"'),
         })
       );
     });

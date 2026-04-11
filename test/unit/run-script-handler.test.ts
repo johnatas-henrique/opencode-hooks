@@ -289,7 +289,9 @@ describe('run-script-handler.ts', () => {
 
       expect(saveToFile).toHaveBeenCalledWith(
         expect.objectContaining({
-          content: expect.stringContaining('Script error'),
+          content: expect.stringContaining(
+            '"errorMessage":"Error with special ?? characters"'
+          ),
         })
       );
     });

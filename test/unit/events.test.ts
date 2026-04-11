@@ -344,7 +344,7 @@ describe('events - resolveToolConfig', () => {
 
     expect(config.enabled).toBe(true);
     expect(config.toast).toBe(true);
-    expect(config.scripts).toEqual([]);
+    expect(config.scripts).toEqual([]); // runScripts default is false
   });
 
   it('should return enabled: false when tool is disabled', () => {

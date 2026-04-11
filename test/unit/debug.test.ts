@@ -46,7 +46,7 @@ describe('handleDebugLog', () => {
     });
 
     expect(mockSaveToFile).toHaveBeenCalledWith({
-      content: expect.stringContaining('DEBUG TEST'),
+      content: expect.stringContaining('"type":"DEBUG"'),
       filename: 'debug.log',
       showToast: mockUseGlobalToastQueue().add,
     });
