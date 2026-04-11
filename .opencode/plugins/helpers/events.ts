@@ -30,6 +30,10 @@ export function getHandler(eventType: string): EventHandler | undefined {
   return handlers[eventType];
 }
 
+export function getToolHandler(toolName: string): EventHandler | undefined {
+  return handlers[`tool:${toolName}`];
+}
+
 function getDefaultScript(eventType: string): string {
   return `${eventType.replace(/\./g, '-')}.sh`;
 }
@@ -164,7 +168,7 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
       toast: getWithDefault(true, defaultCfg, 'toast', false),
       toastTitle: handler?.title ?? '',
       toastMessage: undefined,
-      toastVariant: handler?.variant || 'info',
+      toastVariant: handler?.variant ?? 'info',
       toastDuration: handler?.duration ?? 2000,
       scripts: [],
       saveToFile: getWithDefault(true, defaultCfg, 'saveToFile', false),
@@ -195,7 +199,7 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
     toast: getWithDefault(userEventConfig, defaultCfg, 'toast', false),
     toastTitle: toastCfg?.title ?? handler?.title ?? '',
     toastMessage: toastCfg?.message,
-    toastVariant: toastCfg?.variant || handler?.variant || 'info',
+    toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
     toastDuration: toastCfg?.duration ?? handler?.duration ?? 2000,
     scripts,
     saveToFile: getWithDefault(
@@ -244,6 +248,9 @@ export function resolveToolConfig(
     return DISABLED_CONFIG;
   }
 
+  const toolHandler = getToolHandler(toolName);
+  const eventHandler = handlers[toolEventType];
+
   // Determine event base config: use resolveEventConfig if event is defined,
   // otherwise fall back directly to userConfig.default via getDefaultConfig
   const eventBase: ResolvedEventConfig =
@@ -252,54 +259,77 @@ export function resolveToolConfig(
       ? resolveEventConfig(toolEventType)
       : getDefaultConfig(toolEventType);
 
+  // Build base config that incorporates tool handler defaults
+  const baseWithToolHandler: ResolvedEventConfig = {
+    ...eventBase,
+    toastTitle: toolHandler?.title ?? eventHandler?.title,
+    toastVariant: toolHandler?.variant ?? eventHandler?.variant,
+    toastDuration: toolHandler?.duration ?? eventHandler?.duration,
+    scripts: toolHandler?.defaultScript
+      ? eventBase.scripts.length > 0
+        ? eventBase.scripts
+        : [toolHandler.defaultScript]
+      : eventBase.scripts,
+  };
+
+  // Empty tool config → inherit from baseWithToolHandler
   if (!toolConfig || isEmptyObject(toolConfig)) {
-    return eventBase;
+    return baseWithToolHandler;
   }
 
-  const handler = handlers[toolEventType];
   const defaultCfg = userConfig.default;
 
   const scripts = resolveScripts(
     toolConfig,
-    eventBase.scripts[0] ?? getDefaultScript(toolEventType),
-    eventBase.scripts
+    baseWithToolHandler.scripts[0] ??
+      toolHandler?.defaultScript ??
+      getDefaultScript(toolEventType),
+    baseWithToolHandler.scripts
   );
   const toastCfg = resolveToastOverride(toolConfig);
 
   return {
-    ...eventBase,
+    ...baseWithToolHandler,
     enabled: getWithDefault(
       toolConfig,
       defaultCfg,
       'enabled',
-      eventBase.enabled
+      baseWithToolHandler.enabled
     ),
-    debug: getWithDefault(toolConfig, defaultCfg, 'debug', eventBase.debug),
-    toast: getWithDefault(toolConfig, defaultCfg, 'toast', eventBase.toast),
-    toastTitle: toastCfg?.title ?? handler?.title ?? eventBase.toastTitle,
-    toastMessage: toastCfg?.message ?? eventBase.toastMessage,
-    toastVariant:
-      toastCfg?.variant || handler?.variant || eventBase.toastVariant,
-    toastDuration:
-      toastCfg?.duration ?? handler?.duration ?? eventBase.toastDuration,
+    debug: getWithDefault(
+      toolConfig,
+      defaultCfg,
+      'debug',
+      baseWithToolHandler.debug
+    ),
+    toast: getWithDefault(
+      toolConfig,
+      defaultCfg,
+      'toast',
+      baseWithToolHandler.toast
+    ),
+    toastTitle: toastCfg?.title ?? baseWithToolHandler.toastTitle,
+    toastMessage: toastCfg?.message ?? baseWithToolHandler.toastMessage,
+    toastVariant: toastCfg?.variant ?? baseWithToolHandler.toastVariant,
+    toastDuration: toastCfg?.duration ?? baseWithToolHandler.toastDuration,
     scripts,
     saveToFile: getWithDefault(
       toolConfig,
       defaultCfg,
       'saveToFile',
-      eventBase.saveToFile
+      baseWithToolHandler.saveToFile
     ),
     appendToSession: getWithDefault(
       toolConfig,
       defaultCfg,
       'appendToSession',
-      eventBase.appendToSession
+      baseWithToolHandler.appendToSession
     ),
     runOnlyOnce: getWithDefault(
       toolConfig,
       defaultCfg,
       'runOnlyOnce',
-      eventBase.runOnlyOnce
+      baseWithToolHandler.runOnlyOnce
     ),
   };
 }
