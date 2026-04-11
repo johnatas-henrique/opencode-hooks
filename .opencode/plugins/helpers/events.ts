@@ -83,6 +83,7 @@ export function normalizeInputForHandler(
         properties.tool = { input: toolArgs?.url };
         properties.url = toolArgs?.url;
         break;
+      case 'grep':
       case 'glob':
       case 'filesystem_search_files':
         properties.tool = { input: toolArgs?.pattern };
