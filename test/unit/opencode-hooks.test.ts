@@ -99,6 +99,16 @@ jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
     saveToFile: true,
     appendToSession: true,
     runScripts: true,
+    scriptToasts: {
+      showOutput: true,
+      showError: true,
+      outputVariant: 'info',
+      errorVariant: 'error',
+      outputDuration: 5000,
+      errorDuration: 15000,
+      outputTitle: 'Script Output',
+      errorTitle: 'Script Error',
+    },
     events: {
       'session.created': { runOnlyOnce: true },
       'shell.env': { runScripts: true, scripts: ['shell-env.sh'] },
@@ -175,6 +185,12 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       defaultScript: 'unknown.sh',
       buildMessage: () => 'unknown',
     },
+    'session.idle': {
+      title: '====SESSION IDLE====',
+      variant: 'info',
+      duration: 2000,
+      buildMessage: () => 'session idle',
+    },
   };
 
   const mockUserConfig = {
@@ -183,10 +199,34 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
     saveToFile: true,
     appendToSession: true,
     runScripts: true,
+    scriptToasts: {
+      showOutput: true,
+      showError: true,
+      outputVariant: 'info',
+      errorVariant: 'error',
+      outputDuration: 5000,
+      errorDuration: 15000,
+      outputTitle: 'Script Output',
+      errorTitle: 'Script Error',
+    },
     events: {
       'session.created': true,
       'shell.env': { runScripts: true, scripts: ['shell-env.sh'] },
       'session.disabled': false,
+      'session.idle': {
+        runScripts: true,
+        scripts: ['script1.sh', 'script2.sh', 'script3.sh'],
+        toast: true,
+        toastTitle: 'Scripts Executed',
+        scriptToasts: {
+          showOutput: true,
+          showError: true,
+          outputVariant: 'info',
+          errorVariant: 'error',
+          outputDuration: 5000,
+          errorDuration: 15000,
+        },
+      },
     },
     tools: {
       'tool.execute.after': {
@@ -226,6 +266,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
           : [],
         saveToFile: global.saveToFile,
         appendToSession: global.appendToSession,
+        scriptToasts: global.scriptToasts,
       };
     }
 
@@ -245,6 +286,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
     }
 
     const toastCfg = typeof cfg.toast === 'object' ? cfg.toast : null;
+    const scriptToastsCfg = cfg.scriptToasts ?? global.scriptToasts;
 
     return {
       enabled: true,
@@ -261,6 +303,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       scripts,
       saveToFile: cfg.saveToFile ?? global.saveToFile,
       appendToSession: cfg.appendToSession ?? global.appendToSession,
+      scriptToasts: scriptToastsCfg,
     };
   }
 
@@ -291,6 +334,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
     }
 
     const toastCfg = typeof cfg.toast === 'object' ? cfg.toast : null;
+    const scriptToastsCfg = cfg.scriptToasts ?? global.scriptToasts;
 
     return {
       enabled: true,
@@ -307,6 +351,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       scripts,
       saveToFile: cfg.saveToFile ?? global.saveToFile,
       appendToSession: cfg.appendToSession ?? global.appendToSession,
+      scriptToasts: scriptToastsCfg,
     };
   }
 
@@ -395,6 +440,14 @@ describe('opencode-hooks - plugin hooks', () => {
           saveToFile: true,
           appendToSession: true,
           runScripts: true,
+          scriptToasts: {
+            showOutput: true,
+            showError: true,
+            outputVariant: 'info',
+            errorVariant: 'error',
+            outputDuration: 5000,
+            errorDuration: 15000,
+          },
           events: {},
           tools: {},
         },
@@ -423,7 +476,7 @@ describe('opencode-hooks - plugin hooks', () => {
       const output = {};
       await plugin['tool.execute.before'](input, output);
 
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
       const callArgs = mockClient.tui.showToast.mock.calls[0][0];
       expect(callArgs.body.variant).toBe('info');
       expect(callArgs.body.title).toBe('====TOOL EXECUTE BEFORE====');
@@ -487,7 +540,7 @@ describe('opencode-hooks - plugin hooks', () => {
       );
 
       expect(errorToastCall).toBeDefined();
-      expect(errorToastCall[0].body.title).toBe('====SCRIPT ERROR====');
+      expect(errorToastCall[0].body.title).toBe('Script Error');
       expect(errorToastCall[0].body.message).toContain('before-read.sh');
     });
 
@@ -542,7 +595,7 @@ describe('opencode-hooks - plugin hooks', () => {
       );
 
       expect(errorToastCall).toBeDefined();
-      expect(errorToastCall[0].body.title).toBe('====SCRIPT ERROR====');
+      expect(errorToastCall[0].body.title).toBe('Script Error');
       expect(errorToastCall[0].body.message).toContain('shell-env.sh');
     });
   });
@@ -564,7 +617,7 @@ describe('opencode-hooks - plugin hooks', () => {
       };
       await plugin['tool.execute.after'](input, output);
 
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
     });
 
     it('should not trigger toast when subagent_type is undefined', async () => {
@@ -583,7 +636,7 @@ describe('opencode-hooks - plugin hooks', () => {
       };
       await plugin['tool.execute.after'](input, output);
 
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
     });
 
     it('should show error toast when script fails', async () => {
@@ -614,7 +667,7 @@ describe('opencode-hooks - plugin hooks', () => {
       );
 
       expect(errorToastCall).toBeDefined();
-      expect(errorToastCall[0].body.title).toBe('====SCRIPT ERROR====');
+      expect(errorToastCall[0].body.title).toBe('Script Error');
       expect(errorToastCall[0].body.message).toContain(
         'Error: Agent script failed'
       );
@@ -631,7 +684,7 @@ describe('opencode-hooks - plugin hooks', () => {
       };
       await plugin.event({ event });
 
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
     });
 
     it('should skip script for subagent sessions when runOnlyOnce is true', async () => {
@@ -649,6 +702,15 @@ describe('opencode-hooks - plugin hooks', () => {
           toast: true,
           saveToFile: true,
           appendToSession: true,
+          runScripts: true,
+          scriptToasts: {
+            showOutput: true,
+            showError: true,
+            outputVariant: 'info',
+            errorVariant: 'error',
+            outputDuration: 5000,
+            errorDuration: 15000,
+          },
           events: {
             'session.created': { runScripts: true, runOnlyOnce: true },
           },
@@ -706,6 +768,15 @@ describe('opencode-hooks - plugin hooks', () => {
           toast: true,
           saveToFile: true,
           appendToSession: true,
+          runScripts: true,
+          scriptToasts: {
+            showOutput: true,
+            showError: true,
+            outputVariant: 'info',
+            errorVariant: 'error',
+            outputDuration: 5000,
+            errorDuration: 15000,
+          },
           events: {
             'session.created': { runScripts: true, runOnlyOnce: true },
           },
@@ -761,6 +832,18 @@ describe('opencode-hooks - plugin hooks', () => {
       jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
           enabled: true,
+          toast: true,
+          saveToFile: true,
+          appendToSession: true,
+          runScripts: true,
+          scriptToasts: {
+            showOutput: true,
+            showError: true,
+            outputVariant: 'info',
+            errorVariant: 'error',
+            outputDuration: 5000,
+            errorDuration: 15000,
+          },
           events: {
             'session.created': {
               toast: true,
@@ -799,7 +882,9 @@ describe('opencode-hooks - plugin hooks', () => {
 
       const event2 = {
         type: 'session.created',
-        properties: { info: { id: 'session-2', title: 'Subagent' } },
+        properties: {
+          info: { id: 'session-2', parentID: 'session-1', title: 'Subagent' },
+        },
       };
       await plugin.event({ event: event2 });
 
@@ -990,6 +1075,18 @@ describe('opencode-hooks - plugin hooks', () => {
       jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
           enabled: true,
+          toast: true,
+          saveToFile: true,
+          appendToSession: true,
+          runScripts: true,
+          scriptToasts: {
+            showOutput: true,
+            showError: true,
+            outputVariant: 'info',
+            errorVariant: 'error',
+            outputDuration: 5000,
+            errorDuration: 15000,
+          },
           events: {
             'shell.env': { debug: true, runScripts: false },
           },
@@ -1037,6 +1134,18 @@ describe('opencode-hooks - plugin hooks', () => {
       jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
           enabled: true,
+          toast: true,
+          saveToFile: true,
+          appendToSession: true,
+          runScripts: true,
+          scriptToasts: {
+            showOutput: true,
+            showError: true,
+            outputVariant: 'info',
+            errorVariant: 'error',
+            outputDuration: 5000,
+            errorDuration: 15000,
+          },
           events: {
             'session.created': { debug: true, runScripts: false },
           },
@@ -1086,6 +1195,18 @@ describe('opencode-hooks - plugin hooks', () => {
       jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
         userConfig: {
           enabled: true,
+          toast: true,
+          saveToFile: true,
+          appendToSession: true,
+          runScripts: true,
+          scriptToasts: {
+            showOutput: true,
+            showError: true,
+            outputVariant: 'info',
+            errorVariant: 'error',
+            outputDuration: 5000,
+            errorDuration: 15000,
+          },
           events: {
             'tool.execute.before': { debug: true, runScripts: false },
           },

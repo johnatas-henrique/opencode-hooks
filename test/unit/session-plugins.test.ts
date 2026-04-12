@@ -24,6 +24,16 @@ jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
     saveToFile: true,
     appendToSession: true,
     runScripts: true,
+    scriptToasts: {
+      showOutput: true,
+      showError: true,
+      outputVariant: 'info',
+      errorVariant: 'error',
+      outputDuration: 5000,
+      errorDuration: 15000,
+      outputTitle: 'Script Output',
+      errorTitle: 'Script Error',
+    },
     events: {
       'session.created': true,
       'session.compacted': { scripts: ['pre-compact.sh'] },
@@ -254,6 +264,16 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
     saveToFile: true,
     appendToSession: true,
     runScripts: true,
+    scriptToasts: {
+      showOutput: true,
+      showError: true,
+      outputVariant: 'info',
+      errorVariant: 'error',
+      outputDuration: 5000,
+      errorDuration: 15000,
+      outputTitle: 'Script Output',
+      errorTitle: 'Script Error',
+    },
     events: {
       'session.created': true,
       'session.compacted': { scripts: ['pre-compact.sh'] },
@@ -307,6 +327,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
         scripts: global.runScripts ? [handler.defaultScript] : [],
         saveToFile: global.saveToFile,
         appendToSession: global.appendToSession,
+        scriptToasts: global.scriptToasts,
       };
     }
 
@@ -341,6 +362,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
     }
 
     const toastCfg = typeof cfg.toast === 'object' ? cfg.toast : null;
+    const scriptToastsCfg = cfg.scriptToasts ?? global.scriptToasts;
 
     return {
       enabled: true,
@@ -357,6 +379,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       scripts,
       saveToFile: cfg.saveToFile ?? global.saveToFile,
       appendToSession: cfg.appendToSession ?? global.appendToSession,
+      scriptToasts: scriptToastsCfg,
     };
   }
 
@@ -402,6 +425,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
     }
 
     const toastCfg = typeof cfg.toast === 'object' ? cfg.toast : null;
+    const scriptToastsCfg = cfg.scriptToasts ?? global.scriptToasts;
 
     return {
       enabled: true,
@@ -418,6 +442,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       scripts,
       saveToFile: cfg.saveToFile ?? global.saveToFile,
       appendToSession: cfg.appendToSession ?? global.appendToSession,
+      scriptToasts: scriptToastsCfg,
     };
   }
 
@@ -526,7 +551,7 @@ describe('Session Plugins', () => {
         properties: { info: createMockSession('session-123') },
       };
       await plugin.event({ event });
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
       const callArgs = mockClient.tui.showToast.mock.calls[0][0];
       expect(callArgs.body.variant).toBe('success');
       expect(callArgs.body.title).toBe('====SESSION CREATED====');
@@ -582,7 +607,7 @@ describe('Session Plugins', () => {
         properties: { sessionID: 'session-123' },
       };
       await plugin.event({ event });
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
       const callArgs = mockClient.tui.showToast.mock.calls[0][0];
       expect(callArgs.body.variant).toBe('info');
       expect(callArgs.body.title).toBe('====SESSION COMPACTED====');
@@ -622,7 +647,7 @@ describe('Session Plugins', () => {
         properties: { info: createMockSession('delete-session-001') },
       };
       await plugin.event({ event });
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
       const callArgs = mockClient.tui.showToast.mock.calls[0][0];
       expect(callArgs.body.variant).toBe('error');
       expect(callArgs.body.title).toBe('====SESSION DELETED====');
@@ -666,7 +691,7 @@ describe('Session Plugins', () => {
         },
       };
       await plugin.event({ event });
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
       const callArgs = mockClient.tui.showToast.mock.calls[0][0];
       expect(callArgs.body.variant).toBe('error');
       expect(callArgs.body.title).toBe('====SESSION ERROR====');
@@ -843,7 +868,7 @@ describe('Session Plugins', () => {
         metadata: {},
       };
       await plugin['tool.execute.after'](input, output);
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
     });
 
     it('should not trigger toast for non-task tools', async () => {
@@ -861,7 +886,7 @@ describe('Session Plugins', () => {
         metadata: {},
       };
       await plugin['tool.execute.after'](input, output);
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
     });
 
     it('should not trigger toast when subagent_type is undefined', async () => {
@@ -879,7 +904,7 @@ describe('Session Plugins', () => {
         metadata: {},
       };
       await plugin['tool.execute.after'](input, output);
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(1);
+      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -950,7 +975,7 @@ describe('Session Plugins', () => {
       );
 
       expect(errorToastCall).toBeDefined();
-      expect(errorToastCall[0].body.title).toBe('====SCRIPT ERROR====');
+      expect(errorToastCall[0].body.title).toBe('Script Error');
       expect(errorToastCall[0].body.message).toContain('Script not found');
       expect(errorToastCall[0].body.message).toContain(
         'Check user-events.config.ts'
@@ -1006,7 +1031,7 @@ describe('Session Plugins', () => {
       );
 
       expect(errorToastCall).toBeDefined();
-      expect(errorToastCall[0].body.title).toBe('====SCRIPT ERROR====');
+      expect(errorToastCall[0].body.title).toBe('Script Error');
       expect(errorToastCall[0].body.message).toContain('Agent script failed');
     });
   });
