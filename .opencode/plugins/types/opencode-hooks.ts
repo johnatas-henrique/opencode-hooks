@@ -1,4 +1,4 @@
-import type { Event } from '@opencode-ai/sdk';
+import type { Event, Message, Part } from '@opencode-ai/sdk';
 
 export const OpenCodeEvents = {
   COMMAND_EXECUTED: 'command.executed',
@@ -141,7 +141,7 @@ export type ToolExecuteAfterOutput = {
     sessionID?: string;
     messageID?: string;
   }>;
-  content?: unknown[];
+  content?: Part[];
 };
 
 export type ToolExecuteBeforeInput = {
@@ -153,3 +153,201 @@ export type ToolExecuteBeforeInput = {
 export type ToolExecuteBeforeOutput = {
   args: Record<string, unknown>;
 };
+
+// ============================================
+// Event Property Types
+// ============================================
+
+// Session Events Properties
+export interface SessionCreatedProps {
+  info: {
+    id: string;
+    title: string;
+    parentID?: string;
+  };
+  sessionID?: string;
+}
+
+export interface SessionErrorProps {
+  sessionID: string;
+  error?: {
+    name?: string;
+    data?: { message?: string };
+  };
+}
+
+export interface SessionCompactProps {
+  sessionID: string;
+}
+
+export interface SessionDeleteProps {
+  info: { id: string };
+}
+
+export interface SessionDiffProps {
+  sessionID: string;
+}
+
+export interface SessionIdleProps {
+  sessionID: string;
+}
+
+export interface SessionStatusProps {
+  sessionID: string;
+}
+
+export interface SessionUpdateProps {
+  sessionID: string;
+}
+
+// Server Events Properties
+export interface ServerInstanceDisposedProps {
+  directory: string;
+  sessionID?: string;
+}
+
+// Tool Events Properties
+export interface ToolExecuteAfterProps {
+  tool: string;
+  sessionID: string;
+  callID: string;
+  args: Record<string, unknown>;
+  subagentType?: string;
+}
+
+export interface ToolExecuteBeforeProps {
+  tool: string;
+  sessionID: string;
+  callID?: string;
+  args?: Record<string, unknown>;
+}
+
+// Chat Events Properties
+export interface ChatMessageProps {
+  sessionID: string;
+  agent?: string;
+  model?: { providerID: string; modelID: string };
+  messageID?: string;
+  variant?: string;
+  message?: { role: string; content: string };
+}
+
+export interface ChatParamsProps {
+  sessionID: string;
+  agent: string;
+  model: { providerID: string; modelID: string };
+  provider: { providerID: string; name: string };
+  message: { role: string; content: string };
+}
+
+export interface ChatHeadersProps {
+  sessionID: string;
+  agent: string;
+  model: { providerID: string; modelID: string };
+  provider: { providerID: string; name: string };
+  message: { role: string; content: string };
+}
+
+// Permission Events Properties
+export interface PermissionAskProps {
+  sessionID?: string;
+  tool?: string;
+  id?: string;
+  type?: string;
+  pattern?: string | string[];
+  messageID?: string;
+  callID?: string;
+  title?: string;
+}
+
+// Shell Events Properties
+export interface ShellEnvProps {
+  cwd: string;
+  sessionID?: string;
+  callID?: string;
+}
+
+// Command Execute Events Properties
+export interface CommandExecuteBeforeProps {
+  command: string;
+  sessionID: string;
+  arguments: string;
+}
+
+// Tool Definition Properties
+export interface ToolDefinitionProps {
+  toolID: string;
+}
+
+// Experimental Events Properties
+export interface ExperimentalChatMessagesTransformProps {
+  sessionID?: string;
+  messages: Message[];
+}
+
+export interface ExperimentalChatSystemTransformProps {
+  sessionID?: string;
+  model: { providerID: string; modelID: string };
+}
+
+export interface ExperimentalSessionCompactingProps {
+  sessionID: string;
+}
+
+export interface ExperimentalTextCompleteProps {
+  sessionID: string;
+  messageID: string;
+  partID: string;
+}
+
+// Event Input/Output Types for Hooks
+export interface EventInputRecord {
+  sessionID?: string;
+  [key: string]: unknown;
+}
+
+export interface ChatMessageOutput {
+  message: Record<string, unknown>;
+  parts: Part[];
+}
+
+export interface ChatHeadersOutput {
+  headers: Record<string, string>;
+}
+
+export interface ChatParamsOutput {
+  temperature: number;
+  topP: number;
+  topK: number;
+  options: Record<string, unknown>;
+}
+
+export interface CommandOutput {
+  parts: Part[];
+}
+
+export interface ShellEnvOutput {
+  env: Record<string, string>;
+}
+
+export interface ToolDefinitionOutput {
+  description: string;
+  parameters: Record<string, unknown>;
+}
+
+export interface ExperimentalMessagesTransformOutput {
+  messages: Message[];
+}
+
+export interface ExperimentalSystemTransformOutput {
+  system: string[];
+}
+
+export interface ExperimentalCompactingOutput {
+  context: string[];
+  prompt?: string;
+}
+
+export interface ExperimentalTextCompleteOutput {
+  text: string;
+}
