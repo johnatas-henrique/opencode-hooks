@@ -7,6 +7,7 @@ module.exports = {
   moduleNameMapper: {
     '^@opencode-ai/plugin$': '<rootDir>/test/__mocks__/plugin.ts',
     '^@opencode-ai/sdk$': '<rootDir>/test/__mocks__/sdk.ts',
+    '^fs/promises$': '<rootDir>/test/__mocks__/fs-promises.js',
   },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', { tsconfig: '<rootDir>/test/tsconfig.json' }],

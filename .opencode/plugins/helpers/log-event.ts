@@ -6,7 +6,8 @@ export async function logEventConfig(
   timestamp: string,
   eventType: string,
   input: Record<string, unknown> | undefined,
-  resolved: ResolvedEventConfig
+  resolved: ResolvedEventConfig,
+  output?: Record<string, unknown>
 ): Promise<void> {
   if (resolved.saveToFile && !eventType.startsWith('message.')) {
     await saveToFile({
@@ -15,7 +16,8 @@ export async function logEventConfig(
         type: 'EVENT_OUTPUT',
         data: {
           eventType,
-          arguments: input,
+          input,
+          output,
           resolvedConfig: resolved,
         },
       }),
