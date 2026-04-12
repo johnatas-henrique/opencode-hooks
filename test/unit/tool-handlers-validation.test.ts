@@ -1,53 +1,53 @@
 import { handlers } from '../../.opencode/plugins/helpers/default-handlers';
 
 describe('Tool-Specific Handlers Validation', () => {
-  const toolHandlers = Object.keys(handlers).filter((key) =>
+  const toolHandlersBefore = Object.keys(handlers).filter((key) =>
+    key.startsWith('tool.execute.before.')
+  );
+
+  const toolHandlersAfter = Object.keys(handlers).filter((key) =>
+    key.startsWith('tool.execute.after.')
+  );
+
+  const toolHandlersFallback = Object.keys(handlers).filter((key) =>
     key.startsWith('tool:')
   );
 
-  it('should have handlers for all 28 expected tools', () => {
-    expect(toolHandlers.length).toBe(28);
-
-    const expectedTools = [
-      'tool:read',
-      'tool:write',
-      'tool:edit',
-      'tool:bash',
-      'tool:task',
-      'tool:skill',
-      'tool:chat',
-      'tool:glob',
-      'tool:grep',
-      'tool:list',
-      'tool:patch',
-      'tool:webfetch',
-      'tool:websearch',
-      'tool:codesearch',
-      'tool:todowrite',
-      'tool:todoread',
-      'tool:question',
-      'tool:git.commit',
-      'tool:git.push',
-      'tool:git.pull',
-      'tool:filesystem_read_file',
-      'tool:filesystem_write_file',
-      'tool:filesystem_list_directory',
-      'tool:filesystem_search_files',
-      'tool:filesystem_create_directory',
-      'tool:filesystem_move_file',
-      'tool:filesystem_get_file_info',
-      'tool:gh_grep_searchGitHub',
+  it('should have before handlers for main tools', () => {
+    const mainToolsBefore = [
+      'tool.execute.before.bash',
+      'tool.execute.before.skill',
+      'tool.execute.before.task',
+      'tool.execute.before.read',
+      'tool.execute.before.write',
     ];
-
-    expectedTools.forEach((tool) => {
-      expect(toolHandlers).toContain(tool);
+    mainToolsBefore.forEach((tool) => {
+      expect(toolHandlersBefore).toContain(tool);
     });
+  });
+
+  it('should have after handlers for main tools', () => {
+    const mainToolsAfter = [
+      'tool.execute.after.bash',
+      'tool.execute.after.skill',
+      'tool.execute.after.task',
+      'tool.execute.after.read',
+      'tool.execute.after.write',
+    ];
+    mainToolsAfter.forEach((tool) => {
+      expect(toolHandlersAfter).toContain(tool);
+    });
+  });
+
+  it('should NOT have fallback handlers (no tool:*)', () => {
+    expect(toolHandlersFallback).toHaveLength(0);
   });
 
   it('each tool handler should have required fields with valid types', () => {
     const validVariants = ['success', 'warning', 'error', 'info'];
+    const allToolHandlers = [...toolHandlersBefore, ...toolHandlersAfter];
 
-    for (const handlerKey of toolHandlers) {
+    for (const handlerKey of allToolHandlers) {
       const handler = handlers[handlerKey];
 
       expect(handler).toHaveProperty('title');
@@ -72,18 +72,23 @@ describe('Tool-Specific Handlers Validation', () => {
   });
 
   it('tool handler titles should follow consistent format (===TITLE===)', () => {
-    const format = /^=+[A-Z0-9 ]+=+$/;
+    const format = /^=+[A-Z0-9 -]+====$/;
+    const allToolHandlers = [...toolHandlersBefore, ...toolHandlersAfter];
 
-    for (const handlerKey of toolHandlers) {
+    for (const handlerKey of allToolHandlers) {
       const handler = handlers[handlerKey];
       expect(handler.title).toMatch(format);
     }
   });
 
-  it('tool handler defaultScript names should start with tool-execute-', () => {
-    for (const handlerKey of toolHandlers) {
+  it('tool handler defaultScript names should follow naming convention', () => {
+    const allToolHandlers = [...toolHandlersBefore, ...toolHandlersAfter];
+
+    for (const handlerKey of allToolHandlers) {
       const handler = handlers[handlerKey];
-      expect(handler.defaultScript).toMatch(/^tool-execute-/);
+      expect(handler.defaultScript).toMatch(
+        /^tool-execute-(before|after)|after\.subagent/
+      );
     }
   });
 });

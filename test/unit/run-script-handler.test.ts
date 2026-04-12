@@ -371,7 +371,7 @@ describe('run-script-handler.ts', () => {
       expect(errorToastCall[0].message).toContain('Error: Script failed');
     });
 
-    it.skip('should show only toolName for tool.execute.* events', async () => {
+    it('should show only toolName for tool.execute.* events', async () => {
       (runScript as jest.Mock).mockResolvedValue({
         output: '',
         error: 'Script failed',
