@@ -138,8 +138,12 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     successfulScripts.length > 0 &&
     resolved.scriptToasts?.showOutput
   ) {
+    const outputTitle = resolved.toastTitle.replace(
+      /=+$/,
+      ` ${resolved.scriptToasts?.outputTitle}====`
+    );
     useGlobalToastQueue().add({
-      title: resolved.scriptToasts?.outputTitle ?? 'Script Output',
+      title: outputTitle,
       message: successfulScripts
         .map((result) => `- ${result.script}:\n${result.output}`)
         .join('\n\n'),

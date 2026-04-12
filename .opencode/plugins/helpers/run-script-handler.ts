@@ -53,12 +53,16 @@ export async function runScriptAndHandle(
     : await runScript($, script);
 
   const effectiveScriptToasts = scriptToasts;
+  const eventTitle = resolved.toastTitle;
 
   if (result.exitCode !== 0) {
     const showError = effectiveScriptToasts.showError;
     const errorVariant = effectiveScriptToasts.errorVariant;
     const errorDuration = effectiveScriptToasts.errorDuration;
-    const errorTitle = effectiveScriptToasts.errorTitle;
+    const errorTitle = eventTitle.replace(
+      /=+$/,
+      ` ${effectiveScriptToasts.errorTitle}====`
+    );
 
     const eventInfo =
       eventType.startsWith('tool.execute.') && toolName ? toolName : eventType;
