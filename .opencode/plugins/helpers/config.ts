@@ -97,12 +97,14 @@ export type PluginStatusDisplayMode =
   | 'all-labeled';
 
 export interface ScriptToastsConfig {
-  showOutput?: boolean;
-  showError?: boolean;
-  outputVariant?: EventVariant;
-  errorVariant?: EventVariant;
-  outputDuration?: number;
-  errorDuration?: number;
+  showOutput: boolean;
+  showError: boolean;
+  outputVariant: EventVariant;
+  errorVariant: EventVariant;
+  outputDuration: number;
+  errorDuration: number;
+  outputTitle: string;
+  errorTitle: string;
 }
 
 export interface UserEventsConfig {

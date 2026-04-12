@@ -32,6 +32,8 @@ const DISABLED_CONFIG: ResolvedEventConfig = {
     errorVariant: 'error',
     outputDuration: TOAST_DURATION.FIVE_SECONDS,
     errorDuration: TOAST_DURATION.FIFTEEN_SECONDS,
+    outputTitle: 'Script Output',
+    errorTitle: 'Script Error',
   },
 };
 
