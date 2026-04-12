@@ -1,8 +1,18 @@
 import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
+import type {
+  PluginInput,
+  PluginClient,
+  PluginDollar,
+} from '../__mocks__/@opencode-ai/plugin';
 
-const mockRunScript = jest.fn().mockResolvedValue('Script executed');
+const mockRunScript = jest
+  .fn()
+  .mockResolvedValue({ output: 'Script executed', error: null, exitCode: 0 });
 
-const createMockCtx = (client: any, dollar: any) => ({
+const createMockCtx = (
+  client: PluginClient,
+  dollar: PluginDollar
+): PluginInput => ({
   client,
   $: dollar,
   project: 'test-project',
@@ -14,7 +24,9 @@ const createMockCtx = (client: any, dollar: any) => ({
 jest.mock('../../.opencode/plugins/helpers/run-script', () => ({
   runScript: jest
     .fn()
-    .mockImplementation((...args: any[]) => mockRunScript(...args)),
+    .mockImplementation((...args: Parameters<typeof mockRunScript>) =>
+      mockRunScript(...args)
+    ),
 }));
 
 jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
@@ -36,7 +48,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'success',
       duration: 2000,
       defaultScript: 'session-created.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.info.id}\nTime: now`,
     },
     'tool.execute.before': {
@@ -44,7 +56,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'info',
       duration: 2000,
       defaultScript: 'tool-execute-before.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Tool: ${event.properties?.tool || 'unknown'}\nTime: now`,
     },
     'tool.execute.after': {
@@ -52,7 +64,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'info',
       duration: 2000,
       defaultScript: 'tool-execute-after.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: now`,
     },
     'tool.execute.after.subagent': {
@@ -60,7 +72,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'info',
       duration: 2000,
       defaultScript: 'log-agent.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Agent: ${event.properties?.subagentType || 'unknown'}\nTime: now`,
     },
     'shell.env': {
@@ -122,7 +134,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'success',
       duration: 2000,
       defaultScript: 'session-created.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.info.id}\nTime: now`,
     },
     'tool.execute.before': {
@@ -130,7 +142,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'info',
       duration: 2000,
       defaultScript: 'tool-execute-before.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Tool: ${event.properties?.tool || 'unknown'}\nTime: now`,
     },
     'tool.execute.after': {
@@ -138,7 +150,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'info',
       duration: 2000,
       defaultScript: 'tool-execute-after.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: now`,
     },
     'tool.execute.after.subagent': {
@@ -146,7 +158,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'info',
       duration: 2000,
       defaultScript: 'log-agent.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Agent: ${event.properties?.subagentType || 'unknown'}\nTime: now`,
     },
     'shell.env': {
@@ -194,11 +206,11 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
 
   function resolveEventConfig(eventType: string) {
     const handler = mockHandlers[eventType];
-    const userEventConfig = (mockUserConfig as any).events[eventType];
+    const userEventConfig = mockUserConfig.events[eventType];
     const global = mockUserConfig;
 
     if (!global.enabled) {
-      return { enabled: false } as any;
+      return { enabled: false };
     }
 
     if (userEventConfig === undefined) {
@@ -218,10 +230,10 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
     }
 
     if (userEventConfig === false) {
-      return { enabled: false } as any;
+      return { enabled: false } as unknown;
     }
 
-    const cfg = userEventConfig as any;
+    const cfg = userEventConfig as unknown;
 
     let scripts: string[] = [];
     if (cfg.runScripts === false) {
@@ -253,11 +265,11 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
   }
 
   function resolveToolConfig(toolEventType: string, toolName: string) {
-    const toolConfigs = (mockUserConfig as any).tools?.[toolEventType];
+    const toolConfigs = (mockUserConfig as unknown).tools?.[toolEventType];
     const toolConfig = toolConfigs?.[toolName];
 
     if (toolConfig === false) {
-      return { enabled: false } as any;
+      return { enabled: false } as unknown;
     }
 
     if (!toolConfig) {
@@ -267,7 +279,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
     const handler = mockHandlers[toolEventType];
     const global = mockUserConfig;
 
-    const cfg = toolConfig as any;
+    const cfg = toolConfig as unknown;
 
     let scripts: string[] = [];
     if (cfg.runScripts === false) {
@@ -350,17 +362,27 @@ const createMockClient = (): MockClient => ({
 
 describe('opencode-hooks - plugin hooks', () => {
   let mockClient: MockClient;
-  let mockDollar: any;
+  let mockDollar: () => Promise<{
+    exitCode: number;
+    stdout: string;
+    stderr: string;
+  }>;
 
   beforeEach(() => {
     mockClient = createMockClient();
-    mockDollar = jest.fn().mockResolvedValue({
-      exitCode: 0,
-      stdout: '',
-      stderr: '',
-    });
+    mockDollar = jest
+      .fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>()
+      .mockResolvedValue({
+        exitCode: 0,
+        stdout: '',
+        stderr: '',
+      });
     jest.clearAllMocks();
-    mockRunScript.mockResolvedValue('Script executed');
+    mockRunScript.mockResolvedValue({
+      output: 'Script executed',
+      error: null,
+      exitCode: 0,
+    });
   });
 
   describe('disabled plugin', () => {
@@ -383,7 +405,7 @@ describe('opencode-hooks - plugin hooks', () => {
       const plugin = await DisabledHooks({
         client: mockClient,
         $: mockDollar,
-      } as any);
+      } as unknown);
 
       expect(plugin).toEqual({});
     });
@@ -391,7 +413,7 @@ describe('opencode-hooks - plugin hooks', () => {
 
   describe('tool.execute.before', () => {
     it('should trigger toast when tool is read', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar) as any;
+      const ctx = createMockCtx(mockClient, mockDollar) as unknown;
       const plugin = await OpencodeHooks(ctx);
       const input = {
         tool: 'read',
@@ -408,7 +430,7 @@ describe('opencode-hooks - plugin hooks', () => {
     });
 
     it('should not trigger toast when tool is write', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar) as any;
+      const ctx = createMockCtx(mockClient, mockDollar) as unknown;
       const plugin = await OpencodeHooks(ctx);
       const input = {
         tool: 'write',
@@ -447,7 +469,11 @@ describe('opencode-hooks - plugin hooks', () => {
     });
 
     it('should show error toast when script fails', async () => {
-      mockRunScript.mockRejectedValueOnce(new Error('Script not found'));
+      mockRunScript.mockResolvedValueOnce({
+        output: '',
+        error: 'Script not found',
+        exitCode: -1,
+      });
 
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
@@ -456,7 +482,8 @@ describe('opencode-hooks - plugin hooks', () => {
       await plugin['tool.execute.before'](input, output);
 
       const errorToastCall = mockClient.tui.showToast.mock.calls.find(
-        (call: any) => call[0].body.variant === 'error'
+        (call: [unknown]) =>
+          (call[0] as { body: { variant: string } }).body.variant === 'error'
       );
 
       expect(errorToastCall).toBeDefined();
@@ -465,7 +492,11 @@ describe('opencode-hooks - plugin hooks', () => {
     });
 
     it('should save error to file when script fails', async () => {
-      mockRunScript.mockRejectedValueOnce(new Error('Script not found'));
+      mockRunScript.mockResolvedValueOnce({
+        output: '',
+        error: 'Script not found',
+        exitCode: -1,
+      });
 
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
@@ -475,7 +506,7 @@ describe('opencode-hooks - plugin hooks', () => {
 
       expect(saveToFile).toHaveBeenCalledWith(
         expect.objectContaining({
-          content: expect.stringContaining('"errorMessage":"Script not found"'),
+          content: expect.stringContaining('"error":"Script not found"'),
         })
       );
     });
@@ -493,7 +524,11 @@ describe('opencode-hooks - plugin hooks', () => {
     });
 
     it('should show error toast when script fails', async () => {
-      mockRunScript.mockRejectedValueOnce(new Error('Env script failed'));
+      mockRunScript.mockResolvedValueOnce({
+        output: '',
+        error: 'Env script failed',
+        exitCode: -1,
+      });
 
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
@@ -502,7 +537,8 @@ describe('opencode-hooks - plugin hooks', () => {
       await plugin['shell.env'](input, output);
 
       const errorToastCall = mockClient.tui.showToast.mock.calls.find(
-        (call: any) => call[0].body.variant === 'error'
+        (call: [unknown]) =>
+          (call[0] as { body: { variant: string } }).body.variant === 'error'
       );
 
       expect(errorToastCall).toBeDefined();
@@ -551,7 +587,11 @@ describe('opencode-hooks - plugin hooks', () => {
     });
 
     it('should show error toast when script fails', async () => {
-      mockRunScript.mockRejectedValueOnce(new Error('Agent script failed'));
+      mockRunScript.mockResolvedValueOnce({
+        output: '',
+        error: 'Agent script failed',
+        exitCode: -1,
+      });
 
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
@@ -569,7 +609,8 @@ describe('opencode-hooks - plugin hooks', () => {
       await plugin['tool.execute.after'](input, output);
 
       const errorToastCall = mockClient.tui.showToast.mock.calls.find(
-        (call: any) => call[0].body.variant === 'error'
+        (call: [unknown]) =>
+          (call[0] as { body: { variant: string } }).body.variant === 'error'
       );
 
       expect(errorToastCall).toBeDefined();
@@ -615,7 +656,11 @@ describe('opencode-hooks - plugin hooks', () => {
         },
       }));
 
-      const mockRunScriptFn = jest.fn().mockResolvedValue('Script executed');
+      const mockRunScriptFn = jest.fn().mockResolvedValue({
+        output: 'Script executed',
+        error: null,
+        exitCode: 0,
+      });
       jest.doMock('../../.opencode/plugins/helpers/run-script', () => ({
         runScript: mockRunScriptFn,
       }));
@@ -668,7 +713,11 @@ describe('opencode-hooks - plugin hooks', () => {
         },
       }));
 
-      const mockRunScriptFn = jest.fn().mockResolvedValue('Script executed');
+      const mockRunScriptFn = jest.fn().mockResolvedValue({
+        output: 'Script executed',
+        error: null,
+        exitCode: 0,
+      });
       jest.doMock('../../.opencode/plugins/helpers/run-script', () => ({
         runScript: mockRunScriptFn,
       }));
@@ -723,7 +772,11 @@ describe('opencode-hooks - plugin hooks', () => {
         },
       }));
 
-      const mockRunScriptFn2 = jest.fn().mockResolvedValue('Script executed');
+      const mockRunScriptFn2 = jest.fn().mockResolvedValue({
+        output: 'Script executed',
+        error: null,
+        exitCode: 0,
+      });
       jest.doMock('../../.opencode/plugins/helpers/run-script', () => ({
         runScript: mockRunScriptFn2,
       }));
@@ -968,7 +1021,7 @@ describe('opencode-hooks - plugin hooks', () => {
 
       const input = { cwd: '/test/dir' };
       const output = { env: {} };
-      await plugin['shell.env'](input as any, output as any);
+      await plugin['shell.env'](input as unknown, output as unknown);
 
       expect(mockHandleDebugLog).toHaveBeenCalled();
     });
@@ -1017,7 +1070,7 @@ describe('opencode-hooks - plugin hooks', () => {
         type: 'session.created',
         properties: { info: { id: 'test-session', title: 'Test' } },
       };
-      await plugin.event({ event: event as any });
+      await plugin.event({ event: event as unknown });
 
       expect(mockHandleDebugLog).toHaveBeenCalled();
     });
@@ -1056,7 +1109,7 @@ describe('opencode-hooks - plugin hooks', () => {
 
       const input = { tool: 'read', sessionID: 'test-session' };
       const output = {};
-      await plugin['tool.execute.before'](input as any, output as any);
+      await plugin['tool.execute.before'](input as unknown, output as unknown);
 
       expect(mockHandleDebugLog).toHaveBeenCalled();
     });

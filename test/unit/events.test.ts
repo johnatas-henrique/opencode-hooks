@@ -11,32 +11,32 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'success',
       duration: 2000,
       defaultScript: 'session-created.sh',
-      buildMessage: (event: any) =>
-        `Session Id: ${event.properties.info.id}\nTime: now`,
+      buildMessage: (event: Record<string, unknown>) =>
+        `Session Id: ${String(event.properties?.info?.id)}\nTime: now`,
     },
     'session.error': {
       title: '====SESSION ERROR====',
       variant: 'error',
       duration: 30000,
       defaultScript: 'session-error.sh',
-      buildMessage: (event: any) =>
-        `Session Id: ${event.properties.sessionID}\nError: ${event.properties.error?.name || 'Unknown error'}\nTime: now`,
+      buildMessage: (event: Record<string, unknown>) =>
+        `Session Id: ${String(event.properties?.sessionID)}\nError: ${String(event.properties?.error?.name || 'Unknown error')}\nTime: now`,
     },
     'server.instance.disposed': {
       title: '',
       variant: 'info',
       duration: 0,
       defaultScript: 'session-stop.sh',
-      buildMessage: (event: any) =>
-        `Directory: ${event.properties.directory || 'unknown'}\nTime: now`,
+      buildMessage: (event: Record<string, unknown>) =>
+        `Directory: ${String(event.properties?.directory || 'unknown')}\nTime: now`,
     },
     'tool.execute.after': {
       title: '====SUBAGENT CALLED====',
       variant: 'info',
       duration: 2000,
       defaultScript: 'tool-execute-after.sh',
-      buildMessage: (event: any) =>
-        `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: now`,
+      buildMessage: (event: Record<string, unknown>) =>
+        `Session Id: ${String(event.properties?.sessionID || 'unknown')}\nTime: now`,
     },
     'session.disabled': {
       title: '====DISABLED====',

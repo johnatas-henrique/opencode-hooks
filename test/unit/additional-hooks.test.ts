@@ -29,21 +29,23 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'success',
       duration: 2000,
       defaultScript: 'session-created.sh',
-      buildMessage: (event: any) => `Session: ${event.properties?.info?.id}`,
+      buildMessage: (event: Record<string, unknown>) =>
+        `Session: ${String(event.properties?.info?.id)}`,
     },
     'session.error': {
       title: '====SESSION ERROR====',
       variant: 'error',
       duration: 30000,
       defaultScript: 'session-error.sh',
-      buildMessage: (_event: any) => `Error`,
+      buildMessage: (_event: Record<string, unknown>) => `Error`,
     },
     'tool.execute.after': {
       title: '====TOOL====',
       variant: 'info',
       duration: 2000,
       defaultScript: 'tool.sh',
-      buildMessage: (event: any) => `Tool: ${event.properties?.tool}`,
+      buildMessage: (event: Record<string, unknown>) =>
+        `Tool: ${String(event.properties?.tool)}`,
     },
     'shell.env': {
       title: '====SHELL ENV====',
@@ -129,6 +131,10 @@ jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('../../.opencode/plugins/helpers/append-to-session', () => ({
+  appendToSession: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('../../.opencode/plugins/helpers/toast-queue', () => ({
   initGlobalToastQueue: jest.fn().mockReturnValue({
     add: jest.fn(),
@@ -143,7 +149,9 @@ jest.mock('../../.opencode/plugins/helpers/toast-queue', () => ({
 }));
 
 jest.mock('../../.opencode/plugins/helpers/run-script', () => ({
-  runScript: jest.fn().mockResolvedValue('Script output'),
+  runScript: jest
+    .fn()
+    .mockResolvedValue({ output: 'Script output', error: null, exitCode: 0 }),
 }));
 
 jest.mock('../../.opencode/plugins/helpers/debug', () => ({
@@ -152,6 +160,7 @@ jest.mock('../../.opencode/plugins/helpers/debug', () => ({
 
 jest.mock('../../.opencode/plugins/helpers/log-event', () => ({
   logEventConfig: jest.fn().mockResolvedValue(undefined),
+  logScriptOutput: jest.fn().mockResolvedValue(undefined),
 }));
 
 const mockClient = {
@@ -160,9 +169,15 @@ const mockClient = {
   },
 };
 
-const mockDollar = jest.fn();
+const mockDollar =
+  jest.fn<
+    () => Promise<{ exitCode: number; stdout: string; stderr: string }>
+  >();
 
-function createMockCtx(client: any, $: any) {
+function createMockCtx(
+  client: { tui: { showToast: jest.Mock }; $: () => unknown },
+  $: () => unknown
+) {
   return {
     client,
     $,

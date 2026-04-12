@@ -1,17 +1,19 @@
 import { runScript } from '../../.opencode/plugins/helpers/run-script';
+import type { PluginInput } from '@opencode-ai/plugin';
 
 jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
 describe('run-script', () => {
-  let mockDollar: any;
+  let mockDollar: PluginInput['$'];
 
   beforeEach(() => {
-    mockDollar = jest.fn((_strings: any) => {
+    mockDollar = jest.fn((_strings: TemplateStringsArray) => {
       const result = {
         quiet: jest.fn().mockReturnValue({
           text: jest.fn().mockReturnValue('script output'),
+          exitCode: 0,
         }),
       };
       return result;
@@ -19,59 +21,76 @@ describe('run-script', () => {
   });
 
   it('should run script without arguments', async () => {
-    const result = await runScript(mockDollar as any, 'test-script.sh');
+    const result = await runScript(
+      mockDollar as PluginInput['$'],
+      'test-script.sh'
+    );
 
     expect(mockDollar).toHaveBeenCalled();
-    expect(result).toBe('script output');
+    expect(result.output).toBe('script output');
+    expect(result.exitCode).toBe(0);
   });
 
   it('should run script with arguments', async () => {
     const result = await runScript(
-      mockDollar as any,
+      mockDollar as PluginInput['$'],
       'test-script.sh',
       'arg1',
       'arg2'
     );
 
     expect(mockDollar).toHaveBeenCalled();
-    expect(result).toBe('script output');
+    expect(result.output).toBe('script output');
   });
 
   it('should return output text from script', async () => {
     const customResult = 'custom output';
-    mockDollar = jest.fn((_strings: any) => {
+    mockDollar = jest.fn((_strings: TemplateStringsArray) => {
       return {
         quiet: jest.fn().mockReturnValue({
           text: jest.fn().mockReturnValue(customResult),
+          exitCode: 0,
         }),
       };
     });
 
-    const result = await runScript(mockDollar as any, 'test-script.sh');
-
-    expect(result).toBe(customResult);
-  });
-
-  it('should throw error for invalid script path with ..', async () => {
-    await expect(
-      runScript(mockDollar as any, '../malicious.sh')
-    ).rejects.toThrow('Invalid script path');
-  });
-
-  it('should throw error for invalid script path starting with /', async () => {
-    await expect(runScript(mockDollar as any, '/etc/passwd')).rejects.toThrow(
-      'Invalid script path'
+    const result = await runScript(
+      mockDollar as PluginInput['$'],
+      'test-script.sh'
     );
+
+    expect(result.output).toBe(customResult);
   });
 
-  it('should throw error for empty script path', async () => {
-    await expect(runScript(mockDollar as any, '')).rejects.toThrow(
-      'Invalid script path'
+  it('should return error for invalid script path with ..', async () => {
+    const result = await runScript(
+      mockDollar as PluginInput['$'],
+      '../malicious.sh'
     );
+
+    expect(result.error).toContain('Invalid script path');
+    expect(result.exitCode).toBe(-1);
   });
 
-  it('should throw error and log when script fails', async () => {
-    mockDollar = jest.fn((_strings: any) => {
+  it('should return error for invalid script path starting with /', async () => {
+    const result = await runScript(
+      mockDollar as PluginInput['$'],
+      '/etc/passwd'
+    );
+
+    expect(result.error).toContain('Invalid script path');
+    expect(result.exitCode).toBe(-1);
+  });
+
+  it('should return error for empty script path', async () => {
+    const result = await runScript(mockDollar as PluginInput['$'], '');
+
+    expect(result.error).toContain('Invalid script path');
+    expect(result.exitCode).toBe(-1);
+  });
+
+  it('should return error object when script fails', async () => {
+    mockDollar = jest.fn((_strings: TemplateStringsArray) => {
       return {
         quiet: jest.fn().mockImplementation(() => {
           throw new Error('Script execution failed');
@@ -79,8 +98,12 @@ describe('run-script', () => {
       };
     });
 
-    await expect(runScript(mockDollar as any, 'failing.sh')).rejects.toThrow(
-      'Script execution failed'
+    const result = await runScript(
+      mockDollar as PluginInput['$'],
+      'failing.sh'
     );
+
+    expect(result.error).toContain('Script execution failed');
+    expect(result.exitCode).toBe(-1);
   });
 });

@@ -1,11 +1,15 @@
 import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
 
-const mockRunScript = jest.fn().mockResolvedValue('Script executed');
+const mockRunScript = jest
+  .fn()
+  .mockResolvedValue({ output: 'Script executed', error: null, exitCode: 0 });
 
 jest.mock('../../.opencode/plugins/helpers/run-script', () => ({
   runScript: jest
     .fn()
-    .mockImplementation((...args: any[]) => mockRunScript(...args)),
+    .mockImplementation((...args: Parameters<typeof mockRunScript>) =>
+      mockRunScript(...args)
+    ),
 }));
 
 jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
@@ -58,7 +62,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'success',
       duration: 2000,
       defaultScript: 'session-created.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.info.id}\nTitle: ${event.properties.info.title}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.compacted': {
@@ -66,7 +70,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'info',
       duration: 2000,
       defaultScript: 'session-compacted.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.sessionID}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.deleted': {
@@ -74,7 +78,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'error',
       duration: 2000,
       defaultScript: 'session-deleted.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.info.id}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.error': {
@@ -82,7 +86,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'error',
       duration: 30000,
       defaultScript: 'session-error.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.sessionID}\nError: ${event.properties.error?.name || 'Unknown error'}\nMessage: ${event.properties.error?.data?.message || 'Unknown message'}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.diff': {
@@ -90,7 +94,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'warning',
       duration: 2000,
       defaultScript: 'session-diff.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.sessionID}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.idle': {
@@ -98,7 +102,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'info',
       duration: 2000,
       defaultScript: 'session-idle.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.sessionID}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.status': {
@@ -106,7 +110,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'info',
       duration: 2000,
       defaultScript: 'session-status.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.sessionID}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.updated': {
@@ -114,7 +118,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'info',
       duration: 2000,
       defaultScript: 'session-updated.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.sessionID}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'server.instance.disposed': {
@@ -122,7 +126,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'info',
       duration: 2000,
       defaultScript: 'session-stop.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.sessionID}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'tool.execute.after': {
@@ -130,7 +134,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'info',
       duration: 2000,
       defaultScript: 'tool-execute-after.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Tool: ${event.properties?.tool || 'unknown'}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'tool.execute.after.subagent': {
@@ -138,7 +142,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'info',
       duration: 2000,
       defaultScript: 'log-agent.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Agent: ${event.properties?.subagentType || 'unknown'}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'shell.env': {
@@ -146,7 +150,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       variant: 'info',
       duration: 2000,
       defaultScript: 'shell-env.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: ${new Date().toLocaleTimeString()}`,
     },
   },
@@ -159,7 +163,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'success',
       duration: 2000,
       defaultScript: 'session-created.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.info.id}\nTitle: ${event.properties.info.title}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.compacted': {
@@ -167,7 +171,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'info',
       duration: 2000,
       defaultScript: 'session-compacted.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.sessionID}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.deleted': {
@@ -175,7 +179,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'error',
       duration: 2000,
       defaultScript: 'session-deleted.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.info.id}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.error': {
@@ -183,7 +187,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'error',
       duration: 30000,
       defaultScript: 'session-error.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.sessionID}\nError: ${event.properties.error?.name || 'Unknown error'}\nMessage: ${event.properties.error?.data?.message || 'Unknown message'}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.diff': {
@@ -191,7 +195,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'warning',
       duration: 2000,
       defaultScript: 'session-diff.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.sessionID}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.idle': {
@@ -199,7 +203,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'info',
       duration: 2000,
       defaultScript: 'session-idle.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.sessionID}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.status': {
@@ -207,7 +211,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'info',
       duration: 2000,
       defaultScript: 'session-status.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.sessionID}\nStatus: ${JSON.stringify(event.properties.status)}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'session.updated': {
@@ -215,7 +219,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'info',
       duration: 2000,
       defaultScript: 'session-updated.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties.info.id}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'server.instance.disposed': {
@@ -223,7 +227,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'info',
       duration: 0,
       defaultScript: 'session-stop.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Directory: ${event.properties.directory || 'unknown'}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'tool.execute.after': {
@@ -231,7 +235,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'info',
       duration: 2000,
       defaultScript: 'tool-execute-after.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'tool.execute.after.subagent': {
@@ -239,7 +243,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
       variant: 'info',
       duration: 2000,
       defaultScript: 'log-agent.sh',
-      buildMessage: (event: any) =>
+      buildMessage: (event: Record<string, unknown>) =>
         `Agent: ${event.properties?.subagentType || 'unknown'}\nTime: ${new Date().toLocaleTimeString()}`,
     },
   };
@@ -285,11 +289,11 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
 
   function resolveEventConfig(eventType: string) {
     const handler = mockHandlers[eventType];
-    const userEventConfig = (mockUserConfig as any).events[eventType];
+    const userEventConfig = mockUserConfig.events[eventType];
     const global = mockUserConfig;
 
     if (!global.enabled) {
-      return { enabled: false } as any;
+      return { enabled: false };
     }
 
     if (userEventConfig === undefined) {
@@ -307,10 +311,25 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
     }
 
     if (userEventConfig === false) {
-      return { enabled: false } as any;
+      return { enabled: false };
     }
 
-    const cfg = userEventConfig as any;
+    const cfg = userEventConfig as {
+      enabled?: boolean;
+      toast?:
+        | boolean
+        | {
+            enabled?: boolean;
+            title?: string;
+            message?: string;
+            variant?: string;
+            duration?: number;
+          };
+      scripts?: string[];
+      runScripts?: boolean;
+      saveToFile?: boolean;
+      appendToSession?: boolean;
+    };
 
     let scripts: string[] = [];
     if (cfg.runScripts === false) {
@@ -342,7 +361,7 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
   }
 
   function resolveToolConfig(toolEventType: string, toolName: string) {
-    const toolConfigs = (mockUserConfig as any).tools?.[toolEventType];
+    const toolConfigs = mockUserConfig.tools?.[toolEventType];
     const toolConfig = toolConfigs?.[toolName];
 
     if (!toolConfig) {
@@ -353,10 +372,25 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
     const global = mockUserConfig;
 
     if (toolConfig === false) {
-      return { enabled: false } as any;
+      return { enabled: false };
     }
 
-    const cfg = toolConfig as any;
+    const cfg = toolConfig as {
+      enabled?: boolean;
+      toast?:
+        | boolean
+        | {
+            enabled?: boolean;
+            title?: string;
+            message?: string;
+            variant?: string;
+            duration?: number;
+          };
+      scripts?: string[];
+      runScripts?: boolean;
+      saveToFile?: boolean;
+      appendToSession?: boolean;
+    };
 
     let scripts: string[] = [];
     if (cfg.runScripts === false) {
@@ -421,7 +455,10 @@ import { saveToFile } from '../../.opencode/plugins/helpers/save-to-file';
 
 const _LOG_FILE = './session_events.log';
 
-const createMockCtx = (client: any, dollar: any) => ({
+const createMockCtx = (
+  client: { tui: { showToast: jest.Mock } },
+  dollar: () => unknown
+) => ({
   client,
   $: dollar,
   project: 'test-project',
@@ -468,7 +505,7 @@ const createMockSession = (id: string = 'test-session-123'): Session => ({
 
 describe('Session Plugins', () => {
   let mockClient: MockClient;
-  let mockDollar: any;
+  let mockDollar: () => unknown;
 
   beforeEach(() => {
     mockClient = createMockClient();
@@ -691,7 +728,7 @@ describe('Session Plugins', () => {
         type: 'session.error',
         properties: {
           sessionID: 'error-session-001',
-          error: { name: 'SomeError' } as any,
+          error: { name: 'SomeError' } as { name?: string },
         },
       };
       await plugin.event({ event });
@@ -894,7 +931,11 @@ describe('Session Plugins', () => {
 
   describe('script error handling', () => {
     it('should show error toast when script fails', async () => {
-      mockRunScript.mockRejectedValueOnce(new Error('Script not found'));
+      mockRunScript.mockResolvedValueOnce({
+        output: '',
+        error: 'Script not found',
+        exitCode: -1,
+      });
 
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
@@ -905,7 +946,7 @@ describe('Session Plugins', () => {
       await plugin.event({ event });
 
       const errorToastCall = mockClient.tui.showToast.mock.calls.find(
-        (call: any) => call[0].body.variant === 'error'
+        (call: [unknown]) => call[0].body.variant === 'error'
       );
 
       expect(errorToastCall).toBeDefined();
@@ -917,7 +958,11 @@ describe('Session Plugins', () => {
     });
 
     it('should save error to file when script fails', async () => {
-      mockRunScript.mockRejectedValueOnce(new Error('Script not found'));
+      mockRunScript.mockResolvedValueOnce({
+        output: '',
+        error: 'Script not found',
+        exitCode: -1,
+      });
 
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
@@ -929,13 +974,17 @@ describe('Session Plugins', () => {
 
       expect(saveToFile).toHaveBeenCalledWith(
         expect.objectContaining({
-          content: expect.stringContaining('"errorMessage":"Script not found"'),
+          content: expect.stringContaining('"error":"Script not found"'),
         })
       );
     });
 
     it('should show error toast for tool.execute.after script failure', async () => {
-      mockRunScript.mockRejectedValueOnce(new Error('Agent script failed'));
+      mockRunScript.mockResolvedValueOnce({
+        output: '',
+        error: 'Agent script failed',
+        exitCode: -1,
+      });
 
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
@@ -953,7 +1002,7 @@ describe('Session Plugins', () => {
       await plugin['tool.execute.after'](input, output);
 
       const errorToastCall = mockClient.tui.showToast.mock.calls.find(
-        (call: any) => call[0].body.variant === 'error'
+        (call: [unknown]) => call[0].body.variant === 'error'
       );
 
       expect(errorToastCall).toBeDefined();

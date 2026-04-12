@@ -63,14 +63,20 @@ describe('run-script-handler.ts', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     resetSubagentTracking();
-    (runScript as jest.Mock).mockResolvedValue('output');
+    (runScript as jest.Mock).mockResolvedValue({
+      output: 'output',
+      error: null,
+      exitCode: 0,
+    });
     (appendToSession as jest.Mock).mockResolvedValue(undefined);
   });
 
   describe('runScriptAndHandle', () => {
     it('should run script and handle output', async () => {
       const config = {
-        ctx: createMockCtx() as any,
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
         script: 'test-script.sh',
         scriptArg: 'arg1',
         timestamp: '2026-01-01T00:00:00Z',
@@ -96,7 +102,9 @@ describe('run-script-handler.ts', () => {
       addSubagentSession('subagent-session');
 
       const config = {
-        ctx: createMockCtx() as any,
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
         script: 'test-script.sh',
         scriptArg: 'arg1',
         timestamp: '2026-01-01T00:00:00Z',
@@ -116,7 +124,9 @@ describe('run-script-handler.ts', () => {
 
     it('should run if runOnlyOnce and session is primary', async () => {
       const config = {
-        ctx: createMockCtx() as any,
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
         script: 'test-script.sh',
         scriptArg: 'arg1',
         timestamp: '2026-01-01T00:00:00Z',
@@ -136,7 +146,9 @@ describe('run-script-handler.ts', () => {
 
     it('should call appendToSession when configured', async () => {
       const config = {
-        ctx: createMockCtx() as any,
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
         script: 'test-script.sh',
         scriptArg: 'arg1',
         timestamp: '2026-01-01T00:00:00Z',
@@ -159,10 +171,16 @@ describe('run-script-handler.ts', () => {
     });
 
     it('should handle script error', async () => {
-      (runScript as jest.Mock).mockRejectedValue(new Error('Script failed'));
+      (runScript as jest.Mock).mockResolvedValue({
+        output: '',
+        error: 'Script failed',
+        exitCode: -1,
+      });
 
       const config = {
-        ctx: createMockCtx() as any,
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
         script: 'test-script.sh',
         scriptArg: 'arg1',
         timestamp: '2026-01-01T00:00:00Z',
@@ -181,10 +199,16 @@ describe('run-script-handler.ts', () => {
     });
 
     it('should include eventType in error toast message', async () => {
-      (runScript as jest.Mock).mockRejectedValue(new Error('Script failed'));
+      (runScript as jest.Mock).mockResolvedValue({
+        output: '',
+        error: 'Script failed',
+        exitCode: -1,
+      });
 
       const config = {
-        ctx: createMockCtx() as any,
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
         script: 'test-script.sh',
         timestamp: '2026-01-01T00:00:00Z',
         eventType: 'session.idle',
@@ -197,7 +221,7 @@ describe('run-script-handler.ts', () => {
 
       const toastCalls = mockToastAdd.mock.calls;
       const errorToastCall = toastCalls.find(
-        (call: any) => call[0]?.title === '====SCRIPT ERROR===='
+        (call: [unknown]) => call[0]?.title === '====SCRIPT ERROR===='
       );
 
       expect(errorToastCall).toBeDefined();
@@ -207,10 +231,16 @@ describe('run-script-handler.ts', () => {
     });
 
     it('should show only toolName for tool.execute.* events', async () => {
-      (runScript as jest.Mock).mockRejectedValue(new Error('Script failed'));
+      (runScript as jest.Mock).mockResolvedValue({
+        output: '',
+        error: 'Script failed',
+        exitCode: -1,
+      });
 
       const config = {
-        ctx: createMockCtx() as any,
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
         script: 'test-script.sh',
         timestamp: '2026-01-01T00:00:00Z',
         eventType: 'tool.execute.after',
@@ -223,7 +253,7 @@ describe('run-script-handler.ts', () => {
 
       const toastCalls = mockToastAdd.mock.calls;
       const errorToastCall = toastCalls.find(
-        (call: any) => call[0]?.title === '====SCRIPT ERROR===='
+        (call: [unknown]) => call[0]?.title === '====SCRIPT ERROR===='
       );
 
       expect(errorToastCall).toBeDefined();
@@ -231,10 +261,16 @@ describe('run-script-handler.ts', () => {
     });
 
     it('should include eventType and toolName in error log', async () => {
-      (runScript as jest.Mock).mockRejectedValue(new Error('Script failed'));
+      (runScript as jest.Mock).mockResolvedValue({
+        output: '',
+        error: 'Script failed',
+        exitCode: -1,
+      });
 
       const config = {
-        ctx: createMockCtx() as any,
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
         script: 'test-script.sh',
         timestamp: '2026-01-01T00:00:00Z',
         eventType: 'tool.execute.after',
@@ -257,7 +293,9 @@ describe('run-script-handler.ts', () => {
   describe('resetSubagentTracking', () => {
     it('should run for different primary sessions independently', async () => {
       const config1 = {
-        ctx: createMockCtx() as any,
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
         script: 'test-script.sh',
         scriptArg: 'arg1',
         timestamp: '2026-01-01T00:00:00Z',
@@ -285,7 +323,9 @@ describe('run-script-handler.ts', () => {
       addSubagentSession('subagent-session');
 
       const configPrimary = {
-        ctx: createMockCtx() as any,
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
         script: 'test-script.sh',
         scriptArg: 'arg1',
         timestamp: '2026-01-01T00:00:00Z',
@@ -312,12 +352,16 @@ describe('run-script-handler.ts', () => {
 
   describe('error handling', () => {
     it('should handle script execution error', async () => {
-      (runScript as jest.Mock).mockRejectedValueOnce(
-        new Error('Script failed')
-      );
+      (runScript as jest.Mock).mockResolvedValueOnce({
+        output: '',
+        error: 'Script failed',
+        exitCode: -1,
+      });
 
       const config = {
-        ctx: createMockCtx() as any,
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
         script: 'failing-script.sh',
         scriptArg: 'arg1',
         timestamp: '2026-01-01T00:00:00Z',
@@ -336,10 +380,16 @@ describe('run-script-handler.ts', () => {
     });
 
     it('should handle non-Error rejection', async () => {
-      (runScript as jest.Mock).mockRejectedValueOnce('String error');
+      (runScript as jest.Mock).mockResolvedValueOnce({
+        output: '',
+        error: 'String error',
+        exitCode: -1,
+      });
 
       const config = {
-        ctx: createMockCtx() as any,
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
         script: 'failing-script.sh',
         scriptArg: 'arg1',
         timestamp: '2026-01-01T00:00:00Z',
@@ -358,12 +408,16 @@ describe('run-script-handler.ts', () => {
     });
 
     it('should handle error with special characters', async () => {
-      (runScript as jest.Mock).mockRejectedValueOnce(
-        new Error('Error with special \x00\x1F characters')
-      );
+      (runScript as jest.Mock).mockResolvedValueOnce({
+        output: '',
+        error: 'Error with special characters',
+        exitCode: -1,
+      });
 
       const config = {
-        ctx: createMockCtx() as any,
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
         script: 'failing-script.sh',
         scriptArg: 'arg1',
         timestamp: '2026-01-01T00:00:00Z',
@@ -381,7 +435,7 @@ describe('run-script-handler.ts', () => {
       expect(saveToFile).toHaveBeenCalledWith(
         expect.objectContaining({
           content: expect.stringContaining(
-            '"errorMessage":"Error with special ?? characters"'
+            '"error":"Error with special characters"'
           ),
         })
       );
