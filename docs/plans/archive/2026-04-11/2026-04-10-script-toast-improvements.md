@@ -11,7 +11,7 @@
 | 5. Capturar e expor erro completo do script            | ⏳     | -         |
 | 6. Testar com scripts em erro                          | ⏳     | -         |
 
-**Status**: Not Completed - Steps 2-6 not implemented
+**Status**: ⚠️ NOT IMPLEMENTED - Superseded by types work
 
 ## Problemas Atuais
 
