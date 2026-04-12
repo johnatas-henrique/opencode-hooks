@@ -96,11 +96,21 @@ export type PluginStatusDisplayMode =
   | 'user-separated'
   | 'all-labeled';
 
+export interface ScriptToastsConfig {
+  showOutput?: boolean;
+  showError?: boolean;
+  outputVariant?: EventVariant;
+  errorVariant?: EventVariant;
+  outputDuration?: number;
+  errorDuration?: number;
+}
+
 export interface UserEventsConfig {
   enabled: boolean;
   logDisabledEvents: boolean;
   showPluginStatus: boolean;
   pluginStatusDisplayMode: PluginStatusDisplayMode;
+  scriptToasts: ScriptToastsConfig;
   default: EventOverride;
   events: Partial<Record<EventType, EventConfig>>;
   tools: {
@@ -123,4 +133,5 @@ export interface ResolvedEventConfig {
   saveToFile: boolean;
   appendToSession: boolean;
   runOnlyOnce: boolean;
+  scriptToasts: ScriptToastsConfig;
 }

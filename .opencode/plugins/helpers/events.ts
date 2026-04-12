@@ -1,7 +1,7 @@
 import { handlers, type EventHandler } from './default-handlers';
 import { userConfig } from './user-events.config';
 import { saveToFile } from './save-to-file';
-import { UNKNOWN_EVENT_LOG_FILE } from './constants';
+import { UNKNOWN_EVENT_LOG_FILE, TOAST_DURATION } from './constants';
 import type {
   ResolvedEventConfig,
   EventConfig,
@@ -25,6 +25,14 @@ const DISABLED_CONFIG: ResolvedEventConfig = {
   appendToSession: false,
   runOnlyOnce: false,
   debug: false,
+  scriptToasts: {
+    showOutput: true,
+    showError: true,
+    outputVariant: 'info',
+    errorVariant: 'error',
+    outputDuration: TOAST_DURATION.FIVE_SECONDS,
+    errorDuration: TOAST_DURATION.FIFTEEN_SECONDS,
+  },
 };
 
 function tryBuildMessage(
@@ -298,7 +306,7 @@ export function resolveEventConfig(
         ? tryBuildMessage(handler, eventType, input ?? {})
         : '',
       toastVariant: handler?.variant ?? 'info',
-      toastDuration: handler?.duration ?? 2000,
+      toastDuration: handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
       scripts: [],
       saveToFile: getWithDefault(true, defaultCfg, 'saveToFile', false),
       appendToSession: getWithDefault(
@@ -308,6 +316,7 @@ export function resolveEventConfig(
         false
       ),
       runOnlyOnce: false,
+      scriptToasts: userConfig.scriptToasts,
     };
   }
 
@@ -337,7 +346,8 @@ export function resolveEventConfig(
       toastCfg?.message ??
       (handler ? tryBuildMessage(handler, eventType, input ?? {}) : ''),
     toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
-    toastDuration: toastCfg?.duration ?? handler?.duration ?? 2000,
+    toastDuration:
+      toastCfg?.duration ?? handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
     scripts,
     saveToFile: getWithDefault(
       userEventConfig,
@@ -357,6 +367,7 @@ export function resolveEventConfig(
       'runOnlyOnce',
       false
     ),
+    scriptToasts: userConfig.scriptToasts,
   };
 }
 
@@ -376,7 +387,7 @@ export function resolveToolConfig(
   const toolConfigs = tools?.[toolEventType];
   const toolConfig = toolConfigs?.[toolName];
 
-  const isEmptyObject = (obj: unknown): boolean => {
+  const isEmptyObject = (obj: unknown): obj is Record<string, never> => {
     return (
       typeof obj === 'object' && obj !== null && Object.keys(obj).length === 0
     );
@@ -478,6 +489,7 @@ export function resolveToolConfig(
       'runOnlyOnce',
       baseWithToolHandler.runOnlyOnce
     ),
+    scriptToasts: userConfig.scriptToasts,
   };
 }
 
@@ -501,11 +513,12 @@ function getDefaultConfig(
       ? tryBuildMessage(handler, toolEventType, input ?? {})
       : '',
     toastVariant: handler?.variant ?? 'info',
-    toastDuration: handler?.duration ?? 2000,
+    toastDuration: handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
     scripts,
     runScripts,
     saveToFile: getWithDefault(true, defaultCfg, 'saveToFile', false),
     appendToSession: getWithDefault(true, defaultCfg, 'appendToSession', false),
     runOnlyOnce: false,
+    scriptToasts: userConfig.scriptToasts,
   };
 }
