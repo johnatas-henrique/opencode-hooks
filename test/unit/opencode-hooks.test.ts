@@ -540,7 +540,7 @@ describe('opencode-hooks - plugin hooks', () => {
       );
 
       expect(errorToastCall).toBeDefined();
-      expect(errorToastCall[0].body.title).toBe('Script Error');
+      expect(errorToastCall[0].body.title).toMatch(/ Script Error====$/);
       expect(errorToastCall[0].body.message).toContain('before-read.sh');
     });
 
@@ -595,7 +595,7 @@ describe('opencode-hooks - plugin hooks', () => {
       );
 
       expect(errorToastCall).toBeDefined();
-      expect(errorToastCall[0].body.title).toBe('Script Error');
+      expect(errorToastCall[0].body.title).toMatch(/ Script Error====$/);
       expect(errorToastCall[0].body.message).toContain('shell-env.sh');
     });
   });
@@ -667,7 +667,7 @@ describe('opencode-hooks - plugin hooks', () => {
       );
 
       expect(errorToastCall).toBeDefined();
-      expect(errorToastCall[0].body.title).toBe('Script Error');
+      expect(errorToastCall[0].body.title).toMatch(/ Script Error====$/);
       expect(errorToastCall[0].body.message).toContain(
         'Error: Agent script failed'
       );

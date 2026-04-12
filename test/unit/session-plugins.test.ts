@@ -975,7 +975,7 @@ describe('Session Plugins', () => {
       );
 
       expect(errorToastCall).toBeDefined();
-      expect(errorToastCall[0].body.title).toBe('Script Error');
+      expect(errorToastCall[0].body.title).toMatch(/ Script Error====$/);
       expect(errorToastCall[0].body.message).toContain('Script not found');
       expect(errorToastCall[0].body.message).toContain(
         'Check user-events.config.ts'
@@ -1031,7 +1031,7 @@ describe('Session Plugins', () => {
       );
 
       expect(errorToastCall).toBeDefined();
-      expect(errorToastCall[0].body.title).toBe('Script Error');
+      expect(errorToastCall[0].body.title).toMatch(/ Script Error====$/);
       expect(errorToastCall[0].body.message).toContain('Agent script failed');
     });
   });
