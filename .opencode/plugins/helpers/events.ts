@@ -159,8 +159,17 @@ export function getHandler(eventType: string): EventHandler | undefined {
   return handlers[eventType];
 }
 
-export function getToolHandler(toolName: string): EventHandler | undefined {
-  return handlers[`tool:${toolName}`];
+export function getToolHandler(
+  toolName: string,
+  toolEventType?: string
+): EventHandler | undefined {
+  if (toolEventType?.includes('.before')) {
+    return handlers[`tool.execute.before.${toolName}`];
+  }
+  if (toolEventType?.includes('.after')) {
+    return handlers[`tool.execute.after.${toolName}`];
+  }
+  return undefined;
 }
 
 function getDefaultScript(eventType: string): string {
@@ -400,8 +409,8 @@ export function resolveToolConfig(
   }
 
   const defaultCfg = userConfig.default;
-  const toolHandler = getToolHandler(toolName);
-  const eventHandler = handlers[toolEventType];
+  const toolHandler = getToolHandler(toolName, toolEventType);
+  const eventHandler = toolHandler ?? handlers[toolEventType];
 
   // Determine event base config: use resolveEventConfig if event is defined,
   // otherwise fall back directly to userConfig.default via getDefaultConfig
