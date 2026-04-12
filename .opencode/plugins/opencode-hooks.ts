@@ -27,6 +27,7 @@ import {
   addSubagentSession,
   EventType,
 } from './helpers';
+import { normalizeInputForHandler as normalizeInput } from './helpers/events';
 import { userConfig } from './helpers/user-events.config';
 import {
   UNKNOWN_EVENT_LOG_FILE,
@@ -85,7 +86,7 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     return;
   }
 
-  await logEventConfig(timestamp, eventType, input, resolved);
+  await logEventConfig(timestamp, eventType, input, resolved, output);
 
   if (resolved.toast) {
     let handler = handlers[eventType];
@@ -96,11 +97,15 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
       }
     }
 
+    const normalized = normalizeInput(
+      eventType,
+      (input ?? {}) as Record<string, unknown>,
+      output
+    );
+
     const message =
       resolved.toastMessage ||
-      (handler
-        ? handler.buildMessage((input ?? {}) as Record<string, unknown>)
-        : eventType);
+      (handler ? handler.buildMessage(normalized) : eventType);
 
     useGlobalToastQueue().add({
       title: resolved.toastTitle,
@@ -235,7 +240,8 @@ export const OpencodeHooks: Plugin = async (
       const resolved = resolveToolConfig(
         'tool.execute.before',
         input.tool,
-        input
+        input,
+        output
       );
 
       await executeHook({
@@ -264,10 +270,15 @@ export const OpencodeHooks: Plugin = async (
         const rightTool = subagentType
           ? 'tool.execute.after.subagent'
           : 'tool.execute.after';
-        const resolved = resolveToolConfig(rightTool, input.tool, {
-          ...input,
-          subagentType,
-        });
+        const resolved = resolveToolConfig(
+          rightTool,
+          input.tool,
+          {
+            ...input,
+            subagentType,
+          },
+          output
+        );
 
         if (subagentType) {
           resolved.toastMessage = `Agent invoked: ${subagentType}`;
@@ -293,10 +304,15 @@ export const OpencodeHooks: Plugin = async (
             ? input.args['name']
             : '';
 
-        const resolved = resolveToolConfig('tool.execute.after', input.tool, {
-          ...input,
-          skillType,
-        });
+        const resolved = resolveToolConfig(
+          'tool.execute.after',
+          input.tool,
+          {
+            ...input,
+            skillType,
+          },
+          output
+        );
 
         if (isSkillTool) {
           resolved.toastMessage = `Skill executed: ${input.args['name'] ?? ''}`;

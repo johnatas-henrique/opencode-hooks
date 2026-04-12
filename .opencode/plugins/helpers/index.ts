@@ -16,6 +16,7 @@ import { handlers, type EventHandler } from './default-handlers';
 import {
   resolveEventConfig,
   resolveToolConfig,
+  normalizeInputForHandler,
   getHandler,
   type ResolvedEventConfig,
 } from './events';
@@ -57,6 +58,7 @@ export {
   handlers,
   resolveEventConfig,
   resolveToolConfig,
+  normalizeInputForHandler,
   getHandler,
   EventType,
   showActivePluginsToast,

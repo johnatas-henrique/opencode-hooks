@@ -40,119 +40,47 @@ const DISABLED_CONFIG: ResolvedEventConfig = {
 function tryBuildMessage(
   handler: EventHandler,
   eventType: string,
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  output?: Record<string, unknown>
 ): string {
   try {
-    const normalized = normalizeInputForHandler(eventType, input);
+    const normalized = normalizeInputForHandler(eventType, input, output);
     return handler.buildMessage(normalized);
   } catch {
     return '';
   }
 }
 
-const SUBAGENT_TYPE_ARG = 'subagentType' as const;
-
 export function normalizeInputForHandler(
   eventType: string,
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  output?: Record<string, unknown>
 ): Record<string, unknown> {
-  if (eventType.startsWith('tool.')) {
-    const toolArgs = input.args as Record<string, unknown> | undefined;
-    const toolName = input.tool as string;
-    const properties: Record<string, unknown> = {
-      sessionID: input.sessionID as string,
-      tool: toolName,
-      callID: input.callID as string,
-    };
-
-    switch (toolName) {
-      case 'read':
-      case 'write':
-      case 'edit':
-      case 'list':
-      case 'patch':
-      case 'filesystem_read_file':
-      case 'filesystem_write_file':
-      case 'filesystem_list_directory':
-      case 'filesystem_create_directory':
-      case 'filesystem_get_file_info':
-        properties.path = toolArgs?.filePath ?? toolArgs?.path;
-        break;
-      case 'bash':
-      case 'command':
-        properties.tool = { input: toolArgs?.command };
-        properties.command = toolArgs?.command;
-        break;
-      case 'websearch':
-      case 'codesearch':
-      case 'gh_grep_searchGitHub':
-        properties.tool = { input: toolArgs?.query };
-        properties.query = toolArgs?.query;
-        break;
-      case 'webfetch':
-        properties.tool = { input: toolArgs?.url };
-        properties.url = toolArgs?.url;
-        break;
-      case 'grep':
-      case 'glob':
-      case 'filesystem_search_files':
-        properties.tool = { input: toolArgs?.pattern };
-        properties.pattern = toolArgs?.pattern;
-        break;
-      case 'git.commit':
-        properties.tool = { input: toolArgs?.message };
-        properties.message = toolArgs?.message;
-        break;
-      case 'filesystem_move_file':
-        properties.source = toolArgs?.source;
-        properties.destination = toolArgs?.destination;
-        break;
-      case 'task':
-        if (toolArgs?.[SUBAGENT_TYPE_ARG]) {
-          properties.subagentType = toolArgs[SUBAGENT_TYPE_ARG];
-        }
-        break;
-      case 'skill':
-        if (toolArgs?.name) {
-          properties.tool = { input: String(toolArgs.name) };
-          properties.skillName = String(toolArgs.name);
-        }
-        break;
-    }
-
-    return { properties, ...input };
-  }
-
-  if (eventType.startsWith('session.') || eventType.startsWith('message.')) {
-    if (input.properties && typeof input.properties === 'object') {
-      return input;
-    }
-    return { properties: input };
+  if (eventType.startsWith('tool.execute.')) {
+    return { input, output };
   }
 
   if (eventType === 'shell.env') {
-    return { properties: { cwd: input.cwd } };
+    return { properties: input, output };
   }
 
   if (eventType.startsWith('chat.') || eventType.startsWith('experimental.')) {
-    return { properties: input };
+    return { properties: input, output };
   }
 
-  if (eventType === 'permission.ask') {
-    return { properties: { sessionID: input.sessionID, tool: input.tool } };
+  if (eventType.startsWith('permission.')) {
+    return { properties: input, output };
   }
 
   if (eventType === 'command.execute.before') {
-    return {
-      properties: { command: input.command, sessionID: input.sessionID },
-    };
+    return { properties: input, output };
   }
 
-  if (eventType === 'tool.definition') {
-    return { properties: { toolID: input.toolID } };
+  if (input.properties && typeof input.properties === 'object') {
+    return { properties: input.properties };
   }
 
-  return input;
+  return { properties: input };
 }
 
 export function getHandler(eventType: string): EventHandler | undefined {
@@ -283,7 +211,8 @@ function isEventDisabled(eventCfg: EventConfig): boolean {
  */
 export function resolveEventConfig(
   eventType: string,
-  input?: Record<string, unknown>
+  input?: Record<string, unknown>,
+  output?: Record<string, unknown>
 ): ResolvedEventConfig {
   const handler = handlers[eventType];
   const userEventConfig =
@@ -296,7 +225,8 @@ export function resolveEventConfig(
 
   if (userEventConfig === undefined) {
     const isTool = eventType.startsWith('tool.');
-    if (!isTool) {
+    const hasHandler = !!handler;
+    if (!isTool && !hasHandler) {
       const timestamp = new Date().toISOString();
       saveToFile({
         content: JSON.stringify({
@@ -314,7 +244,7 @@ export function resolveEventConfig(
       toastTitle: handler?.title ?? '',
       runScripts: getWithDefault(true, defaultCfg, 'runScripts', false),
       toastMessage: handler
-        ? tryBuildMessage(handler, eventType, input ?? {})
+        ? tryBuildMessage(handler, eventType, input ?? {}, output)
         : '',
       toastVariant: handler?.variant ?? 'info',
       toastDuration: handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
@@ -355,7 +285,7 @@ export function resolveEventConfig(
     ),
     toastMessage:
       toastCfg?.message ??
-      (handler ? tryBuildMessage(handler, eventType, input ?? {}) : ''),
+      (handler ? tryBuildMessage(handler, eventType, input ?? {}, output) : ''),
     toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
     toastDuration:
       toastCfg?.duration ?? handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
@@ -389,7 +319,8 @@ export function resolveEventConfig(
 export function resolveToolConfig(
   toolEventType: string,
   toolName: string,
-  input?: Record<string, unknown>
+  input?: Record<string, unknown>,
+  output?: Record<string, unknown>
 ): ResolvedEventConfig {
   const tools = userConfig.tools as Record<
     string,
@@ -425,9 +356,9 @@ export function resolveToolConfig(
     ...eventBase,
     toastTitle: toolHandler?.title ?? eventHandler?.title,
     toastMessage: toolHandler
-      ? tryBuildMessage(toolHandler, toolEventType, input ?? {})
+      ? tryBuildMessage(toolHandler, toolEventType, input ?? {}, output)
       : eventHandler
-        ? tryBuildMessage(eventHandler, toolEventType, input ?? {})
+        ? tryBuildMessage(eventHandler, toolEventType, input ?? {}, output)
         : '',
     toastVariant: toolHandler?.variant ?? eventHandler?.variant,
     toastDuration: toolHandler?.duration ?? eventHandler?.duration,
