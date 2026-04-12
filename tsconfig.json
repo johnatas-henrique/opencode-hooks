@@ -5,6 +5,7 @@
     "lib": ["dom", "es2020"],
     "sourceMap": false,
     "outDir": "./dist",
+    "strict": true,
     "removeComments": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
