@@ -10,7 +10,7 @@ export default defineConfig([
     extends: ['js/recommended'],
     languageOptions: { globals: globals.node },
   },
-  tseslint.configs.recommended,
+  ...tseslint.configs.recommended,
   {
     rules: {
       '@typescript-eslint/no-unused-vars': [
@@ -36,7 +36,7 @@ export default defineConfig([
   {
     files: ['test/**/*.ts'],
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-require-imports': 'off',
     },
   },
