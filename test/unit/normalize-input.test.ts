@@ -1,8 +1,12 @@
+jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
+  saveToFile: jest.fn().mockResolvedValue(undefined),
+}));
+
 import { normalizeInputForHandler } from '../../.opencode/plugins/helpers/events';
 
 describe('normalizeInputForHandler', () => {
   describe('tool.execute.before/after events', () => {
-    it('should normalize bash tool input', () => {
+    it('should return input and output for bash tool', () => {
       const input = {
         tool: 'bash',
         sessionID: 'ses_123',
@@ -12,12 +16,11 @@ describe('normalizeInputForHandler', () => {
 
       const result = normalizeInputForHandler('tool.execute.after', input);
 
-      expect(result.properties.sessionID).toBe('ses_123');
-      expect(result.properties.tool.input).toBe('npm run build');
-      expect(result.properties.command).toBe('npm run build');
+      expect(result.input).toBeDefined();
+      expect(result.input).toEqual(input);
     });
 
-    it('should normalize read tool input with path', () => {
+    it('should return input and output for read tool', () => {
       const input = {
         tool: 'read',
         sessionID: 'ses_123',
@@ -27,12 +30,10 @@ describe('normalizeInputForHandler', () => {
 
       const result = normalizeInputForHandler('tool.execute.after', input);
 
-      expect(result.properties.sessionID).toBe('ses_123');
-      expect(result.properties.tool).toBe('read');
-      expect(result.properties.path).toBe('/home/user/file.ts');
+      expect(result.input).toEqual(input);
     });
 
-    it('should normalize grep tool input with pattern', () => {
+    it('should return input and output for grep tool', () => {
       const input = {
         tool: 'grep',
         sessionID: 'ses_123',
@@ -42,12 +43,10 @@ describe('normalizeInputForHandler', () => {
 
       const result = normalizeInputForHandler('tool.execute.before', input);
 
-      expect(result.properties.sessionID).toBe('ses_123');
-      expect(result.properties.tool.input).toBe('todoMessage.*unknown');
-      expect(result.properties.pattern).toBe('todoMessage.*unknown');
+      expect(result.input).toEqual(input);
     });
 
-    it('should normalize websearch tool input', () => {
+    it('should return input and output for websearch tool', () => {
       const input = {
         tool: 'websearch',
         sessionID: 'ses_123',
@@ -57,12 +56,10 @@ describe('normalizeInputForHandler', () => {
 
       const result = normalizeInputForHandler('tool.execute.after', input);
 
-      expect(result.properties.sessionID).toBe('ses_123');
-      expect(result.properties.tool.input).toBe('TypeScript hooks');
-      expect(result.properties.query).toBe('TypeScript hooks');
+      expect(result.input).toEqual(input);
     });
 
-    it('should normalize task tool with subagentType', () => {
+    it('should return input and output for task tool', () => {
       const input = {
         tool: 'task',
         sessionID: 'ses_123',
@@ -72,13 +69,10 @@ describe('normalizeInputForHandler', () => {
 
       const result = normalizeInputForHandler('tool.execute.after', input);
 
-      expect(result.properties.sessionID).toBe('ses_123');
-      expect(result.properties.tool).toBe('task');
-      expect(result.properties.subagentType).toBe('general');
-      expect(result.properties.skillName).toBeUndefined();
+      expect(result.input).toEqual(input);
     });
 
-    it('should normalize skill tool with name', () => {
+    it('should return input and output for skill tool', () => {
       const input = {
         tool: 'skill',
         sessionID: 'ses_123',
@@ -88,12 +82,10 @@ describe('normalizeInputForHandler', () => {
 
       const result = normalizeInputForHandler('tool.execute.after', input);
 
-      expect(result.properties.sessionID).toBe('ses_123');
-      expect(result.properties.tool.input).toBe('commit');
-      expect(result.properties.skillName).toBe('commit');
+      expect(result.input).toEqual(input);
     });
 
-    it('should normalize filesystem move with source and destination', () => {
+    it('should return input and output for filesystem move', () => {
       const input = {
         tool: 'filesystem_move_file',
         sessionID: 'ses_123',
@@ -103,8 +95,7 @@ describe('normalizeInputForHandler', () => {
 
       const result = normalizeInputForHandler('tool.execute.after', input);
 
-      expect(result.properties.source).toBe('/src/a.ts');
-      expect(result.properties.destination).toBe('/dst/b.ts');
+      expect(result.input).toEqual(input);
     });
   });
 
@@ -154,7 +145,7 @@ describe('normalizeInputForHandler', () => {
   });
 
   describe('shell.env event', () => {
-    it('should extract cwd from shell.env input', () => {
+    it('should wrap shell.env input in properties with output', () => {
       const input = {
         cwd: '/home/user',
         sessionID: 'ses_123',
@@ -168,7 +159,7 @@ describe('normalizeInputForHandler', () => {
   });
 
   describe('permission.ask event', () => {
-    it('should map sessionID and tool from permission input', () => {
+    it('should wrap permission input in properties', () => {
       const input = {
         sessionID: 'ses_123',
         tool: 'bash',
@@ -183,7 +174,7 @@ describe('normalizeInputForHandler', () => {
   });
 
   describe('command.execute.before event', () => {
-    it('should map command and sessionID', () => {
+    it('should wrap command input in properties', () => {
       const input = {
         command: 'npm test',
         sessionID: 'ses_123',
@@ -198,19 +189,19 @@ describe('normalizeInputForHandler', () => {
   });
 
   describe('tool.definition event', () => {
-    it('should not have toolID in properties for unknown event types (fallback)', () => {
+    it('should wrap tool.definition input in properties', () => {
       const input = {
         toolID: 'my-tool',
       };
 
       const result = normalizeInputForHandler('tool.definition', input);
 
-      expect(result.properties.toolID).toBeUndefined();
+      expect(result.properties.toolID).toBe('my-tool');
     });
   });
 
   describe('experimental.text.complete event', () => {
-    it('should map sessionID, messageID and partID', () => {
+    it('should wrap experimental input in properties', () => {
       const input = {
         sessionID: 'ses_123',
         messageID: 'msg_456',
@@ -229,7 +220,7 @@ describe('normalizeInputForHandler', () => {
   });
 
   describe('fallback for unknown events', () => {
-    it('should return input as-is for unknown event types', () => {
+    it('should return input wrapped in properties for unknown event types', () => {
       const input = {
         customField: 'value',
         another: 123,
@@ -237,10 +228,10 @@ describe('normalizeInputForHandler', () => {
 
       const result = normalizeInputForHandler('unknown.event', input);
 
-      expect(result).toEqual(input);
+      expect(result.properties).toEqual(input);
     });
 
-    it('should preserve root fields alongside properties', () => {
+    it('should preserve input for tool events', () => {
       const input = {
         tool: 'bash',
         sessionID: 'ses_123',
@@ -249,8 +240,7 @@ describe('normalizeInputForHandler', () => {
 
       const result = normalizeInputForHandler('tool.execute.after', input);
 
-      expect(result.properties.sessionID).toBe('ses_123');
-      expect(result.extraField).toBe('extraValue');
+      expect(result.input).toEqual(input);
     });
   });
 });

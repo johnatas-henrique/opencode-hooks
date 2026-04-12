@@ -358,6 +358,21 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
   return {
     resolveEventConfig: jest.fn(resolveEventConfig),
     resolveToolConfig: jest.fn(resolveToolConfig),
+    normalizeInputForHandler: jest.fn(
+      (
+        eventType: string,
+        input: Record<string, unknown>,
+        output?: Record<string, unknown>
+      ) => {
+        if (eventType.startsWith('tool.execute.')) {
+          return { input, output };
+        }
+        if (input.properties && typeof input.properties === 'object') {
+          return { properties: input.properties, output };
+        }
+        return { properties: input, output };
+      }
+    ),
     getHandler: jest.fn((eventType: string) => mockHandlers[eventType]),
   };
 });

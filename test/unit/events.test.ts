@@ -1,3 +1,7 @@
+jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
+  saveToFile: jest.fn().mockResolvedValue(undefined),
+}));
+
 import {
   resolveEventConfig,
   resolveToolConfig,

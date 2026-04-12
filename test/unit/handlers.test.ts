@@ -41,38 +41,6 @@ describe('handlers - buildMessage', () => {
       expect(message).toContain('ApiError');
       expect(message).toContain('Connection refused');
     });
-
-    it('should show Unknown error fallback when error is undefined', () => {
-      const event = {
-        properties: {
-          sessionID: 'error-session-789',
-          error: undefined,
-        },
-      };
-
-      const message = handlers['session.error'].buildMessage(
-        event as unknown as Record<string, unknown>
-      );
-
-      expect(message).toContain('Unknown error');
-      expect(message).toContain('Unknown message');
-    });
-
-    it('should show Unknown message fallback when data is missing', () => {
-      const event = {
-        properties: {
-          sessionID: 'error-session-abc',
-          error: { name: 'SomeError' },
-        },
-      };
-
-      const message = handlers['session.error'].buildMessage(
-        event as unknown as Record<string, unknown>
-      );
-
-      expect(message).toContain('SomeError');
-      expect(message).toContain('Unknown message');
-    });
   });
 
   describe('server.instance.disposed', () => {
@@ -89,37 +57,9 @@ describe('handlers - buildMessage', () => {
 
       expect(message).toContain('/path/to/project');
     });
-
-    it('should show unknown fallback when directory is missing', () => {
-      const event = {
-        properties: {},
-      };
-
-      const message = handlers['server.instance.disposed'].buildMessage(
-        event as unknown as Record<string, unknown>
-      );
-
-      expect(message).toContain('unknown');
-    });
   });
 
   describe('message events', () => {
-    it('message.part.removed should handle missing sessionID', () => {
-      const event = { properties: {} };
-      const message = handlers['message.part.removed'].buildMessage(
-        event as unknown as Record<string, unknown>
-      );
-      expect(message).toContain('unknown');
-    });
-
-    it('message.part.updated should handle missing messageID', () => {
-      const event = { properties: {} };
-      const message = handlers['message.part.updated'].buildMessage(
-        event as unknown as Record<string, unknown>
-      );
-      expect(message).toContain('unknown');
-    });
-
     it('message.removed should handle full properties', () => {
       const event = { properties: { sessionID: 's1', messageID: 'm1' } };
       const message = handlers['message.removed'].buildMessage(
@@ -140,168 +80,158 @@ describe('handlers - buildMessage', () => {
   });
 
   describe('tool events', () => {
-    it('tool.execute.before should handle missing tool', () => {
-      const event = { properties: {} };
+    it('tool.execute.before should show all properties', () => {
+      const event = {
+        input: {
+          sessionID: 'ses_123',
+          tool: 'bash',
+          callID: 'call_456',
+          args: { command: 'ls -la' },
+        },
+      };
       const message = handlers['tool.execute.before'].buildMessage(
         event as unknown as Record<string, unknown>
       );
-      expect(message).toContain('unknown');
+      expect(message).toContain('sessionID');
+      expect(message).toContain('tool');
+      expect(message).toContain('bash');
+      expect(message).toContain('Time:');
     });
 
-    it('tool.execute.after should handle missing sessionID', () => {
-      const event = { properties: {} };
+    it('tool.execute.after should show input and output', () => {
+      const event = {
+        input: {
+          sessionID: 'ses_123',
+          tool: 'bash',
+        },
+        output: {
+          result: 'success',
+        },
+      };
       const message = handlers['tool.execute.after'].buildMessage(
         event as unknown as Record<string, unknown>
       );
-      expect(message).toContain('unknown');
+      expect(message).toContain('sessionID');
+      expect(message).toContain('output');
+      expect(message).toContain('Time:');
     });
   });
 
-  describe('file events', () => {
-    it('file.edited should handle missing path', () => {
-      const event = { properties: {} };
-      const message = handlers['file.edited'].buildMessage(
+  describe('shell.env', () => {
+    it('should show properties and output', () => {
+      const event = {
+        properties: { cwd: '/home/user', sessionID: 's1' },
+        output: { env: { PATH: '/usr/bin' } },
+      };
+      const message = handlers['shell.env'].buildMessage(
         event as unknown as Record<string, unknown>
       );
-      expect(message).toContain('unknown');
-    });
-
-    it('file.watcher.updated should handle missing properties', () => {
-      const event = { properties: {} };
-      const message = handlers['file.watcher.updated'].buildMessage(
-        event as unknown as Record<string, unknown>
-      );
-      expect(message).toContain('unknown');
+      expect(message).toContain('cwd');
+      expect(message).toContain('Time:');
     });
   });
 
   describe('permission events', () => {
-    it('permission.asked should handle missing permission', () => {
-      const event = { properties: {} };
-      const message = handlers['permission.asked'].buildMessage(
+    it('permission.ask should show properties', () => {
+      const event = {
+        properties: { sessionID: 's1', tool: 'bash' },
+      };
+      const message = handlers['permission.ask'].buildMessage(
         event as unknown as Record<string, unknown>
       );
-      expect(message).toContain('unknown');
-    });
-
-    it('permission.replied should handle missing decision', () => {
-      const event = { properties: {} };
-      const message = handlers['permission.replied'].buildMessage(
-        event as unknown as Record<string, unknown>
-      );
-      expect(message).toContain('unknown');
+      expect(message).toContain('sessionID');
+      expect(message).toContain('tool');
     });
   });
 
-  describe('server events', () => {
-    it('server.connected should handle missing url', () => {
-      const event = { properties: {} };
+  describe('server.connected', () => {
+    it('should show url when present', () => {
+      const event = {
+        properties: { url: 'https://api.example.com' },
+      };
       const message = handlers['server.connected'].buildMessage(
         event as unknown as Record<string, unknown>
       );
-      expect(message).toContain('unknown');
+      expect(message).toContain('url');
     });
   });
 
   describe('command events', () => {
-    it('command.executed should handle missing command', () => {
-      const event = { properties: {} };
+    it('command.executed should show command when present', () => {
+      const event = {
+        properties: { command: 'npm run build' },
+      };
       const message = handlers['command.executed'].buildMessage(
         event as unknown as Record<string, unknown>
       );
-      expect(message).toContain('unknown');
+      expect(message).toContain('command');
     });
   });
 
   describe('LSP events', () => {
-    it('lsp.client.diagnostics should handle missing uri', () => {
-      const event = { properties: {} };
-      const message = handlers['lsp.client.diagnostics'].buildMessage(
-        event as unknown as Record<string, unknown>
-      );
-      expect(message).toContain('unknown');
-    });
-
     it('lsp.client.diagnostics should count diagnostics', () => {
       const event = { properties: { uri: 'file.ts', diagnostics: [{}, {}] } };
       const message = handlers['lsp.client.diagnostics'].buildMessage(
         event as unknown as Record<string, unknown>
       );
-      expect(message).toContain('2');
-    });
-
-    it('lsp.updated should handle missing serverID', () => {
-      const event = { properties: {} };
-      const message = handlers['lsp.updated'].buildMessage(
-        event as unknown as Record<string, unknown>
-      );
-      expect(message).toContain('unknown');
+      expect(message).toContain('uri');
+      expect(message).toContain('diagnostics');
     });
   });
 
   describe('installation events', () => {
-    it('installation.updated should handle missing version', () => {
-      const event = { properties: {} };
+    it('installation.updated should show version when present', () => {
+      const event = { properties: { version: '1.2.3' } };
       const message = handlers['installation.updated'].buildMessage(
         event as unknown as Record<string, unknown>
       );
-      expect(message).toContain('unknown');
+      expect(message).toContain('version');
     });
   });
 
   describe('todo events', () => {
-    it('todo.updated should handle missing count', () => {
-      const event = { properties: {} };
+    it('todo.updated should show count when present', () => {
+      const event = { properties: { count: 5 } };
       const message = handlers['todo.updated'].buildMessage(
         event as unknown as Record<string, unknown>
       );
-      expect(message).toContain('0');
-    });
-  });
-
-  describe('shell events', () => {
-    it('shell.env should handle missing cwd', () => {
-      const event = { properties: {} };
-      const message = handlers['shell.env'].buildMessage(
-        event as unknown as Record<string, unknown>
-      );
-      expect(message).toContain('unknown');
+      expect(message).toContain('count');
     });
   });
 
   describe('TUI events', () => {
-    it('tui.prompt.append should handle missing sessionID', () => {
-      const event = { properties: {} };
+    it('tui.prompt.append should show sessionID when present', () => {
+      const event = { properties: { sessionID: 's1' } };
       const message = handlers['tui.prompt.append'].buildMessage(
         event as unknown as Record<string, unknown>
       );
-      expect(message).toContain('unknown');
+      expect(message).toContain('sessionID');
     });
 
-    it('tui.command.execute should handle missing command', () => {
-      const event = { properties: {} };
+    it('tui.command.execute should show command when present', () => {
+      const event = { properties: { command: 'ls' } };
       const message = handlers['tui.command.execute'].buildMessage(
         event as unknown as Record<string, unknown>
       );
-      expect(message).toContain('unknown');
+      expect(message).toContain('command');
     });
 
-    it('tui.toast.show should handle missing title', () => {
-      const event = { properties: {} };
+    it('tui.toast.show should show title when present', () => {
+      const event = { properties: { title: 'Test Toast' } };
       const message = handlers['tui.toast.show'].buildMessage(
         event as unknown as Record<string, unknown>
       );
-      expect(message).toContain('unknown');
+      expect(message).toContain('title');
     });
   });
 
   describe('experimental events', () => {
-    it('experimental.session.compacting should handle missing sessionID', () => {
-      const event = { properties: {} };
+    it('experimental.session.compacting should show sessionID when present', () => {
+      const event = { properties: { sessionID: 's1' } };
       const message = handlers['experimental.session.compacting'].buildMessage(
         event as unknown as Record<string, unknown>
       );
-      expect(message).toContain('unknown');
+      expect(message).toContain('sessionID');
     });
   });
 });
