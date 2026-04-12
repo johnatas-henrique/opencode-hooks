@@ -110,17 +110,41 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     });
   }
 
-  for (const script of resolved.scripts) {
-    await runScriptAndHandle({
-      ctx,
-      script,
-      timestamp,
-      eventType,
-      resolved,
-      scriptToasts: resolved.scriptToasts,
-      sessionId,
-      toolName,
-      scriptArg,
+  const results = await Promise.all(
+    resolved.scripts.map((script) =>
+      runScriptAndHandle({
+        ctx,
+        script,
+        timestamp,
+        eventType,
+        resolved,
+        scriptToasts: resolved.scriptToasts,
+        sessionId,
+        toolName,
+        scriptArg,
+      })
+    )
+  );
+
+  const successfulScripts = results
+    .filter(
+      (result): result is { script: string; output: string } =>
+        result.output !== undefined
+    )
+    .filter((result) => result.output.trim() !== '');
+
+  if (
+    resolved.toast &&
+    successfulScripts.length > 0 &&
+    resolved.scriptToasts?.showOutput
+  ) {
+    useGlobalToastQueue().add({
+      title: resolved.scriptToasts?.outputTitle ?? 'Script Output',
+      message: successfulScripts
+        .map((result) => `- ${result.script}:\n${result.output}`)
+        .join('\n\n'),
+      variant: resolved.scriptToasts?.outputVariant ?? 'info',
+      duration: resolved.scriptToasts?.outputDuration ?? 5000,
     });
   }
 }

@@ -2,7 +2,7 @@ import { runScript, type ScriptResult } from './run-script';
 import { appendToSession } from './append-to-session';
 import { logScriptOutput } from './log-event';
 import { useGlobalToastQueue } from './toast-queue';
-import { DEFAULT_SESSION_ID, TOAST_DURATION } from './constants';
+import { DEFAULT_SESSION_ID } from './constants';
 import type { RunScriptConfig } from './script-config';
 import { saveToFile } from './save-to-file';
 
@@ -20,9 +20,14 @@ export function resetSubagentTracking(): void {
   subagentSessionIds.clear();
 }
 
+interface ScriptExecutionResult {
+  script: string;
+  output: string | undefined;
+}
+
 export async function runScriptAndHandle(
   config: RunScriptConfig
-): Promise<ScriptResult> {
+): Promise<ScriptExecutionResult> {
   const {
     ctx,
     script,
@@ -39,7 +44,7 @@ export async function runScriptAndHandle(
 
   if (resolved.runOnlyOnce) {
     if (isSubagent(sessionId)) {
-      return { output: '', error: 'skipped for subagent', exitCode: -1 };
+      return { script, output: undefined };
     }
   }
 
@@ -47,22 +52,13 @@ export async function runScriptAndHandle(
     ? await runScript($, script, scriptArg)
     : await runScript($, script);
 
-  const defaultScriptToasts = {
-    showOutput: true,
-    showError: true,
-    outputVariant: 'info',
-    errorVariant: 'error',
-    outputDuration: TOAST_DURATION.FIVE_SECONDS,
-    errorDuration: TOAST_DURATION.FIFTEEN_SECONDS,
-  };
-
-  const effectiveScriptToasts = scriptToasts ?? defaultScriptToasts;
+  const effectiveScriptToasts = scriptToasts;
 
   if (result.exitCode !== 0) {
-    const showError = effectiveScriptToasts.showError ?? true;
-    const errorVariant = effectiveScriptToasts.errorVariant ?? 'error';
-    const errorDuration =
-      effectiveScriptToasts.errorDuration ?? TOAST_DURATION.FIFTEEN_SECONDS;
+    const showError = effectiveScriptToasts.showError;
+    const errorVariant = effectiveScriptToasts.errorVariant;
+    const errorDuration = effectiveScriptToasts.errorDuration;
+    const errorTitle = effectiveScriptToasts.errorTitle;
 
     const eventInfo =
       eventType.startsWith('tool.execute.') && toolName ? toolName : eventType;
@@ -84,14 +80,14 @@ export async function runScriptAndHandle(
 
     if (showError) {
       useGlobalToastQueue().add({
-        title: '====SCRIPT ERROR====',
-        message: `Event: ${eventInfo}\nScript: ${script}\nError: ${result.error ?? 'Unknown error'}\nExit Code: ${result.exitCode}\nCheck user-events.config.ts`,
+        title: errorTitle,
+        message: `Event: ${eventInfo}\nScript: ${script}\nError: ${result.error}\nExit Code: ${result.exitCode}\nCheck user-events.config.ts`,
         variant: errorVariant,
         duration: errorDuration,
       });
     }
 
-    return result;
+    return { script, output: undefined };
   }
 
   if (resolved.saveToFile && result.output) {
@@ -102,5 +98,5 @@ export async function runScriptAndHandle(
     await appendToSession(ctx, sessionId, result.output);
   }
 
-  return result;
+  return { script, output: result.output };
 }

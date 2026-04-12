@@ -12,15 +12,17 @@ export const userConfig: UserEventsConfig = {
   scriptToasts: {
     showOutput: true,
     showError: true,
-    outputVariant: 'info',
+    outputVariant: 'warning',
     errorVariant: 'error',
     outputDuration: TOAST_DURATION.FIVE_SECONDS,
     errorDuration: TOAST_DURATION.FIFTEEN_SECONDS,
+    outputTitle: 'Script Output',
+    errorTitle: 'Script Error',
   },
 
   default: {
     debug: false,
-    toast: true,
+    toast: false,
     runScripts: false,
     runOnlyOnce: false,
     saveToFile: true,
@@ -28,42 +30,29 @@ export const userConfig: UserEventsConfig = {
   },
 
   events: {
-    [EventType.SERVER_CONNECTED]: { toast: { variant: 'success' } },
+    [EventType.SERVER_CONNECTED]: {},
     [EventType.SERVER_INSTANCE_DISPOSED]: {
       enabled: true,
       scripts: ['session-closed.sh'],
       // runScripts: true,
-      saveToFile: true,
     },
 
     [EventType.SESSION_CREATED]: {
       enabled: true,
-      toast: { variant: 'success' },
       runScripts: true,
       runOnlyOnce: true,
-      saveToFile: true,
       appendToSession: true,
     },
     [EventType.SESSION_COMPACTED]: {
       enabled: false,
-      toast: { variant: 'warning' },
       scripts: ['pre-compact.sh'],
       // runScripts: true,
-      saveToFile: true,
     },
     [EventType.SESSION_DELETED]: {
       enabled: false,
-      scripts: ['session-deleted-end-marker.sh'],
-      // runScripts: true,
-      runOnlyOnce: true,
-    },
-    [EventType.SESSION_IDLE]: {
-      enabled: true,
-      // scripts: ['script-inexistente-teste.sh'],
-      toast: true,
       runScripts: true,
-      saveToFile: true,
     },
+    [EventType.SESSION_IDLE]: {},
     [EventType.SESSION_DIFF]: { enabled: false },
     [EventType.SESSION_ERROR]: {
       enabled: true,
@@ -156,12 +145,13 @@ export const userConfig: UserEventsConfig = {
           'tool-execute-after-build-complete.sh',
           'tool-execute-after-governance-capture.sh',
           'tool-execute-after-pr-created.sh',
+          'reload-config.sh',
         ],
-        runScripts: false,
-        saveToFile: true,
+        runScripts: true,
       },
       write: {
         enabled: true,
+        toast: { enabled: true },
         scripts: [
           'tool-execute-after-quality-gate.sh',
           'file-edit-accumulator.sh',
@@ -204,34 +194,9 @@ export const userConfig: UserEventsConfig = {
     [EventType.TOOL_EXECUTE_BEFORE]: {
       task: {},
       skill: {},
-      bash: {
-        enabled: false,
-        scripts: [
-          'tool-execute-before-block-no-verify.sh',
-          'tool-execute-before-tmux-dev.sh',
-          'tool-execute-before-tmux-reminder.sh',
-          'tool-execute-before-git-push-reminder.sh',
-          'tool-execute-before-commit-quality.sh',
-        ],
-        // runScripts: true,
-        toast: true,
-      },
-      write: {
-        enabled: false,
-        scripts: [
-          'file-write-doc-warning.sh',
-          'tool-execute-before-suggest-compact.sh',
-        ],
-        // runScripts: true,
-      },
-      edit: {
-        enabled: false,
-        scripts: [
-          'tool-execute-before-suggest-compact.sh',
-          'file-edit-config-protection.sh',
-        ],
-        // runScripts: true,
-      },
+      bash: {},
+      write: {},
+      edit: {},
       chat: {},
       read: {},
       glob: {},
