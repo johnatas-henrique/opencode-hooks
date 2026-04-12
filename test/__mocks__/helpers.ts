@@ -5,7 +5,7 @@ export const logParser = (eventType: string): string => {
 };
 
 export const runScript = jest.fn(async () => {
-  return 'Script executed';
+  return { output: 'Script executed', error: null, exitCode: 0 };
 });
 
 export const saveToFile = jest.fn(async () => {
