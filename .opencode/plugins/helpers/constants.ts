@@ -3,8 +3,14 @@ export const DEFAULT_SESSION_ID = 'unknown';
 export const TOAST_DURATION = {
   TWO_SECONDS: 2000,
   FIVE_SECONDS: 5000,
+  EIGHT_SECONDS: 8000,
   TEN_SECONDS: 10000,
+  FIFTEEN_SECONDS: 15000,
   THIRTY_SECONDS: 30000,
+} as const;
+
+export const TIMEOUT = {
+  ONE_SECOND_AND_HALF: 1500,
 } as const;
 
 export const STAGGER_MS = {

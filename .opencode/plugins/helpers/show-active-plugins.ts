@@ -1,6 +1,7 @@
 import type { TuiToast } from '@opencode-ai/plugin/tui';
 import { getPluginStatus, formatPluginStatus } from './plugin-status';
 import { userConfig } from './user-events.config';
+import { TOAST_DURATION } from './constants';
 
 type ToastQueue = {
   add: (toast: TuiToast) => void;
@@ -27,6 +28,6 @@ export async function showActivePluginsToast(
     title: 'Plugin Status',
     message,
     variant: hasIssues ? 'warning' : 'info',
-    duration: options.duration ?? 8000,
+    duration: options.duration ?? TOAST_DURATION.EIGHT_SECONDS,
   });
 }

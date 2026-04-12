@@ -1,4 +1,5 @@
 import { readFile } from 'fs/promises';
+import { TIMEOUT } from './constants';
 
 const TOAST_PATTERN = /path=\/tui\/show-toast/g;
 
@@ -7,7 +8,7 @@ export function waitForToastSilence(
   options?: { pollMs?: number; silenceMs?: number }
 ): { promise: Promise<void>; cleanup: () => void } {
   const pollMs = options?.pollMs ?? 200;
-  const silenceMs = options?.silenceMs ?? 1500;
+  const silenceMs = options?.silenceMs ?? TIMEOUT.ONE_SECOND_AND_HALF;
 
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
   let silenceTimer: ReturnType<typeof setTimeout> | null = null;
