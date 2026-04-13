@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.1](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.5.0...opencode-hooks-v0.5.1) (2026-04-13)
+
+
+### Maintenance
+
+* **deps-dev:** bump @opencode-ai/plugin from 1.3.15 to 1.4.3 ([7263641](https://github.com/johnatas-henrique/opencode-hooks/commit/72636412aaa1993345a737e76993fc790ec4836e))
+* **deps-dev:** bump @types/node from 25.5.2 to 25.6.0 ([dcfed3b](https://github.com/johnatas-henrique/opencode-hooks/commit/dcfed3bde43c9815db7a70dc26a9fb8c1c9b2eff))
+* **deps-dev:** bump prettier from 3.8.1 to 3.8.2 ([9778025](https://github.com/johnatas-henrique/opencode-hooks/commit/9778025b98c64c9c670d9e5635131afc987cd36f))
+* **deps-dev:** bump prettier from 3.8.1 to 3.8.2 ([c55bbce](https://github.com/johnatas-henrique/opencode-hooks/commit/c55bbce001ebe967439387f371e8953cc04cb9df))
+* **deps-dev:** bump typescript-eslint from 8.58.0 to 8.58.1 ([6eb3793](https://github.com/johnatas-henrique/opencode-hooks/commit/6eb3793b09b681f8ca89b2a91f7f3313917eb3a6))
+* **deps-dev:** bump typescript-eslint from 8.58.0 to 8.58.1 ([24a57a7](https://github.com/johnatas-henrique/opencode-hooks/commit/24a57a70a59e235651d32b449cab56dfc9f68b10))
+
 ## [0.5.0](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.4.1...opencode-hooks-v0.5.0) (2026-04-13)
 
 
