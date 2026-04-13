@@ -1,6 +1,36 @@
 import { TOAST_DURATION } from './constants';
 import { EventType } from './config';
-import type { UserEventsConfig } from './config';
+import type { UserEventsConfig, ScriptResult } from './config';
+import {
+  ToolExecuteBeforeInput,
+  ToolExecuteBeforeOutput,
+} from '../types/opencode-hooks';
+
+// ============================================
+// BLOCK PREDICATES
+// ============================================
+
+type BlockPredicate = (
+  input: ToolExecuteBeforeInput,
+  output: ToolExecuteBeforeOutput,
+  scriptResults: ScriptResult[]
+) => boolean;
+
+const blockEnvFiles: BlockPredicate = (_, output) =>
+  (output.args.filePath as string)?.includes('.env');
+
+const blockGitForce: BlockPredicate = (_, output) => {
+  const cmd = output.args.command as string;
+  return cmd?.includes('--force') || cmd?.includes(' -f');
+};
+
+const blockScriptsFailed: BlockPredicate = (_, __, results) =>
+  results.some((r) => r.exitCode !== 0);
+
+const blockByPath =
+  (patterns: string[]): BlockPredicate =>
+  (_, output) =>
+    patterns.some((p) => (output.args.filePath as string)?.includes(p));
 
 export const userConfig: UserEventsConfig = {
   enabled: true,
@@ -140,35 +170,9 @@ export const userConfig: UserEventsConfig = {
         runScripts: true,
         saveToFile: true,
       },
-      bash: {
-        enabled: true,
-        toast: { enabled: true },
-        scripts: [
-          'tool-execute-after-bash-audit.sh',
-          'tool-execute-after-build-complete.sh',
-          'tool-execute-after-governance-capture.sh',
-          'tool-execute-after-pr-created.sh',
-        ],
-        runScripts: true,
-      },
-      write: {
-        enabled: true,
-        toast: { enabled: true },
-        scripts: [
-          'tool-execute-after-quality-gate.sh',
-          'file-edit-accumulator.sh',
-        ],
-        runScripts: false,
-      },
-      edit: {
-        enabled: false,
-        scripts: [
-          'file-edit-console-warn.sh',
-          'file-edit-design-quality.sh',
-          'file-edit-accumulator.sh',
-        ],
-        runScripts: false,
-      },
+      bash: {},
+      write: {},
+      edit: {},
       chat: {},
       read: {},
       glob: {},
@@ -196,11 +200,28 @@ export const userConfig: UserEventsConfig = {
     [EventType.TOOL_EXECUTE_BEFORE]: {
       task: {},
       skill: {},
-      bash: {},
-      write: {},
+      bash: {
+        block: [
+          { check: blockGitForce, message: '🚫 git --force forbidden' },
+          { check: blockScriptsFailed, message: '🚫 Blocking: scripts failed' },
+        ],
+      },
+      write: {
+        block: [
+          { check: blockEnvFiles, message: '🚫 Cannot write .env files' },
+        ],
+      },
+      read: {
+        block: [
+          { check: blockEnvFiles, message: '🚫 Cannot read .env files' },
+          {
+            check: blockByPath(['credentials.json', 'secrets/', '.ssh/']),
+            message: '🚫 Protected files',
+          },
+        ],
+      },
       edit: {},
       chat: {},
-      read: {},
       glob: {},
       grep: {},
       list: {},

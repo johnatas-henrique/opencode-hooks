@@ -8,6 +8,7 @@ import type {
   ToolConfig,
   ToastOverride,
   EventOverride,
+  ToolOverride,
 } from './config';
 
 export { ResolvedEventConfig };
@@ -432,6 +433,7 @@ export function resolveToolConfig(
       baseWithToolHandler.runOnlyOnce
     ),
     scriptToasts: userConfig.scriptToasts,
+    block: (toolConfig as ToolOverride)?.block,
   };
 }
 
