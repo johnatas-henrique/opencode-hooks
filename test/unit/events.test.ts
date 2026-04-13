@@ -2,168 +2,21 @@ jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
+  handlers: mockHandlers,
+}));
+
+jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
+  userConfig: mockUserConfig,
+}));
+
+import { mockHandlers, mockUserConfig } from '../fixtures';
+
 import {
   resolveEventConfig,
   resolveToolConfig,
   getHandler,
 } from '../../.opencode/plugins/helpers/events';
-
-jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
-  handlers: {
-    'session.created': {
-      title: '====SESSION CREATED====',
-      variant: 'success',
-      duration: 2000,
-      defaultScript: 'session-created.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Session Id: ${String(event.properties?.info?.id)}\nTime: now`,
-    },
-    'session.error': {
-      title: '====SESSION ERROR====',
-      variant: 'error',
-      duration: 30000,
-      defaultScript: 'session-error.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Session Id: ${String(event.properties?.sessionID)}\nError: ${String(event.properties?.error?.name || 'Unknown error')}\nTime: now`,
-    },
-    'server.instance.disposed': {
-      title: '',
-      variant: 'info',
-      duration: 0,
-      defaultScript: 'session-stop.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Directory: ${String(event.properties?.directory || 'unknown')}\nTime: now`,
-    },
-    'tool.execute.after': {
-      title: '====SUBAGENT CALLED====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'tool-execute-after.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Session Id: ${String(event.properties?.sessionID || 'unknown')}\nTime: now`,
-    },
-    'session.disabled': {
-      title: '====DISABLED====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'session-disabled.sh',
-      buildMessage: () => 'disabled',
-    },
-    'session.custom': {
-      title: '====CUSTOM====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'session-custom.sh',
-      buildMessage: () => 'custom',
-    },
-    'session.no-scripts': {
-      title: '====NO SCRIPTS====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'session-no-scripts.sh',
-      buildMessage: () => 'no scripts',
-    },
-    'session.toast-off': {
-      title: '====TOAST OFF====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'session-toast-off.sh',
-      buildMessage: () => 'toast off',
-    },
-    'session.toast-custom': {
-      title: '====TOAST CUSTOM====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'session-toast-custom.sh',
-      buildMessage: () => 'toast custom',
-    },
-    'session.save-override': {
-      title: '====SAVE OVERRIDE====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'session-save-override.sh',
-      buildMessage: () => 'save override',
-    },
-    'session.append-override': {
-      title: '====APPEND OVERRIDE====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'session-append-override.sh',
-      buildMessage: () => 'append override',
-    },
-    'unknown.event': {
-      title: '',
-      variant: 'info',
-      duration: 0,
-      defaultScript: 'unknown.event.sh',
-      buildMessage: () => 'unknown',
-    },
-    'session.unknown': {
-      title: '====UNKNOWN====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'session-unknown.sh',
-      buildMessage: () => 'unknown',
-    },
-  },
-}));
-
-jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
-  userConfig: {
-    enabled: true,
-    default: {
-      debug: false,
-      toast: true,
-      runScripts: false,
-      runOnlyOnce: false,
-      saveToFile: true,
-      appendToSession: true,
-    },
-    events: {
-      'session.created': true,
-      'session.error': { saveToFile: false, appendToSession: false },
-      'session.disabled': false,
-      'session.custom': {
-        scripts: ['custom-a.sh', 'custom-b.sh'],
-      },
-      'session.no-scripts': {
-        runScripts: false,
-        scripts: ['should-be-ignored.sh'],
-      },
-      'session.toast-off': { toast: false },
-      'session.toast-custom': {
-        toast: {
-          title: 'Custom Title',
-          variant: 'warning',
-          duration: 5000,
-          message: 'Custom message',
-        },
-      },
-      'session.save-override': { saveToFile: false },
-      'session.append-override': { appendToSession: false },
-      'session.run-once': { scripts: ['run-once.sh'], runOnlyOnce: true },
-      'unknown.event': {
-        toast: true,
-        scripts: ['unknown.event.sh'],
-        saveToFile: true,
-        appendToSession: true,
-      },
-      'session.toast-defaults': { toast: true, runScripts: true },
-    },
-    tools: {
-      'tool.execute.after': {
-        task: {
-          toast: true,
-          scripts: ['log-agent.sh'],
-          runOnlyOnce: true,
-        },
-        chat: { toast: false },
-        'git.commit': { runScripts: false },
-        disabled: false,
-      },
-    },
-  },
-}));
 
 describe('events - resolveEventConfig', () => {
   it('should return defaults for event not listed', () => {
@@ -1015,5 +868,57 @@ describe('resolveEventConfig - enabled variations', () => {
 
     expect(config.enabled).toBe(true);
     expect(config.toast).toBe(true);
+  });
+
+  it('should return empty string when buildMessage throws', () => {
+    jest.resetModules();
+    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
+      handlers: {
+        'session.test': {
+          title: '====TEST====',
+          variant: 'info',
+          duration: 2000,
+          defaultScript: 'session-test.sh',
+          buildMessage: () => {
+            throw new Error('Build error');
+          },
+        },
+      },
+    }));
+    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+      userConfig: {
+        enabled: true,
+        default: {},
+        events: {
+          'session.test': {},
+        },
+        tools: {},
+        scriptToasts: {
+          showOutput: true,
+          showError: true,
+          outputVariant: 'info',
+          errorVariant: 'error',
+          outputDuration: 5000,
+          errorDuration: 15000,
+          outputTitle: 'Script Output',
+          errorTitle: 'Script Error',
+        },
+      },
+    }));
+
+    const {
+      resolveEventConfig: rec,
+    } = require('../../.opencode/plugins/helpers/events');
+    const config = rec('session.test', { test: 'data' });
+
+    expect(config.toastMessage).toBe('');
+  });
+
+  it('getToolHandler should return undefined for invalid toolEventType', () => {
+    const {
+      resolveToolConfig,
+    } = require('../../.opencode/plugins/helpers/events');
+    const config = resolveToolConfig('invalid', 'task');
+    expect(config.enabled).toBe(true);
   });
 });

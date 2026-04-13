@@ -289,5 +289,57 @@ describe('toast-queue', () => {
 
       expect(queue.pending).toBeLessThanOrEqual(2);
     });
+
+    it('should handle error toast when queue is full', () => {
+      const showFn = jest.fn();
+      const queue = createToastQueue(showFn, {
+        maxSize: 2,
+        staggerMs: 999999,
+      });
+
+      queue.add({ title: '1', message: 'msg', variant: 'info' as const });
+      queue.add({ title: '2', message: 'msg', variant: 'info' as const });
+      queue.add({ title: '3', message: 'msg', variant: 'error' as const });
+
+      expect(queue.pending).toBeLessThanOrEqual(2);
+    });
+
+    it('should handle error toasts in addMultiple when queue is full', () => {
+      const showFn = jest.fn();
+      const queue = createToastQueue(showFn, {
+        maxSize: 2,
+        staggerMs: 999999,
+      });
+
+      queue.addMultiple([
+        { title: '1', message: 'msg', variant: 'info' as const },
+        { title: '2', message: 'msg', variant: 'info' as const },
+        { title: '3', message: 'msg', variant: 'error' as const },
+      ]);
+
+      expect(queue.pending).toBeLessThanOrEqual(2);
+    });
+
+    it('should flush wait for processing lock', async () => {
+      const showFn = jest
+        .fn()
+        .mockImplementation(
+          () => new Promise((resolve) => setTimeout(resolve, 10))
+        );
+      const queue = createToastQueue(showFn, { staggerMs: 10 });
+
+      queue.add({
+        title: 'Test',
+        message: 'Msg',
+        variant: 'info' as const,
+        duration: 10,
+      });
+
+      const flushPromise = queue.flush();
+      await jest.runAllTimersAsync();
+      await flushPromise;
+
+      expect(queue.pending).toBe(0);
+    });
   });
 });
