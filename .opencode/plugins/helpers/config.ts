@@ -1,3 +1,8 @@
+import type {
+  ToolExecuteBeforeInput,
+  ToolExecuteBeforeOutput,
+} from '../types/opencode-hooks';
+
 export enum EventType {
   SESSION_CREATED = 'session.created',
   SESSION_COMPACTED = 'session.compacted',
@@ -77,17 +82,6 @@ export interface EventOverride {
   appendToSession?: boolean;
 }
 
-export interface ToolOverride {
-  enabled?: boolean;
-  debug?: boolean;
-  toast?: boolean | ToastOverride;
-  scripts?: string[];
-  runScripts?: boolean;
-  runOnlyOnce?: boolean;
-  saveToFile?: boolean;
-  appendToSession?: boolean;
-}
-
 export type EventConfig = boolean | EventOverride;
 export type ToolConfig = boolean | ToolOverride;
 
@@ -136,4 +130,38 @@ export interface ResolvedEventConfig {
   appendToSession: boolean;
   runOnlyOnce: boolean;
   scriptToasts: ScriptToastsConfig;
+  block?: BlockCheck[];
+}
+
+// ============================================
+// BLOCK TYPES
+// ============================================
+
+export interface ScriptResult {
+  script: string;
+  exitCode: number;
+  output?: string;
+}
+
+export type BlockPredicate = (
+  input: ToolExecuteBeforeInput,
+  output: ToolExecuteBeforeOutput,
+  scriptResults: ScriptResult[]
+) => boolean;
+
+export interface BlockCheck {
+  check: BlockPredicate;
+  message?: string;
+}
+
+export interface ToolOverride {
+  enabled?: boolean;
+  debug?: boolean;
+  toast?: boolean | ToastOverride;
+  scripts?: string[];
+  runScripts?: boolean;
+  runOnlyOnce?: boolean;
+  saveToFile?: boolean;
+  appendToSession?: boolean;
+  block?: BlockCheck[];
 }

@@ -32,8 +32,11 @@ import { userConfig } from './helpers/user-events.config';
 import {
   UNKNOWN_EVENT_LOG_FILE,
   DEFAULT_SESSION_ID,
+  BLOCKED_EVENTS_LOG_FILE,
 } from './helpers/constants';
 import type { ResolvedEventConfig } from './helpers/config';
+import { executeBlocking } from './helpers/block-handler';
+import type { ScriptResult } from './helpers/config';
 
 const TASK_TOOL_NAME = 'task';
 const SUBAGENT_TYPE_ARG = 'subagent_type';
@@ -156,6 +159,27 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
       duration: resolved.scriptToasts?.outputDuration ?? 5000,
     });
   }
+
+  const scriptResults: ScriptResult[] = results.map((r) => ({
+    script: r.script,
+    exitCode: r.output ? 0 : 1,
+    output: r.output,
+  }));
+
+  const inputAsBeforeInput = input as ToolExecuteBeforeInput | undefined;
+
+  executeBlocking(
+    resolved.block,
+    {
+      tool: toolName ?? '',
+      sessionID: sessionId,
+      callID: inputAsBeforeInput?.callID ?? '',
+    },
+    output as ToolExecuteBeforeOutput,
+    scriptResults,
+    eventType,
+    BLOCKED_EVENTS_LOG_FILE
+  );
 }
 
 let hasShownToast = false;
