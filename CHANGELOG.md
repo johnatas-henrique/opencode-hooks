@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.5.0](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.4.1...opencode-hooks-v0.5.0) (2026-04-13)
+
+
+### Features
+
+* add block predicates to user config ([c83feaa](https://github.com/johnatas-henrique/opencode-hooks/commit/c83feaa5881e245954647645ef8550b271eb5916))
+* add getToolHandler with toolEventType param for before/after detection ([2d91a5d](https://github.com/johnatas-henrique/opencode-hooks/commit/2d91a5d218c2bd1f7eca0fd4122c8673388aafc7))
+* add global flags for logging and plugin status ([cb392d1](https://github.com/johnatas-henrique/opencode-hooks/commit/cb392d1583578f33f0edf0eb6061bfea59c43387))
+* add outputTitle and errorTitle to ScriptToastsConfig ([b14b37a](https://github.com/johnatas-henrique/opencode-hooks/commit/b14b37a162f6c8419d66e7a3e35eeb01ff87fbbc))
+* combine handler title with script title in toasts ([9dbb9bc](https://github.com/johnatas-henrique/opencode-hooks/commit/9dbb9bc04bb89aa92b6b95d9155b44a4919c1856))
+* **events:** add getToolHandler and enhance resolveToolConfig ([ce2e028](https://github.com/johnatas-henrique/opencode-hooks/commit/ce2e028f06885e47a27cdfe6cdd512a353b6eb4c))
+* **handlers:** add 28 tool-specific handlers ([80eccae](https://github.com/johnatas-henrique/opencode-hooks/commit/80eccae0823ae7284f5df9eadc41ce36f59531d1))
+* multiple improvements - tests, handlers, scripts and blocking ([285d169](https://github.com/johnatas-henrique/opencode-hooks/commit/285d169c1d17158b706e2acf5b56264f92177b33))
+* normalize all events - show all keys with masking and truncation ([d2cdb06](https://github.com/johnatas-henrique/opencode-hooks/commit/d2cdb06b407e1195912e9af681490cafd5c4ac6e))
+* prioritize error toasts in queue ([320ad68](https://github.com/johnatas-henrique/opencode-hooks/commit/320ad68436a57baa279711c668921653962ddc79))
+
+
+### Bug Fixes
+
+* add event context to script error toast ([13d03c8](https://github.com/johnatas-henrique/opencode-hooks/commit/13d03c80a1f251bc71db8b921b407e7e9b713dfe))
+* add getDefaultConfig on events ([16a7744](https://github.com/johnatas-henrique/opencode-hooks/commit/16a774446f8c4985fccc4876560b3682b23f467c))
+* add normalizeInputForHandler to fix toastMessage unknown fields ([6ac0f4e](https://github.com/johnatas-henrique/opencode-hooks/commit/6ac0f4eb6a32e6816509e9f809cf0d0008cd0baf))
+* add subagent detection for runOnce ([4a45990](https://github.com/johnatas-henrique/opencode-hooks/commit/4a4599059a3e7a5105a90807299da78f030c75b2))
+* **config:** add runScripts field and make toastMessage required in ResolvedEventConfig ([c52a055](https://github.com/johnatas-henrique/opencode-hooks/commit/c52a055a74c1be316fed0d1a81458cbebd37431d))
+* improve script result handling ([746682b](https://github.com/johnatas-henrique/opencode-hooks/commit/746682b1981903929784bf7ff2db5ee353d3cbe1))
+* normalize grep tool input in events ([78f1755](https://github.com/johnatas-henrique/opencode-hooks/commit/78f175512d27f9c7b0bce83cf255a7e78d368bf2))
+* padronize all log formats ([031a28d](https://github.com/johnatas-henrique/opencode-hooks/commit/031a28d8f0ebb17ec7390c39e5cf9d713e65939b))
+* replace magic numbers with constants ([055a8c9](https://github.com/johnatas-henrique/opencode-hooks/commit/055a8c96f0ba76030e65b2c0bbba1bf2e60f2a9b))
+* respect runScripts flag and enable tool-specific handler selection ([009bd26](https://github.com/johnatas-henrique/opencode-hooks/commit/009bd268d92062b8bcb2ebf1a340522d4975d4b2))
+* use scriptToasts config for output and error toasts ([7a27a9d](https://github.com/johnatas-henrique/opencode-hooks/commit/7a27a9d6838bec0b739ec5d2e15fc248766f19d9))
+
+
+### Maintenance
+
+* **deps:** add ts-node and adjust coverage command ([d6299e1](https://github.com/johnatas-henrique/opencode-hooks/commit/d6299e13aa747bfb4372ece0ebeee32abd14afe4))
+* update .gitignore to exclude unnecessary files ([218897d](https://github.com/johnatas-henrique/opencode-hooks/commit/218897d127ec24ad6e6fdd0b7a77d31fd421c01c))
+* update lint config ([bd933c4](https://github.com/johnatas-henrique/opencode-hooks/commit/bd933c4959c707d781185e69ea5232f6dd8355d8))
+
 ## [0.4.1](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.4.0...opencode-hooks-v0.4.1) (2026-04-09)
 
 
