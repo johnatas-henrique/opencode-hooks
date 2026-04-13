@@ -108,6 +108,21 @@ describe('toast-silence-detector', () => {
 
       expect(mockReadFile).toHaveBeenCalledTimes(1);
     });
+
+    it('should not schedule poll when already resolved', async () => {
+      mockReadFile.mockResolvedValue('path=/tui/show-toast');
+
+      const { promise, cleanup } = waitForToastSilence('/fake/log.log');
+
+      await jest.runAllTimersAsync();
+      await promise;
+
+      const callCountBefore = mockReadFile.mock.calls.length;
+      cleanup();
+      const callCountAfter = mockReadFile.mock.calls.length;
+
+      expect(callCountAfter).toBe(callCountBefore);
+    });
   });
 
   describe('countToastsInLog', () => {
