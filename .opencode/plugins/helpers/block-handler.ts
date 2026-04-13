@@ -26,7 +26,7 @@ export function executeBlocking(
         blockCheck.message || `🚫 Blocked: ${input.tool} execution`;
 
       useGlobalToastQueue().add({
-        title: `BLOCKED - ${input.tool.toUpperCase()}`,
+        title: `${input.tool.toUpperCase()} BEFORE - EVENT BLOCKED`,
         message,
         variant: 'error',
         duration: 10000,
