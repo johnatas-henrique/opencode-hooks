@@ -99,7 +99,11 @@ export function createToastQueue(
         const dropped = queue.shift();
         logDroppedToast(dropped?.title || DEFAULT_SESSION_ID);
       }
-      queue.push(toast);
+      if (toast.variant === 'error') {
+        queue.unshift(toast);
+      } else {
+        queue.push(toast);
+      }
       processQueue();
     },
     addMultiple: (toasts: TuiToast[]) => {
@@ -108,7 +112,11 @@ export function createToastQueue(
           const dropped = queue.shift();
           logDroppedToast(dropped?.title || DEFAULT_SESSION_ID);
         }
-        queue.push(toast);
+        if (toast.variant === 'error') {
+          queue.unshift(toast);
+        } else {
+          queue.push(toast);
+        }
       }
       processQueue();
     },
