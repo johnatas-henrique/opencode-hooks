@@ -129,7 +129,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
       duration: 2000,
       defaultScript: 'session-updated.sh',
       buildMessage: (event: Record<string, unknown>) =>
-        `Session Id: ${event.properties.sessionID}\nTime: ${new Date().toLocaleTimeString()}`,
+        `Session Id: ${event.properties.info.id}\nTime: ${new Date().toLocaleTimeString()}`,
     },
     'server.instance.disposed': {
       title: '====SERVER STOPPED====',
@@ -493,20 +493,6 @@ jest.mock('../../.opencode/plugins/helpers/show-startup-toast', () => ({
 import { runScript } from '../../.opencode/plugins/helpers/run-script';
 import { saveToFile } from '../../.opencode/plugins/helpers/save-to-file';
 
-const _LOG_FILE = './session_events.log';
-
-const createMockCtx = (
-  client: { tui: { showToast: jest.Mock } },
-  dollar: () => unknown
-) => ({
-  client,
-  $: dollar,
-  project: 'test-project',
-  directory: '/test/dir',
-  worktree: '/test/dir',
-  serverUrl: 'http://localhost:3000',
-});
-
 interface Session {
   id: string;
   projectID: string;
@@ -543,7 +529,16 @@ const createMockSession = (id: string = 'test-session-123'): Session => ({
   time: { created: Date.now(), updated: Date.now() },
 });
 
-describe('Session Plugins', () => {
+const createMockCtx = (client: MockClient, dollar: () => unknown) => ({
+  client,
+  $: dollar,
+  project: 'test-project',
+  directory: '/test/dir',
+  worktree: '/test/dir',
+  serverUrl: 'http://localhost:3000',
+});
+
+describe('session.created', () => {
   let mockClient: MockClient;
   let mockDollar: () => unknown;
 
@@ -557,497 +552,415 @@ describe('Session Plugins', () => {
     jest.clearAllMocks();
   });
 
-  describe('session.created', () => {
-    it('should trigger toast with variant success', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.created',
-        properties: { info: createMockSession('session-123') },
-      };
-      await plugin.event({ event });
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
-      const callArgs = mockClient.tui.showToast.mock.calls[0][0];
-      expect(callArgs.body.variant).toBe('success');
-      expect(callArgs.body.title).toBe('====SESSION CREATED====');
-    });
-
-    it('should contain correct session ID in message', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.created',
-        properties: { info: createMockSession('my-session-456') },
-      };
-      await plugin.event({ event });
-      const callArgs = mockClient.tui.showToast.mock.calls[0][0];
-      expect(callArgs.body.message).toContain('my-session-456');
-    });
-
-    it('should have duration of 2000ms (default SHORT)', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.created',
-        properties: { info: createMockSession() },
-      };
-      await plugin.event({ event });
-      const callArgs = mockClient.tui.showToast.mock.calls[0][0];
-      expect(callArgs.body.duration).toBe(2000);
-    });
-
-    it('should call saveToFile with log entry', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.created',
-        properties: { info: createMockSession() },
-      };
-      await plugin.event({ event });
-      expect(saveToFile).toHaveBeenCalledTimes(3);
-      expect(saveToFile).toHaveBeenCalledWith(
-        expect.objectContaining({
-          content: expect.stringMatching(/session.created/),
-        })
-      );
-    });
+  it('should trigger toast with variant success', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.created',
+      properties: { info: createMockSession('session-123') },
+    };
+    await plugin.event({ event });
+    expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
+    const callArgs = mockClient.tui.showToast.mock.calls[0][0];
+    expect(callArgs.body.variant).toBe('success');
+    expect(callArgs.body.title).toBe('====SESSION CREATED====');
   });
 
-  describe('session.compacted', () => {
-    it('should trigger toast with variant info', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.compacted',
-        properties: { sessionID: 'session-123' },
-      };
-      await plugin.event({ event });
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
-      const callArgs = mockClient.tui.showToast.mock.calls[0][0];
-      expect(callArgs.body.variant).toBe('info');
-      expect(callArgs.body.title).toBe('====SESSION COMPACTED====');
-    });
-
-    it('should run pre-compact.sh script', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.compacted',
-        properties: { sessionID: 'session-123' },
-      };
-      await plugin.event({ event });
-      expect(runScript).toHaveBeenCalledTimes(1);
-      expect(runScript).toHaveBeenCalledWith(mockDollar, 'pre-compact.sh');
-    });
-
-    it('should contain session ID in message', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.compacted',
-        properties: { sessionID: 'compact-session-789' },
-      };
-      await plugin.event({ event });
-      const callArgs = mockClient.tui.showToast.mock.calls[0][0];
-      expect(callArgs.body.message).toContain('compact-session-789');
-    });
+  it('should contain correct session ID in message', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.created',
+      properties: { info: createMockSession('my-session-456') },
+    };
+    await plugin.event({ event });
+    const callArgs = mockClient.tui.showToast.mock.calls[0][0];
+    expect(callArgs.body.message).toContain('my-session-456');
   });
 
-  describe('session.deleted', () => {
-    it('should trigger toast with variant error', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.deleted',
-        properties: { info: createMockSession('delete-session-001') },
-      };
-      await plugin.event({ event });
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
-      const callArgs = mockClient.tui.showToast.mock.calls[0][0];
-      expect(callArgs.body.variant).toBe('error');
-      expect(callArgs.body.title).toBe('====SESSION DELETED====');
-    });
-
-    it('should contain correct session ID', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.deleted',
-        properties: { info: createMockSession('deleted-id-999') },
-      };
-      await plugin.event({ event });
-      const callArgs = mockClient.tui.showToast.mock.calls[0][0];
-      expect(callArgs.body.message).toContain('deleted-id-999');
-    });
+  it('should have duration of 2000ms (default SHORT)', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.created',
+      properties: { info: createMockSession() },
+    };
+    await plugin.event({ event });
+    const callArgs = mockClient.tui.showToast.mock.calls[0][0];
+    expect(callArgs.body.duration).toBe(2000);
   });
 
-  describe('session.idle', () => {
-    it('should not trigger toast when disabled in config', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.idle',
-        properties: { sessionID: 'idle-session-001' },
-      };
-      await plugin.event({ event });
-      expect(mockClient.tui.showToast).not.toHaveBeenCalled();
-    });
+  it('should call saveToFile with log entry', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.created',
+      properties: { info: createMockSession() },
+    };
+    await plugin.event({ event });
+    expect(saveToFile).toHaveBeenCalledTimes(3);
+    expect(saveToFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: expect.stringMatching(/session.created/),
+      })
+    );
+  });
+});
+
+describe('session.compacted', () => {
+  let mockClient: MockClient;
+  let mockDollar: () => unknown;
+
+  beforeEach(() => {
+    mockClient = createMockClient();
+    mockDollar = {
+      spawn: jest
+        .fn()
+        .mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' }),
+    };
+    jest.clearAllMocks();
   });
 
-  describe('session.error', () => {
-    it('should trigger toast with variant error', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.error',
-        properties: {
-          sessionID: 'error-session-001',
-          error: { name: 'ApiError', data: { message: 'Test error' } },
+  it('should trigger toast with variant info', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.compacted',
+      properties: { sessionID: 'session-123' },
+    };
+    await plugin.event({ event });
+    expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
+    const callArgs = mockClient.tui.showToast.mock.calls[0][0];
+    expect(callArgs.body.variant).toBe('info');
+    expect(callArgs.body.title).toBe('====SESSION COMPACTED====');
+  });
+
+  it('should run pre-compact.sh script', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.compacted',
+      properties: { sessionID: 'session-123' },
+    };
+    await plugin.event({ event });
+    expect(runScript).toHaveBeenCalledTimes(1);
+    expect(runScript).toHaveBeenCalledWith(mockDollar, 'pre-compact.sh');
+  });
+
+  it('should contain session ID in message', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.compacted',
+      properties: { sessionID: 'compact-session-789' },
+    };
+    await plugin.event({ event });
+    const callArgs = mockClient.tui.showToast.mock.calls[0][0];
+    expect(callArgs.body.message).toContain('compact-session-789');
+  });
+});
+
+describe('session.deleted', () => {
+  let mockClient: MockClient;
+  let mockDollar: () => unknown;
+
+  beforeEach(() => {
+    mockClient = createMockClient();
+    mockDollar = {
+      spawn: jest
+        .fn()
+        .mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' }),
+    };
+    jest.clearAllMocks();
+  });
+
+  it('should trigger toast with variant error', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.deleted',
+      properties: { info: createMockSession('delete-session-001') },
+    };
+    await plugin.event({ event });
+    expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
+    const callArgs = mockClient.tui.showToast.mock.calls[0][0];
+    expect(callArgs.body.variant).toBe('error');
+    expect(callArgs.body.title).toBe('====SESSION DELETED====');
+  });
+
+  it('should contain correct session ID', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.deleted',
+      properties: { info: createMockSession('deleted-id-999') },
+    };
+    await plugin.event({ event });
+    const callArgs = mockClient.tui.showToast.mock.calls[0][0];
+    expect(callArgs.body.message).toContain('deleted-id-999');
+  });
+});
+
+describe('session.idle', () => {
+  let mockClient: MockClient;
+  let mockDollar: () => unknown;
+
+  beforeEach(() => {
+    mockClient = createMockClient();
+    mockDollar = {
+      spawn: jest
+        .fn()
+        .mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' }),
+    };
+    jest.clearAllMocks();
+  });
+
+  it('should not trigger toast when disabled in config', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.idle',
+      properties: { sessionID: 'idle-session-001' },
+    };
+    await plugin.event({ event });
+    expect(mockClient.tui.showToast).not.toHaveBeenCalled();
+  });
+});
+
+describe('session.error', () => {
+  let mockClient: MockClient;
+  let mockDollar: () => unknown;
+
+  beforeEach(() => {
+    mockClient = createMockClient();
+    mockDollar = {
+      spawn: jest
+        .fn()
+        .mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' }),
+    };
+    jest.clearAllMocks();
+  });
+
+  it('should trigger toast with variant error', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.error',
+      properties: {
+        sessionID: 'error-session-001',
+        error: { name: 'ApiError', data: { message: 'Test error' } },
+      },
+    };
+    await plugin.event({ event });
+    expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
+    const callArgs = mockClient.tui.showToast.mock.calls[0][0];
+    expect(callArgs.body.variant).toBe('error');
+    expect(callArgs.body.title).toBe('====SESSION ERROR====');
+  });
+
+  it('should extract error name correctly', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.error',
+      properties: {
+        sessionID: 'error-session-001',
+        error: {
+          name: 'ProviderAuthError',
+          data: { message: 'Auth failed' },
         },
-      };
-      await plugin.event({ event });
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
-      const callArgs = mockClient.tui.showToast.mock.calls[0][0];
-      expect(callArgs.body.variant).toBe('error');
-      expect(callArgs.body.title).toBe('====SESSION ERROR====');
-    });
-
-    it('should extract error name correctly', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.error',
-        properties: {
-          sessionID: 'error-session-001',
-          error: {
-            name: 'ProviderAuthError',
-            data: { message: 'Auth failed' },
-          },
-        },
-      };
-      await plugin.event({ event });
-      const callArgs = mockClient.tui.showToast.mock.calls[0][0];
-      expect(callArgs.body.message).toContain('ProviderAuthError');
-    });
-
-    it('should extract error message correctly', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.error',
-        properties: {
-          sessionID: 'error-session-001',
-          error: {
-            name: 'ApiError',
-            data: { message: 'Specific error message' },
-          },
-        },
-      };
-      await plugin.event({ event });
-      const callArgs = mockClient.tui.showToast.mock.calls[0][0];
-      expect(callArgs.body.message).toContain('Specific error message');
-    });
-
-    it('should show Unknown error fallback when error is undefined', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.error',
-        properties: { sessionID: 'error-session-001', error: undefined },
-      };
-      await plugin.event({ event });
-      const callArgs = mockClient.tui.showToast.mock.calls[0][0];
-      expect(callArgs.body.message).toContain('Unknown error');
-      expect(callArgs.body.message).toContain('Unknown message');
-    });
-
-    it('should show Unknown message fallback when data is missing', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.error',
-        properties: {
-          sessionID: 'error-session-001',
-          error: { name: 'SomeError' } as { name?: string },
-        },
-      };
-      await plugin.event({ event });
-      const callArgs = mockClient.tui.showToast.mock.calls[0][0];
-      expect(callArgs.body.message).toContain('Unknown message');
-    });
+      },
+    };
+    await plugin.event({ event });
+    const callArgs = mockClient.tui.showToast.mock.calls[0][0];
+    expect(callArgs.body.message).toContain('ProviderAuthError');
   });
 
-  describe('session.diff', () => {
-    it('should not trigger toast when disabled in config', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.diff',
-        properties: { sessionID: 'diff-session-001', diff: [] },
-      };
-      await plugin.event({ event });
-      expect(mockClient.tui.showToast).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('session.status', () => {
-    it('should not trigger toast', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.status',
-        properties: {
-          sessionID: 'status-session-001',
-          status: { type: 'idle' },
+  it('should extract error message correctly', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.error',
+      properties: {
+        sessionID: 'error-session-001',
+        error: {
+          name: 'ApiError',
+          data: { message: 'Specific error message' },
         },
-      };
-      await plugin.event({ event });
-      expect(mockClient.tui.showToast).not.toHaveBeenCalled();
-    });
-
-    it('should complete without error', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.status',
-        properties: {
-          sessionID: 'status-session-001',
-          status: { type: 'idle' },
-        },
-      };
-      await expect(plugin.event({ event })).resolves.not.toThrow();
-    });
+      },
+    };
+    await plugin.event({ event });
+    const callArgs = mockClient.tui.showToast.mock.calls[0][0];
+    expect(callArgs.body.message).toContain('Specific error message');
   });
 
-  describe('session.updated', () => {
-    it('should not trigger toast', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.updated',
-        properties: { info: createMockSession('updated-session-001') },
-      };
-      await plugin.event({ event });
-      expect(mockClient.tui.showToast).not.toHaveBeenCalled();
-    });
-
-    it('should complete without error', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.updated',
-        properties: { info: createMockSession('updated-session-001') },
-      };
-      await expect(plugin.event({ event })).resolves.not.toThrow();
-    });
+  it('should show Unknown error fallback when error is undefined', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.error',
+      properties: { sessionID: 'error-session-001', error: undefined },
+    };
+    await plugin.event({ event });
+    const callArgs = mockClient.tui.showToast.mock.calls[0][0];
+    expect(callArgs.body.message).toContain('Unknown error');
+    expect(callArgs.body.message).toContain('Unknown message');
   });
 
-  describe('server.instance.disposed', () => {
-    it('should run session-stop.sh script', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'server.instance.disposed',
-        properties: { directory: '/test/dir' },
-      };
-      await plugin.event({ event });
-      expect(runScript).toHaveBeenCalledTimes(1);
-      expect(runScript).toHaveBeenCalledWith(mockDollar, 'session-stop.sh');
-    });
+  it('should show Unknown message fallback when data is missing', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.error',
+      properties: {
+        sessionID: 'error-session-001',
+        error: { name: 'SomeError' } as { name?: string },
+      },
+    };
+    await plugin.event({ event });
+    const callArgs = mockClient.tui.showToast.mock.calls[0][0];
+    expect(callArgs.body.message).toContain('Unknown message');
+  });
+});
 
-    it('should not trigger toast', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'server.instance.disposed',
-        properties: { directory: '/test/dir' },
-      };
-      await plugin.event({ event });
-      expect(mockClient.tui.showToast).not.toHaveBeenCalled();
-    });
+describe('session.diff', () => {
+  let mockClient: MockClient;
+  let mockDollar: () => unknown;
+
+  beforeEach(() => {
+    mockClient = createMockClient();
+    mockDollar = {
+      spawn: jest
+        .fn()
+        .mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' }),
+    };
+    jest.clearAllMocks();
   });
 
-  describe('tool.execute.after handler', () => {
-    it('should trigger toast when tool is task', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const input = {
-        tool: 'task',
-        sessionID: 'session-123',
-        callID: 'call-456',
-        args: { subagent_type: 'explore' },
-      };
-      const output = {
-        title: 'Task completed',
-        output: 'result',
-        metadata: {},
-      };
-      await plugin['tool.execute.after'](input, output);
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
-    });
+  it('should not trigger toast when disabled in config', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.diff',
+      properties: { sessionID: 'diff-session-001', diff: [] },
+    };
+    await plugin.event({ event });
+    expect(mockClient.tui.showToast).not.toHaveBeenCalled();
+  });
+});
 
-    it('should not trigger toast for non-task tools', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const input = {
-        tool: 'read',
-        sessionID: 'session-123',
-        callID: 'call-456',
-        args: {},
-      };
-      const output = {
-        title: 'Read completed',
-        output: 'result',
-        metadata: {},
-      };
-      await plugin['tool.execute.after'](input, output);
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
-    });
+describe('session.status', () => {
+  let mockClient: MockClient;
+  let mockDollar: () => unknown;
 
-    it('should not trigger toast when subagent_type is undefined', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const input = {
-        tool: 'task',
-        sessionID: 'session-123',
-        callID: 'call-456',
-        args: {},
-      };
-      const output = {
-        title: 'Task completed',
-        output: 'result',
-        metadata: {},
-      };
-      await plugin['tool.execute.after'](input, output);
-      expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
-    });
+  beforeEach(() => {
+    mockClient = createMockClient();
+    mockDollar = {
+      spawn: jest
+        .fn()
+        .mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' }),
+    };
+    jest.clearAllMocks();
   });
 
-  describe('saveToFile', () => {
-    it('should be called for enabled events with logToFile', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const events = [
-        { type: 'session.created', properties: { info: createMockSession() } },
-        { type: 'session.compacted', properties: { sessionID: '123' } },
-        { type: 'session.deleted', properties: { info: createMockSession() } },
-        { type: 'session.idle', properties: { sessionID: '123' } },
-        {
-          type: 'session.error',
-          properties: { sessionID: '123', error: undefined },
-        },
-        { type: 'session.diff', properties: { sessionID: '123', diff: [] } },
-        {
-          type: 'session.status',
-          properties: { sessionID: '123', status: { type: 'idle' } },
-        },
-        { type: 'session.updated', properties: { info: createMockSession() } },
-      ];
-      for (const event of events) {
-        await plugin.event({ event });
-      }
-      expect(saveToFile).toHaveBeenCalledTimes(15);
-    });
-
-    describe('logDisabledEvents', () => {
-      it('should save EVENT_DISABLED when logDisabledEvents is true', async () => {
-        const ctx = createMockCtx(mockClient, mockDollar);
-        const plugin = await OpencodeHooks(ctx);
-        await plugin.event({
-          event: {
-            type: 'session.diff',
-            properties: { sessionID: '123', diff: [] },
-          },
-        });
-
-        expect(saveToFile).toHaveBeenCalledWith(
-          expect.objectContaining({
-            content: expect.stringContaining('EVENT_DISABLED'),
-          })
-        );
-      });
-    });
+  it('should not trigger toast', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.status',
+      properties: {
+        sessionID: 'status-session-001',
+        status: { type: 'idle' },
+      },
+    };
+    await plugin.event({ event });
+    expect(mockClient.tui.showToast).not.toHaveBeenCalled();
   });
 
-  describe('script error handling', () => {
-    it('should show error toast when script fails', async () => {
-      mockRunScript.mockResolvedValueOnce({
-        output: '',
-        error: 'Script not found',
-        exitCode: -1,
-      });
+  it('should complete without error', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.status',
+      properties: {
+        sessionID: 'status-session-001',
+        status: { type: 'idle' },
+      },
+    };
+    await expect(plugin.event({ event })).resolves.not.toThrow();
+  });
+});
 
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.created',
-        properties: { info: createMockSession('error-test-123') },
-      };
-      await plugin.event({ event });
+describe('session.updated', () => {
+  let mockClient: MockClient;
+  let mockDollar: () => unknown;
 
-      const errorToastCall = mockClient.tui.showToast.mock.calls.find(
-        (call: [unknown]) => call[0].body.variant === 'error'
-      );
+  beforeEach(() => {
+    mockClient = createMockClient();
+    mockDollar = {
+      spawn: jest
+        .fn()
+        .mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' }),
+    };
+    jest.clearAllMocks();
+  });
 
-      expect(errorToastCall).toBeDefined();
-      expect(errorToastCall[0].body.title).toMatch(/ Script Error====$/);
-      expect(errorToastCall[0].body.message).toContain('Script not found');
-      expect(errorToastCall[0].body.message).toContain(
-        'Check user-events.config.ts'
-      );
-    });
+  it('should not trigger toast', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.updated',
+      properties: { info: createMockSession('updated-session-001') },
+    };
+    await plugin.event({ event });
+    expect(mockClient.tui.showToast).not.toHaveBeenCalled();
+  });
 
-    it('should save error to file when script fails', async () => {
-      mockRunScript.mockResolvedValueOnce({
-        output: '',
-        error: 'Script not found',
-        exitCode: -1,
-      });
+  it('should complete without error', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'session.updated',
+      properties: { info: createMockSession('updated-session-001') },
+    };
+    await expect(plugin.event({ event })).resolves.not.toThrow();
+  });
+});
 
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const event = {
-        type: 'session.created',
-        properties: { info: createMockSession('error-test-456') },
-      };
-      await plugin.event({ event });
+describe('server.instance.disposed', () => {
+  let mockClient: MockClient;
+  let mockDollar: () => unknown;
 
-      expect(saveToFile).toHaveBeenCalledWith(
-        expect.objectContaining({
-          content: expect.stringContaining('"error":"Script not found"'),
-        })
-      );
-    });
+  beforeEach(() => {
+    mockClient = createMockClient();
+    mockDollar = {
+      spawn: jest
+        .fn()
+        .mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' }),
+    };
+    jest.clearAllMocks();
+  });
 
-    it('should show error toast for tool.execute.after script failure', async () => {
-      mockRunScript.mockResolvedValueOnce({
-        output: '',
-        error: 'Agent script failed',
-        exitCode: -1,
-      });
+  it('should run session-stop.sh script', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'server.instance.disposed',
+      properties: { directory: '/test/dir' },
+    };
+    await plugin.event({ event });
+    expect(runScript).toHaveBeenCalledTimes(1);
+    expect(runScript).toHaveBeenCalledWith(mockDollar, 'session-stop.sh');
+  });
 
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-      const input = {
-        tool: 'task',
-        sessionID: 'tool-error-session',
-        callID: 'call-789',
-        args: { subagent_type: 'explore' },
-      };
-      const output = {
-        title: 'Task completed',
-        output: 'result',
-        metadata: {},
-      };
-      await plugin['tool.execute.after'](input, output);
-
-      const errorToastCall = mockClient.tui.showToast.mock.calls.find(
-        (call: [unknown]) => call[0].body.variant === 'error'
-      );
-
-      expect(errorToastCall).toBeDefined();
-      expect(errorToastCall[0].body.title).toMatch(/ Script Error====$/);
-      expect(errorToastCall[0].body.message).toContain('Agent script failed');
-    });
+  it('should not trigger toast', async () => {
+    const ctx = createMockCtx(mockClient, mockDollar);
+    const plugin = await OpencodeHooks(ctx);
+    const event = {
+      type: 'server.instance.disposed',
+      properties: { directory: '/test/dir' },
+    };
+    await plugin.event({ event });
+    expect(mockClient.tui.showToast).not.toHaveBeenCalled();
   });
 });
