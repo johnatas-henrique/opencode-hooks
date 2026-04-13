@@ -138,8 +138,8 @@ const createHandler = (config: HandlerConfig): EventHandler => ({
 export const handlers: Record<string, EventHandler> = {
   'session.created': createHandler({
     title: '====SESSION CREATED====',
-    variant: 'info',
-    duration: TOAST_DURATION.FIVE_SECONDS,
+    variant: 'success',
+    duration: TOAST_DURATION.TEN_SECONDS,
     defaultScript: 'session-created.sh',
     buildMessage: buildAllKeysMessageSimple,
   }),
@@ -163,7 +163,7 @@ export const handlers: Record<string, EventHandler> = {
   'session.error': createHandler({
     title: '====SESSION ERROR====',
     variant: 'error',
-    duration: TOAST_DURATION.FIVE_SECONDS,
+    duration: TOAST_DURATION.TEN_SECONDS,
     defaultScript: 'session-error.sh',
     buildMessage: buildAllKeysMessageSimple,
   }),
@@ -314,7 +314,7 @@ export const handlers: Record<string, EventHandler> = {
 
   'server.instance.disposed': createHandler({
     title: '====SERVER INSTANCE DISPOSED====',
-    variant: 'info',
+    variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-stop.sh',
     buildMessage: buildAllKeysMessageSimple,
@@ -396,7 +396,7 @@ export const handlers: Record<string, EventHandler> = {
     title: '====SESSION COMPACTING====',
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
-    defaultScript: 'session-compacting.sh',
+    defaultScript: 'experimental-session-compacting.sh',
     buildMessage: buildAllKeysMessage,
   }),
 

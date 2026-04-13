@@ -52,7 +52,7 @@ export const userConfig: UserEventsConfig = {
 
   default: {
     debug: false,
-    toast: true,
+    toast: false,
     runScripts: false,
     runOnlyOnce: false,
     saveToFile: true,
@@ -60,37 +60,19 @@ export const userConfig: UserEventsConfig = {
   },
 
   events: {
-    [EventType.SERVER_CONNECTED]: {},
-    [EventType.SERVER_INSTANCE_DISPOSED]: {
-      enabled: true,
-      scripts: ['session-closed.sh'],
-      // runScripts: true,
-    },
+    [EventType.SERVER_CONNECTED]: { enabled: false },
+    [EventType.SERVER_INSTANCE_DISPOSED]: { enabled: false },
 
     [EventType.SESSION_CREATED]: {
-      enabled: true,
-      runScripts: true,
+      toast: true,
       runOnlyOnce: true,
       appendToSession: true,
     },
-    [EventType.SESSION_COMPACTED]: {
-      enabled: false,
-      scripts: ['pre-compact.sh'],
-      // runScripts: true,
-    },
-    [EventType.SESSION_DELETED]: {
-      enabled: false,
-      runScripts: true,
-    },
-    [EventType.SESSION_IDLE]: {
-      scripts: ['test-success-1.sh', 'test-success-2.sh'],
-      runScripts: true,
-    },
+    [EventType.SESSION_COMPACTED]: { toast: true },
+    [EventType.SESSION_DELETED]: { toast: true },
+    [EventType.SESSION_IDLE]: { enabled: false },
     [EventType.SESSION_DIFF]: { enabled: false },
-    [EventType.SESSION_ERROR]: {
-      enabled: true,
-      toast: { duration: TOAST_DURATION.THIRTY_SECONDS, variant: 'error' },
-    },
+    [EventType.SESSION_ERROR]: { toast: true },
     [EventType.SESSION_STATUS]: { enabled: false },
     [EventType.SESSION_UPDATED]: { enabled: false },
     [EventType.SESSION_UNKNOWN]: { enabled: false },
@@ -101,48 +83,35 @@ export const userConfig: UserEventsConfig = {
     [EventType.MESSAGE_REMOVED]: { enabled: false },
     [EventType.MESSAGE_UPDATED]: { enabled: false },
 
-    [EventType.FILE_EDITED]: {
-      enabled: false,
-      scripts: ['file-edit-console-warn.sh', 'file-edit-config-protection.sh'],
-      // runScripts: true,
-    },
-    [EventType.FILE_WATCHER_UPDATED]: { enabled: false },
+    [EventType.FILE_EDITED]: { toast: true },
+    [EventType.FILE_WATCHER_UPDATED]: { toast: true },
 
-    [EventType.PERMISSION_ASKED]: { enabled: false },
-    [EventType.PERMISSION_REPLIED]: { enabled: false },
+    [EventType.PERMISSION_ASKED]: { toast: true },
+    [EventType.PERMISSION_REPLIED]: { toast: true },
 
-    [EventType.COMMAND_EXECUTED]: { enabled: false },
+    [EventType.COMMAND_EXECUTED]: { toast: true },
 
-    [EventType.LSP_CLIENT_DIAGNOSTICS]: { enabled: false },
-    [EventType.LSP_UPDATED]: { enabled: false },
+    [EventType.LSP_CLIENT_DIAGNOSTICS]: { toast: true },
+    [EventType.LSP_UPDATED]: { toast: true },
 
-    [EventType.INSTALLATION_UPDATED]: { enabled: false },
+    [EventType.INSTALLATION_UPDATED]: { toast: true },
 
-    [EventType.TODO_UPDATED]: { enabled: false },
+    [EventType.TODO_UPDATED]: { toast: true },
 
-    [EventType.SHELL_ENV]: { enabled: false },
+    [EventType.SHELL_ENV]: { toast: true },
 
-    [EventType.EXPERIMENTAL_SESSION_COMPACTING]: {
-      enabled: false,
-      toast: { variant: 'warning' },
-      scripts: [
-        'experimental-session-compacting-pre-compact.sh',
-        'pre-compact.sh',
-      ],
-      // runScripts: true,
-      saveToFile: true,
-    },
+    [EventType.EXPERIMENTAL_SESSION_COMPACTING]: { toast: true },
 
     [EventType.CHAT_MESSAGE]: { enabled: false },
     [EventType.CHAT_PARAMS]: { enabled: false },
     [EventType.CHAT_HEADERS]: { enabled: false },
-    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: { enabled: false },
-    [EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: { enabled: false },
-    [EventType.EXPERIMENTAL_TEXT_COMPLETE]: { enabled: false },
-    [EventType.TOOL_DEFINITION]: { enabled: false },
+    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: { toast: true },
+    [EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: { toast: true },
+    [EventType.EXPERIMENTAL_TEXT_COMPLETE]: { toast: true },
+    [EventType.TOOL_DEFINITION]: { toast: true },
 
     [EventType.TUI_PROMPT_APPEND]: { toast: true },
-    [EventType.TUI_COMMAND_EXECUTE]: { enabled: false },
+    [EventType.TUI_COMMAND_EXECUTE]: { toast: true },
 
     // // Always disabled, because it fires on toast showing, so it can fires indefinitely
     [EventType.TUI_TOAST_SHOW]: { enabled: false },
@@ -151,20 +120,15 @@ export const userConfig: UserEventsConfig = {
   tools: {
     [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
       task: {
-        enabled: true,
-        toast: {
-          enabled: true,
-          duration: TOAST_DURATION.TEN_SECONDS,
-        },
+        toast: true,
         scripts: ['log-agent.sh'],
         runScripts: true,
         saveToFile: true,
       },
     },
     [EventType.TOOL_EXECUTE_AFTER]: {
-      task: { enabled: true },
+      task: { toast: true },
       skill: {
-        enabled: true,
         toast: true,
         scripts: ['log-skill.sh'],
         runScripts: true,
@@ -198,20 +162,23 @@ export const userConfig: UserEventsConfig = {
       gh_grep_searchGitHub: {},
     },
     [EventType.TOOL_EXECUTE_BEFORE]: {
-      task: {},
-      skill: {},
+      task: { toast: true },
+      skill: { toast: true },
       bash: {
+        toast: true,
         block: [
           { check: blockGitForce, message: '🚫 git --force forbidden' },
           { check: blockScriptsFailed, message: '🚫 Blocking: scripts failed' },
         ],
       },
       write: {
+        toast: true,
         block: [
           { check: blockEnvFiles, message: '🚫 Cannot write .env files' },
         ],
       },
       read: {
+        toast: true,
         block: [
           { check: blockEnvFiles, message: '🚫 Cannot read .env files' },
           {
