@@ -48,7 +48,11 @@ export async function showStartupToast(
         });
       } catch (err) {
         await saveToFile({
-          content: `[${new Date().toISOString()}] - Startup toast error: ${err}\n`,
+          content: JSON.stringify({
+            timestamp: new Date().toISOString(),
+            type: 'PLUGIN_ERROR',
+            data: err,
+          }),
         });
       }
     });

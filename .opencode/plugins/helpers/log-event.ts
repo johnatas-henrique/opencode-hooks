@@ -6,11 +6,21 @@ export async function logEventConfig(
   timestamp: string,
   eventType: string,
   input: Record<string, unknown> | undefined,
-  resolved: ResolvedEventConfig
+  resolved: ResolvedEventConfig,
+  output?: Record<string, unknown>
 ): Promise<void> {
   if (resolved.saveToFile && !eventType.startsWith('message.')) {
     await saveToFile({
-      content: `[${timestamp}] - Hook: ${eventType}\nArguments: ${JSON.stringify(input, null, 2)}\nResolved Config: ${JSON.stringify(resolved, null, 2)}\n------------------------------\n`,
+      content: JSON.stringify({
+        timestamp,
+        type: 'EVENT_OUTPUT',
+        data: {
+          eventType,
+          input,
+          output,
+          resolvedConfig: resolved,
+        },
+      }),
       showToast: useGlobalToastQueue().add,
     });
   }
@@ -21,7 +31,11 @@ export async function logScriptOutput(
   output: string
 ): Promise<void> {
   await saveToFile({
-    content: `[${timestamp}] ${output}\n`,
+    content: JSON.stringify({
+      timestamp,
+      type: 'SCRIPT_OUTPUT',
+      data: output,
+    }),
     showToast: useGlobalToastQueue().add,
   });
 }

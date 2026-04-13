@@ -46,6 +46,11 @@ test/                      # Jest tests
 - **ALWAYS ask for permission before git commit or push**
 - Use atomic commits with conventional commits format
 
+## Agent Rules
+
+- **External changes**: If you detect modifications made by tools other than yourself (e.g., package.json, package-lock.json, generated files), **NEVER delete or revert them**. Either ask the user what to do or ignore them.
+- **Commit validation**: **NEVER bypass linters or validation hooks** when committing. If a commit fails due to lint/typecheck/test errors, report the issue to the user and request guidance instead of using `--no-verify` or disabling checks.
+
 ## Release
 
 Uses Release Please (not semantic-release). Workflow runs on push to main.

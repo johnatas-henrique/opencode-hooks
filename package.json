@@ -13,7 +13,7 @@
     "test:e2e": "bash test/e2e/session-lifecycle.sh && bash test/e2e/tool-execution.sh",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:cov": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
-    "coverage:report": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage --coverageReporters=text-summary --coverageReporters=html",
+    "coverage:report": "NODE_OPTIONS='--experimental-vm-modules' jest --colors --coverage --coverageReporters=text-summary --coverageReporters=html 2>&1 | grep -v 'PASS '",
     "lint": "eslint \"**/*.ts\" --ignore-pattern \"node_modules/**\" --ignore-pattern \"dist/**\" --ignore-pattern \"coverage/**\"",
     "lint:fix": "eslint \"**/*.ts\" --ignore-pattern \"node_modules/**\" --ignore-pattern \"dist/**\" --ignore-pattern \"coverage/**\" --fix",
     "format": "prettier --write \"**/*.ts\" --ignore-path .gitignore",
@@ -48,6 +48,7 @@
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
     "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.0"
   },

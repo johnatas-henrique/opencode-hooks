@@ -1,4 +1,5 @@
 import { showStartupToast } from '../../.opencode/plugins/helpers/show-startup-toast';
+import { saveToFile } from '../../.opencode/plugins/helpers/save-to-file';
 
 jest.mock('../../.opencode/plugins/helpers/plugin-status', () => ({
   getLatestLogFile: jest.fn(),
@@ -30,6 +31,10 @@ jest.mock('../../.opencode/plugins/helpers/toast-queue', () => {
   };
 });
 
+jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
+  saveToFile: jest.fn().mockResolvedValue(undefined),
+}));
+
 const mockGetLatestLogFile =
   require('../../.opencode/plugins/helpers/plugin-status').getLatestLogFile;
 const mockWaitForToastSilence =
@@ -47,6 +52,7 @@ describe('showStartupToast', () => {
   };
 
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.clearAllMocks();
     mockQueue = {
       add: jest.fn(),
@@ -59,6 +65,10 @@ describe('showStartupToast', () => {
     const useGlobalToastQueue =
       require('../../.opencode/plugins/helpers/toast-queue').useGlobalToastQueue;
     useGlobalToastQueue.mockReturnValue(mockQueue);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('should add initial loading toast', async () => {
@@ -128,6 +138,13 @@ describe('showStartupToast', () => {
       new Error('Plugin scan failed')
     );
 
-    await expect(showStartupToast()).resolves.toBeUndefined();
+    await showStartupToast();
+    await jest.runAllTimersAsync();
+
+    expect(saveToFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: expect.stringContaining('PLUGIN_ERROR'),
+      })
+    );
   });
 });

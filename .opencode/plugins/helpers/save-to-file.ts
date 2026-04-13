@@ -1,5 +1,5 @@
 import { appendFile, mkdir } from 'fs/promises';
-import { LOG_DIR, LOG_FILE } from './constants';
+import { LOG_DIR, LOG_FILE, TOAST_DURATION } from './constants';
 
 export type ToastCallback = (params: {
   title: string;
@@ -45,7 +45,7 @@ export const saveToFile = async ({
         title: '====SAVE TO FILE ERROR====',
         message: errMsg,
         variant: 'error',
-        duration: 5000,
+        duration: TOAST_DURATION.FIVE_SECONDS,
       });
     }
   }

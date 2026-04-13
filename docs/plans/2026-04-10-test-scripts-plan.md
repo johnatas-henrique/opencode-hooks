@@ -4,10 +4,12 @@
 
 | Step                                                   | Status | Timestamp |
 | ------------------------------------------------------ | ------ | --------- |
-| 1. Mapear cada script ao seu evento e ação disparadora | ⏳     | -         |
+| 1. Mapear cada script ao seu evento e ação disparadora | ✅     | -         |
 | 2. Criar script de teste manual (test-manual.sh)       | ⏳     | -         |
 | 3. Criar guide de teste para o usuário                 | ⏳     | -         |
 | 4. Criar script de verificação de outputs              | ⏳     | -         |
+
+**Status**: Not Completed - Steps 2-4 not implemented
 
 ## Contexto
 

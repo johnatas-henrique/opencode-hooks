@@ -85,7 +85,11 @@ export function createToastQueue(
 
   const logDroppedToast = (title: string) => {
     saveToFile({
-      content: `[WARN] Toast queue full, dropping: ${title}\n`,
+      content: JSON.stringify({
+        timestamp: new Date().toISOString(),
+        type: 'QUEUE_ERROR',
+        data: title,
+      }),
     });
   };
 
@@ -95,7 +99,11 @@ export function createToastQueue(
         const dropped = queue.shift();
         logDroppedToast(dropped?.title || DEFAULT_SESSION_ID);
       }
-      queue.push(toast);
+      if (toast.variant === 'error') {
+        queue.unshift(toast);
+      } else {
+        queue.push(toast);
+      }
       processQueue();
     },
     addMultiple: (toasts: TuiToast[]) => {
@@ -104,7 +112,11 @@ export function createToastQueue(
           const dropped = queue.shift();
           logDroppedToast(dropped?.title || DEFAULT_SESSION_ID);
         }
-        queue.push(toast);
+        if (toast.variant === 'error') {
+          queue.unshift(toast);
+        } else {
+          queue.push(toast);
+        }
       }
       processQueue();
     },

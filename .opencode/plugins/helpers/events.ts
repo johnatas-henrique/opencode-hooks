@@ -1,13 +1,14 @@
 import { handlers, type EventHandler } from './default-handlers';
 import { userConfig } from './user-events.config';
 import { saveToFile } from './save-to-file';
-import { UNKNOWN_EVENT_LOG_FILE } from './constants';
+import { UNKNOWN_EVENT_LOG_FILE, TOAST_DURATION } from './constants';
 import type {
   ResolvedEventConfig,
   EventConfig,
   ToolConfig,
   ToastOverride,
   EventOverride,
+  ToolOverride,
 } from './config';
 
 export { ResolvedEventConfig };
@@ -16,18 +17,88 @@ const DISABLED_CONFIG: ResolvedEventConfig = {
   enabled: false,
   toast: false,
   toastTitle: '',
-  toastMessage: undefined,
+  toastMessage: '',
   toastVariant: 'info',
   toastDuration: 0,
   scripts: [],
+  runScripts: false,
   saveToFile: false,
   appendToSession: false,
   runOnlyOnce: false,
   debug: false,
+  scriptToasts: {
+    showOutput: true,
+    showError: true,
+    outputVariant: 'info',
+    errorVariant: 'error',
+    outputDuration: TOAST_DURATION.FIVE_SECONDS,
+    errorDuration: TOAST_DURATION.FIFTEEN_SECONDS,
+    outputTitle: 'Script Output',
+    errorTitle: 'Script Error',
+  },
 };
+
+function tryBuildMessage(
+  handler: EventHandler,
+  eventType: string,
+  input: Record<string, unknown>,
+  output?: Record<string, unknown>
+): string {
+  try {
+    const normalized = normalizeInputForHandler(eventType, input, output);
+    return handler.buildMessage(normalized);
+  } catch {
+    return '';
+  }
+}
+
+export function normalizeInputForHandler(
+  eventType: string,
+  input: Record<string, unknown>,
+  output?: Record<string, unknown>
+): Record<string, unknown> {
+  if (eventType.startsWith('tool.execute.')) {
+    return { input, output };
+  }
+
+  if (eventType === 'shell.env') {
+    return { properties: input, output };
+  }
+
+  if (eventType.startsWith('chat.') || eventType.startsWith('experimental.')) {
+    return { properties: input, output };
+  }
+
+  if (eventType.startsWith('permission.')) {
+    return { properties: input, output };
+  }
+
+  if (eventType === 'command.execute.before') {
+    return { properties: input, output };
+  }
+
+  if (input.properties && typeof input.properties === 'object') {
+    return { properties: input.properties };
+  }
+
+  return { properties: input };
+}
 
 export function getHandler(eventType: string): EventHandler | undefined {
   return handlers[eventType];
+}
+
+export function getToolHandler(
+  toolName: string,
+  toolEventType?: string
+): EventHandler | undefined {
+  if (toolEventType?.includes('.before')) {
+    return handlers[`tool.execute.before.${toolName}`];
+  }
+  if (toolEventType?.includes('.after')) {
+    return handlers[`tool.execute.after.${toolName}`];
+  }
+  return undefined;
 }
 
 function getDefaultScript(eventType: string): string {
@@ -139,7 +210,11 @@ function isEventDisabled(eventCfg: EventConfig): boolean {
  * Resolves the event configuration for a given event type.
  * Configuration precedence: user config > handler defaults > system defaults.
  */
-export function resolveEventConfig(eventType: string): ResolvedEventConfig {
+export function resolveEventConfig(
+  eventType: string,
+  input?: Record<string, unknown>,
+  output?: Record<string, unknown>
+): ResolvedEventConfig {
   const handler = handlers[eventType];
   const userEventConfig =
     userConfig.events[eventType as keyof typeof userConfig.events];
@@ -151,10 +226,15 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
 
   if (userEventConfig === undefined) {
     const isTool = eventType.startsWith('tool.');
-    if (!isTool) {
+    const hasHandler = !!handler;
+    if (!isTool && !hasHandler) {
       const timestamp = new Date().toISOString();
       saveToFile({
-        content: `[${timestamp}] [WARN] Event '${eventType}' not configured. Add it to events config or set to false to disable.\n`,
+        content: JSON.stringify({
+          timestamp,
+          type: 'UNKNOWN_EVENT_IN_RESOLVE',
+          data: eventType,
+        }),
         filename: UNKNOWN_EVENT_LOG_FILE,
       });
     }
@@ -163,9 +243,12 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
       debug: getWithDefault(true, defaultCfg, 'debug', false),
       toast: getWithDefault(true, defaultCfg, 'toast', false),
       toastTitle: handler?.title ?? '',
-      toastMessage: undefined,
-      toastVariant: handler?.variant || 'info',
-      toastDuration: handler?.duration ?? 2000,
+      runScripts: getWithDefault(true, defaultCfg, 'runScripts', false),
+      toastMessage: handler
+        ? tryBuildMessage(handler, eventType, input ?? {}, output)
+        : '',
+      toastVariant: handler?.variant ?? 'info',
+      toastDuration: handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
       scripts: [],
       saveToFile: getWithDefault(true, defaultCfg, 'saveToFile', false),
       appendToSession: getWithDefault(
@@ -175,6 +258,7 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
         false
       ),
       runOnlyOnce: false,
+      scriptToasts: userConfig.scriptToasts,
     };
   }
 
@@ -194,9 +278,18 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
     debug: getWithDefault(userEventConfig, defaultCfg, 'debug', false),
     toast: getWithDefault(userEventConfig, defaultCfg, 'toast', false),
     toastTitle: toastCfg?.title ?? handler?.title ?? '',
-    toastMessage: toastCfg?.message,
-    toastVariant: toastCfg?.variant || handler?.variant || 'info',
-    toastDuration: toastCfg?.duration ?? handler?.duration ?? 2000,
+    runScripts: getWithDefault(
+      userEventConfig,
+      defaultCfg,
+      'runScripts',
+      false
+    ),
+    toastMessage:
+      toastCfg?.message ??
+      (handler ? tryBuildMessage(handler, eventType, input ?? {}, output) : ''),
+    toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
+    toastDuration:
+      toastCfg?.duration ?? handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
     scripts,
     saveToFile: getWithDefault(
       userEventConfig,
@@ -216,16 +309,19 @@ export function resolveEventConfig(eventType: string): ResolvedEventConfig {
       'runOnlyOnce',
       false
     ),
+    scriptToasts: userConfig.scriptToasts,
   };
 }
 
 /**
  * Resolves the tool configuration for a given tool event and tool name.
- * Merges event base config with tool-specific overrides.
+ * Merges tool-specific overrides directly from userConfig.default, bypassing event config unless explicitly defined.
  */
 export function resolveToolConfig(
   toolEventType: string,
-  toolName: string
+  toolName: string,
+  input?: Record<string, unknown>,
+  output?: Record<string, unknown>
 ): ResolvedEventConfig {
   const tools = userConfig.tools as Record<
     string,
@@ -234,7 +330,7 @@ export function resolveToolConfig(
   const toolConfigs = tools?.[toolEventType];
   const toolConfig = toolConfigs?.[toolName];
 
-  const isEmptyObject = (obj: unknown): boolean => {
+  const isEmptyObject = (obj: unknown): obj is Record<string, never> => {
     return (
       typeof obj === 'object' && obj !== null && Object.keys(obj).length === 0
     );
@@ -244,56 +340,129 @@ export function resolveToolConfig(
     return DISABLED_CONFIG;
   }
 
-  const eventBase = resolveEventConfig(toolEventType);
-
-  if (!toolConfig || isEmptyObject(toolConfig)) {
-    return eventBase;
-  }
-
-  const handler = handlers[toolEventType];
   const defaultCfg = userConfig.default;
+  const toolHandler = getToolHandler(toolName, toolEventType);
+  const eventHandler = toolHandler ?? handlers[toolEventType];
+
+  // Determine event base config: use resolveEventConfig if event is defined,
+  // otherwise fall back directly to userConfig.default via getDefaultConfig
+  const eventBase: ResolvedEventConfig =
+    userConfig.events[toolEventType as keyof typeof userConfig.events] !==
+    undefined
+      ? resolveEventConfig(toolEventType, input)
+      : getDefaultConfig(toolEventType, input);
+
+  // Build base config that incorporates tool handler defaults
+  const baseWithToolHandler: ResolvedEventConfig = {
+    ...eventBase,
+    toastTitle: toolHandler?.title ?? eventHandler?.title,
+    toastMessage: toolHandler
+      ? tryBuildMessage(toolHandler, toolEventType, input ?? {}, output)
+      : eventHandler
+        ? tryBuildMessage(eventHandler, toolEventType, input ?? {}, output)
+        : '',
+    toastVariant: toolHandler?.variant ?? eventHandler?.variant,
+    toastDuration: toolHandler?.duration ?? eventHandler?.duration,
+    scripts:
+      eventBase.runScripts && toolHandler?.defaultScript
+        ? [toolHandler.defaultScript]
+        : eventBase.scripts,
+  };
+
+  // Empty tool config → inherit from baseWithToolHandler
+  if (!toolConfig || isEmptyObject(toolConfig)) {
+    return baseWithToolHandler;
+  }
 
   const scripts = resolveScripts(
     toolConfig,
-    eventBase.scripts[0] ?? getDefaultScript(toolEventType),
-    eventBase.scripts
+    baseWithToolHandler.scripts[0] ??
+      toolHandler?.defaultScript ??
+      getDefaultScript(toolEventType),
+    baseWithToolHandler.scripts
   );
   const toastCfg = resolveToastOverride(toolConfig);
 
   return {
-    ...eventBase,
+    ...baseWithToolHandler,
     enabled: getWithDefault(
       toolConfig,
       defaultCfg,
       'enabled',
-      eventBase.enabled
+      baseWithToolHandler.enabled
     ),
-    debug: getWithDefault(toolConfig, defaultCfg, 'debug', eventBase.debug),
-    toast: getWithDefault(toolConfig, defaultCfg, 'toast', eventBase.toast),
-    toastTitle: toastCfg?.title ?? handler?.title ?? eventBase.toastTitle,
-    toastMessage: toastCfg?.message ?? eventBase.toastMessage,
-    toastVariant:
-      toastCfg?.variant || handler?.variant || eventBase.toastVariant,
-    toastDuration:
-      toastCfg?.duration ?? handler?.duration ?? eventBase.toastDuration,
+    debug: getWithDefault(
+      toolConfig,
+      defaultCfg,
+      'debug',
+      baseWithToolHandler.debug
+    ),
+    toast: getWithDefault(
+      toolConfig,
+      defaultCfg,
+      'toast',
+      baseWithToolHandler.toast
+    ),
+    toastTitle: toastCfg?.title ?? baseWithToolHandler.toastTitle,
+    runScripts: getWithDefault(
+      toolConfig,
+      defaultCfg,
+      'runScripts',
+      baseWithToolHandler.runScripts
+    ),
+    toastMessage: toastCfg?.message ?? baseWithToolHandler.toastMessage,
+    toastVariant: toastCfg?.variant ?? baseWithToolHandler.toastVariant,
+    toastDuration: toastCfg?.duration ?? baseWithToolHandler.toastDuration,
     scripts,
     saveToFile: getWithDefault(
       toolConfig,
       defaultCfg,
       'saveToFile',
-      eventBase.saveToFile
+      baseWithToolHandler.saveToFile
     ),
     appendToSession: getWithDefault(
       toolConfig,
       defaultCfg,
       'appendToSession',
-      eventBase.appendToSession
+      baseWithToolHandler.appendToSession
     ),
     runOnlyOnce: getWithDefault(
       toolConfig,
       defaultCfg,
       'runOnlyOnce',
-      eventBase.runOnlyOnce
+      baseWithToolHandler.runOnlyOnce
     ),
+    scriptToasts: userConfig.scriptToasts,
+    block: (toolConfig as ToolOverride)?.block,
+  };
+}
+
+function getDefaultConfig(
+  toolEventType: string,
+  input?: Record<string, unknown>
+): ResolvedEventConfig {
+  const handler = handlers[toolEventType];
+  const defaultCfg = userConfig.default;
+
+  const runScripts = getWithDefault(true, defaultCfg, 'runScripts', false);
+  const scripts =
+    runScripts && handler?.defaultScript ? [handler.defaultScript] : [];
+
+  return {
+    enabled: true,
+    debug: getWithDefault(true, defaultCfg, 'debug', false),
+    toast: getWithDefault(true, defaultCfg, 'toast', false),
+    toastTitle: handler?.title ?? '',
+    toastMessage: handler
+      ? tryBuildMessage(handler, toolEventType, input ?? {})
+      : '',
+    toastVariant: handler?.variant ?? 'info',
+    toastDuration: handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
+    scripts,
+    runScripts,
+    saveToFile: getWithDefault(true, defaultCfg, 'saveToFile', false),
+    appendToSession: getWithDefault(true, defaultCfg, 'appendToSession', false),
+    runOnlyOnce: false,
+    scriptToasts: userConfig.scriptToasts,
   };
 }

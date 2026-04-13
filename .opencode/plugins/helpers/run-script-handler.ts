@@ -1,76 +1,106 @@
-import { runScript } from './run-script';
+import { runScript, type ScriptResult } from './run-script';
 import { appendToSession } from './append-to-session';
 import { logScriptOutput } from './log-event';
 import { useGlobalToastQueue } from './toast-queue';
-import { TOAST_DURATION, DEFAULT_SESSION_ID } from './constants';
-import { isPrimarySession as isSessionPrimary } from './session';
+import { DEFAULT_SESSION_ID } from './constants';
 import type { RunScriptConfig } from './script-config';
 import { saveToFile } from './save-to-file';
 
-const runOnceTracker = new Map<string, boolean>();
+const subagentSessionIds = new Set<string>();
 
-/**
- * Runs a script and handles its output, logging, and error management.
- * @param config - Configuration object containing script details and context
- */
+export function isSubagent(sessionId: string | undefined): boolean {
+  return !!sessionId && subagentSessionIds.has(sessionId);
+}
+
+export function addSubagentSession(sessionId: string): void {
+  subagentSessionIds.add(sessionId);
+}
+
+export function resetSubagentTracking(): void {
+  subagentSessionIds.clear();
+}
+
+interface ScriptExecutionResult {
+  script: string;
+  output: string | undefined;
+}
+
 export async function runScriptAndHandle(
   config: RunScriptConfig
-): Promise<void> {
+): Promise<ScriptExecutionResult> {
   const {
     ctx,
     script,
     scriptArg = '',
     timestamp,
     eventType,
+    toolName,
     resolved,
+    scriptToasts,
     sessionId = DEFAULT_SESSION_ID,
   } = config;
 
   const { $ } = ctx;
-  const runOnceKey = `${eventType}:${script}`;
 
   if (resolved.runOnlyOnce) {
-    if (!isSessionPrimary(sessionId)) {
-      return;
+    if (isSubagent(sessionId)) {
+      return { script, output: undefined };
     }
-    if (runOnceTracker.has(runOnceKey)) {
-      return;
-    }
-    runOnceTracker.set(runOnceKey, true);
   }
 
-  try {
-    const output = scriptArg
-      ? await runScript($, script, scriptArg)
-      : await runScript($, script);
+  const result: ScriptResult = scriptArg
+    ? await runScript($, script, scriptArg)
+    : await runScript($, script);
 
-    if (resolved.saveToFile && output) {
-      await logScriptOutput(timestamp, output);
-    }
+  const effectiveScriptToasts = scriptToasts;
+  const eventTitle = resolved.toastTitle;
 
-    if (resolved.appendToSession && output) {
-      await appendToSession(ctx, sessionId, output);
-    }
-  } catch (err) {
-    const rawError = err instanceof Error ? err.message : String(err);
-    const errorMessage = rawError.replace(/[^\x20-\x7E\n]/g, (c) =>
-      c.charCodeAt(0) < 32 ? '?' : c
+  if (result.exitCode !== 0) {
+    const showError = effectiveScriptToasts.showError;
+    const errorVariant = effectiveScriptToasts.errorVariant;
+    const errorDuration = effectiveScriptToasts.errorDuration;
+    const errorTitle = eventTitle.replace(
+      /=+$/,
+      ` ${effectiveScriptToasts.errorTitle}====`
     );
 
+    const eventInfo =
+      eventType.startsWith('tool.execute.') && toolName ? toolName : eventType;
+
     await saveToFile({
-      content: `[${timestamp}] - Script error: ${script} - ${errorMessage}\n`,
+      content: JSON.stringify({
+        timestamp,
+        type: 'SCRIPT_ERROR',
+        data: {
+          eventType,
+          toolName,
+          script,
+          error: result.error,
+          exitCode: result.exitCode,
+        },
+      }),
       showToast: useGlobalToastQueue().add,
     });
 
-    useGlobalToastQueue().add({
-      title: '====SCRIPT ERROR====',
-      message: `Script: ${script}\nError: ${errorMessage}\nCheck user-events.config.ts`,
-      variant: 'error',
-      duration: TOAST_DURATION.FIVE_SECONDS,
-    });
-  }
-}
+    if (showError) {
+      useGlobalToastQueue().add({
+        title: errorTitle,
+        message: `Event: ${eventInfo}\nScript: ${script}\nError: ${result.error}\nExit Code: ${result.exitCode}\nCheck user-events.config.ts`,
+        variant: errorVariant,
+        duration: errorDuration,
+      });
+    }
 
-export function resetRunOnceTracker(): void {
-  runOnceTracker.clear();
+    return { script, output: undefined };
+  }
+
+  if (resolved.saveToFile && result.output) {
+    await logScriptOutput(timestamp, result.output);
+  }
+
+  if (resolved.appendToSession && result.output) {
+    await appendToSession(ctx, sessionId, result.output);
+  }
+
+  return { script, output: result.output };
 }

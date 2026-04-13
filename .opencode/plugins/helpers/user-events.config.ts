@@ -1,13 +1,53 @@
 import { TOAST_DURATION } from './constants';
 import { EventType } from './config';
-import type { UserEventsConfig } from './config';
+import type { UserEventsConfig, ScriptResult } from './config';
+import {
+  ToolExecuteBeforeInput,
+  ToolExecuteBeforeOutput,
+} from '../types/opencode-hooks';
+
+// ============================================
+// BLOCK PREDICATES
+// ============================================
+
+type BlockPredicate = (
+  input: ToolExecuteBeforeInput,
+  output: ToolExecuteBeforeOutput,
+  scriptResults: ScriptResult[]
+) => boolean;
+
+const blockEnvFiles: BlockPredicate = (_, output) =>
+  (output.args.filePath as string)?.includes('.env');
+
+const blockGitForce: BlockPredicate = (_, output) => {
+  const cmd = output.args.command as string;
+  return cmd?.includes('--force') || cmd?.includes(' -f');
+};
+
+const blockScriptsFailed: BlockPredicate = (_, __, results) =>
+  results.some((r) => r.exitCode !== 0);
+
+const blockByPath =
+  (patterns: string[]): BlockPredicate =>
+  (_, output) =>
+    patterns.some((p) => (output.args.filePath as string)?.includes(p));
 
 export const userConfig: UserEventsConfig = {
   enabled: true,
 
-  pluginStatus: {
-    enabled: true,
-    displayMode: 'user-only',
+  logDisabledEvents: false,
+  showPluginStatus: true,
+  pluginStatusDisplayMode: 'user-only',
+
+  scriptToasts: {
+    showOutput: true,
+    showError: true,
+    outputVariant: 'warning',
+    errorVariant: 'error',
+    outputDuration: TOAST_DURATION.FIVE_SECONDS,
+    errorDuration: TOAST_DURATION.FIFTEEN_SECONDS,
+    outputTitle: '- SCRIPTS OUTPUT',
+    errorTitle: '- SCRIPT ERROR',
   },
 
   default: {
@@ -15,46 +55,27 @@ export const userConfig: UserEventsConfig = {
     toast: false,
     runScripts: false,
     runOnlyOnce: false,
-    saveToFile: false,
+    saveToFile: true,
     appendToSession: false,
   },
 
   events: {
-    [EventType.TOOL_EXECUTE_AFTER]: false,
-    [EventType.TOOL_EXECUTE_BEFORE]: false,
-
-    [EventType.SERVER_CONNECTED]: { toast: { variant: 'success' } },
-    [EventType.SERVER_INSTANCE_DISPOSED]: {
-      enabled: true,
-      scripts: ['session-closed.sh'],
-      runScripts: true,
-      saveToFile: true,
-    },
+    [EventType.SERVER_CONNECTED]: { enabled: false },
+    [EventType.SERVER_INSTANCE_DISPOSED]: { enabled: false },
 
     [EventType.SESSION_CREATED]: {
-      enabled: true,
-      toast: { variant: 'success' },
-      runScripts: true,
+      toast: true,
       runOnlyOnce: true,
-      saveToFile: true,
       appendToSession: true,
     },
-    [EventType.SESSION_COMPACTED]: {
-      enabled: true,
-      toast: { variant: 'warning' },
-      scripts: ['pre-compact.sh'],
-      runScripts: true,
-      saveToFile: true,
-    },
-    [EventType.SESSION_DELETED]: { enabled: false },
-    [EventType.SESSION_DIFF]: { enabled: false },
-    [EventType.SESSION_ERROR]: {
-      enabled: true,
-      toast: { duration: TOAST_DURATION.THIRTY_SECONDS, variant: 'error' },
-    },
+    [EventType.SESSION_COMPACTED]: { toast: true },
+    [EventType.SESSION_DELETED]: { toast: true },
     [EventType.SESSION_IDLE]: { enabled: false },
+    [EventType.SESSION_DIFF]: { enabled: false },
+    [EventType.SESSION_ERROR]: { toast: true },
     [EventType.SESSION_STATUS]: { enabled: false },
     [EventType.SESSION_UPDATED]: { enabled: false },
+    [EventType.SESSION_UNKNOWN]: { enabled: false },
 
     [EventType.MESSAGE_PART_DELTA]: { enabled: false },
     [EventType.MESSAGE_PART_REMOVED]: { enabled: false },
@@ -62,132 +83,133 @@ export const userConfig: UserEventsConfig = {
     [EventType.MESSAGE_REMOVED]: { enabled: false },
     [EventType.MESSAGE_UPDATED]: { enabled: false },
 
-    [EventType.FILE_EDITED]: { enabled: false },
-    [EventType.FILE_WATCHER_UPDATED]: { enabled: false },
+    [EventType.FILE_EDITED]: { toast: true },
+    [EventType.FILE_WATCHER_UPDATED]: { toast: true },
 
-    [EventType.PERMISSION_ASKED]: { enabled: false },
-    [EventType.PERMISSION_REPLIED]: { enabled: false },
+    [EventType.PERMISSION_ASKED]: { toast: true },
+    [EventType.PERMISSION_REPLIED]: { toast: true },
 
-    [EventType.COMMAND_EXECUTED]: { enabled: false },
+    [EventType.COMMAND_EXECUTED]: { toast: true },
 
-    [EventType.LSP_CLIENT_DIAGNOSTICS]: { enabled: false },
-    [EventType.LSP_UPDATED]: { enabled: false },
+    [EventType.LSP_CLIENT_DIAGNOSTICS]: { toast: true },
+    [EventType.LSP_UPDATED]: { toast: true },
 
-    [EventType.INSTALLATION_UPDATED]: { enabled: false },
+    [EventType.INSTALLATION_UPDATED]: { toast: true },
 
-    [EventType.TODO_UPDATED]: { enabled: false },
+    [EventType.TODO_UPDATED]: { toast: true },
 
-    [EventType.SHELL_ENV]: { enabled: false },
+    [EventType.SHELL_ENV]: { toast: true },
 
-    [EventType.TUI_PROMPT_APPEND]: { toast: false },
-    [EventType.TUI_COMMAND_EXECUTE]: { enabled: false },
-    [EventType.TUI_TOAST_SHOW]: { enabled: false },
-
-    [EventType.EXPERIMENTAL_SESSION_COMPACTING]: {
-      enabled: true,
-      toast: { variant: 'warning' },
-      scripts: ['pre-compact.sh'],
-      runScripts: true,
-      saveToFile: true,
-    },
+    [EventType.EXPERIMENTAL_SESSION_COMPACTING]: { toast: true },
 
     [EventType.CHAT_MESSAGE]: { enabled: false },
     [EventType.CHAT_PARAMS]: { enabled: false },
     [EventType.CHAT_HEADERS]: { enabled: false },
-    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: { enabled: false },
-    [EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: { enabled: false },
-    [EventType.EXPERIMENTAL_TEXT_COMPLETE]: { enabled: false },
-    [EventType.SESSION_UNKNOWN]: { enabled: false },
+    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: { toast: true },
+    [EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: { toast: true },
+    [EventType.EXPERIMENTAL_TEXT_COMPLETE]: { toast: true },
+    [EventType.TOOL_DEFINITION]: { toast: true },
+
+    [EventType.TUI_PROMPT_APPEND]: { toast: true },
+    [EventType.TUI_COMMAND_EXECUTE]: { toast: true },
+
+    // // Always disabled, because it fires on toast showing, so it can fires indefinitely
+    [EventType.TUI_TOAST_SHOW]: { enabled: false },
   },
 
   tools: {
     [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
       task: {
-        enabled: true,
-        toast: {
-          enabled: true,
-          title: '====SUBAGENT====',
-          duration: TOAST_DURATION.TEN_SECONDS,
-          variant: 'success',
-        },
+        toast: true,
         scripts: ['log-agent.sh'],
         runScripts: true,
         saveToFile: true,
       },
     },
     [EventType.TOOL_EXECUTE_AFTER]: {
-      task: {
-        enabled: true,
-        toast: { enabled: true, title: '====TOOL====' },
-      },
+      task: { toast: true },
       skill: {
-        enabled: true,
-        toast: {
-          enabled: true,
-          title: '====SKILL====',
-          duration: TOAST_DURATION.TEN_SECONDS,
-          variant: 'success',
-        },
+        toast: true,
         scripts: ['log-skill.sh'],
         runScripts: true,
         saveToFile: true,
       },
-      chat: { toast: { title: '====CHAT====' } },
-      read: { toast: { title: '====FILE READ====' } },
-      write: { toast: { title: '====FILE WRITE====' } },
-      edit: { toast: { title: '====FILE EDIT====' } },
-      glob: { toast: { title: '====FILE SEARCH====' } },
-      grep: { toast: { title: '====TEXT SEARCH====' } },
-      bash: { toast: { title: '====TERMINAL====' } },
-      list: { toast: { title: '====DIRECTORY LIST====' } },
-      patch: { toast: { title: '====PATCH====' } },
-      webfetch: { toast: { title: '====WEB FETCH====' } },
-      websearch: { toast: { title: '====WEB SEARCH====' } },
-      codesearch: { toast: { title: '====CODE SEARCH====' } },
-      todowrite: { toast: { title: '====TODO WRITE====' } },
-      todoread: { toast: { title: '====TODO READ====' } },
-      question: { toast: { title: '====QUESTION====' } },
-      'git.commit': { toast: { title: '====GIT COMMIT====' } },
-      'git.push': { toast: { title: '====GIT PUSH====' } },
-      'git.pull': { toast: { title: '====GIT PULL====' } },
-      filesystem_read_file: { toast: { title: '====FS READ====' } },
-      filesystem_write_file: { toast: { title: '====FS WRITE====' } },
-      filesystem_list_directory: { toast: { title: '====FS LIST====' } },
-      filesystem_search_files: { toast: { title: '====FS SEARCH====' } },
-      filesystem_create_directory: { toast: { title: '====FS MKDIR====' } },
-      filesystem_move_file: { toast: { title: '====FS MOVE====' } },
-      filesystem_get_file_info: { toast: { title: '====FS STAT====' } },
-      gh_grep_searchGitHub: { toast: { title: '====GH SEARCH====' } },
+      bash: {},
+      write: {},
+      edit: {},
+      chat: {},
+      read: {},
+      glob: {},
+      grep: {},
+      list: {},
+      patch: {},
+      webfetch: {},
+      websearch: {},
+      codesearch: {},
+      todowrite: {},
+      todoread: {},
+      question: {},
+      'git.commit': {},
+      'git.push': {},
+      'git.pull': {},
+      filesystem_read_file: {},
+      filesystem_write_file: {},
+      filesystem_list_directory: {},
+      filesystem_search_files: {},
+      filesystem_create_directory: {},
+      filesystem_move_file: {},
+      filesystem_get_file_info: {},
+      gh_grep_searchGitHub: {},
     },
     [EventType.TOOL_EXECUTE_BEFORE]: {
-      task: { toast: { title: '====TOOL====' } },
-      skill: { toast: { title: '====SKILL====' } },
-      chat: { toast: { title: '====CHAT====' } },
-      read: { toast: { title: '====FILE READ====' } },
-      write: { toast: { title: '====FILE WRITE====' } },
-      edit: { toast: { title: '====FILE EDIT====' } },
-      glob: { toast: { title: '====FILE SEARCH====' } },
-      grep: { toast: { title: '====TEXT SEARCH====' } },
-      bash: { toast: { title: '====TERMINAL====' } },
-      list: { toast: { title: '====DIRECTORY LIST====' } },
-      patch: { toast: { title: '====PATCH====' } },
-      webfetch: { toast: { title: '====WEB FETCH====' } },
-      websearch: { toast: { title: '====WEB SEARCH====' } },
-      codesearch: { toast: { title: '====CODE SEARCH====' } },
-      todowrite: { toast: { title: '====TODO WRITE====' } },
-      todoread: { toast: { title: '====TODO READ====' } },
-      question: { toast: { title: '====QUESTION====' } },
-      'git.commit': { toast: { title: '====GIT COMMIT====' } },
-      'git.push': { toast: { title: '====GIT PUSH====' } },
-      'git.pull': { toast: { title: '====GIT PULL====' } },
-      filesystem_read_file: { toast: { title: '====FS READ====' } },
-      filesystem_write_file: { toast: { title: '====FS WRITE====' } },
-      filesystem_list_directory: { toast: { title: '====FS LIST====' } },
-      filesystem_search_files: { toast: { title: '====FS SEARCH====' } },
-      filesystem_create_directory: { toast: { title: '====FS MKDIR====' } },
-      filesystem_move_file: { toast: { title: '====FS MOVE====' } },
-      filesystem_get_file_info: { toast: { title: '====FS STAT====' } },
-      gh_grep_searchGitHub: { toast: { title: '====GH SEARCH====' } },
+      task: { toast: true },
+      skill: { toast: true },
+      bash: {
+        toast: true,
+        block: [
+          { check: blockGitForce, message: '🚫 git --force forbidden' },
+          { check: blockScriptsFailed, message: '🚫 Blocking: scripts failed' },
+        ],
+      },
+      write: {
+        toast: true,
+        block: [
+          { check: blockEnvFiles, message: '🚫 Cannot write .env files' },
+        ],
+      },
+      read: {
+        toast: true,
+        block: [
+          { check: blockEnvFiles, message: '🚫 Cannot read .env files' },
+          {
+            check: blockByPath(['credentials.json', 'secrets/', '.ssh/']),
+            message: '🚫 Protected files',
+          },
+        ],
+      },
+      edit: {},
+      chat: {},
+      glob: {},
+      grep: {},
+      list: {},
+      patch: {},
+      webfetch: {},
+      websearch: {},
+      codesearch: {},
+      todowrite: {},
+      todoread: {},
+      question: {},
+      'git.commit': {},
+      'git.push': {},
+      'git.pull': {},
+      filesystem_read_file: {},
+      filesystem_write_file: {},
+      filesystem_list_directory: {},
+      filesystem_search_files: {},
+      filesystem_create_directory: {},
+      filesystem_move_file: {},
+      filesystem_get_file_info: {},
+      gh_grep_searchGitHub: {},
     },
   },
 };

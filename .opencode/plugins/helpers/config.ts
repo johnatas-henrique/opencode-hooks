@@ -1,3 +1,8 @@
+import type {
+  ToolExecuteBeforeInput,
+  ToolExecuteBeforeOutput,
+} from '../types/opencode-hooks';
+
 export enum EventType {
   SESSION_CREATED = 'session.created',
   SESSION_COMPACTED = 'session.compacted',
@@ -77,6 +82,78 @@ export interface EventOverride {
   appendToSession?: boolean;
 }
 
+export type EventConfig = boolean | EventOverride;
+export type ToolConfig = boolean | ToolOverride;
+
+export type PluginStatusDisplayMode =
+  | 'user-only'
+  | 'user-separated'
+  | 'all-labeled';
+
+export interface ScriptToastsConfig {
+  showOutput: boolean;
+  showError: boolean;
+  outputVariant: EventVariant;
+  errorVariant: EventVariant;
+  outputDuration: number;
+  errorDuration: number;
+  outputTitle: string;
+  errorTitle: string;
+}
+
+export interface UserEventsConfig {
+  enabled: boolean;
+  logDisabledEvents: boolean;
+  showPluginStatus: boolean;
+  pluginStatusDisplayMode: PluginStatusDisplayMode;
+  scriptToasts: ScriptToastsConfig;
+  default: EventOverride;
+  events: Partial<Record<EventType, EventConfig>>;
+  tools: {
+    [EventType.TOOL_EXECUTE_AFTER]: Record<string, ToolConfig>;
+    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: Record<string, ToolConfig>;
+    [EventType.TOOL_EXECUTE_BEFORE]: Record<string, ToolOverride>;
+  };
+}
+
+export interface ResolvedEventConfig {
+  enabled: boolean;
+  debug: boolean;
+  toast: boolean;
+  toastTitle: string;
+  toastMessage: string;
+  toastVariant: EventVariant;
+  toastDuration: number;
+  scripts: string[];
+  runScripts: boolean;
+  saveToFile: boolean;
+  appendToSession: boolean;
+  runOnlyOnce: boolean;
+  scriptToasts: ScriptToastsConfig;
+  block?: BlockCheck[];
+}
+
+// ============================================
+// BLOCK TYPES
+// ============================================
+
+export interface ScriptResult {
+  script: string;
+  exitCode: number;
+  output?: string;
+}
+
+export type BlockPredicate = (
+  input: ToolExecuteBeforeInput,
+  output: ToolExecuteBeforeOutput,
+  scriptResults: ScriptResult[]
+) => boolean;
+
+export interface BlockCheck {
+  check: BlockPredicate;
+  message?: string;
+}
+
 export interface ToolOverride {
   enabled?: boolean;
   debug?: boolean;
@@ -86,43 +163,5 @@ export interface ToolOverride {
   runOnlyOnce?: boolean;
   saveToFile?: boolean;
   appendToSession?: boolean;
-}
-
-export type EventConfig = boolean | EventOverride;
-export type ToolConfig = boolean | ToolOverride;
-
-export type PluginStatusDisplayMode =
-  | 'user-only'
-  | 'user-separated'
-  | 'all-labeled';
-
-export interface PluginStatusConfig {
-  enabled: boolean;
-  displayMode: PluginStatusDisplayMode;
-}
-
-export interface UserEventsConfig {
-  enabled: boolean;
-  default?: EventOverride;
-  pluginStatus: PluginStatusConfig;
-  events: Partial<Record<EventType, EventConfig>>;
-  tools: {
-    [EventType.TOOL_EXECUTE_AFTER]?: Record<string, ToolConfig>;
-    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]?: Record<string, ToolConfig>;
-    [EventType.TOOL_EXECUTE_BEFORE]?: Record<string, ToolOverride>;
-  };
-}
-
-export interface ResolvedEventConfig {
-  enabled: boolean;
-  debug: boolean;
-  toast: boolean;
-  toastTitle: string;
-  toastMessage?: string;
-  toastVariant: EventVariant;
-  toastDuration: number;
-  scripts: string[];
-  saveToFile: boolean;
-  appendToSession: boolean;
-  runOnlyOnce: boolean;
+  block?: BlockCheck[];
 }

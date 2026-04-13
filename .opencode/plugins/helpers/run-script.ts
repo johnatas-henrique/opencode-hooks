@@ -1,6 +1,12 @@
 import { PluginInput } from '@opencode-ai/plugin';
 import { SCRIPTS_DIR } from './constants';
 
+export interface ScriptResult {
+  output: string;
+  error: string | null;
+  exitCode: number;
+}
+
 const shellSpecialChars = /[;&|`$(){}[\]<>\\!#*?"'\n\r]/g;
 
 const sanitizeArg = (arg: string): string => {
@@ -17,19 +23,35 @@ export const runScript = async (
   $: PluginInput['$'],
   scriptPath: string,
   ...args: string[]
-): Promise<string> => {
+): Promise<ScriptResult> => {
   if (!validateScriptPath(scriptPath)) {
-    throw new Error(`Invalid script path: ${scriptPath}`);
+    return {
+      output: '',
+      error: `Invalid script path: ${scriptPath}`,
+      exitCode: -1,
+    };
   }
 
   const sanitizedArgs = args.map(sanitizeArg);
 
-  if (sanitizedArgs.length > 0) {
-    const result =
-      await $`./${SCRIPTS_DIR}/${scriptPath} ${sanitizedArgs}`.quiet();
-    return result.text();
-  }
+  try {
+    let result;
+    if (sanitizedArgs.length > 0) {
+      result = await $`./${SCRIPTS_DIR}/${scriptPath} ${sanitizedArgs}`.quiet();
+    } else {
+      result = await $`./${SCRIPTS_DIR}/${scriptPath}`.quiet();
+    }
 
-  const result = await $`./${SCRIPTS_DIR}/${scriptPath}`.quiet();
-  return result.text();
+    return {
+      output: result.text(),
+      error: null,
+      exitCode: result.exitCode,
+    };
+  } catch (err) {
+    return {
+      output: '',
+      error: err instanceof Error ? err.message : String(err),
+      exitCode: -1,
+    };
+  }
 };

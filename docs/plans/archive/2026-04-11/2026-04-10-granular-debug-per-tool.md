@@ -2,8 +2,8 @@
 
 | Step                                                                    | Status | Timestamp |
 | ----------------------------------------------------------------------- | ------ | --------- |
-| 1. Update user-events.config.ts to show granular debug per tool example | ⏳     | -         |
-| 2. Explain how to use granular debug in README or docs                  | ⏳     | -         |
+| 1. Update user-events.config.ts to show granular debug per tool example | ✅     | -         |
+| 2. Explain how to use granular debug in README or docs                  | ✅     | -         |
 
 ## 2026-04-10: Overview
 
