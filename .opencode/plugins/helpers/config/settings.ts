@@ -40,6 +40,11 @@ export const userConfig: UserEventsConfig = {
     appendToSession: false,
   },
 
+  // Opinionated defaults - good for most projects
+  // saveToFile: true = logs all events to production/session-logs/
+  // toast: false = don't show toasts for all events (too noisy)
+  // runScripts: false = scripts are opt-in, not by default
+
   events: {
     [EventType.SERVER_CONNECTED]: { enabled: false },
     [EventType.SERVER_INSTANCE_DISPOSED]: { enabled: false },
