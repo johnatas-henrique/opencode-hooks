@@ -12,7 +12,7 @@ import type {
   ToolExecuteAfterOutput,
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
-} from './types/opencode-hooks';
+} from './types/core';
 import {
   initGlobalToastQueue,
   useGlobalToastQueue,

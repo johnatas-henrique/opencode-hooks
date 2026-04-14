@@ -7,7 +7,7 @@
 import type {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
-} from '../../types/opencode-hooks';
+} from '../../types/core';
 import type { ScriptResult } from '../../types/config';
 
 export type BlockPredicate = (

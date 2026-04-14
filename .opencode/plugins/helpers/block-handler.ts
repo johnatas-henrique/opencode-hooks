@@ -1,7 +1,7 @@
 import type {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
-} from '../types/opencode-hooks';
+} from '../types/core';
 import type { BlockCheck, ScriptResult } from '../types/config';
 import { useGlobalToastQueue } from './toast-queue';
 import { saveToFile } from './save-to-file';
