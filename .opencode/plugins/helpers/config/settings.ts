@@ -1,36 +1,17 @@
-import { TOAST_DURATION } from './constants';
-import { EventType } from './config';
-import type { UserEventsConfig, ScriptResult } from './config';
+import { TOAST_DURATION } from '../constants';
+import { EventType } from '../../types/config';
+import type { UserEventsConfig } from '../../types/config';
 import {
-  ToolExecuteBeforeInput,
-  ToolExecuteBeforeOutput,
-} from '../types/opencode-hooks';
+  BlockPredicate,
+  blockEnvFiles,
+  blockGitForce,
+  blockScriptsFailed,
+  blockByPath,
+  blockNoVerify,
+  blockProtectedBranch,
+} from './blocks';
 
-// ============================================
-// BLOCK PREDICATES
-// ============================================
-
-type BlockPredicate = (
-  input: ToolExecuteBeforeInput,
-  output: ToolExecuteBeforeOutput,
-  scriptResults: ScriptResult[]
-) => boolean;
-
-const blockEnvFiles: BlockPredicate = (_, output) =>
-  (output.args.filePath as string)?.includes('.env');
-
-const blockGitForce: BlockPredicate = (_, output) => {
-  const cmd = output.args.command as string;
-  return cmd?.includes('--force') || cmd?.includes(' -f');
-};
-
-const blockScriptsFailed: BlockPredicate = (_, __, results) =>
-  results.some((r) => r.exitCode !== 0);
-
-const blockByPath =
-  (patterns: string[]): BlockPredicate =>
-  (_, output) =>
-    patterns.some((p) => (output.args.filePath as string)?.includes(p));
+export type { BlockPredicate };
 
 export const userConfig: UserEventsConfig = {
   enabled: true,
@@ -113,7 +94,6 @@ export const userConfig: UserEventsConfig = {
     [EventType.TUI_PROMPT_APPEND]: { toast: true },
     [EventType.TUI_COMMAND_EXECUTE]: { toast: true },
 
-    // // Always disabled, because it fires on toast showing, so it can fires indefinitely
     [EventType.TUI_TOAST_SHOW]: { enabled: false },
   },
 
@@ -121,19 +101,12 @@ export const userConfig: UserEventsConfig = {
     [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
       task: {
         toast: true,
-        scripts: ['log-agent.sh'],
-        runScripts: true,
         saveToFile: true,
       },
     },
     [EventType.TOOL_EXECUTE_AFTER]: {
       task: { toast: true },
-      skill: {
-        toast: true,
-        scripts: ['log-skill.sh'],
-        runScripts: true,
-        saveToFile: true,
-      },
+      skill: { toast: true, saveToFile: true },
       bash: {},
       write: {},
       edit: {},
@@ -167,7 +140,12 @@ export const userConfig: UserEventsConfig = {
       bash: {
         toast: true,
         block: [
+          { check: blockNoVerify, message: '🚫 --no-verify flag blocked' },
           { check: blockGitForce, message: '🚫 git --force forbidden' },
+          {
+            check: blockProtectedBranch,
+            message: '🚫 Push to protected branch',
+          },
           { check: blockScriptsFailed, message: '🚫 Blocking: scripts failed' },
         ],
       },
@@ -202,7 +180,16 @@ export const userConfig: UserEventsConfig = {
       'git.commit': {},
       'git.push': {},
       'git.pull': {},
-      filesystem_read_file: {},
+      filesystem_read_file: {
+        toast: true,
+        block: [
+          { check: blockEnvFiles, message: '🚫 Cannot read .env files' },
+          {
+            check: blockByPath(['credentials.json', 'secrets/', '.ssh/']),
+            message: '🚫 Protected files',
+          },
+        ],
+      },
       filesystem_write_file: {},
       filesystem_list_directory: {},
       filesystem_search_files: {},
