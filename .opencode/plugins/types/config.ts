@@ -82,7 +82,7 @@ export interface EventOverride {
   scripts?: string[];
   runScripts?: boolean;
   runOnlyOnce?: boolean;
-  saveToFile?: boolean;
+  saveToFile?: boolean | FileTemplate;
   appendToSession?: boolean;
   allowedFields?: string[];
 }
@@ -131,7 +131,7 @@ export interface ResolvedEventConfig {
   toastDuration: number;
   scripts: string[];
   runScripts: boolean;
-  saveToFile: boolean;
+  saveToFile: boolean | FileTemplate;
   appendToSession: boolean;
   runOnlyOnce: boolean;
   scriptToasts: ScriptToastsConfig;
@@ -156,6 +156,12 @@ export interface BlockCheck {
   message?: string;
 }
 
+export interface FileTemplate {
+  enabled: boolean;
+  template?: string;
+  path?: string;
+}
+
 export interface ToolOverride {
   enabled?: boolean;
   debug?: boolean;
@@ -163,7 +169,7 @@ export interface ToolOverride {
   scripts?: string[];
   runScripts?: boolean;
   runOnlyOnce?: boolean;
-  saveToFile?: boolean;
+  saveToFile?: boolean | FileTemplate;
   appendToSession?: boolean;
   block?: BlockCheck[];
   messageFn?: (input: unknown, output?: unknown) => string | undefined;

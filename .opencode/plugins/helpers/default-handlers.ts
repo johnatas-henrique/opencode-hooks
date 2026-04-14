@@ -12,6 +12,7 @@ export interface EventHandler {
   defaultScript: string;
   buildMessage: BuildMessageFn;
   allowedFields?: string[];
+  defaultTemplate?: string;
 }
 
 const formatTime = (): string => new Date().toLocaleTimeString();
@@ -171,6 +172,7 @@ interface HandlerConfig {
   defaultScript: string;
   buildMessage: BuildMessageFn;
   allowedFields?: string[];
+  defaultTemplate?: string;
 }
 
 const createHandler = (config: HandlerConfig): EventHandler => ({
@@ -180,6 +182,7 @@ const createHandler = (config: HandlerConfig): EventHandler => ({
   defaultScript: config.defaultScript,
   buildMessage: config.buildMessage,
   allowedFields: config.allowedFields,
+  defaultTemplate: config.defaultTemplate,
 });
 
 export const handlers: Record<string, EventHandler> = {
@@ -190,6 +193,8 @@ export const handlers: Record<string, EventHandler> = {
     defaultScript: 'session-created.sh',
     buildMessage: buildKeysMessageSimple,
     allowedFields: ['info.id', 'info.title', 'info.directory', 'info.parentID'],
+    defaultTemplate:
+      '[{timestamp}] Session: {info.id} | Project: {info.directory}',
   }),
 
   'session.compacted': createHandler({
@@ -199,6 +204,7 @@ export const handlers: Record<string, EventHandler> = {
     defaultScript: 'session-compacted.sh',
     buildMessage: buildKeysMessageSimple,
     allowedFields: ['sessionID', 'contextSize'],
+    defaultTemplate: '[{timestamp}] Session compacted: {properties.sessionID}',
   }),
 
   'session.deleted': createHandler({
@@ -217,6 +223,7 @@ export const handlers: Record<string, EventHandler> = {
     defaultScript: 'session-error.sh',
     buildMessage: buildKeysMessageSimple,
     allowedFields: ['sessionID', 'error.name', 'error.data.message'],
+    defaultTemplate: '[{timestamp}] ERROR: {error.name} - {error.data.message}',
   }),
 
   'session.diff': createHandler({
@@ -317,6 +324,7 @@ export const handlers: Record<string, EventHandler> = {
       'metadata.exit',
       'metadata.description',
     ],
+    defaultTemplate: '[{timestamp}] {input.tool} → {output.metadata.exit}',
   }),
 
   'tool.execute.after.subagent': createHandler({
@@ -326,6 +334,7 @@ export const handlers: Record<string, EventHandler> = {
     defaultScript: 'tool-execute-after.subagent.sh',
     buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'subagentType', 'output.title'],
+    defaultTemplate: '[{timestamp}] Subagent: {input.subagentType}',
   }),
 
   'file.edited': createHandler({
@@ -563,6 +572,7 @@ export const handlers: Record<string, EventHandler> = {
     duration: TOAST_DURATION.TEN_SECONDS,
     defaultScript: 'tool-execute-after-skill.sh',
     buildMessage: buildKeysMessage,
+    defaultTemplate: '[{timestamp}] Skill: {input.args.name}',
   }),
 
   'tool.execute.before.bash': createHandler({

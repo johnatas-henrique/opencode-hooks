@@ -9,6 +9,7 @@ import type {
   ToastOverride,
   EventOverride,
   ToolOverride,
+  FileTemplate,
 } from '../types/config';
 
 export { ResolvedEventConfig };
@@ -214,6 +215,47 @@ function getWithDefault(
   return fallback;
 }
 
+function resolveSaveToFile(
+  eventCfg: EventConfig | undefined,
+  defaultCfg: EventOverride | undefined
+): boolean | FileTemplate {
+  const checkFileTemplate = (value: unknown): boolean | FileTemplate => {
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    if (typeof value === 'object' && value !== null) {
+      const obj = value as Record<string, unknown>;
+      if ('enabled' in obj) {
+        return {
+          enabled: true,
+          template: obj.template as string | undefined,
+          path: obj.path as string | undefined,
+        };
+      }
+      return {
+        enabled: true,
+        template: obj.template as string | undefined,
+        path: obj.path as string | undefined,
+      };
+    }
+    return false;
+  };
+
+  if (typeof eventCfg === 'object' && eventCfg !== null) {
+    const value = (eventCfg as EventOverride).saveToFile;
+    if (value !== undefined) {
+      return checkFileTemplate(value);
+    }
+  }
+  if (defaultCfg !== null && defaultCfg !== undefined) {
+    const value = defaultCfg.saveToFile;
+    if (value !== undefined) {
+      return checkFileTemplate(value);
+    }
+  }
+  return false;
+}
+
 function isEventDisabled(eventCfg: EventConfig): boolean {
   if (eventCfg === false) return true;
   if (typeof eventCfg === 'object' && eventCfg !== null) {
@@ -272,7 +314,7 @@ export function resolveEventConfig(
       toastVariant: handler?.variant ?? 'info',
       toastDuration: handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
       scripts: [],
-      saveToFile: getWithDefault(true, defaultCfg, 'saveToFile', false),
+      saveToFile: resolveSaveToFile(true, defaultCfg),
       appendToSession: getWithDefault(
         true,
         defaultCfg,
@@ -326,12 +368,7 @@ export function resolveEventConfig(
     toastDuration:
       toastCfg?.duration ?? handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
     scripts,
-    saveToFile: getWithDefault(
-      userEventConfig,
-      defaultCfg,
-      'saveToFile',
-      false
-    ),
+    saveToFile: resolveSaveToFile(userEventConfig, defaultCfg),
     appendToSession: getWithDefault(
       userEventConfig,
       defaultCfg,
@@ -469,12 +506,7 @@ export function resolveToolConfig(
     toastVariant: toastCfg?.variant ?? baseWithToolHandler.toastVariant,
     toastDuration: toastCfg?.duration ?? baseWithToolHandler.toastDuration,
     scripts,
-    saveToFile: getWithDefault(
-      toolConfig,
-      defaultCfg,
-      'saveToFile',
-      baseWithToolHandler.saveToFile
-    ),
+    saveToFile: resolveSaveToFile(toolConfig ?? defaultCfg, defaultCfg),
     appendToSession: getWithDefault(
       toolConfig,
       defaultCfg,
@@ -521,7 +553,7 @@ function getDefaultConfig(
     toastDuration: handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
     scripts,
     runScripts,
-    saveToFile: getWithDefault(true, defaultCfg, 'saveToFile', false),
+    saveToFile: resolveSaveToFile(undefined, defaultCfg),
     appendToSession: getWithDefault(true, defaultCfg, 'appendToSession', false),
     runOnlyOnce: false,
     scriptToasts: userConfig.scriptToasts,
