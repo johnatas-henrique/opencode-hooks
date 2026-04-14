@@ -28,7 +28,8 @@ import {
   type EventConfig,
   type ToolConfig,
   type UserEventsConfig,
-} from './config';
+} from '../types/config';
+import { userConfig } from './config/index';
 import { showActivePluginsToast } from './show-active-plugins';
 import {
   waitForToastSilence,
@@ -61,6 +62,7 @@ export {
   normalizeInputForHandler,
   getHandler,
   EventType,
+  userConfig,
   showActivePluginsToast,
   waitForToastSilence,
   countToastsInLog,

@@ -1,6 +1,9 @@
 import { TOAST_DURATION } from './constants';
 
-type BuildMessageFn = (event: Record<string, unknown>) => string;
+type BuildMessageFn = (
+  event: Record<string, unknown>,
+  allowedFields?: string[]
+) => string;
 
 export interface EventHandler {
   title: string;
@@ -8,6 +11,7 @@ export interface EventHandler {
   duration: number;
   defaultScript: string;
   buildMessage: BuildMessageFn;
+  allowedFields?: string[];
 }
 
 const formatTime = (): string => new Date().toLocaleTimeString();
@@ -47,42 +51,73 @@ const formatValue = (value: unknown): string => {
   return truncate(maskSensitive(str));
 };
 
-export const buildAllKeysMessage = (event: Record<string, unknown>): string => {
+const getValueByPath = (obj: unknown, path: string): unknown => {
+  return path
+    .split('.')
+    .reduce((o, k) => (o as Record<string, unknown>)?.[k], obj);
+};
+
+export const buildKeysMessage = (
+  event: Record<string, unknown>,
+  allowedFields?: string[]
+): string => {
   const lines: string[] = [];
 
-  if (event.input) {
-    const input = event.input as Record<string, unknown>;
-    for (const [key, value] of Object.entries(input)) {
-      if (key === 'args') {
-        const args = value as Record<string, unknown>;
-        for (const [argKey, argValue] of Object.entries(args ?? {})) {
-          lines.push(`input.args.${argKey}: ${formatValue(argValue)}`);
+  const addLine = (key: string, value: unknown): void => {
+    lines.push(`${key}: ${formatValue(value)}`);
+  };
+
+  if (!allowedFields || allowedFields.length === 0) {
+    if (event.input) {
+      const input = event.input as Record<string, unknown>;
+      for (const [key, value] of Object.entries(input)) {
+        if (key === 'args') {
+          const args = value as Record<string, unknown>;
+          for (const [argKey, argValue] of Object.entries(args ?? {})) {
+            addLine(`input.args.${argKey}`, argValue);
+          }
+        } else {
+          addLine(`input.${key}`, value);
         }
+      }
+    }
+
+    if (event.output) {
+      const output = event.output as Record<string, unknown>;
+      for (const [key, value] of Object.entries(output)) {
+        addLine(`output.${key}`, value);
+      }
+    }
+  } else {
+    for (const field of allowedFields) {
+      let value: unknown;
+
+      if (field.startsWith('input.')) {
+        value = getValueByPath(event.input, field.substring(6));
+      } else if (field.startsWith('output.')) {
+        value = getValueByPath(event.output, field.substring(7));
+      } else if (field.startsWith('properties.')) {
+        value = getValueByPath(event.properties, field.substring(11));
       } else {
-        lines.push(`input.${key}: ${formatValue(value)}`);
+        value =
+          getValueByPath(event.input, field) ??
+          getValueByPath(event.output, field) ??
+          getValueByPath(event.properties, field);
+      }
+
+      if (value !== undefined) {
+        addLine(field, value);
       }
     }
   }
 
-  if (event.output) {
-    const output = event.output as Record<string, unknown>;
-    for (const [key, value] of Object.entries(output)) {
-      lines.push(`output.${key}: ${formatValue(value)}`);
-    }
-  }
-
-  if (event.properties && !event.input) {
+  if (!lines.length && event.properties) {
     const props = event.properties as Record<string, unknown>;
     for (const [key, value] of Object.entries(props)) {
       if (typeof value === 'object' && value !== null) {
-        lines.push(`${key}: ${formatValue(value)}`);
-        for (const [nestedKey, nestedValue] of Object.entries(
-          value as Record<string, unknown>
-        )) {
-          lines.push(`  ${nestedKey}: ${formatValue(nestedValue)}`);
-        }
+        addLine(key, JSON.stringify(value));
       } else {
-        lines.push(`${key}: ${formatValue(value)}`);
+        addLine(key, value);
       }
     }
   }
@@ -91,8 +126,9 @@ export const buildAllKeysMessage = (event: Record<string, unknown>): string => {
   return lines.join('\n');
 };
 
-export const buildAllKeysMessageSimple = (
-  event: Record<string, unknown>
+export const buildKeysMessageSimple = (
+  event: Record<string, unknown>,
+  allowedFields?: string[]
 ): string => {
   const lines: string[] = [];
 
@@ -111,8 +147,17 @@ export const buildAllKeysMessageSimple = (
     }
   };
 
-  if (event.properties) {
-    flatten(event.properties as Record<string, unknown>);
+  if (!allowedFields || allowedFields.length === 0) {
+    if (event.properties) {
+      flatten(event.properties as Record<string, unknown>);
+    }
+  } else {
+    for (const field of allowedFields) {
+      const value = getValueByPath(event.properties, field);
+      if (value !== undefined) {
+        lines.push(`${field}: ${formatValue(value)}`);
+      }
+    }
   }
 
   lines.push(`Time: ${formatTime()}`);
@@ -125,6 +170,7 @@ interface HandlerConfig {
   duration: number;
   defaultScript: string;
   buildMessage: BuildMessageFn;
+  allowedFields?: string[];
 }
 
 const createHandler = (config: HandlerConfig): EventHandler => ({
@@ -133,6 +179,7 @@ const createHandler = (config: HandlerConfig): EventHandler => ({
   duration: config.duration,
   defaultScript: config.defaultScript,
   buildMessage: config.buildMessage,
+  allowedFields: config.allowedFields,
 });
 
 export const handlers: Record<string, EventHandler> = {
@@ -141,7 +188,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'success',
     duration: TOAST_DURATION.TEN_SECONDS,
     defaultScript: 'session-created.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
+    allowedFields: ['info.id', 'info.title', 'info.directory', 'info.parentID'],
   }),
 
   'session.compacted': createHandler({
@@ -149,7 +197,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.TEN_SECONDS,
     defaultScript: 'session-compacted.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
+    allowedFields: ['sessionID', 'contextSize'],
   }),
 
   'session.deleted': createHandler({
@@ -157,7 +206,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'error',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-deleted.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
+    allowedFields: ['info.id'],
   }),
 
   'session.error': createHandler({
@@ -165,7 +215,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'error',
     duration: TOAST_DURATION.TEN_SECONDS,
     defaultScript: 'session-error.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
+    allowedFields: ['sessionID', 'error.name', 'error.data.message'],
   }),
 
   'session.diff': createHandler({
@@ -173,7 +224,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-diff.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'session.idle': createHandler({
@@ -181,7 +232,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-idle.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'session.status': createHandler({
@@ -189,7 +240,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-status.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'session.updated': createHandler({
@@ -197,7 +248,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-updated.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'message.part.removed': createHandler({
@@ -205,7 +256,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-part-removed.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'message.part.updated': createHandler({
@@ -213,7 +264,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-part-updated.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'message.part.delta': createHandler({
@@ -221,7 +272,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-part-delta.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'message.removed': createHandler({
@@ -229,7 +280,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-removed.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'message.updated': createHandler({
@@ -237,7 +288,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'message-updated.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'tool.execute.before': createHandler({
@@ -245,7 +296,13 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
+    allowedFields: [
+      'tool',
+      'args.command',
+      'args.filePath',
+      'args.description',
+    ],
   }),
 
   'tool.execute.after': createHandler({
@@ -253,7 +310,13 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
+    allowedFields: [
+      'tool',
+      'output.title',
+      'metadata.exit',
+      'metadata.description',
+    ],
   }),
 
   'tool.execute.after.subagent': createHandler({
@@ -261,7 +324,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.subagent.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
+    allowedFields: ['tool', 'subagentType', 'output.title'],
   }),
 
   'file.edited': createHandler({
@@ -269,7 +333,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'file-edited.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
+    allowedFields: ['path'],
   }),
 
   'file.watcher.updated': createHandler({
@@ -277,7 +342,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'file-watcher-updated.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
+    allowedFields: ['path'],
   }),
 
   'permission.ask': createHandler({
@@ -285,7 +351,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'permission-ask.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessageSimple,
+    allowedFields: ['sessionID', 'tool', 'type', 'pattern', 'title'],
   }),
 
   'permission.updated': createHandler({
@@ -293,7 +360,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'permission-updated.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'permission.replied': createHandler({
@@ -301,7 +368,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'permission-replied.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'server.connected': createHandler({
@@ -309,7 +376,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'success',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'server-connected.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'server.instance.disposed': createHandler({
@@ -317,7 +384,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-stop.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'command.executed': createHandler({
@@ -325,7 +392,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'success',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'command-executed.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'lsp.client.diagnostics': createHandler({
@@ -333,7 +400,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'lsp-client-diagnostics.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'lsp.updated': createHandler({
@@ -341,7 +408,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'lsp-updated.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'installation.updated': createHandler({
@@ -349,7 +416,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'success',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'installation-updated.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'todo.updated': createHandler({
@@ -357,7 +424,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'todo-updated.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'shell.env': createHandler({
@@ -365,7 +432,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'shell-env.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessageSimple,
+    allowedFields: ['cwd', 'sessionID'],
   }),
 
   'tui.prompt.append': createHandler({
@@ -373,7 +441,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tui-prompt-append.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'tui.command.execute': createHandler({
@@ -381,7 +449,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'success',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tui-command-execute.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'tui.toast.show': createHandler({
@@ -389,7 +457,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tui-toast-show.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'experimental.session.compacting': createHandler({
@@ -397,7 +465,8 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'experimental-session-compacting.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessageSimple,
+    allowedFields: ['sessionID'],
   }),
 
   'chat.message': createHandler({
@@ -405,7 +474,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'chat-message.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'chat.params': createHandler({
@@ -413,7 +482,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'chat-params.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'chat.headers': createHandler({
@@ -421,7 +490,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'chat-headers.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'command.execute.before': createHandler({
@@ -429,7 +498,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'command-execute-before.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'experimental.chat.messages.transform': createHandler({
@@ -437,7 +506,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'experimental-chat-messages-transform.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'experimental.chat.system.transform': createHandler({
@@ -445,7 +514,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'experimental-chat-system-transform.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'experimental.text.complete': createHandler({
@@ -453,7 +522,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'experimental-text-complete.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'tool.definition': createHandler({
@@ -461,7 +530,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-definition.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'tool.execute.before.task': createHandler({
@@ -469,7 +538,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.TEN_SECONDS,
     defaultScript: 'tool-execute-before-task.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.task': createHandler({
@@ -477,7 +546,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'success',
     duration: TOAST_DURATION.TEN_SECONDS,
     defaultScript: 'tool-execute-after-task.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.skill': createHandler({
@@ -485,7 +554,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.TEN_SECONDS,
     defaultScript: 'tool-execute-before-skill.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.skill': createHandler({
@@ -493,7 +562,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'success',
     duration: TOAST_DURATION.TEN_SECONDS,
     defaultScript: 'tool-execute-after-skill.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.bash': createHandler({
@@ -501,7 +570,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-bash.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.bash': createHandler({
@@ -509,7 +578,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-bash.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.write': createHandler({
@@ -517,7 +586,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-write.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.write': createHandler({
@@ -525,7 +594,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-write.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.edit': createHandler({
@@ -533,7 +602,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-edit.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.edit': createHandler({
@@ -541,7 +610,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-edit.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.read': createHandler({
@@ -549,7 +618,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-read.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.read': createHandler({
@@ -557,7 +626,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-read.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.glob': createHandler({
@@ -565,7 +634,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-glob.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.glob': createHandler({
@@ -573,7 +642,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-glob.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.grep': createHandler({
@@ -581,7 +650,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-grep.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.grep': createHandler({
@@ -589,7 +658,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-grep.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.list': createHandler({
@@ -597,7 +666,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-list.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.list': createHandler({
@@ -605,7 +674,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-list.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.patch': createHandler({
@@ -613,7 +682,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-patch.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.patch': createHandler({
@@ -621,7 +690,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-patch.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.webfetch': createHandler({
@@ -629,7 +698,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-webfetch.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.webfetch': createHandler({
@@ -637,7 +706,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-webfetch.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.websearch': createHandler({
@@ -645,7 +714,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-websearch.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.websearch': createHandler({
@@ -653,7 +722,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-websearch.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.codesearch': createHandler({
@@ -661,7 +730,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-codesearch.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.codesearch': createHandler({
@@ -669,7 +738,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-codesearch.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.todowrite': createHandler({
@@ -677,7 +746,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-todowrite.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.todowrite': createHandler({
@@ -685,7 +754,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-todowrite.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.todoread': createHandler({
@@ -693,7 +762,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-todoread.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.todoread': createHandler({
@@ -701,7 +770,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-todoread.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.question': createHandler({
@@ -709,7 +778,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-question.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.question': createHandler({
@@ -717,7 +786,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-question.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.git-commit': createHandler({
@@ -725,7 +794,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-git-commit.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.git-commit': createHandler({
@@ -733,7 +802,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'success',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-git-commit.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.filesystem_read_file': createHandler({
@@ -741,7 +810,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-filesystem-read.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.filesystem_read_file': createHandler({
@@ -749,7 +818,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-filesystem-read.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.filesystem_write_file': createHandler({
@@ -757,7 +826,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-filesystem-write.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.filesystem_write_file': createHandler({
@@ -765,7 +834,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-filesystem-write.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.filesystem_list_directory': createHandler({
@@ -773,7 +842,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-filesystem-list.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.filesystem_list_directory': createHandler({
@@ -781,7 +850,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-filesystem-list.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.filesystem_search_files': createHandler({
@@ -789,7 +858,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-filesystem-search.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.filesystem_search_files': createHandler({
@@ -797,7 +866,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-filesystem-search.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.filesystem_create_directory': createHandler({
@@ -805,7 +874,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-filesystem-mkdir.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.filesystem_create_directory': createHandler({
@@ -813,7 +882,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-filesystem-mkdir.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.filesystem_move_file': createHandler({
@@ -821,7 +890,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-filesystem-move.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.filesystem_move_file': createHandler({
@@ -829,7 +898,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-filesystem-move.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.filesystem_get_file_info': createHandler({
@@ -837,7 +906,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-filesystem-stat.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.filesystem_get_file_info': createHandler({
@@ -845,7 +914,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-filesystem-stat.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.before.gh_grep_searchGitHub': createHandler({
@@ -853,7 +922,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-before-gh-search.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'tool.execute.after.gh_grep_searchGitHub': createHandler({
@@ -861,7 +930,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'info',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'tool-execute-after-gh-search.sh',
-    buildMessage: buildAllKeysMessage,
+    buildMessage: buildKeysMessage,
   }),
 
   'session.unknown': createHandler({
@@ -869,7 +938,7 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'session-unknown.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 
   'unknown.event': createHandler({
@@ -877,6 +946,6 @@ export const handlers: Record<string, EventHandler> = {
     variant: 'warning',
     duration: TOAST_DURATION.FIVE_SECONDS,
     defaultScript: 'unknown-event.sh',
-    buildMessage: buildAllKeysMessageSimple,
+    buildMessage: buildKeysMessageSimple,
   }),
 };

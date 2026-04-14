@@ -1,5 +1,5 @@
 import { handlers, type EventHandler } from './default-handlers';
-import { userConfig } from './user-events.config';
+import { userConfig } from './config/index';
 import { saveToFile } from './save-to-file';
 import { UNKNOWN_EVENT_LOG_FILE, TOAST_DURATION } from './constants';
 import type {
@@ -9,7 +9,7 @@ import type {
   ToastOverride,
   EventOverride,
   ToolOverride,
-} from './config';
+} from '../types/config';
 
 export { ResolvedEventConfig };
 
@@ -42,11 +42,12 @@ function tryBuildMessage(
   handler: EventHandler,
   eventType: string,
   input: Record<string, unknown>,
-  output?: Record<string, unknown>
+  output?: Record<string, unknown>,
+  allowedFields?: string[]
 ): string {
   try {
     const normalized = normalizeInputForHandler(eventType, input, output);
-    return handler.buildMessage(normalized);
+    return handler.buildMessage(normalized, allowedFields);
   } catch {
     return '';
   }
@@ -138,6 +139,21 @@ function resolveToastOverride(cfg: EventConfig): ToastOverride | null {
     return cfg.toast;
   }
   return null;
+}
+
+function buildToastMessage(
+  toastCfg: ToastOverride | null,
+  fallbackMessage: string,
+  input: Record<string, unknown>,
+  output?: Record<string, unknown>
+): string {
+  if (toastCfg?.messageFn) {
+    const fnMessage = toastCfg.messageFn(input, output);
+    if (fnMessage !== undefined) {
+      return fnMessage;
+    }
+  }
+  return toastCfg?.message ?? fallbackMessage;
 }
 
 /**
@@ -245,7 +261,13 @@ export function resolveEventConfig(
       toastTitle: handler?.title ?? '',
       runScripts: getWithDefault(true, defaultCfg, 'runScripts', false),
       toastMessage: handler
-        ? tryBuildMessage(handler, eventType, input ?? {}, output)
+        ? tryBuildMessage(
+            handler,
+            eventType,
+            input ?? {},
+            output,
+            handler.allowedFields
+          )
         : '',
       toastVariant: handler?.variant ?? 'info',
       toastDuration: handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
@@ -259,6 +281,7 @@ export function resolveEventConfig(
       ),
       runOnlyOnce: false,
       scriptToasts: userConfig.scriptToasts,
+      allowedFields: handler?.allowedFields,
     };
   }
 
@@ -284,9 +307,21 @@ export function resolveEventConfig(
       'runScripts',
       false
     ),
-    toastMessage:
-      toastCfg?.message ??
-      (handler ? tryBuildMessage(handler, eventType, input ?? {}, output) : ''),
+    toastMessage: buildToastMessage(
+      toastCfg,
+      handler
+        ? tryBuildMessage(
+            handler,
+            eventType,
+            input ?? {},
+            output,
+            (userEventConfig as EventOverride)?.allowedFields ??
+              handler.allowedFields
+          )
+        : '',
+      input ?? {},
+      output
+    ),
     toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
     toastDuration:
       toastCfg?.duration ?? handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
@@ -310,6 +345,9 @@ export function resolveEventConfig(
       false
     ),
     scriptToasts: userConfig.scriptToasts,
+    allowedFields:
+      (userEventConfig as EventOverride)?.allowedFields ??
+      handler?.allowedFields,
   };
 }
 
@@ -357,9 +395,21 @@ export function resolveToolConfig(
     ...eventBase,
     toastTitle: toolHandler?.title ?? eventHandler?.title,
     toastMessage: toolHandler
-      ? tryBuildMessage(toolHandler, toolEventType, input ?? {}, output)
+      ? tryBuildMessage(
+          toolHandler,
+          toolEventType,
+          input ?? {},
+          output,
+          toolHandler.allowedFields
+        )
       : eventHandler
-        ? tryBuildMessage(eventHandler, toolEventType, input ?? {}, output)
+        ? tryBuildMessage(
+            eventHandler,
+            toolEventType,
+            input ?? {},
+            output,
+            eventHandler.allowedFields
+          )
         : '',
     toastVariant: toolHandler?.variant ?? eventHandler?.variant,
     toastDuration: toolHandler?.duration ?? eventHandler?.duration,
@@ -410,7 +460,12 @@ export function resolveToolConfig(
       'runScripts',
       baseWithToolHandler.runScripts
     ),
-    toastMessage: toastCfg?.message ?? baseWithToolHandler.toastMessage,
+    toastMessage: buildToastMessage(
+      toastCfg,
+      baseWithToolHandler.toastMessage,
+      input ?? {},
+      output
+    ),
     toastVariant: toastCfg?.variant ?? baseWithToolHandler.toastVariant,
     toastDuration: toastCfg?.duration ?? baseWithToolHandler.toastDuration,
     scripts,
@@ -454,7 +509,13 @@ function getDefaultConfig(
     toast: getWithDefault(true, defaultCfg, 'toast', false),
     toastTitle: handler?.title ?? '',
     toastMessage: handler
-      ? tryBuildMessage(handler, toolEventType, input ?? {})
+      ? tryBuildMessage(
+          handler,
+          toolEventType,
+          input ?? {},
+          undefined,
+          handler.allowedFields
+        )
       : '',
     toastVariant: handler?.variant ?? 'info',
     toastDuration: handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
@@ -464,5 +525,6 @@ function getDefaultConfig(
     appendToSession: getWithDefault(true, defaultCfg, 'appendToSession', false),
     runOnlyOnce: false,
     scriptToasts: userConfig.scriptToasts,
+    allowedFields: handler?.allowedFields,
   };
 }
