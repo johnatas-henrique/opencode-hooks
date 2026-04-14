@@ -1,6 +1,6 @@
 import type { TuiToast } from '@opencode-ai/plugin/tui';
 import { getPluginStatus, formatPluginStatus } from './plugin-status';
-import { userConfig } from './user-events.config';
+import { userConfig } from './config/index';
 import { TOAST_DURATION } from './constants';
 
 type ToastQueue = {

@@ -85,7 +85,7 @@ export async function runScriptAndHandle(
     if (showError) {
       useGlobalToastQueue().add({
         title: errorTitle,
-        message: `Event: ${eventInfo}\nScript: ${script}\nError: ${result.error}\nExit Code: ${result.exitCode}\nCheck user-events.config.ts`,
+        message: `Event: ${eventInfo}\nScript: ${script}\nError: ${result.error}\nExit Code: ${result.exitCode}\nCheck settings.ts`,
         variant: errorVariant,
         duration: errorDuration,
       });

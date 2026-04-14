@@ -28,15 +28,14 @@ import {
   EventType,
 } from './helpers';
 import { normalizeInputForHandler as normalizeInput } from './helpers/events';
-import { userConfig } from './helpers/user-events.config';
+import { userConfig } from './helpers/config/index';
 import {
   UNKNOWN_EVENT_LOG_FILE,
   DEFAULT_SESSION_ID,
   BLOCKED_EVENTS_LOG_FILE,
 } from './helpers/constants';
-import type { ResolvedEventConfig } from './helpers/config';
+import type { ResolvedEventConfig, ScriptResult } from './types/config';
 import { executeBlocking } from './helpers/block-handler';
-import type { ScriptResult } from './helpers/config';
 
 const TASK_TOOL_NAME = 'task';
 const SUBAGENT_TYPE_ARG = 'subagent_type';

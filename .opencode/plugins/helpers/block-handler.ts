@@ -2,7 +2,7 @@ import type {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
 } from '../types/opencode-hooks';
-import type { BlockCheck, ScriptResult } from './config';
+import type { BlockCheck, ScriptResult } from '../types/config';
 import { useGlobalToastQueue } from './toast-queue';
 import { saveToFile } from './save-to-file';
 import { BLOCKED_EVENTS_LOG_FILE } from './constants';
