@@ -1,6 +1,6 @@
 import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
 
-jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
+jest.mock('../../.opencode/plugins/helpers/config/index', () => ({
   userConfig: {
     enabled: true,
     default: {

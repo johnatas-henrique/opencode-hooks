@@ -12,7 +12,7 @@ describe('resolveToolConfig - tool handler precedence', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: { toast: true },
@@ -55,7 +55,7 @@ describe('resolveToolConfig - tool handler precedence', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: { toast: true },
@@ -98,7 +98,7 @@ describe('resolveToolConfig - tool handler precedence', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: { toast: true },

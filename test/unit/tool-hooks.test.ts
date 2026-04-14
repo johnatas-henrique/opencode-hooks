@@ -92,7 +92,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
   },
 }));
 
-jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
+jest.mock('../../.opencode/plugins/helpers/config/index', () => ({
   userConfig: {
     enabled: true,
     toast: true,

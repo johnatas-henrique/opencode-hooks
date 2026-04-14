@@ -6,7 +6,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
   handlers: mockHandlers,
 }));
 
-jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
+jest.mock('../../.opencode/plugins/helpers/config/index', () => ({
   userConfig: mockUserConfig,
 }));
 
@@ -63,7 +63,7 @@ describe('events - resolveEventConfig', () => {
     jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
       handlers: {},
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -94,7 +94,7 @@ describe('events - resolveEventConfig', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {
@@ -164,7 +164,7 @@ describe('events - resolveEventConfig', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         toast: true,
@@ -253,7 +253,7 @@ describe('events - global disabled', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: false,
         toast: true,
@@ -323,7 +323,7 @@ describe('resolveToolConfig - enabled override bug', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {
@@ -372,7 +372,7 @@ describe('resolveToolConfig - enabled override bug', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -410,7 +410,7 @@ describe('resolveToolConfig - enabled override bug', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -448,7 +448,7 @@ describe('resolveToolConfig - enabled override bug', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -486,7 +486,7 @@ describe('resolveToolConfig - enabled override bug', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -524,7 +524,7 @@ describe('resolveToolConfig - enabled override bug', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -560,7 +560,7 @@ describe('resolveToolConfig - enabled override bug', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -596,7 +596,7 @@ describe('resolveToolConfig - enabled override bug', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -632,7 +632,7 @@ describe('resolveToolConfig - enabled override bug', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {
@@ -680,7 +680,7 @@ describe('resolveToolConfig - enabled override bug', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -716,7 +716,7 @@ describe('resolveToolConfig - enabled override bug', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: false,
         default: {},
@@ -754,7 +754,7 @@ describe('resolveEventConfig - enabled variations', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -786,7 +786,7 @@ describe('resolveEventConfig - enabled variations', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -818,7 +818,7 @@ describe('resolveEventConfig - enabled variations', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -850,7 +850,7 @@ describe('resolveEventConfig - enabled variations', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -885,7 +885,7 @@ describe('resolveEventConfig - enabled variations', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: {},

@@ -1,6 +1,6 @@
-import { userConfig } from '../../.opencode/plugins/helpers/user-events.config';
+import { userConfig } from '../../.opencode/plugins/helpers/config/index';
 
-describe('user-events.config - block predicates', () => {
+describe('settings - block predicates', () => {
   it('blockEnvFiles should block files with .env in path', () => {
     const toolBefore = userConfig.tools['tool.execute.before'] as Record<
       string,
@@ -58,9 +58,9 @@ describe('user-events.config - block predicates', () => {
     >;
     const bashConfig = toolBefore.bash?.block;
     expect(bashConfig).toBeDefined();
-    expect(bashConfig).toHaveLength(2);
+    expect(bashConfig).toHaveLength(4);
 
-    const predicate = bashConfig![0].check;
+    const predicate = bashConfig![1].check;
     const mockOutput = { args: { command: 'git push --force origin main' } };
     expect(predicate(undefined, mockOutput as never, [])).toBe(true);
   });
@@ -79,7 +79,7 @@ describe('user-events.config - block predicates', () => {
       }
     >;
     const bashConfig = toolBefore.bash?.block;
-    const predicate = bashConfig![0].check;
+    const predicate = bashConfig![1].check;
 
     const mockOutput = { args: { command: 'git push -f origin main' } };
     expect(predicate(undefined, mockOutput as never, [])).toBe(true);
@@ -99,7 +99,7 @@ describe('user-events.config - block predicates', () => {
       }
     >;
     const bashConfig = toolBefore.bash?.block;
-    const predicate = bashConfig![0].check;
+    const predicate = bashConfig![1].check;
 
     const mockOutput = { args: { command: 'git push origin main' } };
     expect(predicate(undefined, mockOutput as never, [])).toBe(false);
@@ -119,9 +119,9 @@ describe('user-events.config - block predicates', () => {
       }
     >;
     const bashConfig = toolBefore.bash?.block;
-    expect(bashConfig).toHaveLength(2);
+    expect(bashConfig).toHaveLength(4);
 
-    const predicate = bashConfig![1].check;
+    const predicate = bashConfig![3].check;
     const mockOutput = { args: { command: 'ls' } };
     const scriptResults = [{ script: 'test.sh', exitCode: 1, output: 'error' }];
     expect(predicate(undefined, mockOutput as never, scriptResults)).toBe(true);
@@ -142,7 +142,7 @@ describe('user-events.config - block predicates', () => {
     >;
     const bashConfig = toolBefore.bash?.block;
 
-    const predicate = bashConfig![1].check;
+    const predicate = bashConfig![3].check;
     const mockOutput = { args: { command: 'ls' } };
     const scriptResults = [{ script: 'test.sh', exitCode: 0, output: 'ok' }];
     expect(predicate(undefined, mockOutput as never, scriptResults)).toBe(
@@ -199,7 +199,7 @@ describe('user-events.config - block predicates', () => {
   });
 });
 
-describe('user-events.config - config exports', () => {
+describe('settings - config exports', () => {
   it('should export userConfig with correct structure', () => {
     expect(userConfig).toBeDefined();
     expect(userConfig.enabled).toBe(true);

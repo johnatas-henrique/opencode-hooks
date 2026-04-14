@@ -12,7 +12,7 @@ describe('resolveToolConfig - scripts population', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: { runScripts: true },
@@ -43,7 +43,7 @@ describe('resolveToolConfig - scripts population', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: { runScripts: false },
@@ -72,7 +72,7 @@ describe('resolveToolConfig - scripts population', () => {
         },
       },
     }));
-    jest.doMock('../../.opencode/plugins/helpers/user-events.config', () => ({
+    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
       userConfig: {
         enabled: true,
         default: { runScripts: true },

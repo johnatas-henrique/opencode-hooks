@@ -7,7 +7,7 @@ jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
+jest.mock('../../.opencode/plugins/helpers/config/index', () => ({
   userConfig: {
     enabled: true,
     default: {

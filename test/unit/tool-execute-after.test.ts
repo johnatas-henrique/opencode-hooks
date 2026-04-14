@@ -16,7 +16,7 @@ jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
+jest.mock('../../.opencode/plugins/helpers/config/index', () => ({
   userConfig: {
     enabled: true,
     logDisabledEvents: true,
@@ -717,9 +717,7 @@ describe('script error handling', () => {
     expect(errorToastCall).toBeDefined();
     expect(errorToastCall[0].body.title).toMatch(/ Script Error====$/);
     expect(errorToastCall[0].body.message).toContain('Script not found');
-    expect(errorToastCall[0].body.message).toContain(
-      'Check user-events.config.ts'
-    );
+    expect(errorToastCall[0].body.message).toContain('Check settings.ts');
   });
 
   it('should save error to file when script fails', async () => {
