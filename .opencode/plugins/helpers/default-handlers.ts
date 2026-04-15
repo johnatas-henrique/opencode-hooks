@@ -1,4 +1,4 @@
-import { TOAST_DURATION } from './constants';
+import { TOAST_DURATION, TRUNCATE_LENGTH } from './constants';
 
 type BuildMessageFn = (
   event: Record<string, unknown>,
@@ -16,8 +16,6 @@ export interface EventHandler {
 }
 
 const formatTime = (): string => new Date().toLocaleTimeString();
-
-const TRUNCATE_LENGTH = 1000;
 
 const SENSITIVE_PATTERNS = [
   [/(api[_-]?key)[=:]\s*["']?[\w-]+["']?/gi, '$1'],

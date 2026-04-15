@@ -1,7 +1,11 @@
 import { handlers, type EventHandler } from './default-handlers';
 import { userConfig } from './config/index';
 import { saveToFile } from './save-to-file';
-import { UNKNOWN_EVENT_LOG_FILE, TOAST_DURATION } from './constants';
+import {
+  UNKNOWN_EVENT_LOG_FILE,
+  TOAST_DURATION,
+  DISABLED_CONFIG,
+} from './constants';
 import type {
   ResolvedEventConfig,
   EventConfig,
@@ -14,30 +18,7 @@ import type {
 
 export { ResolvedEventConfig };
 
-const DISABLED_CONFIG: ResolvedEventConfig = {
-  enabled: false,
-  toast: false,
-  toastTitle: '',
-  toastMessage: '',
-  toastVariant: 'info',
-  toastDuration: 0,
-  scripts: [],
-  runScripts: false,
-  saveToFile: false,
-  appendToSession: false,
-  runOnlyOnce: false,
-  debug: false,
-  scriptToasts: {
-    showOutput: true,
-    showError: true,
-    outputVariant: 'info',
-    errorVariant: 'error',
-    outputDuration: TOAST_DURATION.FIVE_SECONDS,
-    errorDuration: TOAST_DURATION.FIFTEEN_SECONDS,
-    outputTitle: 'Script Output',
-    errorTitle: 'Script Error',
-  },
-};
+export { DISABLED_CONFIG };
 
 function tryBuildMessage(
   handler: EventHandler,

@@ -1,3 +1,5 @@
+import type { ResolvedEventConfig } from '../types/config';
+
 export const DEFAULT_SESSION_ID = 'unknown';
 
 export const TOAST_DURATION = {
@@ -32,3 +34,35 @@ export const LOG_DIR = './production/session-logs';
 export const SCRIPTS_DIR = '.opencode/scripts';
 
 export const MAX_PROMPT_LENGTH = 10000;
+
+export const TOOL = {
+  TASK: 'task',
+  SUBAGENT_TYPE_ARG: 'subagent_type',
+} as const;
+
+export const TRUNCATE_LENGTH = 1000;
+
+export const DISABLED_CONFIG: ResolvedEventConfig = {
+  enabled: false,
+  toast: false,
+  toastTitle: '',
+  toastMessage: '',
+  toastVariant: 'info',
+  toastDuration: 0,
+  scripts: [],
+  runScripts: false,
+  saveToFile: false,
+  appendToSession: false,
+  runOnlyOnce: false,
+  debug: false,
+  scriptToasts: {
+    showOutput: true,
+    showError: true,
+    outputVariant: 'info',
+    errorVariant: 'error',
+    outputDuration: TOAST_DURATION.FIVE_SECONDS,
+    errorDuration: TOAST_DURATION.FIFTEEN_SECONDS,
+    outputTitle: 'Script Output',
+    errorTitle: 'Script Error',
+  },
+};

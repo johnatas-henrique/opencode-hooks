@@ -33,12 +33,11 @@ import {
   UNKNOWN_EVENT_LOG_FILE,
   DEFAULT_SESSION_ID,
   BLOCKED_EVENTS_LOG_FILE,
+  TOAST_DURATION,
+  TOOL,
 } from './helpers/constants';
 import type { ResolvedEventConfig, ScriptResult } from './types/config';
 import { executeBlocking } from './helpers/block-handler';
-
-const TASK_TOOL_NAME = 'task';
-const SUBAGENT_TYPE_ARG = 'subagent_type';
 
 interface ExecuteHookParams {
   ctx: PluginInput;
@@ -155,7 +154,8 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
         .map((result) => `- ${result.script}:\n${result.output}`)
         .join('\n\n'),
       variant: resolved.scriptToasts?.outputVariant ?? 'info',
-      duration: resolved.scriptToasts?.outputDuration ?? 5000,
+      duration:
+        resolved.scriptToasts?.outputDuration ?? TOAST_DURATION.FIVE_SECONDS,
     });
   }
 
@@ -283,11 +283,11 @@ export const OpencodeHooks: Plugin = async (
       input: ToolExecuteAfterInput,
       output: ToolExecuteAfterOutput
     ) => {
-      const isTaskTool = input.tool === TASK_TOOL_NAME;
+      const isTaskTool = input.tool === TOOL.TASK;
       if (isTaskTool) {
         const subagentType =
-          isTaskTool && typeof input.args[SUBAGENT_TYPE_ARG] === 'string'
-            ? input.args[SUBAGENT_TYPE_ARG]
+          isTaskTool && typeof input.args[TOOL.SUBAGENT_TYPE_ARG] === 'string'
+            ? input.args[TOOL.SUBAGENT_TYPE_ARG]
             : '';
 
         const rightTool = subagentType
@@ -318,7 +318,7 @@ export const OpencodeHooks: Plugin = async (
           >,
           output: output,
           toolName: input.tool,
-          scriptArg: subagentType || input.tool,
+          scriptArg: (subagentType || input.tool) as string,
         });
       } else {
         const isSkillTool = input.tool === 'skill';
