@@ -80,14 +80,35 @@ describe('toast-silence-detector', () => {
       cleanup();
     });
 
-    it('should resolve on log file error', async () => {
-      mockReadFile.mockImplementation(async () => {
-        throw new Error('File not found');
+    it('should resolve on log file error and clear timers', async () => {
+      mockReadFile.mockImplementationOnce(async () => {
+        throw new Error('Read error');
       });
 
       const { promise, cleanup } = waitForToastSilence('/fake/log.log');
 
       jest.advanceTimersByTime(200);
+      await Promise.resolve(); // Allow async check to start
+      await Promise.resolve(); // Allow readFile to reject
+      await promise;
+
+      cleanup();
+    });
+
+    it('should resolve when count does not increase (silence detected)', async () => {
+      mockReadFile.mockResolvedValue('path=/tui/show-toast');
+
+      const { promise, cleanup } = waitForToastSilence('/fake/log.log', {
+        pollMs: 200,
+      });
+
+      // First check: count = 1, lastCount = 0.
+      await Promise.resolve();
+
+      // Trigger the poll timer
+      jest.advanceTimersByTime(200);
+      await Promise.resolve();
+      await Promise.resolve();
       await promise;
 
       cleanup();
