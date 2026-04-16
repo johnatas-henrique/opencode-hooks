@@ -1,6 +1,6 @@
 # RFC: Deep Module — Event Config Resolution
 
-**Status**: Draft  
+**Status**: Approved  
 **Priority**: Medium  
 **Date**: 2026-04-16  
 **Author**: Architecture Review

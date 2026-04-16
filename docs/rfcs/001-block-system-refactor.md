@@ -1,6 +1,6 @@
 # RFC: Block System Refactor
 
-**Status**: Draft  
+**Status**: Approved - Option A Selected  
 **Priority**: High  
 **Date**: 2026-04-16  
 **Author**: Architecture Review
