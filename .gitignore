@@ -6,3 +6,4 @@ coverage/
 production/session-logs/
 .env
 .vscode/
+*.logfmt

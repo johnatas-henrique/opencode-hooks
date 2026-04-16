@@ -19,7 +19,7 @@ module.exports = {
   detectOpenHandles: true,
   collectCoverageFrom: [
     '.opencode/plugins/opencode-hooks.ts',
-    '.opencode/plugins/helpers/**/*.ts',
+    '.opencode/plugins/**/*.ts',
     '!/**/*.test.ts',
     '!node_modules/**',
     '!.opencode/plugins/types/**',
