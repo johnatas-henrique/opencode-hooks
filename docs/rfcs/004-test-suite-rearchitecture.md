@@ -438,12 +438,74 @@ const fakeFileSystem = {
 
 ---
 
+## Implementation Status
+
+### Completed (RFC-004)
+
+#### Test Helper Factories (`test/helpers/`)
+
+| File                | Purpose                                                          |
+| ------------------- | ---------------------------------------------------------------- |
+| `create-handler.ts` | Factory for creating `EventHandler` mocks with sensible defaults |
+| `create-config.ts`  | Factory for creating `UserConfig` test fixtures                  |
+| `index.ts`          | Barrel export                                                    |
+
+**Usage Example:**
+
+```typescript
+import { createHandler, createHandlers } from '../helpers';
+
+// Single handler with overrides
+const handler = createHandler({
+  title: '====CUSTOM====',
+  variant: 'success',
+  duration: 5000,
+});
+
+// Multiple handlers at once
+const handlers = createHandlers({
+  'session.created': { title: '====CREATED====' },
+  'session.error': { title: '====ERROR====', variant: 'error' },
+});
+```
+
+```typescript
+import { createUserConfig, withEvent, withToolEvent } from '../helpers';
+
+// Full config
+const config = createUserConfig();
+
+// With event override
+const config = createUserConfig(
+  withEvent('session.created', {
+    toast: true,
+    debug: true,
+  })
+);
+
+// With tool-specific override
+const config = createUserConfig(
+  withToolEvent(EventType.TOOL_EXECUTE_AFTER, 'my-tool', { toast: false })
+);
+```
+
+#### Toast Contract Tests (`test/integration/toast-contract.test.ts`)
+
+8 passing tests covering:
+
+- Handler resolution for known/unknown events
+- Toast visibility conditions
+- Default variant/duration from handler
+
+---
+
 ## Next Steps
 
-- [ ] Review this RFC
-- [ ] Implement RFC-003 (DI enables pure function testing) **← FIRST**
-- [ ] Implement RFC-001 (Block System refactor)
-- [ ] Implement RFC-002 (Message formatters)
-- [ ] Create test fixtures
-- [ ] Add contract tests for toast behavior
+- [x] ~~Review this RFC~~
+- [x] ~~Implement RFC-003 (DI enables pure function testing)~~
+- [x] ~~Implement RFC-001 (Block System refactor)~~
+- [x] ~~Implement RFC-002 (Message formatters)~~
+- [x] ~~Create test fixtures (helpers)~~
+- [x] ~~Add contract tests for toast behavior~~
+- [ ] Refactor `events.test.ts` to use fixtures (low priority)
 - [ ] Add full spec coverage tests
