@@ -264,9 +264,8 @@ export function resolveEventConfig(
   }
 
   if (userEventConfig === undefined) {
-    const isTool = eventType.startsWith('tool.');
     const hasHandler = !!handler;
-    if (!isTool && !hasHandler) {
+    if (!hasHandler) {
       const timestamp = new Date().toISOString();
       saveToFile({
         content: JSON.stringify({
