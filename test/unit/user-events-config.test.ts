@@ -1,4 +1,4 @@
-import { userConfig } from '../../.opencode/plugins/helpers/config/index';
+import { userConfig } from '../../.opencode/plugins/config';
 
 describe('settings - block predicates', () => {
   it('blockEnvFiles should block files with .env in path', () => {

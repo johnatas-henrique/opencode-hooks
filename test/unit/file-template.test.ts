@@ -1,12 +1,12 @@
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
+jest.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
   handlers: mockHandlers,
 }));
 
-jest.mock('../../.opencode/plugins/helpers/config/index', () => ({
+jest.mock('../../.opencode/plugins/config', () => ({
   userConfig: mockUserConfig,
 }));
 
@@ -15,7 +15,7 @@ import { mockHandlers, mockUserConfig } from '../fixtures';
 import {
   resolveEventConfig,
   resolveToolConfig,
-} from '../../.opencode/plugins/helpers/events';
+} from '../../.opencode/plugins/features/events/events';
 import type { FileTemplate } from '../../.opencode/plugins/types/config';
 
 describe('resolveSaveToFile - resolveEventConfig', () => {
@@ -33,18 +33,21 @@ describe('resolveSaveToFile - resolveEventConfig', () => {
 
   it('should return FileTemplate object with template when saveToFile is object with template only', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.test': {
-          title: '====TEST====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'session-test.sh',
-          buildMessage: () => 'test',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.test': {
+            title: '====TEST====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'session-test.sh',
+            buildMessage: () => 'test',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -71,7 +74,7 @@ describe('resolveSaveToFile - resolveEventConfig', () => {
 
     const {
       resolveEventConfig: rec,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rec('session.test');
 
     const saveToFile = config.saveToFile as FileTemplate;
@@ -82,18 +85,21 @@ describe('resolveSaveToFile - resolveEventConfig', () => {
 
   it('should return FileTemplate object with path when saveToFile has path property', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.test': {
-          title: '====TEST====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'session-test.sh',
-          buildMessage: () => 'test',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.test': {
+            title: '====TEST====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'session-test.sh',
+            buildMessage: () => 'test',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -121,7 +127,7 @@ describe('resolveSaveToFile - resolveEventConfig', () => {
 
     const {
       resolveEventConfig: rec,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rec('session.test');
 
     const saveToFile = config.saveToFile as FileTemplate;
@@ -132,18 +138,21 @@ describe('resolveSaveToFile - resolveEventConfig', () => {
 
   it('should return FileTemplate with enabled: true when saveToFile has enabled: true', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.test': {
-          title: '====TEST====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'session-test.sh',
-          buildMessage: () => 'test',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.test': {
+            title: '====TEST====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'session-test.sh',
+            buildMessage: () => 'test',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -171,7 +180,7 @@ describe('resolveSaveToFile - resolveEventConfig', () => {
 
     const {
       resolveEventConfig: rec,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rec('session.test');
 
     const saveToFile = config.saveToFile as FileTemplate;
@@ -181,18 +190,21 @@ describe('resolveSaveToFile - resolveEventConfig', () => {
 
   it('should return boolean false when saveToFile has enabled: false', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.test': {
-          title: '====TEST====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'session-test.sh',
-          buildMessage: () => 'test',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.test': {
+            title: '====TEST====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'session-test.sh',
+            buildMessage: () => 'test',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -220,7 +232,7 @@ describe('resolveSaveToFile - resolveEventConfig', () => {
 
     const {
       resolveEventConfig: rec,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rec('session.test');
 
     const saveToFile = config.saveToFile as FileTemplate;
@@ -230,18 +242,21 @@ describe('resolveSaveToFile - resolveEventConfig', () => {
 
   it('should fall back to default config when event does not define saveToFile', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.test': {
-          title: '====TEST====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'session-test.sh',
-          buildMessage: () => 'test',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.test': {
+            title: '====TEST====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'session-test.sh',
+            buildMessage: () => 'test',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {
@@ -271,7 +286,7 @@ describe('resolveSaveToFile - resolveEventConfig', () => {
 
     const {
       resolveEventConfig: rec,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rec('session.test');
 
     const saveToFile = config.saveToFile as FileTemplate;
@@ -296,18 +311,21 @@ describe('resolveSaveToFile - resolveToolConfig', () => {
 
   it('should return FileTemplate object when tool has saveToFile as object', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.after': {
-          title: '====TOOL AFTER====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-after.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.after': {
+            title: '====TOOL AFTER====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-after.sh',
+            buildMessage: () => 'tool',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -339,7 +357,7 @@ describe('resolveSaveToFile - resolveToolConfig', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.after', 'task');
 
     const saveToFile = config.saveToFile as FileTemplate;
@@ -352,18 +370,21 @@ describe('resolveSaveToFile - resolveToolConfig', () => {
 
   it('should return false when tool has saveToFile: false', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.after': {
-          title: '====TOOL AFTER====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-after.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.after': {
+            title: '====TOOL AFTER====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-after.sh',
+            buildMessage: () => 'tool',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -392,7 +413,7 @@ describe('resolveSaveToFile - resolveToolConfig', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.after', 'task');
 
     expect(config.saveToFile).toBe(false);
@@ -400,18 +421,21 @@ describe('resolveSaveToFile - resolveToolConfig', () => {
 
   it('should return false when tool does not define saveToFile and event base also does not have it', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.after': {
-          title: '====TOOL AFTER====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-after.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.after': {
+            title: '====TOOL AFTER====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-after.sh',
+            buildMessage: () => 'tool',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -444,7 +468,7 @@ describe('resolveSaveToFile - resolveToolConfig', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.after', 'task');
 
     // When tool config exists but doesn't have saveToFile, it falls back to default (which has none)
@@ -456,19 +480,22 @@ describe('defaultTemplate in EventHandler', () => {
   it('should have defaultTemplate property in EventHandler interface', () => {
     // The interface EventHandler in default-handlers.ts has defaultTemplate property
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.created': {
-          title: '====SESSION CREATED====',
-          variant: 'success',
-          duration: 2000,
-          defaultScript: 'session-created.sh',
-          buildMessage: () => 'test',
-          defaultTemplate: '[{timestamp}] Session: {properties.info.id}',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.created': {
+            title: '====SESSION CREATED====',
+            variant: 'success',
+            duration: 2000,
+            defaultScript: 'session-created.sh',
+            buildMessage: () => 'test',
+            defaultTemplate: '[{timestamp}] Session: {properties.info.id}',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -487,7 +514,9 @@ describe('defaultTemplate in EventHandler', () => {
       },
     }));
 
-    const { getHandler } = require('../../.opencode/plugins/helpers/events');
+    const {
+      getHandler,
+    } = require('../../.opencode/plugins/features/events/events');
     const handler = getHandler('session.created');
 
     expect(handler).toBeDefined();
@@ -498,18 +527,21 @@ describe('defaultTemplate in EventHandler', () => {
 
   it('should return undefined when handler does not have defaultTemplate', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.test': {
-          title: '====TEST====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'session-test.sh',
-          buildMessage: () => 'test',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.test': {
+            title: '====TEST====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'session-test.sh',
+            buildMessage: () => 'test',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -528,7 +560,9 @@ describe('defaultTemplate in EventHandler', () => {
       },
     }));
 
-    const { getHandler } = require('../../.opencode/plugins/helpers/events');
+    const {
+      getHandler,
+    } = require('../../.opencode/plugins/features/events/events');
     const handler = getHandler('session.test');
 
     expect(handler).toBeDefined();

@@ -1,6 +1,6 @@
 import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
 
-jest.mock('../../.opencode/plugins/helpers/config/index', () => ({
+jest.mock('../../.opencode/plugins/config', () => ({
   userConfig: {
     enabled: true,
     default: {
@@ -22,7 +22,7 @@ jest.mock('../../.opencode/plugins/helpers/config/index', () => ({
   },
 }));
 
-jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
+jest.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -127,15 +127,18 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
   },
 }));
 
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/append-to-session', () => ({
-  appendToSession: jest.fn().mockResolvedValue(undefined),
-}));
+jest.mock(
+  '../../.opencode/plugins/features/messages/append-to-session',
+  () => ({
+    appendToSession: jest.fn().mockResolvedValue(undefined),
+  })
+);
 
-jest.mock('../../.opencode/plugins/helpers/toast-queue', () => ({
+jest.mock('../../.opencode/plugins/core/toast-queue', () => ({
   initGlobalToastQueue: jest.fn().mockReturnValue({
     add: jest.fn(),
     flush: jest.fn().mockResolvedValue(undefined),
@@ -148,17 +151,17 @@ jest.mock('../../.opencode/plugins/helpers/toast-queue', () => ({
   }),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/run-script', () => ({
+jest.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
   runScript: jest
     .fn()
     .mockResolvedValue({ output: 'Script output', error: null, exitCode: 0 }),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/debug', () => ({
+jest.mock('../../.opencode/plugins/core/debug', () => ({
   handleDebugLog: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/log-event', () => ({
+jest.mock('../../.opencode/plugins/features/events/log-event', () => ({
   logEventConfig: jest.fn().mockResolvedValue(undefined),
   logScriptOutput: jest.fn().mockResolvedValue(undefined),
 }));

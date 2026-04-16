@@ -1,4 +1,4 @@
-import { handlers } from '../../.opencode/plugins/helpers/default-handlers';
+import { handlers } from '../../.opencode/plugins/features/messages/default-handlers';
 
 describe('Tool-Specific Handlers Validation', () => {
   const toolHandlersBefore = Object.keys(handlers).filter((key) =>

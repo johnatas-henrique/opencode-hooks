@@ -1,8 +1,8 @@
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { runScript } from '../../.opencode/plugins/helpers/run-script';
+import { runScript } from '../../.opencode/plugins/features/scripts/run-script';
 import type { PluginInput } from '@opencode-ai/plugin';
 
 describe('run-script', () => {

@@ -2,7 +2,7 @@ import {
   isPrimarySession,
   getPrimarySessionId,
   resetSessionTracking,
-} from '../../.opencode/plugins/helpers/session';
+} from '../../.opencode/plugins/core/session';
 
 describe('session.ts', () => {
   beforeEach(() => {

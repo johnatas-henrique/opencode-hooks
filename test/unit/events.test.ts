@@ -1,12 +1,12 @@
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
+jest.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
   handlers: mockHandlers,
 }));
 
-jest.mock('../../.opencode/plugins/helpers/config/index', () => ({
+jest.mock('../../.opencode/plugins/config', () => ({
   userConfig: mockUserConfig,
 }));
 
@@ -16,7 +16,7 @@ import {
   resolveEventConfig,
   resolveToolConfig,
   getHandler,
-} from '../../.opencode/plugins/helpers/events';
+} from '../../.opencode/plugins/features/events/events';
 
 describe('events - resolveEventConfig', () => {
   it('should return defaults for event not listed', () => {
@@ -60,10 +60,13 @@ describe('events - resolveEventConfig', () => {
 
   it('should return empty array when event config is boolean false', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {},
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {},
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -76,7 +79,7 @@ describe('events - resolveEventConfig', () => {
 
     const {
       resolveEventConfig: rec,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rec('session.test');
 
     expect(config.scripts).toEqual([]);
@@ -84,17 +87,20 @@ describe('events - resolveEventConfig', () => {
 
   it('should return toast: false when default toast is object with enabled: false', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.test': {
-          title: 'Test',
-          variant: 'info',
-          duration: 2000,
-          buildMessage: () => 'test',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.test': {
+            title: 'Test',
+            variant: 'info',
+            duration: 2000,
+            buildMessage: () => 'test',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {
@@ -109,7 +115,7 @@ describe('events - resolveEventConfig', () => {
 
     const {
       resolveEventConfig: rec,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rec('session.test');
 
     expect(config.toast).toBe(false);
@@ -153,18 +159,21 @@ describe('events - resolveEventConfig', () => {
 
   it('should return empty scripts when event is boolean true and global runScripts is false', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.created': {
-          title: '====SESSION CREATED====',
-          variant: 'success',
-          duration: 2000,
-          defaultScript: 'session-created.sh',
-          buildMessage: () => 'test',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.created': {
+            title: '====SESSION CREATED====',
+            variant: 'success',
+            duration: 2000,
+            defaultScript: 'session-created.sh',
+            buildMessage: () => 'test',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         toast: true,
@@ -179,7 +188,7 @@ describe('events - resolveEventConfig', () => {
 
     const {
       resolveEventConfig: rec,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rec('session.created');
 
     expect(config.enabled).toBe(true);
@@ -242,18 +251,21 @@ describe('events - getHandler', () => {
 describe('events - global disabled', () => {
   it('should return enabled: false when global enabled is false', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.created': {
-          title: '====SESSION CREATED====',
-          variant: 'success',
-          duration: 2000,
-          defaultScript: 'session-created.sh',
-          buildMessage: () => 'test',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.created': {
+            title: '====SESSION CREATED====',
+            variant: 'success',
+            duration: 2000,
+            defaultScript: 'session-created.sh',
+            buildMessage: () => 'test',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: false,
         toast: true,
@@ -269,7 +281,7 @@ describe('events - global disabled', () => {
 
     const {
       resolveEventConfig,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = resolveEventConfig('session.created');
 
     expect(config.enabled).toBe(false);
@@ -305,25 +317,28 @@ describe('resolveToolConfig - runOnlyOnce', () => {
 describe('resolveToolConfig - enabled override bug', () => {
   it('should return enabled: true when event base is false but tool has enabled: true', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.before': {
-          title: '====TOOL BEFORE====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-before.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.before': {
+            title: '====TOOL BEFORE====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-before.sh',
+            buildMessage: () => 'tool',
+          },
+          'tool.execute.after': {
+            title: '====TOOL AFTER====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-after.sh',
+            buildMessage: () => 'tool',
+          },
         },
-        'tool.execute.after': {
-          title: '====TOOL AFTER====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-after.sh',
-          buildMessage: () => 'tool',
-        },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {
@@ -352,7 +367,7 @@ describe('resolveToolConfig - enabled override bug', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.before', 'skill');
 
     expect(config.enabled).toBe(true);
@@ -361,18 +376,21 @@ describe('resolveToolConfig - enabled override bug', () => {
 
   it('should return enabled: false when event base is false and tool has enabled: false', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.before': {
-          title: '====TOOL BEFORE====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-before.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.before': {
+            title: '====TOOL BEFORE====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-before.sh',
+            buildMessage: () => 'tool',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -391,7 +409,7 @@ describe('resolveToolConfig - enabled override bug', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.before', 'skill');
 
     expect(config.enabled).toBe(false);
@@ -399,18 +417,21 @@ describe('resolveToolConfig - enabled override bug', () => {
 
   it('should inherit enabled: false from event base when tool has no enabled property', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.before': {
-          title: '====TOOL BEFORE====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-before.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.before': {
+            title: '====TOOL BEFORE====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-before.sh',
+            buildMessage: () => 'tool',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -429,7 +450,7 @@ describe('resolveToolConfig - enabled override bug', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.before', 'skill');
 
     expect(config.enabled).toBe(false);
@@ -437,18 +458,21 @@ describe('resolveToolConfig - enabled override bug', () => {
 
   it('should return enabled: true when event base is true and tool has enabled: true', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.before': {
-          title: '====TOOL BEFORE====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-before.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.before': {
+            title: '====TOOL BEFORE====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-before.sh',
+            buildMessage: () => 'tool',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -467,7 +491,7 @@ describe('resolveToolConfig - enabled override bug', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.before', 'skill');
 
     expect(config.enabled).toBe(true);
@@ -475,18 +499,21 @@ describe('resolveToolConfig - enabled override bug', () => {
 
   it('should inherit enabled: true from event base when tool has no enabled property and event is true', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.before': {
-          title: '====TOOL BEFORE====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-before.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.before': {
+            title: '====TOOL BEFORE====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-before.sh',
+            buildMessage: () => 'tool',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -505,7 +532,7 @@ describe('resolveToolConfig - enabled override bug', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.before', 'skill');
 
     expect(config.enabled).toBe(true);
@@ -513,18 +540,21 @@ describe('resolveToolConfig - enabled override bug', () => {
 
   it('should return DISABLED_CONFIG when tool config is exactly false', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.before': {
-          title: '====TOOL BEFORE====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-before.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.before': {
+            title: '====TOOL BEFORE====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-before.sh',
+            buildMessage: () => 'tool',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -539,7 +569,7 @@ describe('resolveToolConfig - enabled override bug', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.before', 'skill');
 
     expect(config.enabled).toBe(false);
@@ -549,18 +579,21 @@ describe('resolveToolConfig - enabled override bug', () => {
 
   it('should fall back to eventBase when tool config is empty object', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.before': {
-          title: '====TOOL BEFORE====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-before.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.before': {
+            title: '====TOOL BEFORE====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-before.sh',
+            buildMessage: () => 'tool',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -577,7 +610,7 @@ describe('resolveToolConfig - enabled override bug', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.before', 'skill');
 
     expect(config.enabled).toBe(true);
@@ -585,18 +618,21 @@ describe('resolveToolConfig - enabled override bug', () => {
 
   it('should fall back to eventBase when tool not found', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.before': {
-          title: '====TOOL BEFORE====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-before.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.before': {
+            title: '====TOOL BEFORE====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-before.sh',
+            buildMessage: () => 'tool',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -613,7 +649,7 @@ describe('resolveToolConfig - enabled override bug', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.before', 'nonexistent-tool');
 
     expect(config.enabled).toBe(true);
@@ -621,18 +657,21 @@ describe('resolveToolConfig - enabled override bug', () => {
 
   it('should use default config fallback when tool property is undefined', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.before': {
-          title: '====TOOL BEFORE====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-before.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.before': {
+            title: '====TOOL BEFORE====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-before.sh',
+            buildMessage: () => 'tool',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {
@@ -657,7 +696,7 @@ describe('resolveToolConfig - enabled override bug', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.before', 'skill');
 
     expect(config.debug).toBe(true);
@@ -669,18 +708,21 @@ describe('resolveToolConfig - enabled override bug', () => {
 
   it('should return enabled: true when event base is undefined and tool has enabled: true', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.before': {
-          title: '====TOOL BEFORE====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-before.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.before': {
+            title: '====TOOL BEFORE====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-before.sh',
+            buildMessage: () => 'tool',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -697,7 +739,7 @@ describe('resolveToolConfig - enabled override bug', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.before', 'skill');
 
     expect(config.enabled).toBe(true);
@@ -705,18 +747,21 @@ describe('resolveToolConfig - enabled override bug', () => {
 
   it('should allow tool to override even when global enabled is false (main plugin still blocks)', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.before': {
-          title: '====TOOL BEFORE====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-before.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.before': {
+            title: '====TOOL BEFORE====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-before.sh',
+            buildMessage: () => 'tool',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: false,
         default: {},
@@ -733,7 +778,7 @@ describe('resolveToolConfig - enabled override bug', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.before', 'skill');
 
     expect(config.enabled).toBe(true);
@@ -743,18 +788,21 @@ describe('resolveToolConfig - enabled override bug', () => {
 describe('resolveEventConfig - enabled variations', () => {
   it('should return enabled: true for event config boolean true', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.test': {
-          title: '====TEST====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'session-test.sh',
-          buildMessage: () => 'test',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.test': {
+            title: '====TEST====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'session-test.sh',
+            buildMessage: () => 'test',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -767,7 +815,7 @@ describe('resolveEventConfig - enabled variations', () => {
 
     const {
       resolveEventConfig: rec,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rec('session.test');
 
     expect(config.enabled).toBe(true);
@@ -775,18 +823,21 @@ describe('resolveEventConfig - enabled variations', () => {
 
   it('should return enabled: false for event config boolean false', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.test': {
-          title: '====TEST====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'session-test.sh',
-          buildMessage: () => 'test',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.test': {
+            title: '====TEST====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'session-test.sh',
+            buildMessage: () => 'test',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -799,7 +850,7 @@ describe('resolveEventConfig - enabled variations', () => {
 
     const {
       resolveEventConfig: rec,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rec('session.test');
 
     expect(config.enabled).toBe(false);
@@ -807,18 +858,21 @@ describe('resolveEventConfig - enabled variations', () => {
 
   it('should return enabled: false for event config with enabled: false', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.test': {
-          title: '====TEST====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'session-test.sh',
-          buildMessage: () => 'test',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.test': {
+            title: '====TEST====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'session-test.sh',
+            buildMessage: () => 'test',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -831,7 +885,7 @@ describe('resolveEventConfig - enabled variations', () => {
 
     const {
       resolveEventConfig: rec,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rec('session.test');
 
     expect(config.enabled).toBe(false);
@@ -839,18 +893,21 @@ describe('resolveEventConfig - enabled variations', () => {
 
   it('should return enabled: true for event config with enabled: true', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.test': {
-          title: '====TEST====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'session-test.sh',
-          buildMessage: () => 'test',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.test': {
+            title: '====TEST====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'session-test.sh',
+            buildMessage: () => 'test',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -863,7 +920,7 @@ describe('resolveEventConfig - enabled variations', () => {
 
     const {
       resolveEventConfig: rec,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rec('session.test');
 
     expect(config.enabled).toBe(true);
@@ -872,20 +929,23 @@ describe('resolveEventConfig - enabled variations', () => {
 
   it('should return empty string when buildMessage throws', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'session.test': {
-          title: '====TEST====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'session-test.sh',
-          buildMessage: () => {
-            throw new Error('Build error');
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'session.test': {
+            title: '====TEST====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'session-test.sh',
+            buildMessage: () => {
+              throw new Error('Build error');
+            },
           },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},
@@ -908,7 +968,7 @@ describe('resolveEventConfig - enabled variations', () => {
 
     const {
       resolveEventConfig: rec,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rec('session.test', { test: 'data' });
 
     expect(config.toastMessage).toBe('');
@@ -917,7 +977,7 @@ describe('resolveEventConfig - enabled variations', () => {
   it('getToolHandler should return undefined for invalid toolEventType', () => {
     const {
       resolveToolConfig,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = resolveToolConfig('invalid', 'task');
     expect(config.enabled).toBe(true);
   });

@@ -4,7 +4,7 @@ const mockRunScript = jest
   .fn()
   .mockResolvedValue({ output: 'Script executed', error: null, exitCode: 0 });
 
-jest.mock('../../.opencode/plugins/helpers/run-script', () => ({
+jest.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
   runScript: jest
     .fn()
     .mockImplementation((...args: Parameters<typeof mockRunScript>) =>
@@ -12,11 +12,11 @@ jest.mock('../../.opencode/plugins/helpers/run-script', () => ({
     ),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/config/index', () => ({
+jest.mock('../../.opencode/plugins/config', () => ({
   userConfig: {
     enabled: true,
     logDisabledEvents: true,
@@ -65,7 +65,7 @@ jest.mock('../../.opencode/plugins/helpers/config/index', () => ({
   },
 }));
 
-jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
+jest.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -166,7 +166,7 @@ jest.mock('../../.opencode/plugins/helpers/default-handlers', () => ({
   },
 }));
 
-jest.mock('../../.opencode/plugins/helpers/events', () => {
+jest.mock('../../.opencode/plugins/features/events/events', () => {
   const mockHandlers = {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -468,14 +468,14 @@ jest.mock('../../.opencode/plugins/helpers/events', () => {
   };
 });
 
-jest.mock('../../.opencode/plugins/helpers/toast-queue', () => {
+jest.mock('../../.opencode/plugins/core/toast-queue', () => {
   const mockQueue = {
     add: jest.fn(),
     flush: jest.fn().mockResolvedValue(undefined),
     pending: 0,
   };
   return {
-    ...jest.requireActual('../../.opencode/plugins/helpers/toast-queue'),
+    ...jest.requireActual('../../.opencode/plugins/core/toast-queue'),
     initGlobalToastQueue: jest.fn((showFn) => {
       mockQueue.add = jest.fn((toast) => showFn(toast));
       return mockQueue;
@@ -486,11 +486,14 @@ jest.mock('../../.opencode/plugins/helpers/toast-queue', () => {
   };
 });
 
-jest.mock('../../.opencode/plugins/helpers/show-startup-toast', () => ({
-  showStartupToast: jest.fn().mockResolvedValue(undefined),
-}));
+jest.mock(
+  '../../.opencode/plugins/features/messages/show-startup-toast',
+  () => ({
+    showStartupToast: jest.fn().mockResolvedValue(undefined),
+  })
+);
 
-import { saveToFile } from '../../.opencode/plugins/helpers/save-to-file';
+import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
 
 interface MockClient {
   tui: {

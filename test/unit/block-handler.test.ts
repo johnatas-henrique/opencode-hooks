@@ -1,6 +1,6 @@
 const mockToastAdd = jest.fn().mockResolvedValue(undefined);
 
-jest.mock('../../.opencode/plugins/helpers/toast-queue', () => ({
+jest.mock('../../.opencode/plugins/core/toast-queue', () => ({
   createToastQueue: jest.fn(),
   initGlobalToastQueue: jest.fn(),
   useGlobalToastQueue: () => ({
@@ -10,11 +10,11 @@ jest.mock('../../.opencode/plugins/helpers/toast-queue', () => ({
   showToastStaggered: jest.fn(),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/constants', () => ({
+jest.mock('../../.opencode/plugins/core/constants', () => ({
   BLOCKED_EVENTS_LOG_FILE: 'blocked-events.log',
 }));
 
@@ -22,8 +22,8 @@ import {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
 } from '../../.opencode/plugins/types/opencode-hooks';
-import type { ScriptResult } from '../../.opencode/plugins/helpers/config';
-import { executeBlocking } from '../../.opencode/plugins/helpers/block-handler';
+import type { ScriptResult } from '../../.opencode/plugins/core/config';
+import { executeBlocking } from '../../.opencode/plugins/features/block-system/block-handler';
 
 describe('block-handler', () => {
   const input: ToolExecuteBeforeInput = {

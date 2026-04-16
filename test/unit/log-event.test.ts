@@ -1,13 +1,13 @@
 import {
   logEventConfig,
   logScriptOutput,
-} from '../../.opencode/plugins/helpers/log-event';
+} from '../../.opencode/plugins/features/events/log-event';
 
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/config/index', () => ({
+jest.mock('../../.opencode/plugins/config', () => ({
   userConfig: {
     enabled: true,
     default: {
@@ -32,7 +32,7 @@ jest.mock('../../.opencode/plugins/helpers/config/index', () => ({
   },
 }));
 
-jest.mock('../../.opencode/plugins/helpers/toast-queue', () => {
+jest.mock('../../.opencode/plugins/core/toast-queue', () => {
   const mockQueue = {
     add: jest.fn(),
     addMultiple: jest.fn(),
@@ -50,14 +50,14 @@ jest.mock('../../.opencode/plugins/helpers/toast-queue', () => {
 });
 
 const mockSaveToFile =
-  require('../../.opencode/plugins/helpers/save-to-file').saveToFile;
+  require('../../.opencode/plugins/features/persistence/save-to-file').saveToFile;
 
 describe('logEventConfig', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     const {
       resetGlobalToastQueue,
-    } = require('../../.opencode/plugins/helpers/toast-queue');
+    } = require('../../.opencode/plugins/core/toast-queue');
     resetGlobalToastQueue();
   });
   it('should save config when saveToFile is true', async () => {

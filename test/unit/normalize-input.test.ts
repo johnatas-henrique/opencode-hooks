@@ -1,8 +1,8 @@
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { normalizeInputForHandler } from '../../.opencode/plugins/helpers/events';
+import { normalizeInputForHandler } from '../../.opencode/plugins/features/events/events';
 
 describe('normalizeInputForHandler', () => {
   describe('tool.execute.before/after events', () => {

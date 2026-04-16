@@ -1,24 +1,30 @@
-import { showStartupToast } from '../../.opencode/plugins/helpers/show-startup-toast';
-import { saveToFile } from '../../.opencode/plugins/helpers/save-to-file';
+import { showStartupToast } from '../../.opencode/plugins/features/messages/show-startup-toast';
+import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
 
-jest.mock('../../.opencode/plugins/helpers/plugin-status', () => ({
+jest.mock('../../.opencode/plugins/features/messages/plugin-status', () => ({
   getLatestLogFile: jest.fn(),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/show-active-plugins', () => ({
-  showActivePluginsToast: jest.fn().mockResolvedValue(undefined),
-}));
+jest.mock(
+  '../../.opencode/plugins/features/messages/show-active-plugins',
+  () => ({
+    showActivePluginsToast: jest.fn().mockResolvedValue(undefined),
+  })
+);
 
-jest.mock('../../.opencode/plugins/helpers/toast-silence-detector', () => ({
-  waitForToastSilence: jest.fn(),
-}));
+jest.mock(
+  '../../.opencode/plugins/features/messages/toast-silence-detector',
+  () => ({
+    waitForToastSilence: jest.fn(),
+  })
+);
 
-jest.mock('../../.opencode/plugins/helpers/constants', () => ({
+jest.mock('../../.opencode/plugins/core/constants', () => ({
   TIMER: { OVERWRITE_CHECK_DELAY: 100 },
   TOAST_DURATION: { TWO_SECONDS: 2000, TEN_SECONDS: 10000, FIVE_SECONDS: 5000 },
 }));
 
-jest.mock('../../.opencode/plugins/helpers/toast-queue', () => {
+jest.mock('../../.opencode/plugins/core/toast-queue', () => {
   const mockQueue = {
     add: jest.fn(),
     addMultiple: jest.fn(),
@@ -31,16 +37,16 @@ jest.mock('../../.opencode/plugins/helpers/toast-queue', () => {
   };
 });
 
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
 const mockGetLatestLogFile =
-  require('../../.opencode/plugins/helpers/plugin-status').getLatestLogFile;
+  require('../../.opencode/plugins/features/messages/plugin-status').getLatestLogFile;
 const mockWaitForToastSilence =
-  require('../../.opencode/plugins/helpers/toast-silence-detector').waitForToastSilence;
+  require('../../.opencode/plugins/features/messages/toast-silence-detector').waitForToastSilence;
 const mockShowActivePluginsToast =
-  require('../../.opencode/plugins/helpers/show-active-plugins').showActivePluginsToast;
+  require('../../.opencode/plugins/features/messages/show-active-plugins').showActivePluginsToast;
 
 describe('showStartupToast', () => {
   let mockQueue: {
@@ -63,7 +69,7 @@ describe('showStartupToast', () => {
     };
 
     const useGlobalToastQueue =
-      require('../../.opencode/plugins/helpers/toast-queue').useGlobalToastQueue;
+      require('../../.opencode/plugins/core/toast-queue').useGlobalToastQueue;
     useGlobalToastQueue.mockReturnValue(mockQueue);
   });
 

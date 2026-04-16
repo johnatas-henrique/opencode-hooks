@@ -1,12 +1,12 @@
-import { showActivePluginsToast } from '../../.opencode/plugins/helpers/show-active-plugins';
-import { getPluginStatus } from '../../.opencode/plugins/helpers/plugin-status';
+import { showActivePluginsToast } from '../../.opencode/plugins/features/messages/show-active-plugins';
+import { getPluginStatus } from '../../.opencode/plugins/features/messages/plugin-status';
 
-jest.mock('../../.opencode/plugins/helpers/plugin-status', () => ({
+jest.mock('../../.opencode/plugins/features/messages/plugin-status', () => ({
   getPluginStatus: jest.fn(),
   formatPluginStatus: jest.fn(),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/config/index', () => ({
+jest.mock('../../.opencode/plugins/config', () => ({
   userConfig: {
     showPluginStatus: true,
     pluginStatusDisplayMode: 'user-only',
@@ -17,7 +17,7 @@ const mockGetPluginStatus = getPluginStatus as jest.MockedFunction<
   typeof getPluginStatus
 >;
 const mockFormatPluginStatus = jest.requireMock(
-  '../../.opencode/plugins/helpers/plugin-status'
+  '../../.opencode/plugins/features/messages/plugin-status'
 ).formatPluginStatus;
 
 describe('showActivePluginsToast', () => {
@@ -127,7 +127,7 @@ describe('when showPluginStatus is disabled', () => {
 
   it('should return early and not add toast', async () => {
     const { userConfig: userConfigMock } =
-      await import('../../.opencode/plugins/helpers/config/index');
+      await import('../../.opencode/plugins/config');
     userConfigMock.showPluginStatus = false;
 
     await showActivePluginsToast(mockQueue);

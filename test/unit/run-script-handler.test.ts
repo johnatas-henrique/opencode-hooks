@@ -1,6 +1,6 @@
 const mockToastAdd = jest.fn().mockResolvedValue(undefined);
 
-jest.mock('../../.opencode/plugins/helpers/toast-queue', () => ({
+jest.mock('../../.opencode/plugins/core/toast-queue', () => ({
   createToastQueue: jest.fn(),
   initGlobalToastQueue: jest.fn(),
   useGlobalToastQueue: () => ({
@@ -14,28 +14,31 @@ import {
   runScriptAndHandle,
   addSubagentSession,
   resetSubagentTracking,
-} from '../../.opencode/plugins/helpers/run-script-handler';
+} from '../../.opencode/plugins/features/scripts/run-script-handler';
 
-jest.mock('../../.opencode/plugins/helpers/run-script', () => ({
+jest.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
   runScript: jest.fn(),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/append-to-session', () => ({
-  appendToSession: jest.fn(),
-}));
+jest.mock(
+  '../../.opencode/plugins/features/messages/append-to-session',
+  () => ({
+    appendToSession: jest.fn(),
+  })
+);
 
-jest.mock('../../.opencode/plugins/helpers/log-event', () => ({
+jest.mock('../../.opencode/plugins/features/events/log-event', () => ({
   logScriptOutput: jest.fn(),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { runScript } from '../../.opencode/plugins/helpers/run-script';
-import { appendToSession } from '../../.opencode/plugins/helpers/append-to-session';
-import { saveToFile } from '../../.opencode/plugins/helpers/save-to-file';
-import type { ResolvedEventConfig } from '../../.opencode/plugins/helpers/config';
+import { runScript } from '../../.opencode/plugins/features/scripts/run-script';
+import { appendToSession } from '../../.opencode/plugins/features/messages/append-to-session';
+import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
+import type { ResolvedEventConfig } from '../../.opencode/plugins/core/config';
 
 const createResolvedConfig = (
   overrides: Partial<ResolvedEventConfig> = {}

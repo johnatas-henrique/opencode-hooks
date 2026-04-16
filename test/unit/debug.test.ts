@@ -1,9 +1,9 @@
 import {
   handleDebugLog,
   sanitizeData,
-} from '../../.opencode/plugins/helpers/debug';
+} from '../../.opencode/plugins/core/debug';
 
-jest.mock('../../.opencode/plugins/helpers/toast-queue', () => {
+jest.mock('../../.opencode/plugins/core/toast-queue', () => {
   const mockQueue = {
     add: jest.fn(),
   };
@@ -12,19 +12,19 @@ jest.mock('../../.opencode/plugins/helpers/toast-queue', () => {
   };
 });
 
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
+jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/helpers/constants', () => ({
+jest.mock('../../.opencode/plugins/core/constants', () => ({
   TOAST_DURATION: { TEN_SECONDS: 10000 },
   DEBUG_LOG_FILE: 'debug.log',
 }));
 
 const mockUseGlobalToastQueue =
-  require('../../.opencode/plugins/helpers/toast-queue').useGlobalToastQueue;
+  require('../../.opencode/plugins/core/toast-queue').useGlobalToastQueue;
 const mockSaveToFile =
-  require('../../.opencode/plugins/helpers/save-to-file').saveToFile;
+  require('../../.opencode/plugins/features/persistence/save-to-file').saveToFile;
 
 describe('handleDebugLog', () => {
   beforeEach(() => {

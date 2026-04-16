@@ -1,18 +1,21 @@
 describe('resolveToolConfig - tool handler precedence', () => {
   it('should fall back to event handler when tool handler missing', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.after': {
-          title: '====TOOL AFTER====',
-          variant: 'success',
-          duration: 4000,
-          defaultScript: 'tool-execute-after.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.after': {
+            title: '====TOOL AFTER====',
+            variant: 'success',
+            duration: 4000,
+            defaultScript: 'tool-execute-after.sh',
+            buildMessage: () => 'tool',
+          },
         },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: { toast: true },
@@ -27,7 +30,7 @@ describe('resolveToolConfig - tool handler precedence', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.after', 'unknownTool');
 
     expect(config.toastTitle).toBe('====TOOL AFTER====');
@@ -37,25 +40,28 @@ describe('resolveToolConfig - tool handler precedence', () => {
 
   it('should use tool-specific handler when it exists', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.after': {
-          title: '====TOOL AFTER====',
-          variant: 'info',
-          duration: 2000,
-          defaultScript: 'tool-execute-after.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.after': {
+            title: '====TOOL AFTER====',
+            variant: 'info',
+            duration: 2000,
+            defaultScript: 'tool-execute-after.sh',
+            buildMessage: () => 'tool',
+          },
+          'tool.execute.after.skill': {
+            title: '====SKILL AFTER====',
+            variant: 'success',
+            duration: 10000,
+            defaultScript: 'tool-execute-after-skill.sh',
+            buildMessage: () => 'skill',
+          },
         },
-        'tool.execute.after.skill': {
-          title: '====SKILL AFTER====',
-          variant: 'success',
-          duration: 10000,
-          defaultScript: 'tool-execute-after-skill.sh',
-          buildMessage: () => 'skill',
-        },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: { toast: true },
@@ -70,7 +76,7 @@ describe('resolveToolConfig - tool handler precedence', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.after', 'skill');
 
     expect(config.toastTitle).toBe('====SKILL AFTER====');
@@ -80,25 +86,28 @@ describe('resolveToolConfig - tool handler precedence', () => {
 
   it('should use before handler when toolEventType is before', () => {
     jest.resetModules();
-    jest.doMock('../../.opencode/plugins/helpers/default-handlers', () => ({
-      handlers: {
-        'tool.execute.before': {
-          title: '====TOOL BEFORE====',
-          variant: 'warning',
-          duration: 2000,
-          defaultScript: 'tool-execute-before.sh',
-          buildMessage: () => 'tool',
+    jest.doMock(
+      '../../.opencode/plugins/features/messages/default-handlers',
+      () => ({
+        handlers: {
+          'tool.execute.before': {
+            title: '====TOOL BEFORE====',
+            variant: 'warning',
+            duration: 2000,
+            defaultScript: 'tool-execute-before.sh',
+            buildMessage: () => 'tool',
+          },
+          'tool.execute.before.bash': {
+            title: '====BASH BEFORE====',
+            variant: 'warning',
+            duration: 3000,
+            defaultScript: 'tool-execute-before-bash.sh',
+            buildMessage: () => 'bash',
+          },
         },
-        'tool.execute.before.bash': {
-          title: '====BASH BEFORE====',
-          variant: 'warning',
-          duration: 3000,
-          defaultScript: 'tool-execute-before-bash.sh',
-          buildMessage: () => 'bash',
-        },
-      },
-    }));
-    jest.doMock('../../.opencode/plugins/helpers/config/index', () => ({
+      })
+    );
+    jest.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: { toast: true },
@@ -113,7 +122,7 @@ describe('resolveToolConfig - tool handler precedence', () => {
 
     const {
       resolveToolConfig: rtc,
-    } = require('../../.opencode/plugins/helpers/events');
+    } = require('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.before', 'bash');
 
     expect(config.toastTitle).toBe('====BASH BEFORE====');
