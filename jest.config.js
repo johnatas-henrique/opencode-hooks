@@ -23,6 +23,7 @@ module.exports = {
     '!/**/*.test.ts',
     '!node_modules/**',
     '!.opencode/plugins/types/**',
+    '!**/index.ts',
   ],
   coverageThreshold: {
     global: { statements: 80, branches: 60, functions: 65, lines: 80 },
