@@ -16,11 +16,13 @@ Separate pure block predicates from side effects (toast + file logging) to impro
 ## Problem Statement
 
 Current `executeBlocking()` in `block-handler.ts` mixes:
+
 - Pure evaluation logic
 - Side effects (`useGlobalToastQueue()`, `saveToFile()`)
 - Error throwing
 
 **Issues:**
+
 1. `BlockPredicate` defined in TWO places (`blocks.ts` and `types/config.ts`) — duplication!
 2. Hard to unit test pure predicate logic
 3. Side effects prevent testing without heavy mocking
@@ -70,6 +72,7 @@ interface BlockEffects {
 ```
 
 **Usage:**
+
 ```typescript
 // Pure test
 const result = blockSystem.evaluate([blockEnvFiles], input, output, []);
@@ -130,7 +133,7 @@ interface BlockPorts {
 }
 
 // Core stays pure
-function executeBlocking(params, ports: BlockPorts): void
+function executeBlocking(params, ports: BlockPorts): void;
 ```
 
 **Trade-off**: Clean boundaries, but more files to maintain.
@@ -140,6 +143,7 @@ function executeBlocking(params, ports: BlockPorts): void
 ## Recommendation
 
 **Option A (Minimal)** for this codebase size:
+
 - Simple, easy to understand
 - 1-3 entry points
 - Clear separation
@@ -155,19 +159,25 @@ executeBlocking(blockConfig, input, output, results, eventType);
 
 // After (new)
 const system = createBlockSystem(defaultEffects);
-system.evaluateWithEffects({ predicates: blockConfig, input, output, scriptResults, eventType });
+system.evaluateWithEffects({
+  predicates: blockConfig,
+  input,
+  output,
+  scriptResults,
+  eventType,
+});
 ```
 
 ---
 
 ## Files to Change
 
-| File | Action |
-|------|--------|
-| `helpers/block-system.ts` | Create new module |
-| `helpers/config/blocks.ts` | Rename to `block-predicates.ts` |
-| `helpers/block-handler.ts` | Update to use `BlockSystem` |
-| `types/config.ts` | Remove duplicate `BlockPredicate` |
+| File                       | Action                            |
+| -------------------------- | --------------------------------- |
+| `helpers/block-system.ts`  | Create new module                 |
+| `helpers/config/blocks.ts` | Rename to `block-predicates.ts`   |
+| `helpers/block-handler.ts` | Update to use `BlockSystem`       |
+| `types/config.ts`          | Remove duplicate `BlockPredicate` |
 
 ---
 

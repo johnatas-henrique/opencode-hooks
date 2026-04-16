@@ -17,15 +17,16 @@ Break `events.ts` (543 lines) into pure, composable resolution functions with de
 
 `events.ts` has complex resolution logic depending on global `userConfig`:
 
-| Function | Lines | Problem |
-|----------|-------|---------|
-| `resolveEventConfig()` | 100+ | 15+ resolution steps |
-| `resolveToolConfig()` | 80+ | Inherits from `resolveEventConfig` |
-| `resolveToast()` | 15+ | Nested boolean logic |
-| `resolveScripts()` | 20+ | 5 config shapes to handle |
-| `getWithDefault()` | 10+ | Dynamic key handling |
+| Function               | Lines | Problem                            |
+| ---------------------- | ----- | ---------------------------------- |
+| `resolveEventConfig()` | 100+  | 15+ resolution steps               |
+| `resolveToolConfig()`  | 80+   | Inherits from `resolveEventConfig` |
+| `resolveToast()`       | 15+   | Nested boolean logic               |
+| `resolveScripts()`     | 20+   | 5 config shapes to handle          |
+| `getWithDefault()`     | 10+   | Dynamic key handling               |
 
 **Issues:**
+
 - `userConfig` imported globally — can't swap for tests
 - Functions depend on each other — can't extract one
 - Testing edge case requires mocking entire config tree
@@ -46,7 +47,8 @@ export function resolveEventConfig(
   const handler = handlers[eventType];
   const userEventConfig = userConfig.events[eventType]; // GLOBAL!
 
-  if (!userConfig.enabled) { // GLOBAL!
+  if (!userConfig.enabled) {
+    // GLOBAL!
     return DISABLED_CONFIG;
   }
   // ... 100+ more lines
@@ -85,14 +87,25 @@ export interface ConfigResolverContext {
   readonly default: EventOverride;
   readonly scriptToasts: ScriptToastsConfig;
   readonly getEventConfig: (eventType: string) => EventConfig | undefined;
-  readonly getToolConfigs: (toolEventType: string) => Record<string, ToolConfig> | undefined;
+  readonly getToolConfigs: (
+    toolEventType: string
+  ) => Record<string, ToolConfig> | undefined;
 }
 
-export function createContext(userConfig: UserEventsConfig): ConfigResolverContext {
+export function createContext(
+  userConfig: UserEventsConfig
+): ConfigResolverContext {
   return {
-    get enabled() { return userConfig.enabled; },
-    getEventConfig: (type) => userConfig.events[type as keyof typeof userConfig.events],
-    getToolConfigs: (type) => userConfig.tools[type as keyof typeof userConfig.tools] as Record<string, unknown>,
+    get enabled() {
+      return userConfig.enabled;
+    },
+    getEventConfig: (type) =>
+      userConfig.events[type as keyof typeof userConfig.events],
+    getToolConfigs: (type) =>
+      userConfig.tools[type as keyof typeof userConfig.tools] as Record<
+        string,
+        unknown
+      >,
   };
 }
 ```
@@ -106,15 +119,17 @@ export function resolveScripts(
   eventBaseScripts: string[]
 ): { scripts: string[]; runScripts: boolean } {
   if (config === false) return { scripts: [], runScripts: false };
-  if (config === true) return { scripts: [handlerDefaultScript], runScripts: true };
-  
+  if (config === true)
+    return { scripts: [handlerDefaultScript], runScripts: true };
+
   if (typeof config === 'object' && config !== null) {
     if (config.runScripts === false) return { scripts: [], runScripts: false };
     if (config.scripts) return { scripts: config.scripts, runScripts: true };
-    if (config.runScripts === true) return { scripts: [handlerDefaultScript], runScripts: true };
+    if (config.runScripts === true)
+      return { scripts: [handlerDefaultScript], runScripts: true };
     return { scripts: eventBaseScripts, runScripts: false };
   }
-  
+
   return { scripts: [], runScripts: false };
 }
 ```
@@ -132,12 +147,12 @@ export function getBooleanField(
     const value = eventConfig[key];
     if (value !== undefined) return Boolean(value);
   }
-  
+
   if (defaultConfig) {
     const value = defaultConfig[key];
     if (value !== undefined) return Boolean(value);
   }
-  
+
   return fallback;
 }
 ```
@@ -147,6 +162,7 @@ export function getBooleanField(
 ## Usage Examples
 
 ### Before (current — global coupling)
+
 ```typescript
 // events.ts - uses global userConfig
 export function resolveEventConfig(eventType, input, output) {
@@ -161,6 +177,7 @@ jest.mock('./config/index', () => ({
 ```
 
 ### After (pure, injectable)
+
 ```typescript
 // New API - testable
 import { createContext, createResolver } from './events/context';
@@ -191,20 +208,23 @@ import { resolveScripts } from './scripts';
 describe('resolveScripts', () => {
   it('returns empty when config is false', () => {
     expect(resolveScripts(false, 'default.sh', [])).toEqual({
-      scripts: [], runScripts: false
+      scripts: [],
+      runScripts: false,
     });
   });
 
   it('returns handler default when config is true', () => {
     expect(resolveScripts(true, 'default.sh', [])).toEqual({
-      scripts: ['default.sh'], runScripts: true
+      scripts: ['default.sh'],
+      runScripts: true,
     });
   });
 
   it('returns explicit scripts array', () => {
     const config = { scripts: ['custom.sh'] };
     expect(resolveScripts(config, 'default.sh', [])).toEqual({
-      scripts: ['custom.sh'], runScripts: true
+      scripts: ['custom.sh'],
+      runScripts: true,
     });
   });
 });
@@ -218,7 +238,7 @@ describe('EventConfigResolver', () => {
   it('returns DISABLED_CONFIG when global disabled', () => {
     const ctx = createContext({ ...mockConfig, enabled: false });
     const resolver = createResolver(ctx);
-    
+
     expect(resolver.resolve('session.created').enabled).toBe(false);
   });
 });
@@ -228,13 +248,13 @@ describe('EventConfigResolver', () => {
 
 ## Complexity Hidden
 
-| Original | Hidden Behind |
-|----------|---------------|
+| Original                       | Hidden Behind               |
+| ------------------------------ | --------------------------- |
 | 100+ line `resolveEventConfig` | 8 pure resolution functions |
-| 15+ config shapes for toast | `resolveToastEnabled()` |
-| 5 shapes for scripts | `resolveScripts()` |
-| Dynamic key handling | `getBooleanField()` |
-| Nested FileTemplate parsing | `parseFileTemplate()` |
+| 15+ config shapes for toast    | `resolveToastEnabled()`     |
+| 5 shapes for scripts           | `resolveScripts()`          |
+| Dynamic key handling           | `getBooleanField()`         |
+| Nested FileTemplate parsing    | `parseFileTemplate()`       |
 
 ---
 
@@ -256,7 +276,7 @@ import { createContext } from './context';
 import { userConfig } from '../config/index';
 
 const context = createContext(userConfig);
-export const resolveEventConfig = (eventType, input, output) => 
+export const resolveEventConfig = (eventType, input, output) =>
   createResolver(context).resolve(eventType, input, output);
 
 // STEP 3: Add tests incrementally
@@ -272,12 +292,12 @@ export const resolveEventConfig = (eventType, input, output) =>
 
 ## File Count Reduction
 
-| Metric | Before | After |
-|--------|--------|-------|
-| Lines per file | 543 | <50 |
-| Total files | 1 | 12 |
-| Testable units | 0 | 8 |
-| Global dependencies | 5+ | 0 |
+| Metric              | Before | After |
+| ------------------- | ------ | ----- |
+| Lines per file      | 543    | <50   |
+| Total files         | 1      | 12    |
+| Testable units      | 0      | 8     |
+| Global dependencies | 5+     | 0     |
 
 ---
 

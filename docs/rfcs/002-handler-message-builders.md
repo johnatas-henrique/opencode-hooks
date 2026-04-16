@@ -17,16 +17,17 @@ Extract pure message formatting helpers from `default-handlers.ts` into a testab
 
 `default-handlers.ts` (959 lines, 60+ handlers) has internal helpers that are NOT exported:
 
-| Helper | Lines | Problem |
-|--------|-------|---------|
-| `SENSITIVE_PATTERNS` | 8 | Not configurable |
-| `maskSensitive(str)` | 10 | Can't test alone |
-| `truncate(str)` | 5 | Depends on `TRUNCATE_LENGTH` constant |
-| `formatValue(value)` | 8 | Combines mask + truncate |
-| `getValueByPath(obj, path)` | 6 | Useful utility, untested |
-| `formatTime()` | 2 | Date formatting logic mixed |
+| Helper                      | Lines | Problem                               |
+| --------------------------- | ----- | ------------------------------------- |
+| `SENSITIVE_PATTERNS`        | 8     | Not configurable                      |
+| `maskSensitive(str)`        | 10    | Can't test alone                      |
+| `truncate(str)`             | 5     | Depends on `TRUNCATE_LENGTH` constant |
+| `formatValue(value)`        | 8     | Combines mask + truncate              |
+| `getValueByPath(obj, path)` | 6     | Useful utility, untested              |
+| `formatTime()`              | 2     | Date formatting logic mixed           |
 
 **Issues:**
+
 - Interface ≈ Implementation (shallow module)
 - Any change requires updating all handler tests
 - Can't test `maskSensitive` in isolation
@@ -103,6 +104,7 @@ export { createFormatter, DEFAULT_FORMATTER_CONFIG } from './config';
 ## Usage Examples
 
 ### Before (current — can't test alone)
+
 ```typescript
 // In default-handlers.ts
 const formatValue = (value: unknown): string => {
@@ -112,6 +114,7 @@ const formatValue = (value: unknown): string => {
 ```
 
 ### After (pure, testable)
+
 ```typescript
 // New: helpers/message-formatter/index.ts
 export { maskSensitive, truncate, formatValue, getValueByPath };
@@ -123,11 +126,11 @@ describe('maskSensitive', () => {
   it('redacts api keys', () => {
     expect(maskSensitive('api_key=abc123')).toBe('api_key: [REDACTED]');
   });
-  
+
   it('redacts tokens', () => {
     expect(maskSensitive('token=xyz789')).toBe('token: [REDACTED]');
   });
-  
+
   it('preserves non-sensitive data', () => {
     expect(maskSensitive('name=John')).toBe('name=John');
   });
@@ -138,12 +141,12 @@ describe('maskSensitive', () => {
 
 ## Complexity Hidden
 
-| Internally | Before | After |
-|------------|--------|-------|
-| Pattern iteration | Mixed with logic | `maskSensitive()` loop |
-| Truncation boundary | Hardcoded | `truncate()` pure function |
-| Value formatting | 20 lines inline | `formatValue()` |
-| Path access | 6 lines repeated | `getValueByPath()` |
+| Internally          | Before           | After                      |
+| ------------------- | ---------------- | -------------------------- |
+| Pattern iteration   | Mixed with logic | `maskSensitive()` loop     |
+| Truncation boundary | Hardcoded        | `truncate()` pure function |
+| Value formatting    | 20 lines inline  | `formatValue()`            |
+| Path access         | 6 lines repeated | `getValueByPath()`         |
 
 ---
 
