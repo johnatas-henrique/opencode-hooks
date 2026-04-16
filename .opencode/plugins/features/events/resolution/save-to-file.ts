@@ -36,6 +36,10 @@ export function resolveSaveToFile(
     return false;
   };
 
+  if (eventCfg === false) {
+    return false;
+  }
+
   if (typeof eventCfg === 'object' && eventCfg !== null) {
     const value = (eventCfg as EventOverride).saveToFile;
     if (value !== undefined) {
