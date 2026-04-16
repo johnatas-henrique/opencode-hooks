@@ -21,9 +21,10 @@ jest.mock('../../.opencode/plugins/core/constants', () => ({
 import {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
-} from '../../.opencode/plugins/types/opencode-hooks';
-import type { ScriptResult } from '../../.opencode/plugins/core/config';
+} from '../../.opencode/plugins/types/core';
+import type { ScriptResult } from '../../.opencode/plugins/types/config';
 import { executeBlocking } from '../../.opencode/plugins/features/block-system/block-handler';
+import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
 
 describe('block-handler', () => {
   const input: ToolExecuteBeforeInput = {
@@ -136,6 +137,94 @@ describe('block-handler', () => {
       expect(() =>
         executeBlocking(block, input, output, [], 'tool.execute.before')
       ).toThrow('Blocked: read execution');
+    });
+
+    it('uses custom logFilename for logging', () => {
+      const block = [{ check: () => true, message: 'blocked' }];
+      expect(() =>
+        executeBlocking(
+          block,
+          input,
+          output,
+          [],
+          'tool.execute.before',
+          'custom-blocked.log'
+        )
+      ).toThrow('blocked');
+      expect(saveToFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filename: 'custom-blocked.log',
+        })
+      );
+    });
+
+    it('logs to custom file when logFilename differs from default', () => {
+      const saveToFile =
+        require('../../.opencode/plugins/features/persistence/save-to-file').saveToFile;
+      saveToFile.mockClear();
+
+      const block = [{ check: () => true, message: 'blocked' }];
+      expect(() =>
+        executeBlocking(
+          block,
+          input,
+          output,
+          [],
+          'tool.execute.before',
+          'another-custom.log'
+        )
+      ).toThrow('blocked');
+
+      expect(saveToFile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filename: 'another-custom.log',
+          content: expect.stringContaining('EVENT_BLOCKED'),
+        })
+      );
+    });
+
+    it('logs event data when blocked with custom logFilename', () => {
+      const saveToFile =
+        require('../../.opencode/plugins/features/persistence/save-to-file').saveToFile;
+      saveToFile.mockClear();
+
+      const block = [{ check: () => true, message: 'blocked by test' }];
+      expect(() =>
+        executeBlocking(
+          block,
+          input,
+          output,
+          [],
+          'tool.execute.before',
+          'test-log.log'
+        )
+      ).toThrow('blocked by test');
+
+      const call = saveToFile.mock.calls[0][0];
+      const loggedData = JSON.parse(call.content);
+      expect(loggedData.type).toBe('EVENT_BLOCKED');
+      expect(loggedData.data.eventType).toBe('tool.execute.before');
+    });
+
+    it('logs raw data when data is not an object with eventType', () => {
+      const saveToFile =
+        require('../../.opencode/plugins/features/persistence/save-to-file').saveToFile;
+      saveToFile.mockClear();
+
+      const block = [{ check: () => true, message: 'blocked' }];
+      expect(() =>
+        executeBlocking(
+          block,
+          input,
+          output,
+          [],
+          'tool.execute.before',
+          'test-log.log'
+        )
+      ).toThrow('blocked');
+
+      const call = saveToFile.mock.calls[0][0];
+      expect(call.content).toBeDefined();
     });
   });
 });
