@@ -13,31 +13,28 @@ import type {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
 } from './types/core';
+import { initGlobalToastQueue, useGlobalToastQueue } from './core/toast-queue';
+import { saveToFile } from './features/persistence/save-to-file';
+import { handlers, showStartupToast } from './features/messages';
 import {
-  initGlobalToastQueue,
-  useGlobalToastQueue,
-  saveToFile,
-  handlers,
   resolveEventConfig,
   resolveToolConfig,
-  showStartupToast,
   logEventConfig,
-  handleDebugLog,
-  runScriptAndHandle,
-  addSubagentSession,
-  EventType,
-} from './helpers';
-import { normalizeInputForHandler as normalizeInput } from './helpers/events';
-import { userConfig } from './helpers/config/index';
+} from './features/events';
+import { handleDebugLog } from './core/debug';
+import { runScriptAndHandle, addSubagentSession } from './features/scripts';
+import { EventType } from './types/config';
+import { normalizeInputForHandler as normalizeInput } from './features/events';
+import { userConfig } from './config';
 import {
   UNKNOWN_EVENT_LOG_FILE,
   DEFAULT_SESSION_ID,
   BLOCKED_EVENTS_LOG_FILE,
   TOAST_DURATION,
   TOOL,
-} from './helpers/constants';
+} from './core/constants';
 import type { ResolvedEventConfig, ScriptResult } from './types/config';
-import { executeBlocking } from './helpers/block-handler';
+import { executeBlocking } from './features/block-system';
 
 interface ExecuteHookParams {
   ctx: PluginInput;

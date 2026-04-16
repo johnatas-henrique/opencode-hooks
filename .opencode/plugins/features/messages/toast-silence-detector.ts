@@ -1,5 +1,5 @@
 import { readFile } from 'fs/promises';
-import { TIMEOUT } from './constants';
+import { TIMEOUT } from '../../core/constants';
 
 const TOAST_PATTERN = /path=\/tui\/show-toast/g;
 

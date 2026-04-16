@@ -1,5 +1,5 @@
 import { PluginInput } from '@opencode-ai/plugin';
-import { SCRIPTS_DIR } from './constants';
+import { SCRIPTS_DIR } from '../../core/constants';
 
 export interface ScriptResult {
   output: string;

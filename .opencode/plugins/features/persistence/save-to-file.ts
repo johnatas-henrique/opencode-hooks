@@ -1,5 +1,5 @@
 import { appendFile, mkdir } from 'fs/promises';
-import { LOG_DIR, LOG_FILE, TOAST_DURATION } from './constants';
+import { LOG_DIR, LOG_FILE, TOAST_DURATION } from '../../core/constants';
 
 export type ToastCallback = (params: {
   title: string;

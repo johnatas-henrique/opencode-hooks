@@ -1,11 +1,9 @@
 import { getLatestLogFile } from './plugin-status';
-import {
-  showActivePluginsToast,
-  waitForToastSilence,
-  useGlobalToastQueue,
-} from './index';
-import { saveToFile } from './save-to-file';
-import { TIMER, TOAST_DURATION } from './constants';
+import { showActivePluginsToast } from './show-active-plugins';
+import { waitForToastSilence } from './toast-silence-detector';
+import { useGlobalToastQueue } from '../../core/toast-queue';
+import { saveToFile } from '../persistence/save-to-file';
+import { TIMER, TOAST_DURATION } from '../../core/constants';
 
 export interface ShowStartupToastOptions {
   getLogFile?: () => string | null;

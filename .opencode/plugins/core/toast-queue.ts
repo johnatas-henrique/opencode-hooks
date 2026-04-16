@@ -1,5 +1,5 @@
 import type { TuiToast } from '@opencode-ai/plugin/tui';
-import { saveToFile } from './save-to-file';
+import { saveToFile } from '../features/persistence/save-to-file';
 import { STAGGER_MS, TOAST_DURATION, DEFAULT_SESSION_ID } from './constants';
 
 export type ShowToastOptions = {

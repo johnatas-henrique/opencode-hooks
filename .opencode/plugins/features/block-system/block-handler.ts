@@ -1,11 +1,11 @@
 import type {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
-} from '../types/core';
-import type { BlockCheck, ScriptResult } from '../types/config';
-import { useGlobalToastQueue } from './toast-queue';
-import { saveToFile } from './save-to-file';
-import { BLOCKED_EVENTS_LOG_FILE } from './constants';
+} from '../../types/core';
+import type { BlockCheck, ScriptResult } from '../../types/config';
+import { useGlobalToastQueue } from '../../core/toast-queue';
+import { saveToFile } from '../persistence/save-to-file';
+import { BLOCKED_EVENTS_LOG_FILE } from '../../core/constants';
 
 export function executeBlocking(
   blockConfig: BlockCheck[] | undefined,

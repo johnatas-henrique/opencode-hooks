@@ -1,4 +1,4 @@
-import { TOAST_DURATION, TRUNCATE_LENGTH } from './constants';
+import { TOAST_DURATION, TRUNCATE_LENGTH } from '../../core/constants';
 
 type BuildMessageFn = (
   event: Record<string, unknown>,

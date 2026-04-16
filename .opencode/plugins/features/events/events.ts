@@ -1,11 +1,11 @@
-import { handlers, type EventHandler } from './default-handlers';
-import { userConfig } from './config/index';
-import { saveToFile } from './save-to-file';
+import { handlers, type EventHandler } from '../messages/default-handlers';
+import { userConfig } from '../../config';
+import { saveToFile } from '../persistence/save-to-file';
 import {
   UNKNOWN_EVENT_LOG_FILE,
   TOAST_DURATION,
   DISABLED_CONFIG,
-} from './constants';
+} from '../../core/constants';
 import type {
   ResolvedEventConfig,
   EventConfig,
@@ -14,7 +14,7 @@ import type {
   EventOverride,
   ToolOverride,
   FileTemplate,
-} from '../types/config';
+} from '../../types/config';
 
 export { ResolvedEventConfig };
 

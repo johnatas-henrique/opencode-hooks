@@ -1,6 +1,6 @@
-import { TOAST_DURATION } from '../constants';
-import { EventType } from '../../types/config';
-import type { UserEventsConfig } from '../../types/config';
+import { TOAST_DURATION } from '../core/constants';
+import { EventType } from '../types/config';
+import type { UserEventsConfig } from '../types/config';
 import {
   BlockPredicate,
   blockEnvFiles,
@@ -9,7 +9,7 @@ import {
   blockByPath,
   blockNoVerify,
   blockProtectedBranch,
-} from './blocks';
+} from './security-rules';
 
 export type { BlockPredicate };
 
@@ -47,10 +47,11 @@ export const userConfig: UserEventsConfig = {
 
   events: {
     [EventType.SERVER_CONNECTED]: { enabled: false },
-    [EventType.SERVER_INSTANCE_DISPOSED]: { enabled: false },
+    [EventType.SERVER_INSTANCE_DISPOSED]: { enabled: true },
 
     [EventType.SESSION_CREATED]: {
       toast: true,
+      runScripts: true,
       runOnlyOnce: true,
       appendToSession: true,
     },

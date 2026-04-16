@@ -1,8 +1,8 @@
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
-import { DEFAULT_SESSION_ID } from './constants';
-import type { PluginStatusDisplayMode } from '../types/config';
+import { DEFAULT_SESSION_ID } from '../../core/constants';
+import type { PluginStatusDisplayMode } from '../../types/config';
 
 const LINE_REGEX = /^(INFO|WARN|ERROR|DEBUG)\s+\S+\s+\+\d+ms\s+(.+)$/;
 const TAG_REGEX = /^(\w+)=(.+)$/;

@@ -7,8 +7,8 @@
 import type {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
-} from '../../types/core';
-import type { ScriptResult } from '../../types/config';
+} from '../types/core';
+import type { ScriptResult } from '../types/config';
 
 export type BlockPredicate = (
   input: ToolExecuteBeforeInput,

@@ -1,5 +1,5 @@
 import { useGlobalToastQueue } from './toast-queue';
-import { saveToFile } from './save-to-file';
+import { saveToFile } from '../features/persistence/save-to-file';
 import { TOAST_DURATION, DEBUG_LOG_FILE } from './constants';
 
 const SENSITIVE_KEYS = [

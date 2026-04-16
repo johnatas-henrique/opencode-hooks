@@ -1,10 +1,10 @@
 import { runScript, type ScriptResult } from './run-script';
-import { appendToSession } from './append-to-session';
-import { logScriptOutput } from './log-event';
-import { useGlobalToastQueue } from './toast-queue';
-import { DEFAULT_SESSION_ID } from './constants';
+import { appendToSession } from '../messages/append-to-session';
+import { logScriptOutput } from '../events/log-event';
+import { useGlobalToastQueue } from '../../core/toast-queue';
+import { DEFAULT_SESSION_ID } from '../../core/constants';
 import type { RunScriptConfig } from './script-config';
-import { saveToFile } from './save-to-file';
+import { saveToFile } from '../persistence/save-to-file';
 
 const subagentSessionIds = new Set<string>();
 
