@@ -9,14 +9,10 @@ import { BLOCKED_EVENTS_LOG_FILE } from '../../core/constants';
 import { createBlockSystem, type BlockSystem } from './block-system';
 
 const defaultEffects = {
-  notify: (title: string, details?: unknown) => {
-    const message =
-      typeof details === 'object' && details !== null && 'message' in details
-        ? String((details as { message: string }).message)
-        : '';
+  notify: (title: string, details?: { message: string }) => {
     useGlobalToastQueue().add({
       title,
-      message,
+      message: details?.message || '',
       variant: 'error',
       duration: 10000,
     });
@@ -56,27 +52,10 @@ export function executeBlocking(
       ? {
           notify: defaultEffects.notify,
           log: (data: unknown) => {
-            const d = data as { data: unknown };
-            if (
-              typeof d.data === 'object' &&
-              d.data !== null &&
-              'eventType' in d.data
-            ) {
-              const eventData = d.data as {
-                eventType: string;
-                input: unknown;
-                output: unknown;
-                blockCheck: unknown;
-              };
-              saveToFile({
-                content: JSON.stringify({
-                  timestamp: new Date().toISOString(),
-                  type: 'EVENT_BLOCKED',
-                  data: { ...eventData, filename: logFilename },
-                }),
-                filename: logFilename,
-              });
-            }
+            saveToFile({
+              content: JSON.stringify(data),
+              filename: logFilename,
+            });
           },
         }
       : defaultEffects;
