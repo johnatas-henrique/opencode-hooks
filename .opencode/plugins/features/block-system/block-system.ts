@@ -11,7 +11,7 @@ export interface BlockResult {
 }
 
 export interface BlockEffects {
-  notify: (message: string, details?: unknown) => void;
+  notify: (title: string, details?: { message: string }) => void;
   log: (data: unknown) => void;
 }
 
@@ -55,16 +55,16 @@ export function createBlockSystem(effects: BlockEffects): BlockSystem {
     evaluateWithEffects(predicates, input, output, scriptResults, eventType) {
       const result = this.evaluate(predicates, input, output, scriptResults);
       if (result?.blocked) {
+        const message = result.message || `Blocked: ${input.tool} execution`;
         effects.notify(`${input.tool.toUpperCase()} BEFORE - EVENT BLOCKED`, {
-          message: result.message,
-          eventType,
+          message,
         });
         effects.log({
           timestamp: new Date().toISOString(),
           type: 'EVENT_BLOCKED',
           data: { eventType, input, output, blockCheck: result.predicate },
         });
-        throw new Error(result.message);
+        throw new Error(message);
       }
     },
   };
