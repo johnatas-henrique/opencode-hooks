@@ -5,9 +5,9 @@ export {
   createToastQueue,
   getGlobalToastQueue,
   resetGlobalToastQueue,
-  type ShowToastOptions,
-  type ToastQueue,
 } from './core/toast-queue';
+export type { ToastQueueOptions } from './types/toast';
+export type { ToastQueue } from './types/toast';
 export { handleDebugLog, sanitizeData } from './core/debug';
 export {
   DEFAULT_SESSION_ID,
@@ -33,7 +33,6 @@ export {
 } from './core/session';
 
 export { userConfig } from './config/settings';
-export type { BlockPredicate } from './config/security-rules';
 export {
   blockEnvFiles,
   blockGitForce,
@@ -47,9 +46,7 @@ export {
 
 export {
   handlers,
-  type EventHandler,
   formatPluginStatus,
-  type PluginStatus,
   getPluginStatus,
   getLatestLogFile,
   showActivePluginsToast,
@@ -58,24 +55,28 @@ export {
   waitForToastSilence,
   countToastsInLog,
 } from './features/messages';
+export type { EventHandler } from './types/events';
+export type { PluginStatus } from './types/plugin';
+
 export {
   resolveEventConfig,
   resolveToolConfig,
   normalizeInputForHandler,
   DISABLED_CONFIG as DISABLED_EVENT_CONFIG,
-  type ResolvedEventConfig,
   logEventConfig,
   logScriptOutput,
 } from './features/events';
+export type { ResolvedEventConfig } from './types/config';
+
 export {
   runScript,
-  type ScriptResult,
   runScriptAndHandle,
   addSubagentSession,
   isSubagent,
   resetSubagentTracking,
-  type RunScriptConfig,
 } from './features/scripts';
+export type { ScriptRunResult, EventScriptConfig } from './types/scripts';
+
 export { executeBlocking } from './features/block-system';
 export { saveToFile } from './features/persistence/save-to-file';
 
