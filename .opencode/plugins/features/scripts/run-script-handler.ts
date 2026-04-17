@@ -1,9 +1,10 @@
-import { runScript, type ScriptResult } from './run-script';
+import { runScript } from './run-script';
+import type { ScriptRunResult } from '../../types/scripts';
 import { appendToSession } from '../messages/append-to-session';
 import { logScriptOutput } from '../events/log-event';
 import { useGlobalToastQueue } from '../../core/toast-queue';
 import { DEFAULT_SESSION_ID } from '../../core/constants';
-import type { RunScriptConfig } from './script-config';
+import type { EventScriptConfig } from '../../types/scripts';
 import { saveToFile } from '../persistence/save-to-file';
 
 const subagentSessionIds = new Set<string>();
@@ -26,7 +27,7 @@ interface ScriptExecutionResult {
 }
 
 export async function runScriptAndHandle(
-  config: RunScriptConfig
+  config: EventScriptConfig
 ): Promise<ScriptExecutionResult> {
   const {
     ctx,
@@ -48,7 +49,7 @@ export async function runScriptAndHandle(
     }
   }
 
-  const result: ScriptResult = scriptArg
+  const result: ScriptRunResult = scriptArg
     ? await runScript($, script, scriptArg)
     : await runScript($, script);
 

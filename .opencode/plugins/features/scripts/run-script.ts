@@ -1,11 +1,6 @@
 import { PluginInput } from '@opencode-ai/plugin';
 import { SCRIPTS_DIR } from '../../core/constants';
-
-export interface ScriptResult {
-  output: string;
-  error: string | null;
-  exitCode: number;
-}
+import type { ScriptRunResult } from '../../types/scripts';
 
 const shellSpecialChars = /[;&|`$(){}[\]<>\\!#*?"'\n\r]/g;
 
@@ -23,7 +18,7 @@ export const runScript = async (
   $: PluginInput['$'],
   scriptPath: string,
   ...args: string[]
-): Promise<ScriptResult> => {
+): Promise<ScriptRunResult> => {
   if (!validateScriptPath(scriptPath)) {
     return {
       output: '',
