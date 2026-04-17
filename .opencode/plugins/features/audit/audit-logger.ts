@@ -1,4 +1,12 @@
-import { appendFile, mkdir, readdir, unlink, open } from 'fs/promises';
+import {
+  appendFile,
+  mkdir,
+  readdir,
+  rename,
+  stat,
+  unlink,
+  open,
+} from 'fs/promises';
 import { createGzip } from 'zlib';
 import { pipeline } from 'stream';
 import type {
@@ -12,6 +20,43 @@ import type {
 import { DEFAULT_AUDIT_CONFIG } from '../../types/audit';
 
 export { AuditLogger, AuditLoggerOptions };
+
+export interface ArchiveDependencies {
+  mkdir: (
+    path: string,
+    options?: { recursive?: boolean }
+  ) => Promise<void | string>;
+  rename: (src: string, dest: string) => Promise<void>;
+  stat: (path: string) => Promise<{ existsSync?: boolean }>;
+}
+
+export async function archiveLogFiles(
+  basePath: string,
+  archivePath: string,
+  files: { events: string; scripts: string; errors: string },
+  deps?: Partial<ArchiveDependencies>
+): Promise<void> {
+  const mkdirFn = deps?.mkdir ?? mkdir;
+  const renameFn = deps?.rename ?? rename;
+  const statFn = deps?.stat ?? stat;
+
+  await mkdirFn(archivePath, { recursive: true });
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const logFiles = [files.events, files.scripts, files.errors];
+
+  for (const file of logFiles) {
+    const sourcePath = `${basePath}/${file}`;
+    const destPath = `${archivePath}/${file.replace('.jsonl', '')}-${timestamp}.jsonl`;
+
+    try {
+      await statFn(sourcePath);
+      await renameFn(sourcePath, destPath);
+    } catch {
+      // File doesn't exist, skip
+    }
+  }
+}
 
 export function createGzipFile(deps: GzipDependencies) {
   return async function gzipFile(

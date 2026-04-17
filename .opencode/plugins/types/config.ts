@@ -1,4 +1,5 @@
 import type { ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from './core';
+import type { AuditConfig } from './audit';
 import { EventType } from './events';
 import type { EventHandler } from './events';
 
@@ -53,6 +54,7 @@ export interface ScriptToastsConfig {
 export interface UserEventsConfig {
   enabled: boolean;
   logDisabledEvents: boolean;
+  audit?: AuditConfig;
   showPluginStatus: boolean;
   pluginStatusDisplayMode: PluginStatusDisplayMode;
   scriptToasts: ScriptToastsConfig;

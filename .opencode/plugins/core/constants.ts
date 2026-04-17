@@ -30,6 +30,10 @@ export const DEBUG_LOG_FILE = 'session_debug_events.log';
 export const UNKNOWN_EVENT_LOG_FILE = 'session_unknown_events.log';
 export const BLOCKED_EVENTS_LOG_FILE = 'blocked-events.log';
 export const LOG_DIR = './production/session-logs';
+export const AUDIT_EVENTS_FILE = 'plugin-events.jsonl';
+export const AUDIT_SCRIPTS_FILE = 'plugin-scripts.jsonl';
+export const AUDIT_ERRORS_FILE = 'plugin-errors.jsonl';
+export const AUDIT_ARCHIVE_DIR = 'audit-archive';
 
 export const SCRIPTS_DIR = '.opencode/scripts';
 

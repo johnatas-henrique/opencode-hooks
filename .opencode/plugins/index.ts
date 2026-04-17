@@ -63,8 +63,6 @@ export {
   resolveToolConfig,
   normalizeInputForHandler,
   DISABLED_CONFIG as DISABLED_EVENT_CONFIG,
-  logEventConfig,
-  logScriptOutput,
 } from './features/events';
 export type { ResolvedEventConfig } from './types/config';
 

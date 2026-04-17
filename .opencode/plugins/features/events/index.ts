@@ -1,6 +1,5 @@
 export { normalizeInputForHandler } from './resolvers/normalize-input';
 export { DISABLED_CONFIG } from '../../core/constants';
-export { logEventConfig, logScriptOutput } from './log-event';
 export {
   createContext,
   createFactory,

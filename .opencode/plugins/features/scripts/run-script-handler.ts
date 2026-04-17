@@ -1,11 +1,12 @@
 import { runScript } from './run-script';
 import type { ScriptRunResult } from '../../types/scripts';
 import { appendToSession } from '../messages/append-to-session';
-import { logScriptOutput } from '../events/log-event';
 import { useGlobalToastQueue } from '../../core/toast-queue';
 import { DEFAULT_SESSION_ID } from '../../core/constants';
 import type { EventScriptConfig } from '../../types/scripts';
+import type { ScriptRecorder } from '../../types/audit';
 import { saveToFile } from '../persistence/save-to-file';
+import { truncateOutput } from '../audit/script-recorder';
 
 const subagentSessionIds = new Set<string>();
 
@@ -27,7 +28,7 @@ interface ScriptExecutionResult {
 }
 
 export async function runScriptAndHandle(
-  config: EventScriptConfig
+  config: EventScriptConfig & { scriptRecorder?: ScriptRecorder }
 ): Promise<ScriptExecutionResult> {
   const {
     ctx,
@@ -39,6 +40,7 @@ export async function runScriptAndHandle(
     resolved,
     scriptToasts,
     sessionId = DEFAULT_SESSION_ID,
+    scriptRecorder,
   } = config;
 
   const { $ } = ctx;
@@ -96,7 +98,16 @@ export async function runScriptAndHandle(
   }
 
   if (resolved.saveToFile && result.output) {
-    await logScriptOutput(timestamp, result.output);
+    const outputToLog = script.endsWith('.sh')
+      ? truncateOutput(result.output)
+      : result.output;
+
+    if (scriptRecorder) {
+      await scriptRecorder.logScript(
+        { script, args: scriptArg ? [scriptArg] : [], startTime: Date.now() },
+        { output: outputToLog, error: null, exitCode: result.exitCode }
+      );
+    }
   }
 
   if (resolved.appendToSession && result.output) {

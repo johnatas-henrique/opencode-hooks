@@ -16,11 +16,7 @@ import type {
 import { initGlobalToastQueue, useGlobalToastQueue } from './core/toast-queue';
 import { saveToFile } from './features/persistence/save-to-file';
 import { handlers, showStartupToast } from './features/messages';
-import {
-  resolveEventConfig,
-  resolveToolConfig,
-  logEventConfig,
-} from './features/events';
+import { resolveEventConfig, resolveToolConfig } from './features/events';
 import { handleDebugLog } from './core/debug';
 import { runScriptAndHandle, addSubagentSession } from './features/scripts';
 import { EventType } from './types/config';
@@ -34,6 +30,13 @@ import {
 } from './core/constants';
 import type { ResolvedEventConfig, ScriptResult } from './types/config';
 import { executeBlocking } from './features/block-system';
+import {
+  initAuditLogging,
+  getEventRecorder,
+  getScriptRecorder,
+  createEventRecorder,
+} from './features/audit';
+import type { ScriptRecorder } from './types/audit';
 
 interface ExecuteHookParams {
   ctx: PluginInput;
@@ -44,6 +47,8 @@ interface ExecuteHookParams {
   output?: Record<string, unknown>;
   toolName?: string;
   scriptArg?: string;
+  eventRecorder?: ReturnType<typeof createEventRecorder>;
+  scriptRecorder?: ScriptRecorder;
   showToast?: boolean;
 }
 
@@ -83,7 +88,21 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     return;
   }
 
-  await logEventConfig(timestamp, eventType, input, resolved, output);
+  if (params.eventRecorder) {
+    if (eventType.startsWith('tool.execute.')) {
+      if (toolName) {
+        await params.eventRecorder.logToolExecuteBefore({
+          tool: toolName,
+          sessionID: sessionId,
+          callID: '',
+        });
+      }
+    } else if (eventType === 'session.created') {
+      await params.eventRecorder.logSessionEvent(eventType, {
+        sessionID: sessionId,
+      });
+    }
+  }
 
   if (resolved.toast) {
     const handler = handlers[eventType];
@@ -118,6 +137,7 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
         sessionId,
         toolName,
         scriptArg,
+        scriptRecorder: params.scriptRecorder,
       })
     )
   );
@@ -205,6 +225,10 @@ export const OpencodeHooks: Plugin = async (
     return {};
   }
 
+  await initAuditLogging(userConfig.audit);
+  const eventRecorder = getEventRecorder();
+  const scriptRecorder = getScriptRecorder();
+
   const hooks: Hooks = {
     event: async ({ event }) => {
       const timestamp = new Date().toISOString();
@@ -242,6 +266,9 @@ export const OpencodeHooks: Plugin = async (
         resolved,
         sessionId,
         input: event,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -265,6 +292,9 @@ export const OpencodeHooks: Plugin = async (
         output: output,
         toolName: input.tool,
         scriptArg: input.tool,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -357,6 +387,9 @@ export const OpencodeHooks: Plugin = async (
         input: input,
         output: output,
         toolName: EventType.SHELL_ENV,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -379,6 +412,9 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -406,6 +442,9 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -428,6 +467,9 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -453,6 +495,9 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -472,6 +517,9 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -491,6 +539,9 @@ export const OpencodeHooks: Plugin = async (
         sessionId: DEFAULT_SESSION_ID,
         input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -510,6 +561,9 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -529,6 +583,9 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -548,6 +605,9 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -564,6 +624,9 @@ export const OpencodeHooks: Plugin = async (
         sessionId: DEFAULT_SESSION_ID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
