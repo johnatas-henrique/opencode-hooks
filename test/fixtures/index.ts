@@ -160,11 +160,11 @@ export const mockHandlers = {
 };
 
 export const mockSaveToFile = {
-  saveToFile: jest.fn().mockResolvedValue(undefined),
+  saveToFile: vi.fn().mockResolvedValue(undefined),
 };
 
 export const mockRunScript = {
-  runScript: jest.fn().mockResolvedValue({
+  runScript: vi.fn().mockResolvedValue({
     output: 'script output',
     exitCode: 0,
     error: undefined,
@@ -174,23 +174,23 @@ export const mockRunScript = {
 export const createMockDollar = (
   output = 'script output',
   exitCode = 0
-): jest.MockedFunction<PluginInput['$']> => {
-  return jest.fn((_strings: TemplateStringsArray) => {
+): vi.MockedFunction<PluginInput['$']> => {
+  return vi.fn((_strings: TemplateStringsArray) => {
     const result = {
-      quiet: jest.fn().mockReturnValue({
-        text: jest.fn().mockReturnValue(output),
+      quiet: vi.fn().mockReturnValue({
+        text: vi.fn().mockReturnValue(output),
         exitCode,
       }),
     };
     return result;
-  }) as unknown as jest.MockedFunction<PluginInput['$']>;
+  }) as unknown as vi.MockedFunction<PluginInput['$']>;
 };
 
 export const mockToastQueue = {
-  add: jest.fn(),
-  addMultiple: jest.fn(),
-  clear: jest.fn(),
-  flush: jest.fn().mockResolvedValue(undefined),
+  add: vi.fn(),
+  addMultiple: vi.fn(),
+  clear: vi.fn(),
+  flush: vi.fn().mockResolvedValue(undefined),
   get pending() {
     return 0;
   },

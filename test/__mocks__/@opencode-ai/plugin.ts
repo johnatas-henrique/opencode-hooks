@@ -56,14 +56,14 @@ export function createMockPluginInput(
   return {
     client: {
       tui: {
-        showToast: jest.fn().mockResolvedValue(undefined),
+        showToast: vi.fn().mockResolvedValue(undefined),
       },
       session: {
-        prompt: jest.fn().mockResolvedValue(undefined),
+        prompt: vi.fn().mockResolvedValue(undefined),
       },
       ...options.client,
     },
-    $: options.$ ?? (jest.fn() as PluginDollar),
+    $: options.$ ?? (vi.fn() as PluginDollar),
     project: options.project ?? 'test-project',
     directory: options.directory ?? '/test/dir',
     worktree: options.worktree ?? '/test/dir',

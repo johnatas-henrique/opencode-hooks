@@ -1,5 +1,5 @@
-jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
+  saveToFile: vi.fn().mockResolvedValue(undefined),
 }));
 
 import {
@@ -7,7 +7,7 @@ import {
   resolveToolConfig,
 } from '../../.opencode/plugins/features/events/events';
 
-jest.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
+vi.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -33,7 +33,7 @@ jest.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
   },
 }));
 
-jest.mock('../../.opencode/plugins/config', () => ({
+vi.mock('../../.opencode/plugins/config', () => ({
   userConfig: {
     enabled: true,
     default: {
