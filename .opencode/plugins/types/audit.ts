@@ -76,6 +76,36 @@ export interface EventRecorderDependencies {
   ) => Promise<void>;
 }
 
+export interface ScriptRecorderDependencies {
+  writeLine: (
+    fileType: 'scripts',
+    data: Record<string, unknown>
+  ) => Promise<void>;
+}
+
+export interface ScriptRecord {
+  ts: string;
+  script: string;
+  args: string[];
+  exit: number;
+  duration?: number;
+  output?: string;
+  error?: string;
+  [key: string]: unknown;
+}
+
+export interface ErrorRecord {
+  ts: string;
+  type: 'config' | 'code';
+  error: string;
+  stack?: string;
+  eventType?: string;
+  toolName?: string;
+  scriptPath?: string;
+  context?: string;
+  [key: string]: unknown;
+}
+
 export interface SessionInput {
   sessionID?: string;
   info?: {
@@ -130,4 +160,27 @@ export interface EventRecorder {
     }
   ): Promise<void>;
   logSessionEvent(eventType: string, input: SessionInput): Promise<void>;
+}
+
+export interface ScriptRecorderDependencies {
+  writeLine: (
+    fileType: 'scripts',
+    data: Record<string, unknown>
+  ) => Promise<void>;
+}
+
+export interface ScriptInput {
+  script: string;
+  args?: string[];
+  startTime?: number;
+}
+
+export interface ScriptRecorderResult {
+  output: string;
+  error: string | null;
+  exitCode: number;
+}
+
+export interface ScriptRecorder {
+  logScript(input: ScriptInput, result: ScriptRecorderResult): Promise<void>;
 }
