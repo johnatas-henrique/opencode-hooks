@@ -669,3 +669,384 @@ describe('run-script-handler.ts', () => {
     });
   });
 });
+
+const createScriptToastsConfig = () => ({
+  showOutput: true,
+  outputTitle: 'Script Output',
+  showError: true,
+  outputVariant: 'info',
+  errorVariant: 'error',
+  errorTitle: 'Script Error',
+  outputDuration: 5000,
+  errorDuration: 15000,
+});
+describe('runScriptAndHandle with scriptRecorder', () => {
+  const mockWriteLine = jest.fn().mockResolvedValue(undefined);
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should call scriptRecorder.logScript on success with saveToFile', async () => {
+    const {
+      runScript,
+    } = require('../../.opencode/plugins/features/scripts/run-script');
+    runScript.mockResolvedValueOnce({
+      output: 'test output',
+      error: null,
+      exitCode: 0,
+    });
+
+    const ctx = createMockCtx();
+    const config = {
+      ctx,
+      script: 'test.sh',
+      timestamp: '2024-01-01',
+      eventType: 'test.event',
+      resolved: {
+        ...createResolvedConfig({ saveToFile: true }),
+        scriptToasts: createScriptToastsConfig(),
+      },
+      scriptToasts: createScriptToastsConfig(),
+      sessionId: 'test-session',
+      scriptRecorder: { logScript: mockWriteLine },
+    };
+
+    await runScriptAndHandle(config);
+
+    expect(mockWriteLine).toHaveBeenCalledWith(
+      expect.objectContaining({ script: 'test.sh' }),
+      expect.objectContaining({ output: expect.any(String), exitCode: 0 })
+    );
+  });
+
+  it('should truncate .sh script output', async () => {
+    const {
+      runScript,
+    } = require('../../.opencode/plugins/features/scripts/run-script');
+    const longOutput = 'x'.repeat(20000);
+    runScript.mockResolvedValueOnce({
+      output: longOutput,
+      error: null,
+      exitCode: 0,
+    });
+
+    const ctx = createMockCtx();
+    const config = {
+      ctx,
+      script: 'deploy.sh',
+      timestamp: '2024-01-01',
+      eventType: 'test.event',
+      resolved: {
+        ...createResolvedConfig({ saveToFile: true }),
+        scriptToasts: createScriptToastsConfig(),
+      },
+      scriptToasts: createScriptToastsConfig(),
+      sessionId: 'test-session',
+      scriptRecorder: { logScript: mockWriteLine },
+    };
+
+    await runScriptAndHandle(config);
+
+    expect(mockWriteLine).toHaveBeenCalledWith(
+      expect.objectContaining({ script: 'deploy.sh' }),
+      expect.objectContaining({ output: expect.any(String) })
+    );
+    const call = mockWriteLine.mock.calls[0];
+    expect(call[1].output.length).toBeLessThan(longOutput.length);
+  });
+
+  it('should show error toast when script fails and showError is true', async () => {
+    const {
+      runScript,
+    } = require('../../.opencode/plugins/features/scripts/run-script');
+    runScript.mockResolvedValueOnce({
+      output: '',
+      error: 'Script failed',
+      exitCode: 1,
+    });
+
+    const ctx = createMockCtx();
+    const config = {
+      ctx,
+      script: 'fail.sh',
+      timestamp: '2024-01-01',
+      eventType: 'test.event',
+      resolved: {
+        ...createResolvedConfig({ toast: true }),
+        scriptToasts: { ...createScriptToastsConfig(), showError: true },
+      },
+      scriptToasts: { ...createScriptToastsConfig(), showError: true },
+      sessionId: 'test-session',
+    };
+
+    await runScriptAndHandle(config);
+
+    expect(mockToastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: 'error' })
+    );
+  });
+
+  describe('runScriptAndHandle scriptRecorder parameter', () => {
+    const mockWriteLine = jest.fn().mockResolvedValue(undefined);
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should destructure scriptRecorder from config', async () => {
+      const {
+        runScript,
+      } = require('../../.opencode/plugins/features/scripts/run-script');
+      runScript.mockResolvedValueOnce({
+        output: 'output',
+        error: null,
+        exitCode: 0,
+      });
+
+      const ctx = createMockCtx();
+      const config = {
+        ctx,
+        script: 'test.sh',
+        timestamp: '2024-01-01',
+        eventType: 'test.event',
+        resolved: createResolvedConfig({ saveToFile: true }),
+        scriptToasts: createScriptToastsConfig(),
+        sessionId: 'test-session',
+        toolName: 'test-tool',
+        scriptArg: 'arg1',
+        scriptRecorder: { logScript: mockWriteLine },
+      };
+
+      await runScriptAndHandle(config);
+
+      expect(mockWriteLine).toHaveBeenCalled();
+    });
+
+    describe('runScriptAndHandle line coverage', () => {
+      const mockWriteLine = jest.fn().mockResolvedValue(undefined);
+
+      beforeEach(() => {
+        jest.clearAllMocks();
+      });
+
+      it('should use DEFAULT_SESSION_ID when sessionId not provided (line 42)', async () => {
+        const {
+          runScript,
+        } = require('../../.opencode/plugins/features/scripts/run-script');
+        runScript.mockResolvedValueOnce({
+          output: 'output',
+          error: null,
+          exitCode: 0,
+        });
+
+        const ctx = createMockCtx();
+        const config = {
+          ctx,
+          script: 'test.sh',
+          timestamp: '2024-01-01',
+          eventType: 'test.event',
+          resolved: createResolvedConfig({ saveToFile: true }),
+          scriptToasts: createScriptToastsConfig(),
+          scriptRecorder: { logScript: mockWriteLine },
+          // sessionId not provided - should use DEFAULT_SESSION_ID
+        };
+
+        await runScriptAndHandle(config);
+
+        expect(mockWriteLine).toHaveBeenCalled();
+      });
+
+      it('should call useGlobalToastQueue.add when showError is true (line 88)', async () => {
+        const {
+          runScript,
+        } = require('../../.opencode/plugins/features/scripts/run-script');
+        runScript.mockResolvedValueOnce({
+          output: '',
+          error: 'failed',
+          exitCode: 1,
+        });
+
+        const ctx = createMockCtx();
+        const config = {
+          ctx,
+          script: 'test.sh',
+          timestamp: '2024-01-01',
+          eventType: 'test.event',
+          resolved: {
+            ...createResolvedConfig(),
+            toast: true,
+            toastTitle: '===',
+            scriptToasts: { ...createScriptToastsConfig(), showError: true },
+          },
+          scriptToasts: { ...createScriptToastsConfig(), showError: true },
+          sessionId: 'test-session',
+        };
+
+        await runScriptAndHandle(config);
+
+        expect(mockToastAdd).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: expect.stringContaining('Script Error'),
+          })
+        );
+      });
+
+      it('should truncate .sh output (line 101)', async () => {
+        const {
+          runScript,
+        } = require('../../.opencode/plugins/features/scripts/run-script');
+        const longOutput = 'x'.repeat(20000);
+        runScript.mockResolvedValueOnce({
+          output: longOutput,
+          error: null,
+          exitCode: 0,
+        });
+
+        const ctx = createMockCtx();
+        const config = {
+          ctx,
+          script: 'deploy.sh',
+          timestamp: '2024-01-01',
+          eventType: 'test.event',
+          resolved: {
+            ...createResolvedConfig({ saveToFile: true }),
+            scriptToasts: createScriptToastsConfig(),
+          },
+          scriptToasts: createScriptToastsConfig(),
+          sessionId: 'test-session',
+          scriptRecorder: { logScript: mockWriteLine },
+        };
+
+        await runScriptAndHandle(config);
+
+        expect(mockWriteLine).toHaveBeenCalled();
+        const callArgs = mockWriteLine.mock.calls[0];
+        expect(callArgs[1].output.length).toBeLessThan(longOutput.length);
+      });
+
+      describe('Specific branch coverage', () => {
+        beforeEach(() => {
+          jest.clearAllMocks();
+        });
+
+        it('covers showError branch (line 88)', async () => {
+          const {
+            runScript,
+          } = require('../../.opencode/plugins/features/scripts/run-script');
+          runScript.mockResolvedValueOnce({
+            output: '',
+            error: 'error',
+            exitCode: 1,
+          });
+
+          const ctx = createMockCtx();
+          const resolvedConfig = createResolvedConfig();
+          resolvedConfig.toast = true;
+          resolvedConfig.toastTitle = '===';
+          resolvedConfig.scriptToasts = {
+            showOutput: true,
+            outputTitle: 'Output',
+            showError: true,
+            outputVariant: 'info',
+            errorVariant: 'error',
+            errorTitle: 'Error',
+            outputDuration: 5000,
+            errorDuration: 15000,
+          };
+
+          const config = {
+            ctx,
+            script: 'error.sh',
+            timestamp: '2024-01-01',
+            eventType: 'test.event',
+            resolved: resolvedConfig,
+            scriptToasts: resolvedConfig.scriptToasts,
+            sessionId: 'test-session',
+          };
+
+          await runScriptAndHandle(config);
+
+          expect(mockToastAdd).toHaveBeenCalled();
+        });
+
+        describe('Branch coverage tests', () => {
+          beforeEach(() => {
+            jest.clearAllMocks();
+          });
+
+          it('covers showError=false branch (line 88)', async () => {
+            const {
+              runScript,
+            } = require('../../.opencode/plugins/features/scripts/run-script');
+            runScript.mockResolvedValueOnce({
+              output: '',
+              error: 'error',
+              exitCode: 1,
+            });
+
+            const ctx = createMockCtx();
+            const resolvedConfig = createResolvedConfig();
+            resolvedConfig.scriptToasts = {
+              showOutput: false,
+              outputTitle: 'Output',
+              showError: false,
+              outputVariant: 'info',
+              errorVariant: 'error',
+              errorTitle: 'Error',
+              outputDuration: 5000,
+              errorDuration: 15000,
+            };
+
+            const config = {
+              ctx,
+              script: 'error.sh',
+              timestamp: '2024-01-01',
+              eventType: 'test.event',
+              resolved: resolvedConfig,
+              scriptToasts: resolvedConfig.scriptToasts,
+              sessionId: 'test-session',
+            };
+
+            await runScriptAndHandle(config);
+
+            expect(mockToastAdd).not.toHaveBeenCalled();
+          });
+
+          it('covers non-.sh script branch (line 101)', async () => {
+            const {
+              runScript,
+            } = require('../../.opencode/plugins/features/scripts/run-script');
+            runScript.mockResolvedValueOnce({
+              output: 'output',
+              error: null,
+              exitCode: 0,
+            });
+
+            const ctx = createMockCtx();
+            const config = {
+              ctx,
+              script: 'node-script.js',
+              timestamp: '2024-01-01',
+              eventType: 'test.event',
+              resolved: {
+                ...createResolvedConfig({ saveToFile: true }),
+                scriptToasts: createScriptToastsConfig(),
+              },
+              scriptToasts: createScriptToastsConfig(),
+              sessionId: 'test-session',
+              scriptRecorder: { logScript: jest.fn() },
+            };
+
+            await runScriptAndHandle(config);
+
+            expect(config.scriptRecorder.logScript).toHaveBeenCalledWith(
+              expect.objectContaining({ script: 'node-script.js' }),
+              expect.any(Object)
+            );
+          });
+        });
+      });
+    });
+  });
+});
