@@ -92,10 +92,10 @@ export const userConfig: UserEventsConfig = {
     [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: { toast: true },
     [EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: { toast: true },
     [EventType.EXPERIMENTAL_TEXT_COMPLETE]: { toast: true },
-    [EventType.TOOL_DEFINITION]: { toast: true },
+    [EventType.TOOL_DEFINITION]: { enabled: false },
 
-    [EventType.TUI_PROMPT_APPEND]: { toast: true },
-    [EventType.TUI_COMMAND_EXECUTE]: { toast: true },
+    [EventType.TUI_PROMPT_APPEND]: { enabled: false },
+    [EventType.TUI_COMMAND_EXECUTE]: { enabled: false },
 
     [EventType.TUI_TOAST_SHOW]: { enabled: false },
   },
@@ -103,13 +103,12 @@ export const userConfig: UserEventsConfig = {
   tools: {
     [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
       task: {
-        toast: true,
         saveToFile: true,
       },
     },
     [EventType.TOOL_EXECUTE_AFTER]: {
-      task: { toast: true },
-      skill: { toast: true, saveToFile: true },
+      task: {},
+      skill: { saveToFile: true },
       bash: {},
       write: {},
       edit: {},
@@ -138,10 +137,9 @@ export const userConfig: UserEventsConfig = {
       gh_grep_searchGitHub: {},
     },
     [EventType.TOOL_EXECUTE_BEFORE]: {
-      task: { toast: true },
-      skill: { toast: true },
+      task: {},
+      skill: {},
       bash: {
-        toast: true,
         block: [
           { check: blockNoVerify, message: '🚫 --no-verify flag blocked' },
           { check: blockGitForce, message: '🚫 git --force forbidden' },
@@ -153,13 +151,11 @@ export const userConfig: UserEventsConfig = {
         ],
       },
       write: {
-        toast: true,
         block: [
           { check: blockEnvFiles, message: '🚫 Cannot write .env files' },
         ],
       },
       read: {
-        toast: true,
         block: [
           { check: blockEnvFiles, message: '🚫 Cannot read .env files' },
           {
@@ -184,7 +180,6 @@ export const userConfig: UserEventsConfig = {
       'git.push': {},
       'git.pull': {},
       filesystem_read_file: {
-        toast: true,
         block: [
           { check: blockEnvFiles, message: '🚫 Cannot read .env files' },
           {
