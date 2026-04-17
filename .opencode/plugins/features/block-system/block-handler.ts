@@ -3,10 +3,11 @@ import type {
   ToolExecuteBeforeOutput,
 } from '../../types/core';
 import type { BlockCheck, ScriptResult } from '../../types/config';
+import type { BlockSystem } from '../../types/block-system';
 import { useGlobalToastQueue } from '../../core/toast-queue';
 import { saveToFile } from '../persistence/save-to-file';
 import { BLOCKED_EVENTS_LOG_FILE } from '../../core/constants';
-import { createBlockSystem, type BlockSystem } from './block-system';
+import { createBlockSystem } from './block-system';
 
 const defaultEffects = {
   notify: (title: string, details?: { message: string }) => {
@@ -70,8 +71,4 @@ export function executeBlocking(
   );
 }
 
-export {
-  createBlockSystem,
-  type BlockSystem,
-  type BlockResult,
-} from './block-system';
+export { createBlockSystem };
