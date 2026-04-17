@@ -1,10 +1,9 @@
-import { handlers, type EventHandler } from '../messages/default-handlers';
+import { handlers } from '../messages/default-handlers';
 import { userConfig } from '../../config';
 import { DISABLED_CONFIG } from '../../core/constants';
 import type { ResolvedEventConfig } from '../../types/config';
 import { createEventResolver, createToolResolver } from './context';
 
-export { ResolvedEventConfig };
 export { DISABLED_CONFIG };
 
 const eventResolver = createEventResolver(userConfig);
@@ -42,14 +41,11 @@ export function normalizeInputForHandler(
   return { properties: input };
 }
 
-export function getHandler(eventType: string): EventHandler | undefined {
+export function getHandler(eventType: string) {
   return handlers[eventType];
 }
 
-export function getToolHandler(
-  toolName: string,
-  toolEventType?: string
-): EventHandler | undefined {
+export function getToolHandler(toolName: string, toolEventType?: string) {
   if (toolEventType?.includes('.before')) {
     return handlers[`tool.execute.before.${toolName}`];
   }

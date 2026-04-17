@@ -1,10 +1,13 @@
-import type { EventHandler } from '../../messages/default-handlers';
+import type {
+  EventHandler,
+  ConfigResolverContext,
+  EventConfigResolver,
+} from '../../../types/events';
 import type {
   ResolvedEventConfig,
   EventConfig,
   EventOverride,
 } from '../../../types/config';
-import type { ConfigResolverContext, EventConfigResolver } from '../interfaces';
 import { getBooleanField, resolveSaveToFile } from '../resolution';
 import { resolveScripts, resolveToastOverride } from '../resolution';
 import { TOAST_DURATION, DISABLED_CONFIG } from '../../../core/constants';

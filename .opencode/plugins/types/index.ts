@@ -3,3 +3,8 @@ export * from './config';
 export * from './toast';
 export * from './plugin';
 export * from './core';
+export * from './audit';
+export * from './messages';
+export * from './scripts';
+export * from './block-system';
+export * from './persistence';

@@ -4,12 +4,6 @@ import type {
   FileTemplate,
 } from '../../../types/config';
 
-export interface ResolvedSaveToFile {
-  readonly enabled: boolean;
-  readonly template?: string;
-  readonly path?: string;
-}
-
 export function resolveSaveToFile(
   eventCfg: EventConfig | undefined,
   defaultCfg: EventOverride | undefined

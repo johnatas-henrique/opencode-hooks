@@ -1,11 +1,11 @@
 import type { UserEventsConfig } from '../../types/config';
-import type { EventHandler } from '../messages/default-handlers';
 import type {
+  EventHandler,
   ConfigResolverContext,
   ResolverFactory,
   EventConfigResolver,
   ToolConfigResolver,
-} from './interfaces';
+} from '../../types/events';
 import { EventConfigResolverImpl } from './resolvers/event-config.resolver';
 import { ToolConfigResolverImpl } from './resolvers/tool-config.resolver';
 import { handlers } from '../messages/default-handlers';

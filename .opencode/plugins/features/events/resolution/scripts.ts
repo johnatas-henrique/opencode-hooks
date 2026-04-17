@@ -1,15 +1,10 @@
 import type { EventConfig } from '../../../types/config';
 
-export interface ResolvedScripts {
-  readonly scripts: string[];
-  readonly runScripts: boolean;
-}
-
 export function resolveScripts(
   cfg: EventConfig,
   handlerDefaultScript: string,
   eventBaseScripts: string[]
-): ResolvedScripts {
+): import('../../../types/events').ResolvedScripts {
   if (cfg === false) {
     return { scripts: [], runScripts: false };
   }
