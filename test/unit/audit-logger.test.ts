@@ -1,0 +1,419 @@
+import {
+  createAuditLogger,
+  createGzipFile,
+} from '../../.opencode/plugins/features/audit/audit-logger';
+import type { AuditConfig } from '../../.opencode/plugins/features/audit/types';
+
+const mockAppendFile = jest.fn();
+const mockMkdir = jest.fn();
+const mockStat = jest.fn();
+const mockReaddir = jest.fn();
+const mockUnlink = jest.fn();
+const mockGzipFile = jest.fn();
+
+jest.mock('fs/promises', () => ({
+  appendFile: (...args: unknown[]) => mockAppendFile(...args),
+  mkdir: (...args: unknown[]) => mockMkdir(...args),
+  readdir: (...args: unknown[]) => mockReaddir(...args),
+  unlink: (...args: unknown[]) => mockUnlink(...args),
+  stat: (...args: unknown[]) => mockStat(...args),
+}));
+
+describe('audit-logger', () => {
+  const BASE_PATH = '/tmp/audit-test';
+
+  const defaultConfig: AuditConfig = {
+    enabled: true,
+    level: 'debug',
+    maxSizeMB: 10,
+    maxAgeDays: 30,
+    truncationKB: 10,
+    files: {
+      events: 'plugin-events.jsonl',
+      scripts: 'plugin-scripts.jsonl',
+      errors: 'plugin-errors.jsonl',
+    },
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAppendFile.mockResolvedValue(undefined);
+    mockMkdir.mockResolvedValue(undefined);
+    mockReaddir.mockResolvedValue([]);
+    mockUnlink.mockResolvedValue(undefined);
+    mockStat.mockReset();
+    mockGzipFile.mockReset().mockResolvedValue(undefined);
+  });
+
+  describe('writeLine', () => {
+    it('should append valid JSON line to file', async () => {
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: {
+          appendFile: mockAppendFile,
+          mkdir: mockMkdir,
+          gzipFile: mockGzipFile,
+        },
+      });
+      const data = { ts: '2026-04-16T18:30:33.300Z', event: 'test.event' };
+      await logger.writeLine('events', data);
+      expect(mockAppendFile).toHaveBeenCalledTimes(1);
+      const [filePath, content] = mockAppendFile.mock.calls[0];
+      expect(filePath).toBe(`${BASE_PATH}/plugin-events.jsonl`);
+      expect(content).toBe(JSON.stringify(data) + '\n');
+    });
+
+    it('should parse each line as valid JSON', async () => {
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: {
+          appendFile: mockAppendFile,
+          mkdir: mockMkdir,
+          gzipFile: mockGzipFile,
+        },
+      });
+      await logger.writeLine('events', { event: 'event1' });
+      await logger.writeLine('events', { event: 'event2' });
+      expect(() => {
+        JSON.parse(mockAppendFile.mock.calls[0][1].trim());
+        JSON.parse(mockAppendFile.mock.calls[1][1].trim());
+      }).not.toThrow();
+    });
+
+    it('should create directory if not exists', async () => {
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: {
+          appendFile: mockAppendFile,
+          mkdir: mockMkdir,
+          gzipFile: mockGzipFile,
+        },
+      });
+      await logger.writeLine('events', { event: 'test' });
+      expect(mockMkdir).toHaveBeenCalledWith(BASE_PATH, { recursive: true });
+    });
+
+    it('should not write when disabled', async () => {
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: { ...defaultConfig, enabled: false },
+        deps: { appendFile: mockAppendFile, mkdir: mockMkdir },
+      });
+      await logger.writeLine('events', { event: 'test' });
+      expect(mockAppendFile).not.toHaveBeenCalled();
+    });
+
+    it('should write to correct file based on type', async () => {
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: {
+          appendFile: mockAppendFile,
+          mkdir: mockMkdir,
+          gzipFile: mockGzipFile,
+        },
+      });
+      await logger.writeLine('scripts', { script: 'test.sh' });
+      expect(mockAppendFile).toHaveBeenCalledWith(
+        `${BASE_PATH}/plugin-scripts.jsonl`,
+        expect.any(String)
+      );
+      await logger.writeLine('errors', { error: 'test error' });
+      expect(mockAppendFile).toHaveBeenCalledWith(
+        `${BASE_PATH}/plugin-errors.jsonl`,
+        expect.any(String)
+      );
+    });
+
+    it('should use default config when not provided', async () => {
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        // config not provided - should use DEFAULT_AUDIT_CONFIG
+        deps: { appendFile: mockAppendFile, mkdir: mockMkdir },
+      });
+      await logger.writeLine('events', { event: 'test' });
+      expect(mockAppendFile).toHaveBeenCalled();
+    });
+    it('should handle write errors gracefully', async () => {
+      const appendFileWithError = jest
+        .fn()
+        .mockRejectedValue(new Error('Write failed'));
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: {
+          appendFile: appendFileWithError,
+          mkdir: mockMkdir,
+          gzipFile: mockGzipFile,
+        },
+      });
+      await expect(
+        logger.writeLine('events', { event: 'test' })
+      ).resolves.not.toThrow();
+    });
+  });
+
+  describe('rotate', () => {
+    it('should create gzip file and remove original', async () => {
+      mockStat.mockResolvedValue({ size: 1024, mtimeMs: Date.now() });
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: { unlink: mockUnlink, gzipFile: mockGzipFile, stat: mockStat },
+      });
+      await logger.rotate('events');
+      expect(mockGzipFile).toHaveBeenCalled();
+      expect(mockUnlink).toHaveBeenCalled();
+    });
+
+    it('should handle non-existent file gracefully', async () => {
+      mockStat.mockRejectedValue(new Error('File not found'));
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: { unlink: mockUnlink, gzipFile: mockGzipFile, stat: mockStat },
+      });
+      await logger.rotate('events');
+      expect(mockGzipFile).not.toHaveBeenCalled();
+      expect(mockUnlink).not.toHaveBeenCalled();
+    });
+
+    it('should increment counter for same day rotations', async () => {
+      mockStat.mockResolvedValue({ size: 1024, mtimeMs: Date.now() });
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: { unlink: mockUnlink, gzipFile: mockGzipFile, stat: mockStat },
+      });
+      await logger.rotate('events');
+      await logger.rotate('events');
+      expect(mockGzipFile).toHaveBeenCalledTimes(2);
+    });
+
+    it('should not call stat if stat is not provided', async () => {
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: { unlink: mockUnlink, gzipFile: mockGzipFile },
+      });
+      await logger.rotate('events');
+      expect(mockGzipFile).toHaveBeenCalledWith(
+        `${BASE_PATH}/plugin-events.jsonl`,
+        expect.stringContaining('plugin-events-')
+      );
+    });
+
+    it('should handle gzipFile error during rotation gracefully', async () => {
+      mockStat.mockResolvedValue({ size: 1024, mtimeMs: Date.now() });
+      mockGzipFile.mockRejectedValue(new Error('Gzip failed'));
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: { unlink: mockUnlink, gzipFile: mockGzipFile, stat: mockStat },
+      });
+      await expect(logger.rotate('events')).resolves.not.toThrow();
+    });
+  });
+
+  describe('cleanup', () => {
+    it('should delete files older than maxAgeDays', async () => {
+      const oldDate = Date.now() - 31 * 24 * 60 * 60 * 1000;
+      mockStat.mockResolvedValue({ size: 1024, mtimeMs: oldDate });
+      mockReaddir.mockResolvedValue(['old-file.jsonl.gz']);
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: { unlink: mockUnlink, stat: mockStat, readdir: mockReaddir },
+      });
+      await logger.cleanup();
+      expect(mockUnlink).toHaveBeenCalled();
+    });
+
+    it('should not delete recent files', async () => {
+      const recentDate = Date.now() - 1 * 24 * 60 * 60 * 1000;
+      mockStat.mockResolvedValue({ size: 1024, mtimeMs: recentDate });
+      mockReaddir.mockResolvedValue(['recent-file.jsonl.gz']);
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: { unlink: mockUnlink, stat: mockStat, readdir: mockReaddir },
+      });
+      await logger.cleanup();
+      expect(mockUnlink).not.toHaveBeenCalled();
+    });
+
+    it('should skip non-gzip files', async () => {
+      mockReaddir.mockResolvedValue(['regular-file.jsonl', 'another.txt']);
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: { unlink: mockUnlink, stat: mockStat, readdir: mockReaddir },
+      });
+      await logger.cleanup();
+      expect(mockStat).not.toHaveBeenCalled();
+      expect(mockUnlink).not.toHaveBeenCalled();
+    });
+
+    it('should not cleanup when maxAgeDays is 0', async () => {
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: { ...defaultConfig, maxAgeDays: 0 },
+        deps: { readdir: mockReaddir, unlink: mockUnlink },
+      });
+      await logger.cleanup();
+      expect(mockReaddir).not.toHaveBeenCalled();
+    });
+
+    it('should handle directory not found gracefully', async () => {
+      mockReaddir.mockRejectedValue(new Error('Directory not found'));
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: { unlink: mockUnlink, readdir: mockReaddir },
+      });
+      await expect(logger.cleanup()).resolves.not.toThrow();
+    });
+  });
+
+  describe('concurrent writes', () => {
+    it('should handle multiple writes to same file safely', async () => {
+      const appendFile = jest
+        .fn()
+        .mockImplementation(
+          () => new Promise((resolve) => setTimeout(resolve, 10))
+        );
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: { appendFile, mkdir: mockMkdir, gzipFile: mockGzipFile },
+      });
+      const writes = [
+        logger.writeLine('events', { event: '1' }),
+        logger.writeLine('events', { event: '2' }),
+        logger.writeLine('events', { event: '3' }),
+      ];
+      await Promise.all(writes);
+      expect(appendFile).toHaveBeenCalledTimes(3);
+    });
+
+    it('should handle writes to different files independently', async () => {
+      const appendFile = jest
+        .fn()
+        .mockImplementation(
+          () => new Promise((resolve) => setTimeout(resolve, 5))
+        );
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: { appendFile, mkdir: mockMkdir, gzipFile: mockGzipFile },
+      });
+      await Promise.all([
+        logger.writeLine('events', { event: 'event' }),
+        logger.writeLine('scripts', { script: 'script' }),
+        logger.writeLine('errors', { error: 'error' }),
+      ]);
+      expect(appendFile).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('file rotation trigger', () => {
+    it('should trigger rotation when file exceeds maxSizeMB', async () => {
+      const maxSizeBytes = defaultConfig.maxSizeMB * 1024 * 1024;
+      mockStat
+        .mockResolvedValueOnce({ size: maxSizeBytes, mtimeMs: Date.now() })
+        .mockResolvedValue({ size: 100, mtimeMs: Date.now() });
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: {
+          appendFile: mockAppendFile,
+          mkdir: mockMkdir,
+          gzipFile: mockGzipFile,
+          unlink: mockUnlink,
+          stat: mockStat,
+        },
+      });
+      await logger.writeLine('events', { event: 'test' });
+      expect(mockGzipFile).toHaveBeenCalled();
+    });
+
+    it('should not trigger rotation when file is under limit', async () => {
+      mockStat.mockResolvedValue({ size: 1024, mtimeMs: Date.now() });
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: {
+          appendFile: mockAppendFile,
+          mkdir: mockMkdir,
+          gzipFile: mockGzipFile,
+          unlink: mockUnlink,
+          stat: mockStat,
+        },
+      });
+      await logger.writeLine('events', { event: 'test' });
+      expect(mockGzipFile).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe('createGzipFile', () => {
+  it('should create a gzip function with correct dependencies', async () => {
+    const pipelineMock = jest.fn((_src, _gzip, _dest, cb) => {
+      cb(null);
+      return Promise.resolve();
+    });
+    const mockGzip = { pipe: jest.fn() };
+    const mockSourceHandle = {
+      createReadStream: jest.fn().mockReturnValue({ pipe: jest.fn() }),
+      close: jest.fn(),
+    };
+    const mockDestHandle = {
+      createWriteStream: jest.fn().mockReturnValue({ end: jest.fn() }),
+      close: jest.fn(),
+    };
+    const mockOpen = jest
+      .fn()
+      .mockResolvedValueOnce(mockSourceHandle)
+      .mockResolvedValueOnce(mockDestHandle);
+
+    const factoryResult = createGzipFile({
+      createGzip: () => mockGzip,
+      open: mockOpen,
+      pipeline: pipelineMock,
+    });
+
+    expect(typeof factoryResult).toBe('function');
+    await factoryResult('/source/path', '/dest/path');
+
+    expect(mockOpen).toHaveBeenCalledWith('/source/path', 'r');
+    expect(mockOpen).toHaveBeenCalledWith('/dest/path', 'w');
+    expect(pipelineMock).toHaveBeenCalled();
+    expect(mockSourceHandle.close).toHaveBeenCalled();
+    expect(mockDestHandle.close).toHaveBeenCalled();
+  });
+
+  it('should handle pipeline errors', async () => {
+    const pipelineError = new Error('Pipeline error');
+    const pipelineMock = jest.fn((_src, _gzip, _dest, cb) => {
+      cb(pipelineError);
+      return Promise.resolve();
+    });
+
+    const gzipFile = createGzipFile({
+      createGzip: () => ({ pipe: jest.fn() }),
+      open: jest.fn().mockResolvedValue({
+        createReadStream: () => ({ pipe: jest.fn() }),
+        createWriteStream: () => ({ end: jest.fn() }),
+        close: jest.fn(),
+      }),
+      pipeline: pipelineMock,
+    });
+
+    await expect(gzipFile('/source', '/dest')).rejects.toThrow(
+      'Pipeline error'
+    );
+  });
+});
