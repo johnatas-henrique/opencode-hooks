@@ -30,7 +30,6 @@ import {
   UNKNOWN_EVENT_LOG_FILE,
   DEFAULT_SESSION_ID,
   BLOCKED_EVENTS_LOG_FILE,
-  TOAST_DURATION,
   TOOL,
 } from './core/constants';
 import type { ResolvedEventConfig, ScriptResult } from './types/config';
@@ -87,17 +86,11 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
   await logEventConfig(timestamp, eventType, input, resolved, output);
 
   if (resolved.toast) {
-    let handler = handlers[eventType];
-    if (toolName) {
-      const toolHandler = handlers[`tool:${toolName}`];
-      if (toolHandler) {
-        handler = toolHandler;
-      }
-    }
+    const handler = handlers[eventType];
 
     const normalized = normalizeInput(
       eventType,
-      (input ?? {}) as Record<string, unknown>,
+      input as Record<string, unknown>,
       output
     );
 
@@ -150,9 +143,8 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
       message: successfulScripts
         .map((result) => `- ${result.script}:\n${result.output}`)
         .join('\n\n'),
-      variant: resolved.scriptToasts?.outputVariant ?? 'info',
-      duration:
-        resolved.scriptToasts?.outputDuration ?? TOAST_DURATION.FIVE_SECONDS,
+      variant: resolved.scriptToasts.outputVariant,
+      duration: resolved.scriptToasts.outputDuration,
     });
   }
 
