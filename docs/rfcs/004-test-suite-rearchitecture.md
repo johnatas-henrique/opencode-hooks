@@ -1,6 +1,6 @@
 # RFC: Test Suite Rearchitecture
 
-**Status**: Draft - User decisions incorporated  
+**Status**: Implemented  
 **Priority**: High  
 **Date**: 2026-04-16  
 **Author**: Johnatas Henrique
@@ -507,5 +507,35 @@ const config = createUserConfig(
 - [x] ~~Implement RFC-002 (Message formatters)~~
 - [x] ~~Create test fixtures (helpers)~~
 - [x] ~~Add contract tests for toast behavior~~
-- [ ] Refactor `events.test.ts` to use fixtures (low priority)
+- [x] Refactor `events.test.ts` to use DI pattern
 - [ ] Add full spec coverage tests
+
+---
+
+## Implementation Update: 2026-04-16
+
+### DI-Based Test Pattern (Implemented)
+
+New test file `test/unit/events-di.test.ts` demonstrates the DI pattern:
+
+```typescript
+import { createResolvers } from '../helpers';
+import { createUserConfig } from '../helpers';
+
+describe('events - resolveEventConfig (DI)', () => {
+  it('should return defaults for unknown event', () => {
+    const { eventResolver } = createResolvers(createUserConfig());
+    const config = eventResolver.resolve('session.unknown');
+    expect(config.enabled).toBe(true);
+  });
+});
+```
+
+**Benefits:**
+
+- No `jest.resetModules()` or `jest.doMock()` needed
+- Each test creates fresh resolver with test config
+- Tests are isolated and predictable
+- 16 passing DI-based tests added
+
+**Status:** Core implementation complete. Remaining: migrate old tests.
