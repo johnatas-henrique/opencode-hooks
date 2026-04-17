@@ -67,20 +67,20 @@ export const userConfig: UserEventsConfig = {
     [EventType.MESSAGE_REMOVED]: { enabled: false },
     [EventType.MESSAGE_UPDATED]: { enabled: false },
 
-    [EventType.FILE_EDITED]: { toast: true },
-    [EventType.FILE_WATCHER_UPDATED]: { toast: true },
+    [EventType.FILE_EDITED]: { enabled: false },
+    [EventType.FILE_WATCHER_UPDATED]: { enabled: false },
 
-    [EventType.PERMISSION_ASKED]: { toast: true },
-    [EventType.PERMISSION_REPLIED]: { toast: true },
+    [EventType.PERMISSION_ASKED]: { enabled: false },
+    [EventType.PERMISSION_REPLIED]: { enabled: false },
 
-    [EventType.COMMAND_EXECUTED]: { toast: true },
+    [EventType.COMMAND_EXECUTED]: { enabled: false },
 
-    [EventType.LSP_CLIENT_DIAGNOSTICS]: { toast: true },
-    [EventType.LSP_UPDATED]: { toast: true },
+    [EventType.LSP_CLIENT_DIAGNOSTICS]: { enabled: false },
+    [EventType.LSP_UPDATED]: { enabled: false },
 
     [EventType.INSTALLATION_UPDATED]: { toast: true },
 
-    [EventType.TODO_UPDATED]: { toast: true },
+    [EventType.TODO_UPDATED]: { enabled: false },
 
     [EventType.SHELL_ENV]: { toast: true },
 
@@ -89,9 +89,9 @@ export const userConfig: UserEventsConfig = {
     [EventType.CHAT_MESSAGE]: { enabled: false },
     [EventType.CHAT_PARAMS]: { enabled: false },
     [EventType.CHAT_HEADERS]: { enabled: false },
-    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: { toast: true },
-    [EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: { toast: true },
-    [EventType.EXPERIMENTAL_TEXT_COMPLETE]: { toast: true },
+    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: { enabled: false },
+    [EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: { enabled: false },
+    [EventType.EXPERIMENTAL_TEXT_COMPLETE]: { enabled: false },
     [EventType.TOOL_DEFINITION]: { enabled: false },
 
     [EventType.TUI_PROMPT_APPEND]: { enabled: false },
