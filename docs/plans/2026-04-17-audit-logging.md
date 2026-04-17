@@ -33,11 +33,11 @@ Create the base `audit-logger.ts` module with:
 
 ### Acceptance criteria
 
-- [ ] Can write valid JSONL lines to file
-- [ ] Each line is parseable with `JSON.parse()`
-- [ ] File rotation triggers when maxSizeMB exceeded
-- [ ] Rotated files are gzip compressed
-- [ ] Old files deleted after maxAgeDays
+- [x] Can write valid JSONL lines to file
+- [x] Each line is parseable with `JSON.parse()`
+- [x] File rotation triggers when maxSizeMB exceeded
+- [x] Rotated files are gzip compressed
+- [x] Old files deleted after maxAgeDays
 
 ### Tests
 
@@ -47,10 +47,10 @@ Create the base `audit-logger.ts` module with:
 
 **Criteria**:
 
-- [ ] `writeLine()` appends valid JSON to file
-- [ ] `rotate()` creates gzip and starts new file
-- [ ] `cleanup()` deletes files older than maxAgeDays
-- [ ] Multiple concurrent writes handled safely
+- [x] `writeLine()` appends valid JSON to file
+- [x] `rotate()` creates gzip and starts new file
+- [x] `cleanup()` deletes files older than maxAgeDays
+- [x] Multiple concurrent writes handled safely
 
 ---
 
@@ -75,11 +75,11 @@ Event fields:
 
 ### Acceptance criteria
 
-- [ ] `tool.execute.before` logged with correct fields
-- [ ] `tool.execute.after` logged with correct fields
-- [ ] `session.*` events logged correctly
-- [ ] Audit level disables event logging
-- [ ] No `scriptToasts` in logged data
+- [x] `tool.execute.before` logged with correct fields
+- [x] `tool.execute.after` logged with correct fields
+- [x] `session.*` events logged correctly
+- [x] Audit level disables event logging
+- [x] No `scriptToasts` in logged data
 
 ### Tests
 
@@ -89,11 +89,11 @@ Event fields:
 
 **Criteria**:
 
-- [ ] `tool.execute.before` output has ts, event, tool, session
-- [ ] `tool.execute.after` output has ts, event, tool, session, status, duration
-- [ ] session.\* events have ts, event, session, directory
-- [ ] `scriptToasts` not present in output
-- [ ] Audit level produces no output for events
+- [x] `tool.execute.before` output has ts, event, tool, session
+- [x] `tool.execute.after` output has ts, event, tool, session, status, duration
+- [x] session.\* events have ts, event, session, directory
+- [x] `scriptToasts` not present in output
+- [x] Audit level produces no output for events
 
 ---
 
@@ -115,10 +115,10 @@ Script fields:
 
 ### Acceptance criteria
 
-- [ ] Successful script executions logged with exit: 0
-- [ ] Failed script executions logged with exit: 1 and error output
-- [ ] Output > 10KB truncated, last 10KB kept
-- [ ] All scripts logged regardless of log level
+- [x] Successful script executions logged with exit: 0
+- [x] Failed script executions logged with exit: 1 and error output
+- [x] Output > 10KB truncated, last 10KB kept
+- [x] All scripts logged regardless of log level
 
 ### Tests
 
@@ -128,11 +128,11 @@ Script fields:
 
 **Criteria**:
 
-- [ ] exit: 0 for successful scripts
-- [ ] exit: 1 for failed scripts
-- [ ] Output truncation keeps last 10KB
-- [ ] Duration field present
-- [ ] Works regardless of audit level
+- [x] exit: 0 for successful scripts
+- [x] exit: 1 for failed scripts
+- [x] Output truncation keeps last 10KB
+- [x] Duration field present
+- [x] Works regardless of audit level
 
 ---
 
@@ -159,10 +159,10 @@ Error sources:
 
 ### Acceptance criteria
 
-- [ ] Script validation errors logged as config
-- [ ] Script failures logged as config
-- [ ] save-to-file failures logged as config
-- [ ] tryBuildMessage errors logged as code with stack
+- [x] Script validation errors logged as config
+- [x] Script failures logged as config
+- [x] save-to-file failures logged as config
+- [x] tryBuildMessage errors logged as code with stack
 
 ### Tests
 
@@ -172,12 +172,12 @@ Error sources:
 
 **Criteria**:
 
-- [ ] Script path not found → type: "config"
-- [ ] Script permission denied → type: "config"
-- [ ] Script exit code != 0 → type: "config"
-- [ ] save-to-file failure → type: "config"
-- [ ] tryBuildMessage exception → type: "code" with stack
-- [ ] All errors have ts, event, error, type fields
+- [x] Script path not found → type: "config"
+- [x] Script permission denied → type: "config"
+- [x] Script exit code != 0 → type: "config"
+- [x] save-to-file failure → type: "config"
+- [x] tryBuildMessage exception → type: "code" with stack
+- [x] All errors have ts, event, error, type fields
 
 ---
 
@@ -214,10 +214,10 @@ Defaults:
 
 ### Acceptance criteria
 
-- [ ] All settings configurable
-- [ ] Default values sensible
-- [ ] Invalid values trigger warning and use defaults
-- [ ] Settings documented in `docs/config/settings.md`
+- [x] All settings configurable
+- [x] Default values sensible
+- [x] Invalid values trigger warning and use defaults
+- [x] Settings documented in `docs/config/settings.md`
 
 ### Tests
 
@@ -227,9 +227,9 @@ Defaults:
 
 **Criteria**:
 
-- [ ] Default values applied when not specified
-- [ ] Invalid values rejected with clear errors
-- [ ] All fields accessible programmatically
+- [x] Default values applied when not specified
+- [x] Invalid values rejected with clear errors
+- [x] All fields accessible programmatically
 
 ---
 
@@ -246,10 +246,10 @@ Defaults:
 
 ### Acceptance criteria
 
-- [ ] Old files moved to archive with timestamp
-- [ ] New logging active in plugin
-- [ ] No breaking changes to existing functionality
-- [ ] Tests pass with new logging
+- [x] Old files moved to archive with timestamp
+- [x] New logging active in plugin
+- [x] No breaking changes to existing functionality
+- [x] Tests pass with new logging
 
 ### Tests
 
@@ -259,12 +259,12 @@ Defaults:
 
 **Criteria**:
 
-- [ ] Old logs moved to `archive/` with timestamp
-- [ ] `plugin-events.jsonl` created with events
-- [ ] `plugin-scripts.jsonl` created with script outputs
-- [ ] `plugin-errors.jsonl` created with errors
-- [ ] Each JSONL line is valid and parseable
-- [ ] Existing functionality (toasts, etc) still works
+- [x] Old logs moved to `archive/` with timestamp
+- [x] `plugin-events.jsonl` created with events
+- [x] `plugin-scripts.jsonl` created with script outputs
+- [x] `plugin-errors.jsonl` created with errors
+- [x] Each JSONL line is valid and parseable
+- [x] Existing functionality (toasts, etc) still works
 
 ---
 
