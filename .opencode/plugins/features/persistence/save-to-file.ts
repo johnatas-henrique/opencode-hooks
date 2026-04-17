@@ -1,12 +1,6 @@
 import { appendFile, mkdir } from 'fs/promises';
 import { LOG_DIR, LOG_FILE, TOAST_DURATION } from '../../core/constants';
-
-export type ToastCallback = (params: {
-  title: string;
-  message: string;
-  variant?: 'success' | 'warning' | 'error' | 'info';
-  duration?: number;
-}) => void | Promise<void>;
+import type { PersistToastCallback } from '../../types/persistence';
 
 let dirCreated = false;
 
@@ -28,7 +22,7 @@ export const saveToFile = async ({
 }: {
   content: string;
   filename?: string;
-  showToast?: ToastCallback;
+  showToast?: PersistToastCallback;
 }): Promise<void> => {
   try {
     const validFilename = isValidFilename(filename) ? filename : LOG_FILE;
