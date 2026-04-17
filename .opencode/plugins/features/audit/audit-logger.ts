@@ -2,13 +2,16 @@ import { appendFile, mkdir, readdir, unlink, open } from 'fs/promises';
 import { createGzip } from 'zlib';
 import { pipeline } from 'stream';
 import type {
-  AuditConfig,
   AuditLoggerDependencies,
   AuditFileType,
   GzipDependencies,
   FileHandle,
-} from './types';
-import { DEFAULT_AUDIT_CONFIG } from './types';
+  AuditLogger,
+  AuditLoggerOptions,
+} from '../../types/audit';
+import { DEFAULT_AUDIT_CONFIG } from '../../types/audit';
+
+export { AuditLogger, AuditLoggerOptions };
 
 export function createGzipFile(deps: GzipDependencies) {
   return async function gzipFile(
@@ -34,21 +37,6 @@ export function createGzipFile(deps: GzipDependencies) {
     await source.close();
     await dest.close();
   };
-}
-
-export interface AuditLogger {
-  writeLine(
-    fileType: AuditFileType,
-    data: Record<string, unknown>
-  ): Promise<void>;
-  rotate(fileType: AuditFileType): Promise<void>;
-  cleanup(): Promise<void>;
-}
-
-export interface AuditLoggerOptions {
-  basePath: string;
-  config: AuditConfig;
-  deps?: Partial<AuditLoggerDependencies>;
 }
 
 const defaultGzipDeps: GzipDependencies = {

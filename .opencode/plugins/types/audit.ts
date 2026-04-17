@@ -57,6 +57,35 @@ export interface GzipDependencies {
   ) => Promise<void>;
 }
 
+export interface AuditRecord {
+  ts: string;
+  event: string;
+  tool?: string;
+  session?: string;
+  status?: string;
+  duration?: number;
+  error?: string;
+  directory?: string;
+  [key: string]: unknown;
+}
+
+export interface EventRecorderDependencies {
+  writeLine: (
+    fileType: 'events',
+    data: Record<string, unknown>
+  ) => Promise<void>;
+}
+
+export interface SessionInput {
+  sessionID?: string;
+  info?: {
+    id?: string;
+    title?: string;
+    directory?: string;
+  };
+  directory?: string;
+}
+
 export const DEFAULT_AUDIT_CONFIG: AuditConfig = {
   enabled: true,
   level: 'debug',
@@ -69,3 +98,36 @@ export const DEFAULT_AUDIT_CONFIG: AuditConfig = {
     errors: 'plugin-errors.jsonl',
   },
 };
+export interface AuditLogger {
+  writeLine(
+    fileType: AuditFileType,
+    data: Record<string, unknown>
+  ): Promise<void>;
+  rotate(fileType: AuditFileType): Promise<void>;
+  cleanup(): Promise<void>;
+}
+
+export interface AuditLoggerOptions {
+  basePath: string;
+  config: AuditConfig;
+  deps?: Partial<AuditLoggerDependencies>;
+}
+
+export interface EventRecorder {
+  logToolExecuteBefore(input: {
+    tool?: string;
+    sessionID?: string;
+    callID?: string;
+  }): Promise<void>;
+  logToolExecuteAfter(
+    input: {
+      tool?: string;
+      sessionID?: string;
+      callID?: string;
+    },
+    output?: {
+      metadata?: { exit?: number };
+    }
+  ): Promise<void>;
+  logSessionEvent(eventType: string, input: SessionInput): Promise<void>;
+}
