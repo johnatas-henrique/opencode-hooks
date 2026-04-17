@@ -3,7 +3,6 @@ export {
   createGzipFile,
   archiveLogFiles,
 } from './audit-logger';
-export type { ArchiveDependencies } from './audit-logger';
 export { createEventRecorder } from './event-recorder';
 export { createScriptRecorder, truncateOutput } from './script-recorder';
 export { createErrorRecorder } from './error-recorder';

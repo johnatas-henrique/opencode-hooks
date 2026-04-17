@@ -1,5 +1,8 @@
 import { runScript } from './run-script';
-import type { ScriptRunResult } from '../../types/scripts';
+import type {
+  ScriptRunResult,
+  ScriptExecutionResult,
+} from '../../types/scripts';
 import { appendToSession } from '../messages/append-to-session';
 import { useGlobalToastQueue } from '../../core/toast-queue';
 import { DEFAULT_SESSION_ID } from '../../core/constants';
@@ -20,11 +23,6 @@ export function addSubagentSession(sessionId: string): void {
 
 export function resetSubagentTracking(): void {
   subagentSessionIds.clear();
-}
-
-interface ScriptExecutionResult {
-  script: string;
-  output: string | undefined;
 }
 
 export async function runScriptAndHandle(

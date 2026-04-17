@@ -26,3 +26,8 @@ export interface ScriptRunResult {
   error: string | null;
   exitCode: number;
 }
+
+export interface ScriptExecutionResult {
+  script: string;
+  output: string | undefined;
+}

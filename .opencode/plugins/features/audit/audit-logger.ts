@@ -10,25 +10,15 @@ import {
 import { createGzip } from 'zlib';
 import { pipeline } from 'stream';
 import type {
-  AuditLoggerDependencies,
-  AuditFileType,
-  GzipDependencies,
-  FileHandle,
   AuditLogger,
   AuditLoggerOptions,
+  ArchiveDependencies,
+  AuditFileType,
+  AuditLoggerDependencies,
+  GzipDependencies,
+  FileHandle,
 } from '../../types/audit';
 import { DEFAULT_AUDIT_CONFIG } from '../../types/audit';
-
-export { AuditLogger, AuditLoggerOptions };
-
-export interface ArchiveDependencies {
-  mkdir: (
-    path: string,
-    options?: { recursive?: boolean }
-  ) => Promise<void | string>;
-  rename: (src: string, dest: string) => Promise<void>;
-  stat: (path: string) => Promise<{ existsSync?: boolean }>;
-}
 
 export async function archiveLogFiles(
   basePath: string,

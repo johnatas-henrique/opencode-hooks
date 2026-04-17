@@ -184,3 +184,35 @@ export interface ScriptRecorderResult {
 export interface ScriptRecorder {
   logScript(input: ScriptInput, result: ScriptRecorderResult): Promise<void>;
 }
+
+export type ErrorType = 'config' | 'code';
+
+export interface ErrorRecorderDependencies {
+  writeLine: (
+    fileType: 'errors',
+    data: Record<string, unknown>
+  ) => Promise<void>;
+}
+
+export interface ConfigErrorContext {
+  scriptPath?: string;
+  eventType?: string;
+  toolName?: string;
+  message: string;
+}
+
+export interface CodeErrorContext {
+  error: Error;
+  context?: string;
+}
+
+export type ErrorContext = ConfigErrorContext | CodeErrorContext;
+
+export interface ArchiveDependencies {
+  mkdir: (
+    path: string,
+    options?: { recursive?: boolean }
+  ) => Promise<void | string>;
+  rename: (src: string, dest: string) => Promise<void>;
+  stat?: (path: string) => Promise<{ existsSync?: boolean }>;
+}

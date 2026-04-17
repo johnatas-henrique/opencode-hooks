@@ -1,7 +1,4 @@
-type BuildMessageFn = (
-  event: Record<string, unknown>,
-  allowedFields?: string[]
-) => string;
+import type { BuildMessageFn } from './messages';
 
 export interface EventHandler {
   title: string;

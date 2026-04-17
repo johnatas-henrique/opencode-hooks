@@ -3,22 +3,13 @@ import { join } from 'path';
 import { homedir } from 'os';
 import { DEFAULT_SESSION_ID } from '../../core/constants';
 import type { PluginStatusDisplayMode } from '../../types/config';
-import type { PluginStatus } from '../../types/plugin';
+import type { PluginStatus, PluginEntry } from '../../types/plugin';
 
 const LINE_REGEX = /^(INFO|WARN|ERROR|DEBUG)\s+\S+\s+\+\d+ms\s+(.+)$/;
 const TAG_REGEX = /^(\w+)=(.+)$/;
 const INTERNAL_PLUGIN_MARKER = 'internal plugin';
 const LOADING_MARKER = 'loading';
 const INCOMPATIBLE_MARKER = 'incompatible';
-
-interface PluginEntry {
-  level: string;
-  message: string;
-  name?: string;
-  path?: string;
-  pkg?: string;
-  error?: string;
-}
 
 function getLogDirectory(): string {
   const xdgData = process.env.XDG_DATA_HOME;

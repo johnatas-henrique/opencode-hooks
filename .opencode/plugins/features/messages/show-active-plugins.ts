@@ -1,11 +1,7 @@
-import type { TuiToast } from '@opencode-ai/plugin/tui';
 import { getPluginStatus, formatPluginStatus } from './plugin-status';
 import { userConfig } from '../../config';
 import { TOAST_DURATION } from '../../core/constants';
-
-type ToastQueue = {
-  add: (toast: TuiToast) => void;
-};
+import type { ToastQueue } from '../../types/toast';
 
 export async function showActivePluginsToast(
   queue: ToastQueue,

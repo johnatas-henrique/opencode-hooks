@@ -1,17 +1,9 @@
-import type { AuditConfig, ScriptRecord } from '../../types/audit';
-
-export interface ScriptRecorderDependencies {
-  writeLine: (
-    fileType: 'scripts',
-    data: Record<string, unknown>
-  ) => Promise<void>;
-}
-
-export interface ScriptInput {
-  script: string;
-  args?: string[];
-  startTime?: number;
-}
+import type {
+  AuditConfig,
+  ScriptRecord,
+  ScriptRecorderDependencies,
+  ScriptInput,
+} from '../../types/audit';
 
 const TRUNCATION_KB = 10;
 

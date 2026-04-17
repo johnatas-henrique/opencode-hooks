@@ -1,27 +1,12 @@
-import type { AuditConfig, ErrorRecord } from '../../types/audit';
-
-export type ErrorType = 'config' | 'code';
-
-export interface ErrorRecorderDependencies {
-  writeLine: (
-    fileType: 'errors',
-    data: Record<string, unknown>
-  ) => Promise<void>;
-}
-
-export interface ConfigErrorContext {
-  scriptPath?: string;
-  eventType?: string;
-  toolName?: string;
-  message: string;
-}
-
-export interface CodeErrorContext {
-  error: Error;
-  context?: string;
-}
-
-export type ErrorContext = ConfigErrorContext | CodeErrorContext;
+import type {
+  AuditConfig,
+  ErrorRecord,
+  ErrorType,
+  ErrorRecorderDependencies,
+  ConfigErrorContext,
+  CodeErrorContext,
+  ErrorContext,
+} from '../../types/audit';
 
 export function getErrorType(context: ErrorContext): ErrorType {
   if ('error' in context) {

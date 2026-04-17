@@ -1,12 +1,7 @@
 import { formatValue } from './format-value';
 import { getValueByPath } from './get-value-by-path';
 import { formatTime } from './format-time';
-
-interface BuildKeysEvent {
-  input?: Record<string, unknown>;
-  output?: Record<string, unknown>;
-  properties?: Record<string, unknown>;
-}
+import type { BuildKeysEvent } from '../../types/messages';
 
 export function buildKeysMessage(
   event: BuildKeysEvent,
