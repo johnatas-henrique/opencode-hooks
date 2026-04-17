@@ -4,22 +4,7 @@
 // Import these in settings.ts to enable:
 // import { blockEnvFiles, blockGitForce, blockNoVerify } from './blocks';
 
-import type {
-  ToolExecuteBeforeInput,
-  ToolExecuteBeforeOutput,
-} from '../types/core';
-import type { ScriptResult } from '../types/config';
-
-export type BlockPredicate = (
-  input: ToolExecuteBeforeInput,
-  output: ToolExecuteBeforeOutput,
-  scriptResults: ScriptResult[]
-) => boolean;
-
-export interface BlockCheck {
-  check: BlockPredicate;
-  message?: string;
-}
+import type { BlockPredicate } from '../types/config';
 
 export const blockEnvFiles: BlockPredicate = (_, output) =>
   (output.args.filePath as string)?.includes('.env');

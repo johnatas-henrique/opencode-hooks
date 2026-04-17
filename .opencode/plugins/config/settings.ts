@@ -2,7 +2,6 @@ import { TOAST_DURATION } from '../core/constants';
 import { EventType } from '../types/config';
 import type { UserEventsConfig } from '../types/config';
 import {
-  BlockPredicate,
   blockEnvFiles,
   blockGitForce,
   blockScriptsFailed,
@@ -10,8 +9,6 @@ import {
   blockNoVerify,
   blockProtectedBranch,
 } from './security-rules';
-
-export type { BlockPredicate };
 
 export const userConfig: UserEventsConfig = {
   enabled: true,
