@@ -11,10 +11,6 @@ import { TOAST_DURATION } from '../../../core/constants';
 import { normalizeInputForHandler } from './normalize-input';
 import { buildToastMessage } from './build-message';
 
-function isToolOverride(cfg: ToolConfig): cfg is ToolOverride {
-  return typeof cfg === 'object' && cfg !== null;
-}
-
 export class ToolConfigResolverImpl implements ToolConfigResolver {
   constructor(private context: ConfigResolverContext) {}
 
@@ -188,7 +184,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       baseWithToolHandler.scripts
     );
     const toastCfg = resolveToastOverride(toolConfig);
-    const toolOverride = isToolOverride(toolConfig) ? toolConfig : undefined;
+    const toolOverride = toolConfig as ToolOverride;
 
     return {
       ...baseWithToolHandler,
@@ -226,7 +222,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       toastVariant: toastCfg?.variant ?? baseWithToolHandler.toastVariant,
       toastDuration: toastCfg?.duration ?? baseWithToolHandler.toastDuration,
       scripts,
-      saveToFile: resolveSaveToFile(toolConfig ?? defaultCfg, defaultCfg),
+      saveToFile: resolveSaveToFile(toolConfig, defaultCfg),
       appendToSession: getBooleanField(
         toolConfig,
         defaultCfg,
