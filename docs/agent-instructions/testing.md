@@ -15,7 +15,7 @@
 
 ## Mocking Patterns
 
-- Mock `user-events.config.ts` and `handlers.ts` in tests that use `events.ts`
+- Mock `config/settings.ts` and `features/messages/default-handlers.ts` in tests that use `features/events/`
 - Use `jest.resetModules()` + `jest.doMock()` for per-test config overrides
 - Mock `@opencode-ai/plugin` and `@opencode-ai/sdk` via `test/__mocks__/`
 
@@ -32,6 +32,6 @@ npm run coverage:report    # Text-summary only
 ### Single Test
 
 ```bash
-NODE_OPTIONS='--experimental-vm-modules' npx jest test/handlers.test.ts --forceExit
+NODE_OPTIONS='--experimental-vm-modules' npx jest test/unit/handlers.test.ts --forceExit
 NODE_OPTIONS='--experimental-vm-modules' npx jest -t "session.created" --forceExit
 ```

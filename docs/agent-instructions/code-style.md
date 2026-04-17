@@ -4,7 +4,7 @@
 
 - Use ES module syntax with `import type` for type-only imports
 - Group imports: external packages first, then relative imports
-- Barrel exports via `helpers/index.ts` — import from there, not individual files
+- Barrel exports via `features/*/index.ts` for features and `types/index.ts` for types
 - Alias `@opencode-ai/plugin` and `@opencode-ai/sdk` are mocked in tests
 
 ## Formatting (Prettier)

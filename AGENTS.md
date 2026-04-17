@@ -12,12 +12,12 @@ TypeScript plugin system for OpenCode AI with event-driven hooks.
 
 ## Important Files
 
-| File                          | Purpose                                    |
-| ----------------------------- | ------------------------------------------ |
-| `helpers/config/settings.ts`  | **ONLY FILE TO EDIT** - user configuration |
-| `helpers/config/blocks.ts`    | Security predicates                        |
-| `helpers/default-handlers.ts` | Event handlers with `allowedFields`        |
-| `events-catalog.md`           | Event types and available fields           |
+| File                                    | Purpose                                    |
+| --------------------------------------- | ------------------------------------------ |
+| `config/settings.ts`                    | **ONLY FILE TO EDIT** - user configuration |
+| `config/security-rules.ts`              | Security predicates                        |
+| `features/messages/default-handlers.ts` | Event handlers with `allowedFields`        |
+| `events-catalog.md`                     | Event types and available fields           |
 
 ## Guidelines
 
