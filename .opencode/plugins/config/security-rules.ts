@@ -11,7 +11,11 @@ export const blockEnvFiles: BlockPredicate = (_, output) =>
 
 export const blockGitForce: BlockPredicate = (_, output) => {
   const cmd = output.args.command as string;
-  return cmd?.includes('--force') || cmd?.includes(' -f');
+  const tokens = cmd?.trim().split(/\s+/) ?? [];
+  const isGit = tokens[0] === 'git';
+  const hasForce = tokens.includes('--force') || tokens.includes('-f');
+
+  return isGit && hasForce;
 };
 
 export const blockScriptsFailed: BlockPredicate = (_, __, results) =>
