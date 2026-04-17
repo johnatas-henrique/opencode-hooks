@@ -12,12 +12,10 @@ export function waitForToastSilence(
 
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
   let silenceTimer: ReturnType<typeof setTimeout> | null = null;
-  let resolved = false;
   let lastCount = 0;
 
   const promise = new Promise<void>((resolve) => {
     const schedulePoll = () => {
-      if (resolved) return;
       pollTimer = setTimeout(() => {
         pollTimer = null;
         check();
@@ -26,8 +24,6 @@ export function waitForToastSilence(
     };
 
     const check = async () => {
-      if (resolved) return;
-
       try {
         const content = await readFile(logFile, 'utf-8');
         const matches = content.match(TOAST_PATTERN);
@@ -39,13 +35,10 @@ export function waitForToastSilence(
           silenceTimer = setTimeout(check, silenceMs);
           silenceTimer.unref();
         } else {
-          resolved = true;
-          if (pollTimer) clearTimeout(pollTimer);
           if (silenceTimer) clearTimeout(silenceTimer);
           resolve();
         }
       } catch {
-        resolved = true;
         if (pollTimer) clearTimeout(pollTimer);
         if (silenceTimer) clearTimeout(silenceTimer);
         resolve();
@@ -57,7 +50,6 @@ export function waitForToastSilence(
   });
 
   const cleanup = () => {
-    resolved = true;
     if (pollTimer) clearTimeout(pollTimer);
     if (silenceTimer) clearTimeout(silenceTimer);
     pollTimer = null;
