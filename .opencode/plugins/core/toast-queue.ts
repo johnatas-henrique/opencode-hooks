@@ -1,18 +1,15 @@
 import type { TuiToast } from '@opencode-ai/plugin/tui';
+import type { ToastQueue, ToastQueueOptions } from '../types/toast';
 import { saveToFile } from '../features/persistence/save-to-file';
 import { STAGGER_MS, TOAST_DURATION, DEFAULT_SESSION_ID } from './constants';
 
-export type ShowToastOptions = {
-  delay?: number;
-  stagger?: boolean;
-};
-
 let activeToast: Promise<void> | null = null;
+let globalToastQueue: ToastQueue | null = null;
 
 export async function showToastStaggered(
   showFn: (toast: TuiToast) => void | Promise<void>,
   toast: TuiToast,
-  options: ShowToastOptions = {}
+  options: ToastQueueOptions = {}
 ): Promise<void> {
   const { delay = 0, stagger = true } = options;
 
@@ -138,8 +135,6 @@ export function createToastQueue(
   return queueObj;
 }
 
-let globalToastQueue: ReturnType<typeof createToastQueue> | null = null;
-
 export function initGlobalToastQueue(
   showFn: (toast: TuiToast) => void | Promise<void>
 ): ToastQueue {
@@ -175,5 +170,3 @@ export function useGlobalToastQueue(): ToastQueue {
 export function resetGlobalToastQueue() {
   globalToastQueue = null;
 }
-
-export type ToastQueue = ReturnType<typeof createToastQueue>;
