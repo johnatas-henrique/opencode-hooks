@@ -1,7 +1,6 @@
-export { handlers, type EventHandler } from './default-handlers';
+export { handlers } from './default-handlers';
 export {
   formatPluginStatus,
-  type PluginStatus,
   getPluginStatus,
   getLatestLogFile,
 } from './plugin-status';

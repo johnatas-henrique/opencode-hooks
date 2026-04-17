@@ -1,20 +1,12 @@
 import { TOAST_DURATION } from '../../core/constants';
 import { buildKeysMessage, buildKeysMessageSimple } from '../message-formatter';
 
+import type { EventHandler } from '../../types/events';
+
 type BuildMessageFn = (
   event: Record<string, unknown>,
   allowedFields?: string[]
 ) => string;
-
-export interface EventHandler {
-  title: string;
-  variant: 'success' | 'warning' | 'error' | 'info';
-  duration: number;
-  defaultScript: string;
-  buildMessage: BuildMessageFn;
-  allowedFields?: string[];
-  defaultTemplate?: string;
-}
 
 interface HandlerConfig {
   title: string;

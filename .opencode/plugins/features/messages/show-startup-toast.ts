@@ -4,13 +4,10 @@ import { waitForToastSilence } from './toast-silence-detector';
 import { useGlobalToastQueue } from '../../core/toast-queue';
 import { saveToFile } from '../persistence/save-to-file';
 import { TIMER, TOAST_DURATION } from '../../core/constants';
-
-export interface ShowStartupToastOptions {
-  getLogFile?: () => string | null;
-}
+import type { StartupToastOptions } from '../../types/messages';
 
 export async function showStartupToast(
-  options: ShowStartupToastOptions = {}
+  options: StartupToastOptions = {}
 ): Promise<void> {
   const getLogFile = options.getLogFile ?? getLatestLogFile;
   const logFile = getLogFile();

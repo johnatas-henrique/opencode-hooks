@@ -3,19 +3,13 @@ import { join } from 'path';
 import { homedir } from 'os';
 import { DEFAULT_SESSION_ID } from '../../core/constants';
 import type { PluginStatusDisplayMode } from '../../types/config';
+import type { PluginStatus } from '../../types/plugin';
 
 const LINE_REGEX = /^(INFO|WARN|ERROR|DEBUG)\s+\S+\s+\+\d+ms\s+(.+)$/;
 const TAG_REGEX = /^(\w+)=(.+)$/;
 const INTERNAL_PLUGIN_MARKER = 'internal plugin';
 const LOADING_MARKER = 'loading';
 const INCOMPATIBLE_MARKER = 'incompatible';
-
-export interface PluginStatus {
-  name: string;
-  status: 'active' | 'failed' | 'incompatible';
-  error?: string;
-  source?: 'built-in' | 'user';
-}
 
 interface PluginEntry {
   level: string;
