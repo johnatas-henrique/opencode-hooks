@@ -27,10 +27,6 @@ jest.mock(
   })
 );
 
-jest.mock('../../.opencode/plugins/features/events/log-event', () => ({
-  logScriptOutput: jest.fn(),
-}));
-
 jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));

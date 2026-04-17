@@ -16,6 +16,22 @@ jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('../../.opencode/plugins/features/audit', () => ({
+  initAuditLogging: jest.fn().mockResolvedValue(undefined),
+  createAuditLogger: jest.fn(() => ({ writeLine: jest.fn() })),
+  createEventRecorder: jest.fn(() => ({
+    logToolExecuteBefore: jest.fn(),
+    logToolExecuteAfter: jest.fn(),
+    logSessionEvent: jest.fn(),
+  })),
+  createScriptRecorder: jest.fn(() => ({ logScript: jest.fn() })),
+  createErrorRecorder: jest.fn(() => ({ logError: jest.fn() })),
+  archiveLogFiles: jest.fn().mockResolvedValue(undefined),
+  getEventRecorder: jest.fn(),
+  getScriptRecorder: jest.fn(),
+  getErrorRecorder: jest.fn(),
+}));
+
 jest.mock('../../.opencode/plugins/config', () => ({
   userConfig: {
     enabled: true,
@@ -494,7 +510,6 @@ jest.mock(
 );
 
 import { runScript } from '../../.opencode/plugins/features/scripts/run-script';
-import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
 
 interface Session {
   id: string;
@@ -593,7 +608,7 @@ describe('session.created', () => {
     expect(callArgs.body.duration).toBe(2000);
   });
 
-  it('should call saveToFile with log entry', async () => {
+  it('should initialize audit logging', async () => {
     const ctx = createMockCtx(mockClient, mockDollar);
     const plugin = await OpencodeHooks(ctx);
     const event = {
@@ -601,12 +616,8 @@ describe('session.created', () => {
       properties: { info: createMockSession() },
     };
     await plugin.event({ event });
-    expect(saveToFile).toHaveBeenCalledTimes(3);
-    expect(saveToFile).toHaveBeenCalledWith(
-      expect.objectContaining({
-        content: expect.stringMatching(/session.created/),
-      })
-    );
+    const auditModule = require('../../.opencode/plugins/features/audit');
+    expect(auditModule.initAuditLogging).toHaveBeenCalled();
   });
 });
 

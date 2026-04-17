@@ -161,11 +161,6 @@ jest.mock('../../.opencode/plugins/core/debug', () => ({
   handleDebugLog: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/features/events/log-event', () => ({
-  logEventConfig: jest.fn().mockResolvedValue(undefined),
-  logScriptOutput: jest.fn().mockResolvedValue(undefined),
-}));
-
 const mockClient = {
   tui: {
     showToast: jest.fn().mockResolvedValue(undefined),

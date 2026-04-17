@@ -16,6 +16,22 @@ jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('../../.opencode/plugins/features/audit', () => ({
+  initAuditLogging: jest.fn().mockResolvedValue(undefined),
+  createAuditLogger: jest.fn(() => ({ writeLine: jest.fn() })),
+  createEventRecorder: jest.fn(() => ({
+    logToolExecuteBefore: jest.fn(),
+    logToolExecuteAfter: jest.fn(),
+    logSessionEvent: jest.fn(),
+  })),
+  createScriptRecorder: jest.fn(() => ({ logScript: jest.fn() })),
+  createErrorRecorder: jest.fn(() => ({ logError: jest.fn() })),
+  archiveLogFiles: jest.fn().mockResolvedValue(undefined),
+  getEventRecorder: jest.fn(),
+  getScriptRecorder: jest.fn(),
+  getErrorRecorder: jest.fn(),
+}));
+
 jest.mock('../../.opencode/plugins/config', () => ({
   userConfig: {
     enabled: true,
@@ -645,7 +661,7 @@ describe('saveToFile', () => {
     for (const event of events) {
       await plugin.event({ event });
     }
-    expect(saveToFile).toHaveBeenCalledTimes(15);
+    expect(saveToFile).toHaveBeenCalledTimes(3);
   });
 
   it('should save EVENT_DISABLED when logDisabledEvents is true', async () => {

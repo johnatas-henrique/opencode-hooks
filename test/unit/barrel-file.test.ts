@@ -16,8 +16,6 @@ describe('barrel file (index.ts) - re-exports', () => {
     expect(typeof index.EventType).toBe('object');
     expect(typeof index.showActivePluginsToast).toBe('function');
     expect(typeof index.showStartupToast).toBe('function');
-    expect(typeof index.logEventConfig).toBe('function');
-    expect(typeof index.logScriptOutput).toBe('function');
     expect(typeof index.addSubagentSession).toBe('function');
   });
 
