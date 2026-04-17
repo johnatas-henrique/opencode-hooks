@@ -1,20 +1,20 @@
-const mockToastAdd = jest.fn().mockResolvedValue(undefined);
+const mockToastAdd = vi.fn().mockResolvedValue(undefined);
 
-jest.mock('../../.opencode/plugins/core/toast-queue', () => ({
-  createToastQueue: jest.fn(),
-  initGlobalToastQueue: jest.fn(),
+vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
+  createToastQueue: vi.fn(),
+  initGlobalToastQueue: vi.fn(),
   useGlobalToastQueue: () => ({
     add: mockToastAdd,
   }),
-  resetGlobalToastQueue: jest.fn(),
-  showToastStaggered: jest.fn(),
+  resetGlobalToastQueue: vi.fn(),
+  showToastStaggered: vi.fn(),
 }));
 
-jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
+  saveToFile: vi.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/core/constants', () => ({
+vi.mock('../../.opencode/plugins/core/constants', () => ({
   BLOCKED_EVENTS_LOG_FILE: 'blocked-events.log',
 }));
 
@@ -37,7 +37,7 @@ describe('block-handler', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('executeBlocking', () => {
@@ -159,8 +159,6 @@ describe('block-handler', () => {
     });
 
     it('logs to custom file when logFilename differs from default', () => {
-      const saveToFile =
-        require('../../.opencode/plugins/features/persistence/save-to-file').saveToFile;
       saveToFile.mockClear();
 
       const block = [{ check: () => true, message: 'blocked' }];
@@ -184,8 +182,6 @@ describe('block-handler', () => {
     });
 
     it('logs event data when blocked with custom logFilename', () => {
-      const saveToFile =
-        require('../../.opencode/plugins/features/persistence/save-to-file').saveToFile;
       saveToFile.mockClear();
 
       const block = [{ check: () => true, message: 'blocked by test' }];
@@ -207,8 +203,6 @@ describe('block-handler', () => {
     });
 
     it('logs raw data when data is not an object with eventType', () => {
-      const saveToFile =
-        require('../../.opencode/plugins/features/persistence/save-to-file').saveToFile;
       saveToFile.mockClear();
 
       const block = [{ check: () => true, message: 'blocked' }];

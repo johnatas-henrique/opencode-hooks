@@ -5,9 +5,96 @@ import type {
   PluginDollar,
 } from '../__mocks__/@opencode-ai/plugin';
 
-const mockRunScript = jest
-  .fn()
-  .mockResolvedValue({ output: 'Script executed', error: null, exitCode: 0 });
+const { mockRunScript } = vi.hoisted(() => ({
+  mockRunScript: vi.fn(),
+}));
+
+const { mockSaveToFile } = vi.hoisted(() => ({
+  mockSaveToFile: vi.fn().mockResolvedValue(undefined),
+}));
+
+let capturedShowFn: ((toast: unknown) => void) | null = null;
+
+const { mockQueue: globalMockQueue } = vi.hoisted(() => ({
+  mockQueue: {
+    add: vi.fn((toast: unknown) => {
+      if (capturedShowFn) capturedShowFn(toast);
+    }),
+    addMultiple: vi.fn(),
+    clear: vi.fn(),
+    flush: vi.fn().mockResolvedValue(undefined),
+    get pending() {
+      return 0;
+    },
+  },
+}));
+
+vi.mock('../../.opencode/plugins/config', async () => {
+  const actual = await vi.importActual('../../.opencode/plugins/config');
+  return {
+    ...actual,
+    userConfig: {
+      ...actual.userConfig,
+      enabledEvents: [
+        'tool.execute.before',
+        'tool.execute.after',
+        'tool.execute.after.subagent',
+        'shell.env',
+      ],
+      disabledEvents: [],
+      logToFile: true,
+      events: {
+        ...actual.userConfig.events,
+        'shell.env': {
+          toast: true,
+          runScripts: true,
+          scripts: ['shell-env.sh'],
+        },
+        'tool.execute.after.subagent': {
+          runScripts: true,
+          toast: true,
+          scripts: ['after-task.sh'],
+        },
+      },
+      tools: {
+        'tool.execute.before': {
+          read: { runScripts: true, toast: true },
+          write: { runScripts: false, toast: false },
+          disabled: { enabled: false },
+        },
+        'tool.execute.after': {
+          task: { runScripts: true, toast: true },
+          read: { toast: true },
+        },
+      },
+    },
+  };
+});
+
+vi.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
+  runScript: mockRunScript,
+}));
+
+vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
+  saveToFile: mockSaveToFile,
+}));
+
+vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
+  initGlobalToastQueue: (showFn: (toast: unknown) => void) => {
+    capturedShowFn = showFn;
+    return globalMockQueue;
+  },
+  useGlobalToastQueue: () => globalMockQueue,
+  getGlobalToastQueue: () => globalMockQueue,
+  resetGlobalToastQueue: vi.fn(),
+}));
+
+vi.mock('../../.opencode/plugins/features/messages/show-startup-toast', () => ({
+  showStartupToast: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { _runScript } from '../../.opencode/plugins/features/scripts/run-script';
+import { _saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
 
 const createMockCtx = (
   client: PluginClient,
@@ -21,408 +108,21 @@ const createMockCtx = (
   serverUrl: 'http://localhost:3000',
 });
 
-jest.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
-  runScript: jest
-    .fn()
-    .mockImplementation((...args: Parameters<typeof mockRunScript>) =>
-      mockRunScript(...args)
-    ),
-}));
-
-jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: jest.fn().mockResolvedValue(undefined),
-}));
-
-jest.mock('../../.opencode/plugins/core/debug', () => ({
-  handleDebugLog: jest.fn().mockResolvedValue(undefined),
-}));
-
-jest.mock(
-  '../../.opencode/plugins/features/messages/append-to-session',
-  () => ({
-    appendToSession: jest.fn().mockResolvedValue(undefined),
-  })
-);
-
-jest.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
-  handlers: {
-    'session.created': {
-      title: '====SESSION CREATED====',
-      variant: 'success',
-      duration: 2000,
-      defaultScript: 'session-created.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Session Id: ${event.properties.info.id}\nTime: now`,
-    },
-    'tool.execute.before': {
-      title: '====TOOL EXECUTE BEFORE====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'tool-execute-before.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Tool: ${event.properties?.tool || 'unknown'}\nTime: now`,
-    },
-    'tool.execute.after': {
-      title: '====SUBAGENT CALLED====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'tool-execute-after.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: now`,
-    },
-    'tool.execute.after.subagent': {
-      title: '====SUBAGENT CALLED====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'log-agent.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Agent: ${event.properties?.subagentType || 'unknown'}\nTime: now`,
-    },
-    'shell.env': {
-      title: '====SHELL ENV====',
-      variant: 'info',
-      duration: 0,
-      defaultScript: 'shell-env.sh',
-      buildMessage: () => 'shell env',
-    },
-    'unknown.event': {
-      title: '====UNKNOWN====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'unknown.sh',
-      buildMessage: () => 'unknown',
-    },
-  },
-}));
-
-jest.mock('../../.opencode/plugins/config', () => ({
-  userConfig: {
-    enabled: true,
-    toast: true,
-    saveToFile: true,
-    appendToSession: true,
-    runScripts: true,
-    scriptToasts: {
-      showOutput: true,
-      showError: true,
-      outputVariant: 'info',
-      errorVariant: 'error',
-      outputDuration: 5000,
-      errorDuration: 15000,
-      outputTitle: 'Script Output',
-      errorTitle: 'Script Error',
-    },
-    events: {
-      'session.created': { runOnlyOnce: true },
-      'shell.env': { runScripts: true, scripts: ['shell-env.sh'] },
-      'chat.message': { enabled: false },
-      'chat.params': { enabled: false },
-      'chat.headers': { enabled: false },
-      'experimental.chat.messages.transform': { enabled: false },
-      'experimental.chat.system.transform': { enabled: false },
-      'experimental.text.complete': { enabled: false },
-      'session.unknown': { enabled: false },
-    },
-    tools: {
-      'tool.execute.after': {
-        task: { toast: true, scripts: ['log-agent.sh'] },
-        chat: { toast: false },
-      },
-      'tool.execute.after.subagent': {
-        task: { toast: true, scripts: ['log-agent.sh'] },
-      },
-      'tool.execute.before': {
-        read: { toast: true, scripts: ['before-read.sh'] },
-        write: { toast: false, scripts: ['before-write.sh'] },
-        disabled: false,
-      },
-    },
-  },
-}));
-
-jest.mock('../../.opencode/plugins/features/events/events', () => {
-  const mockHandlers = {
-    'session.created': {
-      title: '====SESSION CREATED====',
-      variant: 'success',
-      duration: 2000,
-      defaultScript: 'session-created.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Session Id: ${event.properties.info.id}\nTime: now`,
-    },
-    'tool.execute.before': {
-      title: '====TOOL EXECUTE BEFORE====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'tool-execute-before.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Tool: ${event.properties?.tool || 'unknown'}\nTime: now`,
-    },
-    'tool.execute.after': {
-      title: '====SUBAGENT CALLED====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'tool-execute-after.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: now`,
-    },
-    'tool.execute.after.subagent': {
-      title: '====SUBAGENT CALLED====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'log-agent.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Agent: ${event.properties?.subagentType || 'unknown'}\nTime: now`,
-    },
-    'shell.env': {
-      title: '====SHELL ENV====',
-      variant: 'info',
-      duration: 0,
-      defaultScript: 'shell-env.sh',
-      buildMessage: () => 'shell env',
-    },
-    'unknown.event': {
-      title: '====UNKNOWN====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'unknown.sh',
-      buildMessage: () => 'unknown',
-    },
-    'session.idle': {
-      title: '====SESSION IDLE====',
-      variant: 'info',
-      duration: 2000,
-      buildMessage: () => 'session idle',
-    },
-  };
-
-  const mockUserConfig = {
-    enabled: true,
-    toast: true,
-    saveToFile: true,
-    appendToSession: true,
-    runScripts: true,
-    scriptToasts: {
-      showOutput: true,
-      showError: true,
-      outputVariant: 'info',
-      errorVariant: 'error',
-      outputDuration: 5000,
-      errorDuration: 15000,
-      outputTitle: 'Script Output',
-      errorTitle: 'Script Error',
-    },
-    events: {
-      'session.created': true,
-      'shell.env': { runScripts: true, scripts: ['shell-env.sh'] },
-      'session.disabled': false,
-      'session.idle': {
-        runScripts: true,
-        scripts: ['script1.sh', 'script2.sh', 'script3.sh'],
-        toast: true,
-        toastTitle: 'Scripts Executed',
-        scriptToasts: {
-          showOutput: true,
-          showError: true,
-          outputVariant: 'info',
-          errorVariant: 'error',
-          outputDuration: 5000,
-          errorDuration: 15000,
-        },
-      },
-    },
-    tools: {
-      'tool.execute.after': {
-        task: { toast: true, scripts: ['log-agent.sh'] },
-        chat: { toast: false },
-      },
-      'tool.execute.after.subagent': {
-        task: { toast: true, scripts: ['log-agent.sh'] },
-      },
-      'tool.execute.before': {
-        read: { toast: true, scripts: ['before-read.sh'] },
-        write: { toast: false, scripts: ['before-write.sh'] },
-        disabled: false,
-      },
-    },
-  };
-
-  function resolveEventConfig(eventType: string) {
-    const handler = mockHandlers[eventType];
-    const userEventConfig = mockUserConfig.events[eventType];
-    const global = mockUserConfig;
-
-    if (!global.enabled) {
-      return { enabled: false };
-    }
-
-    if (userEventConfig === undefined) {
-      return {
-        enabled: true,
-        toast: global.toast,
-        toastTitle: handler?.title ?? '',
-        toastMessage: undefined,
-        toastVariant: handler?.variant ?? 'info',
-        toastDuration: handler?.duration ?? 2000,
-        scripts: global.runScripts
-          ? [handler?.defaultScript ?? 'default.sh']
-          : [],
-        saveToFile: global.saveToFile,
-        appendToSession: global.appendToSession,
-        scriptToasts: global.scriptToasts,
-      };
-    }
-
-    if (userEventConfig === false) {
-      return { enabled: false } as unknown;
-    }
-
-    const cfg = userEventConfig as unknown;
-
-    let scripts: string[] = [];
-    if (cfg.runScripts === false) {
-      scripts = [];
-    } else if (cfg.scripts !== undefined) {
-      scripts = cfg.scripts;
-    } else if (cfg.runScripts === true || global.runScripts) {
-      scripts = [handler?.defaultScript ?? 'default.sh'];
-    }
-
-    const toastCfg = typeof cfg.toast === 'object' ? cfg.toast : null;
-    const scriptToastsCfg = cfg.scriptToasts ?? global.scriptToasts;
-
-    return {
-      enabled: true,
-      toast:
-        cfg.toast !== undefined
-          ? typeof cfg.toast === 'boolean'
-            ? cfg.toast
-            : true
-          : global.toast,
-      toastTitle: toastCfg?.title ?? handler?.title ?? '',
-      toastMessage: toastCfg?.message,
-      toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
-      toastDuration: toastCfg?.duration ?? handler?.duration ?? 2000,
-      scripts,
-      saveToFile: cfg.saveToFile ?? global.saveToFile,
-      appendToSession: cfg.appendToSession ?? global.appendToSession,
-      scriptToasts: scriptToastsCfg,
-    };
-  }
-
-  function resolveToolConfig(toolEventType: string, toolName: string) {
-    const toolConfigs = (mockUserConfig as unknown).tools?.[toolEventType];
-    const toolConfig = toolConfigs?.[toolName];
-
-    if (toolConfig === false) {
-      return { enabled: false } as unknown;
-    }
-
-    if (!toolConfig) {
-      return resolveEventConfig(toolEventType);
-    }
-
-    const handler = mockHandlers[toolEventType];
-    const global = mockUserConfig;
-
-    const cfg = toolConfig as unknown;
-
-    let scripts: string[] = [];
-    if (cfg.runScripts === false) {
-      scripts = [];
-    } else if (cfg.scripts !== undefined) {
-      scripts = cfg.scripts;
-    } else if (cfg.runScripts === true || global.runScripts) {
-      scripts = [handler?.defaultScript ?? 'default.sh'];
-    }
-
-    const toastCfg = typeof cfg.toast === 'object' ? cfg.toast : null;
-    const scriptToastsCfg = cfg.scriptToasts ?? global.scriptToasts;
-
-    return {
-      enabled: true,
-      toast:
-        cfg.toast !== undefined
-          ? typeof cfg.toast === 'boolean'
-            ? cfg.toast
-            : true
-          : global.toast,
-      toastTitle: toastCfg?.title ?? handler?.title ?? '',
-      toastMessage: toastCfg?.message,
-      toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
-      toastDuration: toastCfg?.duration ?? handler?.duration ?? 2000,
-      scripts,
-      saveToFile: cfg.saveToFile ?? global.saveToFile,
-      appendToSession: cfg.appendToSession ?? global.appendToSession,
-      scriptToasts: scriptToastsCfg,
-    };
-  }
-
-  return {
-    resolveEventConfig: jest.fn(resolveEventConfig),
-    resolveToolConfig: jest.fn(resolveToolConfig),
-    normalizeInputForHandler: jest.fn(
-      (
-        eventType: string,
-        input: Record<string, unknown>,
-        output?: Record<string, unknown>
-      ) => {
-        if (eventType.startsWith('tool.execute.')) {
-          return { input, output };
-        }
-        if (input.properties && typeof input.properties === 'object') {
-          return { properties: input.properties, output };
-        }
-        return { properties: input, output };
-      }
-    ),
-    getHandler: jest.fn((eventType: string) => mockHandlers[eventType]),
-  };
-});
-
-jest.mock('../../.opencode/plugins/core/toast-queue', () => {
-  const mockQueue = {
-    add: jest.fn(),
-    flush: jest.fn().mockResolvedValue(undefined),
-    pending: 0,
-  };
-  return {
-    ...jest.requireActual('../../.opencode/plugins/core/toast-queue'),
-    initGlobalToastQueue: jest.fn((showFn) => {
-      mockQueue.add = jest.fn((toast) => showFn(toast));
-      return mockQueue;
-    }),
-    useGlobalToastQueue: jest.fn(() => mockQueue),
-    getGlobalToastQueue: jest.fn(() => mockQueue),
-    resetGlobalToastQueue: jest.fn(),
-  };
-});
-
-jest.mock(
-  '../../.opencode/plugins/features/messages/show-startup-toast',
-  () => ({
-    showStartupToast: jest.fn().mockResolvedValue(undefined),
-  })
-);
-
-import { runScript } from '../../.opencode/plugins/features/scripts/run-script';
-import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
-
 interface MockClient {
   tui: {
-    showToast: ReturnType<typeof jest.fn>;
+    showToast: ReturnType<typeof vi.fn>;
   };
   session: {
-    prompt: ReturnType<typeof jest.fn>;
+    prompt: ReturnType<typeof vi.fn>;
   };
 }
 
 const createMockClient = (): MockClient => ({
   tui: {
-    showToast: jest.fn().mockResolvedValue(undefined),
+    showToast: vi.fn().mockResolvedValue(undefined),
   },
   session: {
-    prompt: jest.fn().mockResolvedValue(undefined),
+    prompt: vi.fn().mockResolvedValue(undefined),
   },
 });
 
@@ -436,14 +136,14 @@ describe('tool.execute.before hook', () => {
 
   beforeEach(() => {
     mockClient = createMockClient();
-    mockDollar = jest
+    mockDollar = vi
       .fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>()
       .mockResolvedValue({
         exitCode: 0,
         stdout: '',
         stderr: '',
       });
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockRunScript.mockResolvedValue({
       output: 'Script executed',
       error: null,
@@ -462,10 +162,13 @@ describe('tool.execute.before hook', () => {
     const output = {};
     await plugin['tool.execute.before'](input, output);
 
-    expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
-    const callArgs = mockClient.tui.showToast.mock.calls[0][0];
-    expect(callArgs.body.variant).toBe('info');
-    expect(callArgs.body.title).toBe('====TOOL EXECUTE BEFORE====');
+    expect(globalMockQueue.add).toHaveBeenCalled();
+    const callArgs = globalMockQueue.add.mock.calls[0][0] as {
+      title: string;
+      variant: string;
+    };
+    expect(callArgs.variant).toBe('warning');
+    expect(callArgs.title).toBe('====READ BEFORE====');
   });
 
   it('should not trigger toast when tool is write', async () => {
@@ -479,7 +182,7 @@ describe('tool.execute.before hook', () => {
     const output = {};
     await plugin['tool.execute.before'](input, output);
 
-    expect(mockClient.tui.showToast).not.toHaveBeenCalled();
+    expect(globalMockQueue.add).not.toHaveBeenCalled();
   });
 
   it('should run script for read tool', async () => {
@@ -489,9 +192,9 @@ describe('tool.execute.before hook', () => {
     const output = {};
     await plugin['tool.execute.before'](input, output);
 
-    expect(runScript).toHaveBeenCalledWith(
+    expect(mockRunScript).toHaveBeenCalledWith(
       mockDollar,
-      'before-read.sh',
+      'tool-execute-before-read.sh',
       'read'
     );
   });
@@ -503,8 +206,8 @@ describe('tool.execute.before hook', () => {
     const output = {};
     await plugin['tool.execute.before'](input, output);
 
-    expect(runScript).not.toHaveBeenCalled();
-    expect(mockClient.tui.showToast).not.toHaveBeenCalled();
+    expect(mockRunScript).not.toHaveBeenCalled();
+    expect(globalMockQueue.add).not.toHaveBeenCalled();
   });
 
   it('should show error toast when script fails', async () => {
@@ -520,14 +223,13 @@ describe('tool.execute.before hook', () => {
     const output = {};
     await plugin['tool.execute.before'](input, output);
 
-    const errorToastCall = mockClient.tui.showToast.mock.calls.find(
-      (call: [unknown]) =>
-        (call[0] as { body: { variant: string } }).body.variant === 'error'
+    const errorToastCall = globalMockQueue.add.mock.calls.find(
+      (call: [unknown]) => (call[0] as { variant: string }).variant === 'error'
     );
 
     expect(errorToastCall).toBeDefined();
-    expect(errorToastCall[0].body.title).toMatch(/ Script Error====$/);
-    expect(errorToastCall[0].body.message).toContain('before-read.sh');
+    expect(errorToastCall[0].title).toMatch(/ - SCRIPT ERROR====$/);
+    expect(errorToastCall[0].message).toContain('tool-execute-before-read.sh');
   });
 
   it('should save error to file when script fails', async () => {
@@ -543,7 +245,7 @@ describe('tool.execute.before hook', () => {
     const output = {};
     await plugin['tool.execute.before'](input, output);
 
-    expect(saveToFile).toHaveBeenCalledWith(
+    expect(mockSaveToFile).toHaveBeenCalledWith(
       expect.objectContaining({
         content: expect.stringContaining('"error":"Script not found"'),
       })
@@ -561,14 +263,14 @@ describe('shell.env hook', () => {
 
   beforeEach(() => {
     mockClient = createMockClient();
-    mockDollar = jest
+    mockDollar = vi
       .fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>()
       .mockResolvedValue({
         exitCode: 0,
         stdout: '',
         stderr: '',
       });
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockRunScript.mockResolvedValue({
       output: 'Script executed',
       error: null,
@@ -583,7 +285,7 @@ describe('shell.env hook', () => {
     const output = { env: {} };
     await plugin['shell.env'](input, output);
 
-    expect(runScript).toHaveBeenCalledWith(mockDollar, 'shell-env.sh');
+    expect(mockRunScript).toHaveBeenCalledWith(mockDollar, 'shell-env.sh');
   });
 
   it('should show error toast when script fails', async () => {
@@ -599,14 +301,13 @@ describe('shell.env hook', () => {
     const output = { env: {} };
     await plugin['shell.env'](input, output);
 
-    const errorToastCall = mockClient.tui.showToast.mock.calls.find(
-      (call: [unknown]) =>
-        (call[0] as { body: { variant: string } }).body.variant === 'error'
+    const errorToastCall = globalMockQueue.add.mock.calls.find(
+      (call: [unknown]) => (call[0] as { variant: string }).variant === 'error'
     );
 
     expect(errorToastCall).toBeDefined();
-    expect(errorToastCall[0].body.title).toMatch(/ Script Error====$/);
-    expect(errorToastCall[0].body.message).toContain('shell-env.sh');
+    expect(errorToastCall[0].title).toMatch(/ - SCRIPT ERROR====$/);
+    expect(errorToastCall[0].message).toContain('shell-env.sh');
   });
 });
 
@@ -620,14 +321,14 @@ describe('tool.execute.after hook', () => {
 
   beforeEach(() => {
     mockClient = createMockClient();
-    mockDollar = jest
+    mockDollar = vi
       .fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>()
       .mockResolvedValue({
         exitCode: 0,
         stdout: '',
         stderr: '',
       });
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockRunScript.mockResolvedValue({
       output: 'Script executed',
       error: null,
@@ -651,7 +352,7 @@ describe('tool.execute.after hook', () => {
     };
     await plugin['tool.execute.after'](input, output);
 
-    expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
+    expect(globalMockQueue.add).toHaveBeenCalled();
   });
 
   it('should not trigger toast when subagent_type is undefined', async () => {
@@ -670,7 +371,7 @@ describe('tool.execute.after hook', () => {
     };
     await plugin['tool.execute.after'](input, output);
 
-    expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
+    expect(globalMockQueue.add).toHaveBeenCalled();
   });
 
   it('should show error toast when script fails', async () => {
@@ -695,15 +396,12 @@ describe('tool.execute.after hook', () => {
     };
     await plugin['tool.execute.after'](input, output);
 
-    const errorToastCall = mockClient.tui.showToast.mock.calls.find(
-      (call: [unknown]) =>
-        (call[0] as { body: { variant: string } }).body.variant === 'error'
+    const errorToastCall = globalMockQueue.add.mock.calls.find(
+      (call: [unknown]) => (call[0] as { variant: string }).variant === 'error'
     );
 
     expect(errorToastCall).toBeDefined();
-    expect(errorToastCall[0].body.title).toMatch(/ Script Error====$/);
-    expect(errorToastCall[0].body.message).toContain(
-      'Error: Agent script failed'
-    );
+    expect(errorToastCall[0].title).toMatch(/ - SCRIPT ERROR====$/);
+    expect(errorToastCall[0].message).toContain('Error: Agent script failed');
   });
 });

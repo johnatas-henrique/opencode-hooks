@@ -86,7 +86,7 @@ describe('error-recorder', () => {
 
   describe('createErrorRecorder', () => {
     it('should create recorder with logError function', () => {
-      const mockWriteLine = jest.fn();
+      const mockWriteLine = vi.fn();
       const deps = { writeLine: mockWriteLine };
       const recorder = createErrorRecorder(defaultConfig, deps);
 
@@ -94,7 +94,7 @@ describe('error-recorder', () => {
     });
 
     it('should call writeLine with errors fileType', async () => {
-      const mockWriteLine = jest.fn().mockResolvedValue(undefined);
+      const mockWriteLine = vi.fn().mockResolvedValue(undefined);
       const deps = { writeLine: mockWriteLine };
       const recorder = createErrorRecorder(defaultConfig, deps);
 
@@ -104,7 +104,7 @@ describe('error-recorder', () => {
     });
 
     it('should not call writeLine when disabled', async () => {
-      const mockWriteLine = jest.fn();
+      const mockWriteLine = vi.fn();
       const deps = { writeLine: mockWriteLine };
       const config = { ...defaultConfig, enabled: false };
       const recorder = createErrorRecorder(config, deps);
@@ -115,7 +115,7 @@ describe('error-recorder', () => {
     });
 
     it('should pass correct record data to writeLine', async () => {
-      const mockWriteLine = jest.fn().mockResolvedValue(undefined);
+      const mockWriteLine = vi.fn().mockResolvedValue(undefined);
       const deps = { writeLine: mockWriteLine };
       const recorder = createErrorRecorder(defaultConfig, deps);
 
@@ -131,7 +131,7 @@ describe('error-recorder', () => {
     });
 
     it('should include stack for code errors', async () => {
-      const mockWriteLine = jest.fn().mockResolvedValue(undefined);
+      const mockWriteLine = vi.fn().mockResolvedValue(undefined);
       const deps = { writeLine: mockWriteLine };
       const recorder = createErrorRecorder(defaultConfig, deps);
 

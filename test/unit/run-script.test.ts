@@ -1,5 +1,5 @@
-jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
+  saveToFile: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { runScript } from '../../.opencode/plugins/features/scripts/run-script';
@@ -9,10 +9,10 @@ describe('run-script', () => {
   let mockDollar: PluginInput['$'];
 
   beforeEach(() => {
-    mockDollar = jest.fn((_strings: TemplateStringsArray) => {
+    mockDollar = vi.fn((_strings: TemplateStringsArray) => {
       const result = {
-        quiet: jest.fn().mockReturnValue({
-          text: jest.fn().mockReturnValue('script output'),
+        quiet: vi.fn().mockReturnValue({
+          text: vi.fn().mockReturnValue('script output'),
           exitCode: 0,
         }),
       };
@@ -45,10 +45,10 @@ describe('run-script', () => {
 
   it('should return output text from script', async () => {
     const customResult = 'custom output';
-    mockDollar = jest.fn((_strings: TemplateStringsArray) => {
+    mockDollar = vi.fn((_strings: TemplateStringsArray) => {
       return {
-        quiet: jest.fn().mockReturnValue({
-          text: jest.fn().mockReturnValue(customResult),
+        quiet: vi.fn().mockReturnValue({
+          text: vi.fn().mockReturnValue(customResult),
           exitCode: 0,
         }),
       };
@@ -90,9 +90,9 @@ describe('run-script', () => {
   });
 
   it('should return error object when script fails', async () => {
-    mockDollar = jest.fn((_strings: TemplateStringsArray) => {
+    mockDollar = vi.fn((_strings: TemplateStringsArray) => {
       return {
-        quiet: jest.fn().mockImplementation(() => {
+        quiet: vi.fn().mockImplementation(() => {
           throw new Error('Script execution failed');
         }),
       };

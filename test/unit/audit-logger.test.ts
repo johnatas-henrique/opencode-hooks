@@ -3,20 +3,24 @@ import {
   createGzipFile,
 } from '../../.opencode/plugins/features/audit/audit-logger';
 import type { AuditConfig } from '../../.opencode/plugins/features/audit/types';
+import {
+  appendFile as mockedAppendFile,
+  mkdir as mockedMkdir,
+  readdir as mockedReaddir,
+  unlink as mockedUnlink,
+  stat as mockedStat,
+} from 'fs/promises';
 
-const mockAppendFile = jest.fn();
-const mockMkdir = jest.fn();
-const mockStat = jest.fn();
-const mockReaddir = jest.fn();
-const mockUnlink = jest.fn();
-const mockGzipFile = jest.fn();
+const mockGzipFile = vi.fn();
 
-jest.mock('fs/promises', () => ({
-  appendFile: (...args: unknown[]) => mockAppendFile(...args),
-  mkdir: (...args: unknown[]) => mockMkdir(...args),
-  readdir: (...args: unknown[]) => mockReaddir(...args),
-  unlink: (...args: unknown[]) => mockUnlink(...args),
-  stat: (...args: unknown[]) => mockStat(...args),
+vi.mock('fs/promises', () => ({
+  appendFile: vi.fn(),
+  mkdir: vi.fn(),
+  readdir: vi.fn(),
+  unlink: vi.fn(),
+  stat: vi.fn(),
+  rename: vi.fn(),
+  open: vi.fn(),
 }));
 
 describe('audit-logger', () => {
@@ -36,12 +40,12 @@ describe('audit-logger', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockAppendFile.mockResolvedValue(undefined);
-    mockMkdir.mockResolvedValue(undefined);
-    mockReaddir.mockResolvedValue([]);
-    mockUnlink.mockResolvedValue(undefined);
-    mockStat.mockReset();
+    vi.clearAllMocks();
+    mockedAppendFile.mockResolvedValue(undefined);
+    mockedMkdir.mockResolvedValue(undefined);
+    mockedReaddir.mockResolvedValue([]);
+    mockedUnlink.mockResolvedValue(undefined);
+    mockedStat.mockReset();
     mockGzipFile.mockReset().mockResolvedValue(undefined);
   });
 
@@ -51,15 +55,15 @@ describe('audit-logger', () => {
         basePath: BASE_PATH,
         config: defaultConfig,
         deps: {
-          appendFile: mockAppendFile,
-          mkdir: mockMkdir,
+          appendFile: mockedAppendFile,
+          mkdir: mockedMkdir,
           gzipFile: mockGzipFile,
         },
       });
       const data = { ts: '2026-04-16T18:30:33.300Z', event: 'test.event' };
       await logger.writeLine('events', data);
-      expect(mockAppendFile).toHaveBeenCalledTimes(1);
-      const [filePath, content] = mockAppendFile.mock.calls[0];
+      expect(mockedAppendFile).toHaveBeenCalledTimes(1);
+      const [filePath, content] = mockedAppendFile.mock.calls[0];
       expect(filePath).toBe(`${BASE_PATH}/plugin-events.jsonl`);
       expect(content).toBe(JSON.stringify(data) + '\n');
     });
@@ -69,16 +73,16 @@ describe('audit-logger', () => {
         basePath: BASE_PATH,
         config: defaultConfig,
         deps: {
-          appendFile: mockAppendFile,
-          mkdir: mockMkdir,
+          appendFile: mockedAppendFile,
+          mkdir: mockedMkdir,
           gzipFile: mockGzipFile,
         },
       });
       await logger.writeLine('events', { event: 'event1' });
       await logger.writeLine('events', { event: 'event2' });
       expect(() => {
-        JSON.parse(mockAppendFile.mock.calls[0][1].trim());
-        JSON.parse(mockAppendFile.mock.calls[1][1].trim());
+        JSON.parse(mockedAppendFile.mock.calls[0][1].trim());
+        JSON.parse(mockedAppendFile.mock.calls[1][1].trim());
       }).not.toThrow();
     });
 
@@ -87,23 +91,23 @@ describe('audit-logger', () => {
         basePath: BASE_PATH,
         config: defaultConfig,
         deps: {
-          appendFile: mockAppendFile,
-          mkdir: mockMkdir,
+          appendFile: mockedAppendFile,
+          mkdir: mockedMkdir,
           gzipFile: mockGzipFile,
         },
       });
       await logger.writeLine('events', { event: 'test' });
-      expect(mockMkdir).toHaveBeenCalledWith(BASE_PATH, { recursive: true });
+      expect(mockedMkdir).toHaveBeenCalledWith(BASE_PATH, { recursive: true });
     });
 
     it('should not write when disabled', async () => {
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: { ...defaultConfig, enabled: false },
-        deps: { appendFile: mockAppendFile, mkdir: mockMkdir },
+        deps: { appendFile: mockedAppendFile, mkdir: mockedMkdir },
       });
       await logger.writeLine('events', { event: 'test' });
-      expect(mockAppendFile).not.toHaveBeenCalled();
+      expect(mockedAppendFile).not.toHaveBeenCalled();
     });
 
     it('should write to correct file based on type', async () => {
@@ -111,18 +115,18 @@ describe('audit-logger', () => {
         basePath: BASE_PATH,
         config: defaultConfig,
         deps: {
-          appendFile: mockAppendFile,
-          mkdir: mockMkdir,
+          appendFile: mockedAppendFile,
+          mkdir: mockedMkdir,
           gzipFile: mockGzipFile,
         },
       });
       await logger.writeLine('scripts', { script: 'test.sh' });
-      expect(mockAppendFile).toHaveBeenCalledWith(
+      expect(mockedAppendFile).toHaveBeenCalledWith(
         `${BASE_PATH}/plugin-scripts.jsonl`,
         expect.any(String)
       );
       await logger.writeLine('errors', { error: 'test error' });
-      expect(mockAppendFile).toHaveBeenCalledWith(
+      expect(mockedAppendFile).toHaveBeenCalledWith(
         `${BASE_PATH}/plugin-errors.jsonl`,
         expect.any(String)
       );
@@ -131,14 +135,14 @@ describe('audit-logger', () => {
     it('should use default config when not provided', async () => {
       const logger = createAuditLogger({
         basePath: BASE_PATH,
-        // config not provided - should use DEFAULT_AUDIT_CONFIG
-        deps: { appendFile: mockAppendFile, mkdir: mockMkdir },
+        deps: { appendFile: mockedAppendFile, mkdir: mockedMkdir },
       });
       await logger.writeLine('events', { event: 'test' });
-      expect(mockAppendFile).toHaveBeenCalled();
+      expect(mockedAppendFile).toHaveBeenCalled();
     });
+
     it('should handle write errors gracefully', async () => {
-      const appendFileWithError = jest
+      const appendFileWithError = vi
         .fn()
         .mockRejectedValue(new Error('Write failed'));
       const logger = createAuditLogger({
@@ -146,7 +150,7 @@ describe('audit-logger', () => {
         config: defaultConfig,
         deps: {
           appendFile: appendFileWithError,
-          mkdir: mockMkdir,
+          mkdir: mockedMkdir,
           gzipFile: mockGzipFile,
         },
       });
@@ -158,35 +162,47 @@ describe('audit-logger', () => {
 
   describe('rotate', () => {
     it('should create gzip file and remove original', async () => {
-      mockStat.mockResolvedValue({ size: 1024, mtimeMs: Date.now() });
+      mockedStat.mockResolvedValue({ size: 1024, mtimeMs: Date.now() });
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
-        deps: { unlink: mockUnlink, gzipFile: mockGzipFile, stat: mockStat },
+        deps: {
+          unlink: mockedUnlink,
+          gzipFile: mockGzipFile,
+          stat: mockedStat,
+        },
       });
       await logger.rotate('events');
       expect(mockGzipFile).toHaveBeenCalled();
-      expect(mockUnlink).toHaveBeenCalled();
+      expect(mockedUnlink).toHaveBeenCalled();
     });
 
     it('should handle non-existent file gracefully', async () => {
-      mockStat.mockRejectedValue(new Error('File not found'));
+      mockedStat.mockRejectedValue(new Error('File not found'));
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
-        deps: { unlink: mockUnlink, gzipFile: mockGzipFile, stat: mockStat },
+        deps: {
+          unlink: mockedUnlink,
+          gzipFile: mockGzipFile,
+          stat: mockedStat,
+        },
       });
       await logger.rotate('events');
       expect(mockGzipFile).not.toHaveBeenCalled();
-      expect(mockUnlink).not.toHaveBeenCalled();
+      expect(mockedUnlink).not.toHaveBeenCalled();
     });
 
     it('should increment counter for same day rotations', async () => {
-      mockStat.mockResolvedValue({ size: 1024, mtimeMs: Date.now() });
+      mockedStat.mockResolvedValue({ size: 1024, mtimeMs: Date.now() });
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
-        deps: { unlink: mockUnlink, gzipFile: mockGzipFile, stat: mockStat },
+        deps: {
+          unlink: mockedUnlink,
+          gzipFile: mockGzipFile,
+          stat: mockedStat,
+        },
       });
       await logger.rotate('events');
       await logger.rotate('events');
@@ -197,7 +213,7 @@ describe('audit-logger', () => {
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
-        deps: { unlink: mockUnlink, gzipFile: mockGzipFile },
+        deps: { unlink: mockedUnlink, gzipFile: mockGzipFile },
       });
       await logger.rotate('events');
       expect(mockGzipFile).toHaveBeenCalledWith(
@@ -207,12 +223,16 @@ describe('audit-logger', () => {
     });
 
     it('should handle gzipFile error during rotation gracefully', async () => {
-      mockStat.mockResolvedValue({ size: 1024, mtimeMs: Date.now() });
+      mockedStat.mockResolvedValue({ size: 1024, mtimeMs: Date.now() });
       mockGzipFile.mockRejectedValue(new Error('Gzip failed'));
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
-        deps: { unlink: mockUnlink, gzipFile: mockGzipFile, stat: mockStat },
+        deps: {
+          unlink: mockedUnlink,
+          gzipFile: mockGzipFile,
+          stat: mockedStat,
+        },
       });
       await expect(logger.rotate('events')).resolves.not.toThrow();
     });
@@ -221,58 +241,70 @@ describe('audit-logger', () => {
   describe('cleanup', () => {
     it('should delete files older than maxAgeDays', async () => {
       const oldDate = Date.now() - 31 * 24 * 60 * 60 * 1000;
-      mockStat.mockResolvedValue({ size: 1024, mtimeMs: oldDate });
-      mockReaddir.mockResolvedValue(['old-file.jsonl.gz']);
+      mockedStat.mockResolvedValue({ size: 1024, mtimeMs: oldDate });
+      mockedReaddir.mockResolvedValue(['old-file.jsonl.gz']);
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
-        deps: { unlink: mockUnlink, stat: mockStat, readdir: mockReaddir },
+        deps: {
+          unlink: mockedUnlink,
+          stat: mockedStat,
+          readdir: mockedReaddir,
+        },
       });
       await logger.cleanup();
-      expect(mockUnlink).toHaveBeenCalled();
+      expect(mockedUnlink).toHaveBeenCalled();
     });
 
     it('should not delete recent files', async () => {
       const recentDate = Date.now() - 1 * 24 * 60 * 60 * 1000;
-      mockStat.mockResolvedValue({ size: 1024, mtimeMs: recentDate });
-      mockReaddir.mockResolvedValue(['recent-file.jsonl.gz']);
+      mockedStat.mockResolvedValue({ size: 1024, mtimeMs: recentDate });
+      mockedReaddir.mockResolvedValue(['recent-file.jsonl.gz']);
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
-        deps: { unlink: mockUnlink, stat: mockStat, readdir: mockReaddir },
+        deps: {
+          unlink: mockedUnlink,
+          stat: mockedStat,
+          readdir: mockedReaddir,
+        },
       });
       await logger.cleanup();
-      expect(mockUnlink).not.toHaveBeenCalled();
+      expect(mockedUnlink).not.toHaveBeenCalled();
     });
 
     it('should skip non-gzip files', async () => {
-      mockReaddir.mockResolvedValue(['regular-file.jsonl', 'another.txt']);
+      mockedReaddir.mockResolvedValue(['regular-file.jsonl', 'another.txt']);
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
-        deps: { unlink: mockUnlink, stat: mockStat, readdir: mockReaddir },
+        deps: {
+          unlink: mockedUnlink,
+          stat: mockedStat,
+          readdir: mockedReaddir,
+        },
       });
       await logger.cleanup();
-      expect(mockStat).not.toHaveBeenCalled();
-      expect(mockUnlink).not.toHaveBeenCalled();
+      expect(mockedStat).not.toHaveBeenCalled();
+      expect(mockedUnlink).not.toHaveBeenCalled();
     });
 
     it('should not cleanup when maxAgeDays is 0', async () => {
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: { ...defaultConfig, maxAgeDays: 0 },
-        deps: { readdir: mockReaddir, unlink: mockUnlink },
+        deps: { readdir: mockedReaddir, unlink: mockedUnlink },
       });
       await logger.cleanup();
-      expect(mockReaddir).not.toHaveBeenCalled();
+      expect(mockedReaddir).not.toHaveBeenCalled();
     });
 
     it('should handle directory not found gracefully', async () => {
-      mockReaddir.mockRejectedValue(new Error('Directory not found'));
+      mockedReaddir.mockRejectedValue(new Error('Directory not found'));
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
-        deps: { unlink: mockUnlink, readdir: mockReaddir },
+        deps: { unlink: mockedUnlink, readdir: mockedReaddir },
       });
       await expect(logger.cleanup()).resolves.not.toThrow();
     });
@@ -280,7 +312,7 @@ describe('audit-logger', () => {
 
   describe('concurrent writes', () => {
     it('should handle multiple writes to same file safely', async () => {
-      const appendFile = jest
+      const appendFile = vi
         .fn()
         .mockImplementation(
           () => new Promise((resolve) => setTimeout(resolve, 10))
@@ -288,7 +320,7 @@ describe('audit-logger', () => {
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
-        deps: { appendFile, mkdir: mockMkdir, gzipFile: mockGzipFile },
+        deps: { appendFile, mkdir: mockedMkdir, gzipFile: mockGzipFile },
       });
       const writes = [
         logger.writeLine('events', { event: '1' }),
@@ -300,7 +332,7 @@ describe('audit-logger', () => {
     });
 
     it('should handle writes to different files independently', async () => {
-      const appendFile = jest
+      const appendFile = vi
         .fn()
         .mockImplementation(
           () => new Promise((resolve) => setTimeout(resolve, 5))
@@ -308,7 +340,7 @@ describe('audit-logger', () => {
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
-        deps: { appendFile, mkdir: mockMkdir, gzipFile: mockGzipFile },
+        deps: { appendFile, mkdir: mockedMkdir, gzipFile: mockGzipFile },
       });
       await Promise.all([
         logger.writeLine('events', { event: 'event' }),
@@ -322,18 +354,18 @@ describe('audit-logger', () => {
   describe('file rotation trigger', () => {
     it('should trigger rotation when file exceeds maxSizeMB', async () => {
       const maxSizeBytes = defaultConfig.maxSizeMB * 1024 * 1024;
-      mockStat
+      mockedStat
         .mockResolvedValueOnce({ size: maxSizeBytes, mtimeMs: Date.now() })
         .mockResolvedValue({ size: 100, mtimeMs: Date.now() });
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
         deps: {
-          appendFile: mockAppendFile,
-          mkdir: mockMkdir,
+          appendFile: mockedAppendFile,
+          mkdir: mockedMkdir,
           gzipFile: mockGzipFile,
-          unlink: mockUnlink,
-          stat: mockStat,
+          unlink: mockedUnlink,
+          stat: mockedStat,
         },
       });
       await logger.writeLine('events', { event: 'test' });
@@ -341,16 +373,16 @@ describe('audit-logger', () => {
     });
 
     it('should not trigger rotation when file is under limit', async () => {
-      mockStat.mockResolvedValue({ size: 1024, mtimeMs: Date.now() });
+      mockedStat.mockResolvedValue({ size: 1024, mtimeMs: Date.now() });
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
         deps: {
-          appendFile: mockAppendFile,
-          mkdir: mockMkdir,
+          appendFile: mockedAppendFile,
+          mkdir: mockedMkdir,
           gzipFile: mockGzipFile,
-          unlink: mockUnlink,
-          stat: mockStat,
+          unlink: mockedUnlink,
+          stat: mockedStat,
         },
       });
       await logger.writeLine('events', { event: 'test' });
@@ -361,20 +393,20 @@ describe('audit-logger', () => {
 
 describe('createGzipFile', () => {
   it('should create a gzip function with correct dependencies', async () => {
-    const pipelineMock = jest.fn((_src, _gzip, _dest, cb) => {
+    const pipelineMock = vi.fn((_src, _gzip, _dest, cb) => {
       cb(null);
       return Promise.resolve();
     });
-    const mockGzip = { pipe: jest.fn() };
+    const mockGzip = { pipe: vi.fn() };
     const mockSourceHandle = {
-      createReadStream: jest.fn().mockReturnValue({ pipe: jest.fn() }),
-      close: jest.fn(),
+      createReadStream: vi.fn().mockReturnValue({ pipe: vi.fn() }),
+      close: vi.fn(),
     };
     const mockDestHandle = {
-      createWriteStream: jest.fn().mockReturnValue({ end: jest.fn() }),
-      close: jest.fn(),
+      createWriteStream: vi.fn().mockReturnValue({ end: vi.fn() }),
+      close: vi.fn(),
     };
-    const mockOpen = jest
+    const mockOpen = vi
       .fn()
       .mockResolvedValueOnce(mockSourceHandle)
       .mockResolvedValueOnce(mockDestHandle);
@@ -397,17 +429,17 @@ describe('createGzipFile', () => {
 
   it('should handle pipeline errors', async () => {
     const pipelineError = new Error('Pipeline error');
-    const pipelineMock = jest.fn((_src, _gzip, _dest, cb) => {
+    const pipelineMock = vi.fn((_src, _gzip, _dest, cb) => {
       cb(pipelineError);
       return Promise.resolve();
     });
 
     const gzipFile = createGzipFile({
-      createGzip: () => ({ pipe: jest.fn() }),
-      open: jest.fn().mockResolvedValue({
-        createReadStream: () => ({ pipe: jest.fn() }),
-        createWriteStream: () => ({ end: jest.fn() }),
-        close: jest.fn(),
+      createGzip: () => ({ pipe: vi.fn() }),
+      open: vi.fn().mockResolvedValue({
+        createReadStream: () => ({ pipe: vi.fn() }),
+        createWriteStream: () => ({ end: vi.fn() }),
+        close: vi.fn(),
       }),
       pipeline: pipelineMock,
     });

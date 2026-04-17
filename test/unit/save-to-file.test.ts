@@ -1,22 +1,20 @@
 import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
 import * as fs from 'fs/promises';
 
-jest.mock('fs/promises', () => ({
-  appendFile: jest.fn().mockResolvedValue(undefined),
-  mkdir: jest.fn().mockResolvedValue(undefined),
+vi.mock('fs/promises', () => ({
+  appendFile: vi.fn().mockResolvedValue(undefined),
+  mkdir: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockAppendFile = fs.appendFile as jest.MockedFunction<
-  typeof fs.appendFile
->;
-const mockMkdir = fs.mkdir as jest.MockedFunction<typeof fs.mkdir>;
+const mockAppendFile = fs.appendFile as vi.MockedFunction<typeof fs.appendFile>;
+const mockMkdir = fs.mkdir as vi.MockedFunction<typeof fs.mkdir>;
 
 describe('save-to-file', () => {
   const LOG_DIR = './production/session-logs';
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.resetModules();
+    vi.clearAllMocks();
+    vi.resetModules();
   });
 
   it('should save content to default log file', async () => {
@@ -53,8 +51,8 @@ describe('save-to-file', () => {
   });
 
   it('should show toast on filesystem error', async () => {
-    const mockShowToast = jest.fn();
-    (fs.appendFile as jest.Mock).mockRejectedValueOnce(new Error('Disk full'));
+    const mockShowToast = vi.fn();
+    (fs.appendFile as vi.Mock).mockRejectedValueOnce(new Error('Disk full'));
 
     await saveToFile({ content: 'test', showToast: mockShowToast });
 
@@ -67,7 +65,7 @@ describe('save-to-file', () => {
   });
 
   it('should not throw on filesystem error', async () => {
-    (fs.appendFile as jest.Mock).mockRejectedValueOnce(new Error('Disk full'));
+    (fs.appendFile as vi.Mock).mockRejectedValueOnce(new Error('Disk full'));
 
     await expect(saveToFile({ content: 'test' })).resolves.not.toThrow();
   });

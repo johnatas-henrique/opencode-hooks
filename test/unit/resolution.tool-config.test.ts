@@ -40,8 +40,8 @@ describe('ToolConfigResolverImpl', () => {
         buildMessage: () => 'Bash After Message',
       },
     },
-    getEventConfig: jest.fn(),
-    getToolConfigs: jest.fn(),
+    getEventConfig: vi.fn(),
+    getToolConfigs: vi.fn(),
     ...overrides,
   });
 
@@ -50,7 +50,7 @@ describe('ToolConfigResolverImpl', () => {
       const context = createMockContext();
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getToolConfigs as jest.Mock).mockReturnValue({ myTool: false });
+      (context.getToolConfigs as vi.Mock).mockReturnValue({ myTool: false });
 
       const result = resolver.resolve('tool.execute.after', 'myTool');
 
@@ -63,7 +63,7 @@ describe('ToolConfigResolverImpl', () => {
       const context = createMockContext();
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getToolConfigs as jest.Mock).mockReturnValue(undefined);
+      (context.getToolConfigs as vi.Mock).mockReturnValue(undefined);
 
       const result = resolver.resolve('tool.execute.after', 'myTool');
 
@@ -82,8 +82,8 @@ describe('ToolConfigResolverImpl', () => {
       };
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getToolConfigs as jest.Mock).mockReturnValue({});
-      (context.getEventConfig as jest.Mock).mockReturnValue({ toast: true });
+      (context.getToolConfigs as vi.Mock).mockReturnValue({});
+      (context.getEventConfig as vi.Mock).mockReturnValue({ toast: true });
 
       const result = resolver.resolve('tool.execute.before', 'bash');
 
@@ -95,8 +95,8 @@ describe('ToolConfigResolverImpl', () => {
       const context = createMockContext();
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getToolConfigs as jest.Mock).mockReturnValue({});
-      (context.getEventConfig as jest.Mock).mockReturnValue({ toast: true });
+      (context.getToolConfigs as vi.Mock).mockReturnValue({});
+      (context.getEventConfig as vi.Mock).mockReturnValue({ toast: true });
 
       const result = resolver.resolve('tool.execute.after', 'bash');
 
@@ -124,8 +124,8 @@ describe('ToolConfigResolverImpl', () => {
       };
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getToolConfigs as jest.Mock).mockReturnValue({});
-      (context.getEventConfig as jest.Mock).mockReturnValue(undefined);
+      (context.getToolConfigs as vi.Mock).mockReturnValue({});
+      (context.getEventConfig as vi.Mock).mockReturnValue(undefined);
 
       const result = resolver.resolve('tool.execute.after', 'bash');
 
@@ -137,10 +137,10 @@ describe('ToolConfigResolverImpl', () => {
       const context = createMockContext();
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getToolConfigs as jest.Mock).mockReturnValue({
+      (context.getToolConfigs as vi.Mock).mockReturnValue({
         myTool: { block: true },
       });
-      (context.getEventConfig as jest.Mock).mockReturnValue(undefined);
+      (context.getEventConfig as vi.Mock).mockReturnValue(undefined);
 
       const result = resolver.resolve('tool.execute.after', 'myTool');
 
@@ -151,7 +151,7 @@ describe('ToolConfigResolverImpl', () => {
       const context = createMockContext();
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getToolConfigs as jest.Mock).mockReturnValue({
+      (context.getToolConfigs as vi.Mock).mockReturnValue({
         myTool: {
           enabled: false,
           toast: false,
@@ -160,7 +160,7 @@ describe('ToolConfigResolverImpl', () => {
           block: true,
         },
       });
-      (context.getEventConfig as jest.Mock).mockReturnValue(undefined);
+      (context.getEventConfig as vi.Mock).mockReturnValue(undefined);
 
       const result = resolver.resolve('tool.execute.after', 'myTool');
 
@@ -175,7 +175,7 @@ describe('ToolConfigResolverImpl', () => {
       const context = createMockContext();
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getToolConfigs as jest.Mock).mockReturnValue({
+      (context.getToolConfigs as vi.Mock).mockReturnValue({
         myTool: {
           toast: {
             title: 'Custom Title',
@@ -184,7 +184,7 @@ describe('ToolConfigResolverImpl', () => {
           },
         },
       });
-      (context.getEventConfig as jest.Mock).mockReturnValue(undefined);
+      (context.getEventConfig as vi.Mock).mockReturnValue(undefined);
 
       const result = resolver.resolve('tool.execute.after', 'myTool');
 
@@ -197,10 +197,10 @@ describe('ToolConfigResolverImpl', () => {
       const context = createMockContext();
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getToolConfigs as jest.Mock).mockReturnValue({
+      (context.getToolConfigs as vi.Mock).mockReturnValue({
         myTool: {},
       });
-      (context.getEventConfig as jest.Mock).mockReturnValue(undefined);
+      (context.getEventConfig as vi.Mock).mockReturnValue(undefined);
 
       const result = resolver.resolve('tool.execute.after', 'myTool');
 
@@ -211,12 +211,12 @@ describe('ToolConfigResolverImpl', () => {
       const context = createMockContext();
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getToolConfigs as jest.Mock).mockReturnValue({
+      (context.getToolConfigs as vi.Mock).mockReturnValue({
         myTool: {
           scripts: ['custom-script.sh'],
         },
       });
-      (context.getEventConfig as jest.Mock).mockReturnValue(undefined);
+      (context.getEventConfig as vi.Mock).mockReturnValue(undefined);
 
       const result = resolver.resolve('tool.execute.after', 'myTool');
 
@@ -237,7 +237,7 @@ describe('ToolConfigResolverImpl', () => {
       };
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getEventConfig as jest.Mock).mockReturnValue({
+      (context.getEventConfig as vi.Mock).mockReturnValue({
         toast: true,
         debug: true,
       });
@@ -255,7 +255,7 @@ describe('ToolConfigResolverImpl', () => {
       const context = createMockContext();
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getEventConfig as jest.Mock).mockReturnValue({
+      (context.getEventConfig as vi.Mock).mockReturnValue({
         toast: {
           title: 'Event Title',
           variant: 'error' as const,
@@ -274,7 +274,7 @@ describe('ToolConfigResolverImpl', () => {
       const context = createMockContext();
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getEventConfig as jest.Mock).mockReturnValue(false);
+      (context.getEventConfig as vi.Mock).mockReturnValue(false);
 
       const result = resolver.resolveBase('tool.execute.after', {});
 
@@ -289,7 +289,7 @@ describe('ToolConfigResolverImpl', () => {
       });
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getEventConfig as jest.Mock).mockReturnValue(undefined);
+      (context.getEventConfig as vi.Mock).mockReturnValue(undefined);
 
       const result = resolver.resolveBase('unknown.event', {});
 
@@ -303,7 +303,7 @@ describe('ToolConfigResolverImpl', () => {
       const context = createMockContext();
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getEventConfig as jest.Mock).mockReturnValue({
+      (context.getEventConfig as vi.Mock).mockReturnValue({
         runScripts: true,
       });
 
@@ -328,10 +328,10 @@ describe('ToolConfigResolverImpl', () => {
       };
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getToolConfigs as jest.Mock).mockReturnValue({
+      (context.getToolConfigs as vi.Mock).mockReturnValue({
         myTool: { enabled: true },
       });
-      (context.getEventConfig as jest.Mock).mockReturnValue(undefined);
+      (context.getEventConfig as vi.Mock).mockReturnValue(undefined);
 
       const result = resolver.resolve('tool.execute.after', 'myTool');
       expect(result.toastMessage).toBe('');

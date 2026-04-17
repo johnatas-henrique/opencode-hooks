@@ -1,87 +1,79 @@
 import { showStartupToast } from '../../.opencode/plugins/features/messages/show-startup-toast';
 import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
+import { getLatestLogFile } from '../../.opencode/plugins/features/messages/plugin-status';
+import { showActivePluginsToast } from '../../.opencode/plugins/features/messages/show-active-plugins';
+import { waitForToastSilence } from '../../.opencode/plugins/features/messages/toast-silence-detector';
 
-jest.mock('../../.opencode/plugins/features/messages/plugin-status', () => ({
-  getLatestLogFile: jest.fn(),
+const _mockAdd = vi.fn();
+const _mockAddMultiple = vi.fn();
+const _mockClear = vi.fn();
+const _mockFlush = vi.fn().mockResolvedValue(undefined);
+
+vi.mock('../../.opencode/plugins/features/messages/plugin-status', () => ({
+  getLatestLogFile: vi.fn(),
 }));
 
-jest.mock(
+vi.mock(
   '../../.opencode/plugins/features/messages/show-active-plugins',
   () => ({
-    showActivePluginsToast: jest.fn().mockResolvedValue(undefined),
+    showActivePluginsToast: vi.fn().mockResolvedValue(undefined),
   })
 );
 
-jest.mock(
+vi.mock(
   '../../.opencode/plugins/features/messages/toast-silence-detector',
   () => ({
-    waitForToastSilence: jest.fn(),
+    waitForToastSilence: vi.fn(),
   })
 );
 
-jest.mock('../../.opencode/plugins/core/constants', () => ({
+vi.mock('../../.opencode/plugins/core/constants', () => ({
   TIMER: { OVERWRITE_CHECK_DELAY: 100 },
   TOAST_DURATION: { TWO_SECONDS: 2000, TEN_SECONDS: 10000, FIVE_SECONDS: 5000 },
 }));
 
-jest.mock('../../.opencode/plugins/core/toast-queue', () => {
-  const mockQueue = {
-    add: jest.fn(),
-    addMultiple: jest.fn(),
-    clear: jest.fn(),
-    flush: jest.fn().mockResolvedValue(undefined),
-    pending: 0,
-  };
+vi.mock('../../.opencode/plugins/core/toast-queue', () => {
+  const mockAdd = vi.fn();
+  const mockAddMultiple = vi.fn();
+  const mockClear = vi.fn();
+  const mockFlush = vi.fn().mockResolvedValue(undefined);
   return {
-    useGlobalToastQueue: jest.fn(() => mockQueue),
+    useGlobalToastQueue: vi.fn(() => ({
+      add: mockAdd,
+      addMultiple: mockAddMultiple,
+      clear: mockClear,
+      flush: mockFlush,
+      pending: 0,
+    })),
+    __mockAdd: mockAdd,
+    __mockAddMultiple: mockAddMultiple,
+    __mockClear: mockClear,
+    __mockFlush: mockFlush,
   };
 });
 
-jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
+  saveToFile: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockGetLatestLogFile =
-  require('../../.opencode/plugins/features/messages/plugin-status').getLatestLogFile;
-const mockWaitForToastSilence =
-  require('../../.opencode/plugins/features/messages/toast-silence-detector').waitForToastSilence;
-const mockShowActivePluginsToast =
-  require('../../.opencode/plugins/features/messages/show-active-plugins').showActivePluginsToast;
+import { useGlobalToastQueue } from '../../.opencode/plugins/core/toast-queue';
 
 describe('showStartupToast', () => {
-  let mockQueue: {
-    add: jest.Mock;
-    addMultiple: jest.Mock;
-    clear: jest.Mock;
-    flush: jest.Mock;
-    pending: number;
-  };
-
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.clearAllMocks();
-    mockQueue = {
-      add: jest.fn(),
-      addMultiple: jest.fn(),
-      clear: jest.fn(),
-      flush: jest.fn().mockResolvedValue(undefined),
-      pending: 0,
-    };
-
-    const useGlobalToastQueue =
-      require('../../.opencode/plugins/core/toast-queue').useGlobalToastQueue;
-    useGlobalToastQueue.mockReturnValue(mockQueue);
+    vi.useFakeTimers();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('should add initial loading toast', async () => {
-    mockGetLatestLogFile.mockReturnValue(null);
+    (getLatestLogFile as vi.Mock).mockReturnValue(null);
 
     await showStartupToast();
 
+    const mockQueue = useGlobalToastQueue();
     expect(mockQueue.add).toHaveBeenCalledWith({
       title: 'Loading plugin status...',
       message: 'Scanning OpenCode plugins',
@@ -91,38 +83,38 @@ describe('showStartupToast', () => {
   });
 
   it('should call waitForToastSilence when logFile exists', async () => {
-    const mockCleanup = jest.fn();
+    const mockCleanup = vi.fn();
     const mockPromise = Promise.resolve();
-    mockGetLatestLogFile.mockReturnValue('/test/logfile.log');
-    mockWaitForToastSilence.mockReturnValue({
+    (getLatestLogFile as vi.Mock).mockReturnValue('/test/logfile.log');
+    (waitForToastSilence as vi.Mock).mockReturnValue({
       promise: mockPromise,
       cleanup: mockCleanup,
     });
 
     await showStartupToast();
 
-    expect(mockWaitForToastSilence).toHaveBeenCalledWith('/test/logfile.log');
+    expect(waitForToastSilence).toHaveBeenCalledWith('/test/logfile.log');
   });
 
   it('should not wait for toast silence when logFile is null', async () => {
-    mockGetLatestLogFile.mockReturnValue(null);
-    mockWaitForToastSilence.mockReturnValue({
+    (getLatestLogFile as vi.Mock).mockReturnValue(null);
+    (waitForToastSilence as vi.Mock).mockReturnValue({
       promise: Promise.resolve(),
-      cleanup: jest.fn(),
+      cleanup: vi.fn(),
     });
 
     await showStartupToast();
 
-    expect(mockWaitForToastSilence).not.toHaveBeenCalled();
-    expect(mockShowActivePluginsToast).not.toHaveBeenCalled();
+    expect(waitForToastSilence).not.toHaveBeenCalled();
+    expect(showActivePluginsToast).not.toHaveBeenCalled();
   });
 
   it('should use custom getLogFile when provided', async () => {
-    mockGetLatestLogFile.mockReturnValue(null);
-    const customGetLogFile = jest.fn().mockReturnValue('/custom/log.log');
-    const mockCleanup = jest.fn();
+    (getLatestLogFile as vi.Mock).mockReturnValue(null);
+    const customGetLogFile = vi.fn().mockReturnValue('/custom/log.log');
+    const mockCleanup = vi.fn();
     const mockPromise = Promise.resolve();
-    mockWaitForToastSilence.mockReturnValue({
+    (waitForToastSilence as vi.Mock).mockReturnValue({
       promise: mockPromise,
       cleanup: mockCleanup,
     });
@@ -130,22 +122,22 @@ describe('showStartupToast', () => {
     await showStartupToast({ getLogFile: customGetLogFile });
 
     expect(customGetLogFile).toHaveBeenCalled();
-    expect(mockGetLatestLogFile).not.toHaveBeenCalled();
+    expect(getLatestLogFile).not.toHaveBeenCalled();
   });
 
   it('should handle error when showActivePluginsToast fails', async () => {
-    const mockCleanup = jest.fn();
-    mockGetLatestLogFile.mockReturnValue('/test/logfile.log');
-    mockWaitForToastSilence.mockReturnValue({
+    const mockCleanup = vi.fn();
+    (getLatestLogFile as vi.Mock).mockReturnValue('/test/logfile.log');
+    (waitForToastSilence as vi.Mock).mockReturnValue({
       promise: Promise.resolve(),
       cleanup: mockCleanup,
     });
-    mockShowActivePluginsToast.mockRejectedValue(
+    (showActivePluginsToast as vi.Mock).mockRejectedValue(
       new Error('Plugin scan failed')
     );
 
     await showStartupToast();
-    await jest.runAllTimersAsync();
+    await vi.runAllTimersAsync();
 
     expect(saveToFile).toHaveBeenCalledWith(
       expect.objectContaining({

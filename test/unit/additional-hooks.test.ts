@@ -1,6 +1,6 @@
 import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
 
-jest.mock('../../.opencode/plugins/config', () => ({
+vi.mock('../../.opencode/plugins/config', () => ({
   userConfig: {
     enabled: true,
     default: {
@@ -22,7 +22,7 @@ jest.mock('../../.opencode/plugins/config', () => ({
   },
 }));
 
-jest.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
+vi.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -127,53 +127,48 @@ jest.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
   },
 }));
 
-jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
+  saveToFile: vi.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock(
-  '../../.opencode/plugins/features/messages/append-to-session',
-  () => ({
-    appendToSession: jest.fn().mockResolvedValue(undefined),
-  })
-);
+vi.mock('../../.opencode/plugins/features/messages/append-to-session', () => ({
+  appendToSession: vi.fn().mockResolvedValue(undefined),
+}));
 
-jest.mock('../../.opencode/plugins/core/toast-queue', () => ({
-  initGlobalToastQueue: jest.fn().mockReturnValue({
-    add: jest.fn(),
-    flush: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
+  initGlobalToastQueue: vi.fn().mockReturnValue({
+    add: vi.fn(),
+    flush: vi.fn().mockResolvedValue(undefined),
     pending: 0,
   }),
-  useGlobalToastQueue: jest.fn().mockReturnValue({
-    add: jest.fn(),
-    flush: jest.fn().mockResolvedValue(undefined),
+  useGlobalToastQueue: vi.fn().mockReturnValue({
+    add: vi.fn(),
+    flush: vi.fn().mockResolvedValue(undefined),
     pending: 0,
   }),
 }));
 
-jest.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
-  runScript: jest
+vi.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
+  runScript: vi
     .fn()
     .mockResolvedValue({ output: 'Script output', error: null, exitCode: 0 }),
 }));
 
-jest.mock('../../.opencode/plugins/core/debug', () => ({
-  handleDebugLog: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../.opencode/plugins/core/debug', () => ({
+  handleDebugLog: vi.fn().mockResolvedValue(undefined),
 }));
 
 const mockClient = {
   tui: {
-    showToast: jest.fn().mockResolvedValue(undefined),
+    showToast: vi.fn().mockResolvedValue(undefined),
   },
 };
 
 const mockDollar =
-  jest.fn<
-    () => Promise<{ exitCode: number; stdout: string; stderr: string }>
-  >();
+  vi.fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>();
 
 function createMockCtx(
-  client: { tui: { showToast: jest.Mock }; $: () => unknown },
+  client: { tui: { showToast: vi.Mock }; $: () => unknown },
   $: () => unknown
 ) {
   return {
@@ -188,7 +183,7 @@ function createMockCtx(
 
 describe('opencode-hooks.ts - additional hook coverage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('event hook', () => {

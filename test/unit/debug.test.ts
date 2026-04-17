@@ -3,32 +3,32 @@ import {
   sanitizeData,
 } from '../../.opencode/plugins/core/debug';
 
-jest.mock('../../.opencode/plugins/core/toast-queue', () => {
+vi.mock('../../.opencode/plugins/core/toast-queue', () => {
+  const mockAdd = vi.fn();
   const mockQueue = {
-    add: jest.fn(),
+    add: mockAdd,
   };
   return {
-    useGlobalToastQueue: jest.fn(() => mockQueue),
+    useGlobalToastQueue: vi.fn(() => mockQueue),
+    __mockAdd: mockAdd,
   };
 });
 
-jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
+  saveToFile: vi.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/core/constants', () => ({
+vi.mock('../../.opencode/plugins/core/constants', () => ({
   TOAST_DURATION: { TEN_SECONDS: 10000 },
   DEBUG_LOG_FILE: 'debug.log',
 }));
 
-const mockUseGlobalToastQueue =
-  require('../../.opencode/plugins/core/toast-queue').useGlobalToastQueue;
-const mockSaveToFile =
-  require('../../.opencode/plugins/features/persistence/save-to-file').saveToFile;
+import { useGlobalToastQueue } from '../../.opencode/plugins/core/toast-queue';
+import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
 
 describe('handleDebugLog', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should add debug toast and save to file', async () => {
@@ -38,17 +38,18 @@ describe('handleDebugLog', () => {
 
     await handleDebugLog(timestamp, title, data);
 
-    expect(mockUseGlobalToastQueue().add).toHaveBeenCalledWith({
+    const mockQueue = useGlobalToastQueue();
+    expect(mockQueue.add).toHaveBeenCalledWith({
       title: 'DEBUG TEST',
       message: JSON.stringify(data, null, 2),
       variant: 'info',
       duration: 10000,
     });
 
-    expect(mockSaveToFile).toHaveBeenCalledWith({
+    expect(saveToFile).toHaveBeenCalledWith({
       content: expect.stringContaining('"type":"DEBUG"'),
       filename: 'debug.log',
-      showToast: mockUseGlobalToastQueue().add,
+      showToast: mockQueue.add,
     });
   });
 
@@ -59,7 +60,8 @@ describe('handleDebugLog', () => {
 
     await handleDebugLog(timestamp, title, data);
 
-    expect(mockUseGlobalToastQueue().add).toHaveBeenCalledWith(
+    const mockQueue = useGlobalToastQueue();
+    expect(mockQueue.add).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'DEBUG EVENT',
         variant: 'info',
@@ -75,7 +77,8 @@ describe('handleDebugLog', () => {
 
     await handleDebugLog(timestamp, title, data);
 
-    expect(mockUseGlobalToastQueue().add).toHaveBeenCalledWith(
+    const mockQueue = useGlobalToastQueue();
+    expect(mockQueue.add).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'DEBUG EMPTY',
         message: '{}',
@@ -90,7 +93,8 @@ describe('handleDebugLog', () => {
 
     await handleDebugLog(timestamp, title, data);
 
-    expect(mockUseGlobalToastQueue().add).toHaveBeenCalledWith(
+    const mockQueue = useGlobalToastQueue();
+    expect(mockQueue.add).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'DEBUG NULL',
         message: 'null',

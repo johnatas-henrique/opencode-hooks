@@ -1,12 +1,12 @@
 import { archiveLogFiles } from '../../.opencode/plugins/features/audit/audit-logger';
 
 describe('archiveLogFiles', () => {
-  const mockMkdir = jest.fn().mockResolvedValue(undefined);
-  const mockStat = jest.fn().mockRejectedValue(new Error('File not found'));
-  const mockRename = jest.fn().mockResolvedValue(undefined);
+  const mockMkdir = vi.fn().mockResolvedValue(undefined);
+  const mockStat = vi.fn().mockRejectedValue(new Error('File not found'));
+  const mockRename = vi.fn().mockResolvedValue(undefined);
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should create archive directory', async () => {

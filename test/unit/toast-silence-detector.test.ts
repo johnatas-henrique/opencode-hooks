@@ -3,22 +3,22 @@ import {
   countToastsInLog,
 } from '../../.opencode/plugins/features/messages/toast-silence-detector';
 
-jest.mock('fs/promises', () => ({
-  readFile: jest.fn(),
+vi.mock('fs/promises', () => ({
+  readFile: vi.fn(),
 }));
 
 import { readFile } from 'fs/promises';
 
-const mockReadFile = readFile as jest.MockedFunction<typeof readFile>;
+const mockReadFile = readFile as vi.MockedFunction<typeof readFile>;
 
 describe('toast-silence-detector', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.clearAllMocks();
+    vi.useFakeTimers();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('waitForToastSilence', () => {
@@ -27,7 +27,7 @@ describe('toast-silence-detector', () => {
 
       const { promise, cleanup } = waitForToastSilence('/fake/log.log');
 
-      jest.advanceTimersByTime(200);
+      vi.advanceTimersByTime(200);
       await promise;
 
       cleanup();
@@ -46,9 +46,9 @@ describe('toast-silence-detector', () => {
         pollMs: 200,
       });
 
-      jest.advanceTimersByTime(200);
-      jest.advanceTimersByTime(1500);
-      jest.advanceTimersByTime(200);
+      vi.advanceTimersByTime(200);
+      vi.advanceTimersByTime(1500);
+      vi.advanceTimersByTime(200);
 
       await promise;
 
@@ -69,11 +69,11 @@ describe('toast-silence-detector', () => {
         pollMs: 200,
       });
 
-      jest.advanceTimersByTime(200);
-      jest.advanceTimersByTime(200);
-      jest.advanceTimersByTime(200);
-      jest.advanceTimersByTime(1500);
-      jest.advanceTimersByTime(200);
+      vi.advanceTimersByTime(200);
+      vi.advanceTimersByTime(200);
+      vi.advanceTimersByTime(200);
+      vi.advanceTimersByTime(1500);
+      vi.advanceTimersByTime(200);
 
       await promise;
 
@@ -87,7 +87,7 @@ describe('toast-silence-detector', () => {
 
       const { promise, cleanup } = waitForToastSilence('/fake/log.log');
 
-      jest.advanceTimersByTime(200);
+      vi.advanceTimersByTime(200);
       await Promise.resolve();
       await Promise.resolve();
       await promise;
@@ -103,7 +103,7 @@ describe('toast-silence-detector', () => {
       });
 
       await Promise.resolve();
-      jest.advanceTimersByTime(200);
+      vi.advanceTimersByTime(200);
       await Promise.resolve();
       await Promise.resolve();
       await promise;
@@ -120,9 +120,9 @@ describe('toast-silence-detector', () => {
 
       cleanup();
 
-      jest.advanceTimersByTime(200);
-      jest.advanceTimersByTime(200);
-      jest.advanceTimersByTime(200);
+      vi.advanceTimersByTime(200);
+      vi.advanceTimersByTime(200);
+      vi.advanceTimersByTime(200);
 
       expect(mockReadFile).toHaveBeenCalledTimes(1);
     });
@@ -132,7 +132,7 @@ describe('toast-silence-detector', () => {
 
       const { promise, cleanup } = waitForToastSilence('/fake/log.log');
 
-      await jest.runAllTimersAsync();
+      await vi.runAllTimersAsync();
       await promise;
 
       const callCountBefore = mockReadFile.mock.calls.length;
@@ -159,11 +159,11 @@ describe('toast-silence-detector', () => {
       await Promise.resolve();
       expect(callCount).toBe(1);
 
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
       await Promise.resolve();
       expect(callCount).toBe(2);
 
-      jest.advanceTimersByTime(500);
+      vi.advanceTimersByTime(500);
       await Promise.resolve();
       await Promise.resolve();
       await promise;
@@ -179,7 +179,7 @@ describe('toast-silence-detector', () => {
       });
 
       await Promise.resolve();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
       await Promise.resolve();
       await Promise.resolve();
       await promise;
@@ -202,9 +202,9 @@ describe('toast-silence-detector', () => {
       });
 
       await Promise.resolve();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
       await Promise.resolve();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
       await Promise.resolve();
       await Promise.resolve();
       await promise;
@@ -225,7 +225,7 @@ describe('toast-silence-detector', () => {
       });
 
       await Promise.resolve();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
       await Promise.resolve();
       await Promise.resolve();
       await promise;
@@ -241,7 +241,7 @@ describe('toast-silence-detector', () => {
       });
 
       await Promise.resolve();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
       await Promise.resolve();
       await Promise.resolve();
       await promise;

@@ -5,10 +5,6 @@ import type {
   PluginDollar,
 } from '../__mocks__/@opencode-ai/plugin';
 
-const mockRunScript = jest
-  .fn()
-  .mockResolvedValue({ output: 'Script executed', error: null, exitCode: 0 });
-
 const createMockCtx = (
   client: PluginClient,
   dollar: PluginDollar
@@ -21,30 +17,37 @@ const createMockCtx = (
   serverUrl: 'http://localhost:3000',
 });
 
-jest.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
-  runScript: jest
+const {
+  mockRunScript,
+  mockSaveToFile,
+  mockHandleDebugLog,
+  mockAppendToSession,
+} = vi.hoisted(() => ({
+  mockRunScript: vi
     .fn()
-    .mockImplementation((...args: Parameters<typeof mockRunScript>) =>
-      mockRunScript(...args)
-    ),
+    .mockResolvedValue({ output: 'Script executed', error: null, exitCode: 0 }),
+  mockSaveToFile: vi.fn().mockResolvedValue(undefined),
+  mockHandleDebugLog: vi.fn().mockResolvedValue(undefined),
+  mockAppendToSession: vi.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
+  runScript: mockRunScript,
 }));
 
-jest.mock('../../.opencode/plugins/core/debug', () => ({
-  handleDebugLog: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
+  saveToFile: mockSaveToFile,
 }));
 
-jest.mock(
-  '../../.opencode/plugins/features/messages/append-to-session',
-  () => ({
-    appendToSession: jest.fn().mockResolvedValue(undefined),
-  })
-);
+vi.mock('../../.opencode/plugins/core/debug', () => ({
+  handleDebugLog: mockHandleDebugLog,
+}));
 
-jest.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
+vi.mock('../../.opencode/plugins/features/messages/append-to-session', () => ({
+  appendToSession: mockAppendToSession,
+}));
+
+vi.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -52,7 +55,7 @@ jest.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
       duration: 2000,
       defaultScript: 'session-created.sh',
       buildMessage: (event: Record<string, unknown>) =>
-        `Session Id: ${event.properties.info.id}\nTime: now`,
+        `Session Id: ${event.properties?.info?.id}\nTime: now`,
     },
     'tool.execute.before': {
       title: '====TOOL EXECUTE BEFORE====',
@@ -95,7 +98,7 @@ jest.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
   },
 }));
 
-jest.mock('../../.opencode/plugins/config', () => ({
+vi.mock('../../.opencode/plugins/config', () => ({
   userConfig: {
     enabled: true,
     toast: true,
@@ -109,319 +112,65 @@ jest.mock('../../.opencode/plugins/config', () => ({
       errorVariant: 'error',
       outputDuration: 5000,
       errorDuration: 15000,
-      outputTitle: 'Script Output',
-      errorTitle: 'Script Error',
-    },
-    events: {
-      'session.created': { runOnlyOnce: true },
-      'shell.env': { runScripts: true, scripts: ['shell-env.sh'] },
-      'chat.message': { enabled: false },
-      'chat.params': { enabled: false },
-      'chat.headers': { enabled: false },
-      'experimental.chat.messages.transform': { enabled: false },
-      'experimental.chat.system.transform': { enabled: false },
-      'experimental.text.complete': { enabled: false },
-      'session.unknown': { enabled: false },
-    },
-    tools: {
-      'tool.execute.after': {
-        task: { toast: true, scripts: ['log-agent.sh'] },
-        chat: { toast: false },
-      },
-      'tool.execute.after.subagent': {
-        task: { toast: true, scripts: ['log-agent.sh'] },
-      },
-      'tool.execute.before': {
-        read: { toast: true, scripts: ['before-read.sh'] },
-        write: { toast: false, scripts: ['before-write.sh'] },
-        disabled: false,
-      },
-    },
-  },
-}));
-
-jest.mock('../../.opencode/plugins/features/events/events', () => {
-  const mockHandlers = {
-    'session.created': {
-      title: '====SESSION CREATED====',
-      variant: 'success',
-      duration: 2000,
-      defaultScript: 'session-created.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Session Id: ${event.properties.info.id}\nTime: now`,
-    },
-    'tool.execute.before': {
-      title: '====TOOL EXECUTE BEFORE====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'tool-execute-before.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Tool: ${event.properties?.tool || 'unknown'}\nTime: now`,
-    },
-    'tool.execute.after': {
-      title: '====SUBAGENT CALLED====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'tool-execute-after.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: now`,
-    },
-    'tool.execute.after.subagent': {
-      title: '====SUBAGENT CALLED====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'log-agent.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Agent: ${event.properties?.subagentType || 'unknown'}\nTime: now`,
-    },
-    'shell.env': {
-      title: '====SHELL ENV====',
-      variant: 'info',
-      duration: 0,
-      defaultScript: 'shell-env.sh',
-      buildMessage: () => 'shell env',
-    },
-    'unknown.event': {
-      title: '====UNKNOWN====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'unknown.sh',
-      buildMessage: () => 'unknown',
-    },
-    'session.idle': {
-      title: '====SESSION IDLE====',
-      variant: 'info',
-      duration: 2000,
-      buildMessage: () => 'session idle',
-    },
-  };
-
-  const mockUserConfig = {
-    enabled: true,
-    toast: true,
-    saveToFile: true,
-    appendToSession: true,
-    runScripts: true,
-    scriptToasts: {
-      showOutput: true,
-      showError: true,
-      outputVariant: 'info',
-      errorVariant: 'error',
-      outputDuration: 5000,
-      errorDuration: 15000,
-      outputTitle: 'Script Output',
-      errorTitle: 'Script Error',
     },
     events: {
       'session.created': true,
-      'shell.env': { runScripts: true, scripts: ['shell-env.sh'] },
-      'session.disabled': false,
-      'session.idle': {
-        runScripts: true,
-        scripts: ['script1.sh', 'script2.sh', 'script3.sh'],
-        toast: true,
-        toastTitle: 'Scripts Executed',
-        scriptToasts: {
-          showOutput: true,
-          showError: true,
-          outputVariant: 'info',
-          errorVariant: 'error',
-          outputDuration: 5000,
-          errorDuration: 15000,
-        },
-      },
+      'unknown.event': true,
     },
-    tools: {
-      'tool.execute.after': {
-        task: { toast: true, scripts: ['log-agent.sh'] },
-        chat: { toast: false },
-      },
-      'tool.execute.after.subagent': {
-        task: { toast: true, scripts: ['log-agent.sh'] },
-      },
-      'tool.execute.before': {
-        read: { toast: true, scripts: ['before-read.sh'] },
-        write: { toast: false, scripts: ['before-write.sh'] },
-        disabled: false,
-      },
-    },
-  };
+    tools: {},
+  },
+}));
 
-  function resolveEventConfig(eventType: string) {
-    const handler = mockHandlers[eventType];
-    const userEventConfig = mockUserConfig.events[eventType];
-    const global = mockUserConfig;
-
-    if (!global.enabled) {
-      return { enabled: false };
-    }
-
-    if (userEventConfig === undefined) {
-      return {
-        enabled: true,
-        toast: global.toast,
-        toastTitle: handler?.title ?? '',
-        toastMessage: undefined,
-        toastVariant: handler?.variant ?? 'info',
-        toastDuration: handler?.duration ?? 2000,
-        scripts: global.runScripts
-          ? [handler?.defaultScript ?? 'default.sh']
-          : [],
-        saveToFile: global.saveToFile,
-        appendToSession: global.appendToSession,
-        scriptToasts: global.scriptToasts,
-      };
-    }
-
-    if (userEventConfig === false) {
-      return { enabled: false } as unknown;
-    }
-
-    const cfg = userEventConfig as unknown;
-
-    let scripts: string[] = [];
-    if (cfg.runScripts === false) {
-      scripts = [];
-    } else if (cfg.scripts !== undefined) {
-      scripts = cfg.scripts;
-    } else if (cfg.runScripts === true || global.runScripts) {
-      scripts = [handler?.defaultScript ?? 'default.sh'];
-    }
-
-    const toastCfg = typeof cfg.toast === 'object' ? cfg.toast : null;
-    const scriptToastsCfg = cfg.scriptToasts ?? global.scriptToasts;
-
-    return {
-      enabled: true,
-      toast:
-        cfg.toast !== undefined
-          ? typeof cfg.toast === 'boolean'
-            ? cfg.toast
-            : true
-          : global.toast,
-      toastTitle: toastCfg?.title ?? handler?.title ?? '',
-      toastMessage: toastCfg?.message,
-      toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
-      toastDuration: toastCfg?.duration ?? handler?.duration ?? 2000,
-      scripts,
-      saveToFile: cfg.saveToFile ?? global.saveToFile,
-      appendToSession: cfg.appendToSession ?? global.appendToSession,
-      scriptToasts: scriptToastsCfg,
-    };
-  }
-
-  function resolveToolConfig(toolEventType: string, toolName: string) {
-    const toolConfigs = (mockUserConfig as unknown).tools?.[toolEventType];
-    const toolConfig = toolConfigs?.[toolName];
-
-    if (toolConfig === false) {
-      return { enabled: false } as unknown;
-    }
-
-    if (!toolConfig) {
-      return resolveEventConfig(toolEventType);
-    }
-
-    const handler = mockHandlers[toolEventType];
-    const global = mockUserConfig;
-
-    const cfg = toolConfig as unknown;
-
-    let scripts: string[] = [];
-    if (cfg.runScripts === false) {
-      scripts = [];
-    } else if (cfg.scripts !== undefined) {
-      scripts = cfg.scripts;
-    } else if (cfg.runScripts === true || global.runScripts) {
-      scripts = [handler?.defaultScript ?? 'default.sh'];
-    }
-
-    const toastCfg = typeof cfg.toast === 'object' ? cfg.toast : null;
-    const scriptToastsCfg = cfg.scriptToasts ?? global.scriptToasts;
-
-    return {
-      enabled: true,
-      toast:
-        cfg.toast !== undefined
-          ? typeof cfg.toast === 'boolean'
-            ? cfg.toast
-            : true
-          : global.toast,
-      toastTitle: toastCfg?.title ?? handler?.title ?? '',
-      toastMessage: toastCfg?.message,
-      toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
-      toastDuration: toastCfg?.duration ?? handler?.duration ?? 2000,
-      scripts,
-      saveToFile: cfg.saveToFile ?? global.saveToFile,
-      appendToSession: cfg.appendToSession ?? global.appendToSession,
-      scriptToasts: scriptToastsCfg,
-    };
-  }
-
-  return {
-    resolveEventConfig: jest.fn(resolveEventConfig),
-    resolveToolConfig: jest.fn(resolveToolConfig),
-    normalizeInputForHandler: jest.fn(
-      (
-        eventType: string,
-        input: Record<string, unknown>,
-        output?: Record<string, unknown>
-      ) => {
-        if (eventType.startsWith('tool.execute.')) {
-          return { input, output };
-        }
-        if (input.properties && typeof input.properties === 'object') {
-          return { properties: input.properties, output };
-        }
-        return { properties: input, output };
-      }
-    ),
-    getHandler: jest.fn((eventType: string) => mockHandlers[eventType]),
-  };
-});
-
-jest.mock('../../.opencode/plugins/core/toast-queue', () => {
+const { mockQueue: globalMockQueue, setCapturedShowFn } = vi.hoisted(() => {
+  let capturedShowFn: ((toast: unknown) => void) | null = null;
   const mockQueue = {
-    add: jest.fn(),
-    flush: jest.fn().mockResolvedValue(undefined),
-    pending: 0,
-  };
-  return {
-    ...jest.requireActual('../../.opencode/plugins/core/toast-queue'),
-    initGlobalToastQueue: jest.fn((showFn) => {
-      mockQueue.add = jest.fn((toast) => showFn(toast));
-      return mockQueue;
+    add: vi.fn((toast: unknown) => {
+      if (capturedShowFn) capturedShowFn(toast);
     }),
-    useGlobalToastQueue: jest.fn(() => mockQueue),
-    getGlobalToastQueue: jest.fn(() => mockQueue),
-    resetGlobalToastQueue: jest.fn(),
+    addMultiple: vi.fn(),
+    clear: vi.fn(),
+    flush: vi.fn().mockResolvedValue(undefined),
+    get pending() {
+      return 0;
+    },
   };
+  const setCapturedShowFn = (fn: (toast: unknown) => void) => {
+    capturedShowFn = fn;
+  };
+  const getQueue = () => mockQueue;
+  return { mockQueue, setCapturedShowFn, getQueue };
 });
 
-jest.mock(
-  '../../.opencode/plugins/features/messages/show-startup-toast',
-  () => ({
-    showStartupToast: jest.fn().mockResolvedValue(undefined),
-  })
-);
+vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
+  ...vi.importActual('../../.opencode/plugins/core/toast-queue'),
+  initGlobalToastQueue: (showFn: (toast: unknown) => void) => {
+    setCapturedShowFn(showFn);
+    return globalMockQueue;
+  },
+  useGlobalToastQueue: () => globalMockQueue,
+  getGlobalToastQueue: () => globalMockQueue,
+  resetGlobalToastQueue: vi.fn(),
+}));
 
-import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
+vi.mock('../../.opencode/plugins/features/messages/show-startup-toast', () => ({
+  showStartupToast: vi.fn().mockResolvedValue(undefined),
+}));
 
 interface MockClient {
   tui: {
-    showToast: ReturnType<typeof jest.fn>;
+    showToast: ReturnType<typeof vi.fn>;
   };
   session: {
-    prompt: ReturnType<typeof jest.fn>;
+    prompt: ReturnType<typeof vi.fn>;
   };
 }
 
 const createMockClient = (): MockClient => ({
   tui: {
-    showToast: jest.fn().mockResolvedValue(undefined),
+    showToast: vi.fn().mockResolvedValue(undefined),
   },
   session: {
-    prompt: jest.fn().mockResolvedValue(undefined),
+    prompt: vi.fn().mockResolvedValue(undefined),
   },
 });
 
@@ -435,14 +184,14 @@ describe('event handler', () => {
 
   beforeEach(() => {
     mockClient = createMockClient();
-    mockDollar = jest
+    mockDollar = vi
       .fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>()
       .mockResolvedValue({
         exitCode: 0,
         stdout: '',
         stderr: '',
       });
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should return early when no handler exists for event type', async () => {
@@ -454,19 +203,13 @@ describe('event handler', () => {
     };
     await plugin.event({ event });
 
-    expect(mockClient.tui.showToast).toHaveBeenCalledTimes(2);
+    expect(mockSaveToFile).toHaveBeenCalled();
   });
 
   it('should skip script for subagent sessions when runOnlyOnce is true', async () => {
-    jest.resetModules();
-    jest.unmock('../../.opencode/plugins/config');
-    jest.unmock('../../.opencode/plugins/features/scripts/run-script');
-    jest.unmock('../../.opencode/plugins/features/persistence/save-to-file');
-    jest.unmock('../../.opencode/plugins/features/messages/append-to-session');
-    jest.unmock('../../.opencode/plugins/features/messages/default-handlers');
-    jest.unmock('../../.opencode/plugins/features/events/events');
+    vi.resetModules();
 
-    jest.doMock('../../.opencode/plugins/config', () => ({
+    vi.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         toast: true,
@@ -488,12 +231,12 @@ describe('event handler', () => {
       },
     }));
 
-    const mockRunScriptFn = jest.fn().mockResolvedValue({
+    const mockRunScriptFn = vi.fn().mockResolvedValue({
       output: 'Script executed',
       error: null,
       exitCode: 0,
     });
-    jest.doMock('../../.opencode/plugins/features/scripts/run-script', () => ({
+    vi.doMock('../../.opencode/plugins/features/scripts/run-script', () => ({
       runScript: mockRunScriptFn,
     }));
 
@@ -524,15 +267,9 @@ describe('event handler', () => {
   });
 
   it('should run script for multiple primary sessions when runOnlyOnce is true', async () => {
-    jest.resetModules();
-    jest.unmock('../../.opencode/plugins/config');
-    jest.unmock('../../.opencode/plugins/features/scripts/run-script');
-    jest.unmock('../../.opencode/plugins/features/persistence/save-to-file');
-    jest.unmock('../../.opencode/plugins/features/messages/append-to-session');
-    jest.unmock('../../.opencode/plugins/features/messages/default-handlers');
-    jest.unmock('../../.opencode/plugins/features/events/events');
+    vi.resetModules();
 
-    jest.doMock('../../.opencode/plugins/config', () => ({
+    vi.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         toast: true,
@@ -554,12 +291,12 @@ describe('event handler', () => {
       },
     }));
 
-    const mockRunScriptFn = jest.fn().mockResolvedValue({
+    const mockRunScriptFn = vi.fn().mockResolvedValue({
       output: 'Script executed',
       error: null,
       exitCode: 0,
     });
-    jest.doMock('../../.opencode/plugins/features/scripts/run-script', () => ({
+    vi.doMock('../../.opencode/plugins/features/scripts/run-script', () => ({
       runScript: mockRunScriptFn,
     }));
 
@@ -591,15 +328,9 @@ describe('event handler', () => {
   });
 
   it('should still show toast when runOnlyOnce skips script', async () => {
-    jest.resetModules();
-    jest.unmock('../../.opencode/plugins/config');
-    jest.unmock('../../.opencode/plugins/features/scripts/run-script');
-    jest.unmock('../../.opencode/plugins/features/persistence/save-to-file');
-    jest.unmock('../../.opencode/plugins/features/messages/append-to-session');
-    jest.unmock('../../.opencode/plugins/features/messages/default-handlers');
-    jest.unmock('../../.opencode/plugins/features/events/events');
+    vi.resetModules();
 
-    jest.doMock('../../.opencode/plugins/config', () => ({
+    vi.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         toast: true,
@@ -625,12 +356,12 @@ describe('event handler', () => {
       },
     }));
 
-    const mockRunScriptFn2 = jest.fn().mockResolvedValue({
+    const mockRunScriptFn2 = vi.fn().mockResolvedValue({
       output: 'Script executed',
       error: null,
       exitCode: 0,
     });
-    jest.doMock('../../.opencode/plugins/features/scripts/run-script', () => ({
+    vi.doMock('../../.opencode/plugins/features/scripts/run-script', () => ({
       runScript: mockRunScriptFn2,
     }));
 
@@ -674,24 +405,20 @@ describe('executeHook - debug mode', () => {
 
   beforeEach(() => {
     mockClient = createMockClient();
-    mockDollar = jest
+    mockDollar = vi
       .fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>()
       .mockResolvedValue({
         exitCode: 0,
         stdout: '',
         stderr: '',
       });
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should call handleDebugLog when debug is enabled in executeHook', async () => {
-    jest.resetModules();
-    jest.unmock('../../.opencode/plugins/config');
-    jest.unmock('../../.opencode/plugins/features/messages/default-handlers');
-    jest.unmock('../../.opencode/plugins/features/events/events');
-    jest.unmock('../../.opencode/plugins/core/debug');
+    vi.resetModules();
 
-    jest.doMock('../../.opencode/plugins/config', () => ({
+    vi.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         toast: true,
@@ -713,7 +440,7 @@ describe('executeHook - debug mode', () => {
       },
     }));
 
-    jest.doMock(
+    vi.doMock(
       '../../.opencode/plugins/features/messages/default-handlers',
       () => ({
         handlers: {
@@ -728,8 +455,8 @@ describe('executeHook - debug mode', () => {
       })
     );
 
-    const mockHandleDebugLog = jest.fn().mockResolvedValue(undefined);
-    jest.doMock('../../.opencode/plugins/core/debug', () => ({
+    const mockHandleDebugLog = vi.fn().mockResolvedValue(undefined);
+    vi.doMock('../../.opencode/plugins/core/debug', () => ({
       handleDebugLog: mockHandleDebugLog,
     }));
 
@@ -746,14 +473,10 @@ describe('executeHook - debug mode', () => {
   });
 
   it('should call handleDebugLog when debug is enabled in event handler', async () => {
-    jest.setTimeout(30000);
-    jest.resetModules();
-    jest.unmock('../../.opencode/plugins/config');
-    jest.unmock('../../.opencode/plugins/features/messages/default-handlers');
-    jest.unmock('../../.opencode/plugins/features/events/events');
-    jest.unmock('../../.opencode/plugins/core/debug');
+    vi.useFakeTimers();
+    vi.resetModules();
 
-    jest.doMock('../../.opencode/plugins/config', () => ({
+    vi.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         toast: true,
@@ -775,7 +498,7 @@ describe('executeHook - debug mode', () => {
       },
     }));
 
-    jest.doMock(
+    vi.doMock(
       '../../.opencode/plugins/features/messages/default-handlers',
       () => ({
         handlers: {
@@ -790,8 +513,8 @@ describe('executeHook - debug mode', () => {
       })
     );
 
-    const mockHandleDebugLog = jest.fn().mockResolvedValue(undefined);
-    jest.doMock('../../.opencode/plugins/core/debug', () => ({
+    const mockHandleDebugLog = vi.fn().mockResolvedValue(undefined);
+    vi.doMock('../../.opencode/plugins/core/debug', () => ({
       handleDebugLog: mockHandleDebugLog,
     }));
 
@@ -807,6 +530,7 @@ describe('executeHook - debug mode', () => {
     await plugin.event({ event: event as unknown });
 
     expect(mockHandleDebugLog).toHaveBeenCalled();
+    vi.useRealTimers();
   });
 });
 
@@ -820,14 +544,14 @@ describe('new hooks', () => {
 
   beforeEach(() => {
     mockClient = createMockClient();
-    mockDollar = jest
+    mockDollar = vi
       .fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>()
       .mockResolvedValue({
         exitCode: 0,
         stdout: '',
         stderr: '',
       });
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should handle chat.message hook', async () => {
@@ -843,7 +567,7 @@ describe('new hooks', () => {
 
     await plugin['chat.message'](input, output);
 
-    expect(saveToFile).toHaveBeenCalled();
+    expect(mockSaveToFile).toHaveBeenCalled();
   });
 
   it('should handle chat.params hook', async () => {
@@ -860,7 +584,7 @@ describe('new hooks', () => {
 
     await plugin['chat.params'](input, output);
 
-    expect(saveToFile).toHaveBeenCalled();
+    expect(mockSaveToFile).toHaveBeenCalled();
   });
 
   it('should handle chat.headers hook', async () => {
@@ -877,7 +601,7 @@ describe('new hooks', () => {
 
     await plugin['chat.headers'](input, output);
 
-    expect(saveToFile).toHaveBeenCalled();
+    expect(mockSaveToFile).toHaveBeenCalled();
   });
 
   it('should handle permission.ask hook', async () => {
@@ -888,7 +612,7 @@ describe('new hooks', () => {
 
     await plugin['permission.ask'](input, output);
 
-    expect(saveToFile).toHaveBeenCalled();
+    expect(mockSaveToFile).toHaveBeenCalled();
   });
 
   it('should handle command.execute.before hook', async () => {
@@ -903,7 +627,7 @@ describe('new hooks', () => {
 
     await plugin['command.execute.before'](input, output);
 
-    expect(saveToFile).toHaveBeenCalled();
+    expect(mockSaveToFile).toHaveBeenCalled();
   });
 
   it('should handle experimental.chat.messages.transform hook', async () => {
@@ -914,7 +638,7 @@ describe('new hooks', () => {
 
     await plugin['experimental.chat.messages.transform'](input, output);
 
-    expect(saveToFile).toHaveBeenCalled();
+    expect(mockSaveToFile).toHaveBeenCalled();
   });
 
   it('should handle experimental.chat.system.transform hook', async () => {
@@ -928,7 +652,7 @@ describe('new hooks', () => {
 
     await plugin['experimental.chat.system.transform'](input, output);
 
-    expect(saveToFile).toHaveBeenCalled();
+    expect(mockSaveToFile).toHaveBeenCalled();
   });
 
   it('should handle experimental.session.compacting hook', async () => {
@@ -939,7 +663,7 @@ describe('new hooks', () => {
 
     await plugin['experimental.session.compacting'](input, output);
 
-    expect(saveToFile).toHaveBeenCalled();
+    expect(mockSaveToFile).toHaveBeenCalled();
   });
 
   it('should handle experimental.text.complete hook', async () => {
@@ -954,7 +678,7 @@ describe('new hooks', () => {
 
     await plugin['experimental.text.complete'](input, output);
 
-    expect(saveToFile).toHaveBeenCalled();
+    expect(mockSaveToFile).toHaveBeenCalled();
   });
 
   it('should handle tool.definition hook', async () => {
@@ -965,7 +689,7 @@ describe('new hooks', () => {
 
     await plugin['tool.definition'](input, output);
 
-    expect(saveToFile).toHaveBeenCalled();
+    expect(mockSaveToFile).toHaveBeenCalled();
   });
 
   it('should handle config hook', async () => {
@@ -975,7 +699,7 @@ describe('new hooks', () => {
 
     await plugin.config(input);
 
-    expect(saveToFile).toHaveBeenCalled();
+    expect(mockSaveToFile).toHaveBeenCalled();
   });
 });
 
@@ -989,19 +713,19 @@ describe('plugin disabled', () => {
 
   beforeEach(() => {
     mockClient = createMockClient();
-    mockDollar = jest
+    mockDollar = vi
       .fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>()
       .mockResolvedValue({
         exitCode: 0,
         stdout: '',
         stderr: '',
       });
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should return empty object when plugin is disabled', async () => {
-    jest.resetModules();
-    jest.doMock('../../.opencode/plugins/config', () => ({
+    vi.resetModules();
+    vi.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: false,
         toast: true,

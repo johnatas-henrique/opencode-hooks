@@ -5,38 +5,38 @@ import {
   getErrorRecorder,
 } from '../../.opencode/plugins/features/audit/plugin-integration';
 
-jest.mock('../../.opencode/plugins/features/audit/audit-logger', () => ({
-  createAuditLogger: jest.fn(() => ({
-    writeLine: jest.fn(),
-    rotate: jest.fn(),
-    cleanup: jest.fn(),
+vi.mock('../../.opencode/plugins/features/audit/audit-logger', () => ({
+  createAuditLogger: vi.fn(() => ({
+    writeLine: vi.fn(),
+    rotate: vi.fn(),
+    cleanup: vi.fn(),
   })),
-  archiveLogFiles: jest.fn().mockResolvedValue(undefined),
+  archiveLogFiles: vi.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../.opencode/plugins/features/audit/event-recorder', () => ({
-  createEventRecorder: jest.fn(() => ({
-    logToolExecuteBefore: jest.fn(),
-    logToolExecuteAfter: jest.fn(),
-    logSessionEvent: jest.fn(),
-  })),
-}));
-
-jest.mock('../../.opencode/plugins/features/audit/script-recorder', () => ({
-  createScriptRecorder: jest.fn(() => ({
-    logScript: jest.fn(),
+vi.mock('../../.opencode/plugins/features/audit/event-recorder', () => ({
+  createEventRecorder: vi.fn(() => ({
+    logToolExecuteBefore: vi.fn(),
+    logToolExecuteAfter: vi.fn(),
+    logSessionEvent: vi.fn(),
   })),
 }));
 
-jest.mock('../../.opencode/plugins/features/audit/error-recorder', () => ({
-  createErrorRecorder: jest.fn(() => ({
-    logError: jest.fn(),
+vi.mock('../../.opencode/plugins/features/audit/script-recorder', () => ({
+  createScriptRecorder: vi.fn(() => ({
+    logScript: vi.fn(),
+  })),
+}));
+
+vi.mock('../../.opencode/plugins/features/audit/error-recorder', () => ({
+  createErrorRecorder: vi.fn(() => ({
+    logError: vi.fn(),
   })),
 }));
 
 describe('Audit Plugin Integration', () => {
   beforeEach(() => {
-    jest.resetModules();
+    vi.resetModules();
   });
 
   describe('getEventRecorder', () => {

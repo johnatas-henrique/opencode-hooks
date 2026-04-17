@@ -19,12 +19,12 @@ describe('block-system - pure evaluation', () => {
   };
 
   const mockEffects = {
-    notify: jest.fn(),
-    log: jest.fn(),
+    notify: vi.fn(),
+    log: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('evaluate (pure)', () => {
@@ -84,7 +84,7 @@ describe('block-system - pure evaluation', () => {
 
     it('receives scriptResults in check function', () => {
       const system = createBlockSystem(mockEffects);
-      const checkFn = jest.fn().mockReturnValue(true);
+      const checkFn = vi.fn().mockReturnValue(true);
       const predicates: BlockCheck[] = [{ check: checkFn }];
       const scriptResults: ScriptResult[] = [
         { script: 'test.sh', exitCode: 1, output: 'error' },

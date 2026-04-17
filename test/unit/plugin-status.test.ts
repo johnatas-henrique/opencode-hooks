@@ -3,29 +3,27 @@ import {
   formatPluginStatus,
 } from '../../.opencode/plugins/features/messages/plugin-status';
 
-jest.mock('fs', () => ({
-  readFileSync: jest.fn(),
-  readdirSync: jest.fn(),
-  existsSync: jest.fn(),
+vi.mock('fs', () => ({
+  readFileSync: vi.fn(),
+  readdirSync: vi.fn(),
+  existsSync: vi.fn(),
 }));
 
-jest.mock('os', () => ({
-  homedir: jest.fn(() => '/home/testuser'),
+vi.mock('os', () => ({
+  homedir: vi.fn(() => '/home/testuser'),
 }));
 
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { homedir } from 'os';
 
-const mockReadFileSync = readFileSync as jest.MockedFunction<
-  typeof readFileSync
->;
-const mockReaddirSync = readdirSync as jest.MockedFunction<typeof readdirSync>;
-const mockExistsSync = existsSync as jest.MockedFunction<typeof existsSync>;
-const mockHomedir = homedir as jest.MockedFunction<typeof homedir>;
+const mockReadFileSync = readFileSync as vi.MockedFunction<typeof readFileSync>;
+const mockReaddirSync = readdirSync as vi.MockedFunction<typeof readdirSync>;
+const mockExistsSync = existsSync as vi.MockedFunction<typeof existsSync>;
+const mockHomedir = homedir as vi.MockedFunction<typeof homedir>;
 
 describe('plugin-status', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     delete process.env.XDG_DATA_HOME;
     mockHomedir.mockReturnValue('/home/testuser');
   });

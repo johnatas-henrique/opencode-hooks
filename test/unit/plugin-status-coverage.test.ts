@@ -1,19 +1,19 @@
 import { getLatestLogFile } from '../../.opencode/plugins/features/messages/plugin-status';
 import * as fs from 'fs';
 
-jest.mock('fs', () => ({
-  existsSync: jest.fn(),
-  readdirSync: jest.fn(),
-  readFileSync: jest.fn(),
+vi.mock('fs', () => ({
+  existsSync: vi.fn(),
+  readdirSync: vi.fn(),
+  readFileSync: vi.fn(),
 }));
 
-const mockExistsSync = fs.existsSync as jest.Mock;
-const mockReaddirSync = fs.readdirSync as jest.Mock;
-const mockReadFileSync = fs.readFileSync as jest.Mock;
+const mockExistsSync = fs.existsSync as vi.Mock;
+const mockReaddirSync = fs.readdirSync as vi.Mock;
+const mockReadFileSync = fs.readFileSync as vi.Mock;
 
 describe('getLatestLogFile coverage', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should sort dev.log to the end', () => {

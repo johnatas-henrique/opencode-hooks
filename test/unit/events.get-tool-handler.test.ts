@@ -1,4 +1,4 @@
-jest.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
+vi.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
   handlers: {
     'tool.execute.before.git': { title: 'Before Git' },
     'tool.execute.after.git': { title: 'After Git' },

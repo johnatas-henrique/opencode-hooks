@@ -1,13 +1,13 @@
-const mockToastAdd = jest.fn().mockResolvedValue(undefined);
+const mockToastAdd = vi.fn().mockResolvedValue(undefined);
 
-jest.mock('../../.opencode/plugins/core/toast-queue', () => ({
-  createToastQueue: jest.fn(),
-  initGlobalToastQueue: jest.fn(),
+vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
+  createToastQueue: vi.fn(),
+  initGlobalToastQueue: vi.fn(),
   useGlobalToastQueue: () => ({
     add: mockToastAdd,
   }),
-  resetGlobalToastQueue: jest.fn(),
-  showToastStaggered: jest.fn(),
+  resetGlobalToastQueue: vi.fn(),
+  showToastStaggered: vi.fn(),
 }));
 
 import {
@@ -16,19 +16,16 @@ import {
   resetSubagentTracking,
 } from '../../.opencode/plugins/features/scripts/run-script-handler';
 
-jest.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
-  runScript: jest.fn(),
+vi.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
+  runScript: vi.fn(),
 }));
 
-jest.mock(
-  '../../.opencode/plugins/features/messages/append-to-session',
-  () => ({
-    appendToSession: jest.fn(),
-  })
-);
+vi.mock('../../.opencode/plugins/features/messages/append-to-session', () => ({
+  appendToSession: vi.fn(),
+}));
 
-jest.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
+  saveToFile: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { runScript } from '../../.opencode/plugins/features/scripts/run-script';
@@ -76,14 +73,14 @@ const createMockCtx = () => ({
 
 describe('run-script-handler.ts', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     resetSubagentTracking();
-    (runScript as jest.Mock).mockResolvedValue({
+    (runScript as vi.Mock).mockResolvedValue({
       output: 'output',
       error: null,
       exitCode: 0,
     });
-    (appendToSession as jest.Mock).mockResolvedValue(undefined);
+    (appendToSession as vi.Mock).mockResolvedValue(undefined);
   });
 
   describe('runScriptAndHandle', () => {
@@ -110,7 +107,7 @@ describe('run-script-handler.ts', () => {
     });
 
     it('should return undefined on script error', async () => {
-      (runScript as jest.Mock).mockResolvedValue({
+      (runScript as vi.Mock).mockResolvedValue({
         output: '',
         error: 'Script failed',
         exitCode: -1,
@@ -284,7 +281,7 @@ describe('run-script-handler.ts', () => {
     });
 
     it('should handle script error', async () => {
-      (runScript as jest.Mock).mockResolvedValue({
+      (runScript as vi.Mock).mockResolvedValue({
         output: '',
         error: 'Script failed',
         exitCode: -1,
@@ -327,7 +324,7 @@ describe('run-script-handler.ts', () => {
     });
 
     it('should include eventType in error toast message', async () => {
-      (runScript as jest.Mock).mockResolvedValue({
+      (runScript as vi.Mock).mockResolvedValue({
         output: '',
         error: 'Script failed',
         exitCode: -1,
@@ -371,7 +368,7 @@ describe('run-script-handler.ts', () => {
     });
 
     it('should show only toolName for tool.execute.* events', async () => {
-      (runScript as jest.Mock).mockResolvedValue({
+      (runScript as vi.Mock).mockResolvedValue({
         output: '',
         error: 'Script failed',
         exitCode: -1,
@@ -413,7 +410,7 @@ describe('run-script-handler.ts', () => {
     });
 
     it('should include eventType and toolName in error log', async () => {
-      (runScript as jest.Mock).mockResolvedValue({
+      (runScript as vi.Mock).mockResolvedValue({
         output: '',
         error: 'Script failed',
         exitCode: -1,
@@ -536,7 +533,7 @@ describe('run-script-handler.ts', () => {
 
   describe('error handling', () => {
     it('should handle script execution error', async () => {
-      (runScript as jest.Mock).mockResolvedValueOnce({
+      (runScript as vi.Mock).mockResolvedValueOnce({
         output: '',
         error: 'Script failed',
         exitCode: -1,
@@ -578,7 +575,7 @@ describe('run-script-handler.ts', () => {
     });
 
     it('should handle non-Error rejection', async () => {
-      (runScript as jest.Mock).mockResolvedValueOnce({
+      (runScript as vi.Mock).mockResolvedValueOnce({
         output: '',
         error: 'String error',
         exitCode: -1,
@@ -620,7 +617,7 @@ describe('run-script-handler.ts', () => {
     });
 
     it('should handle error with special characters', async () => {
-      (runScript as jest.Mock).mockResolvedValueOnce({
+      (runScript as vi.Mock).mockResolvedValueOnce({
         output: '',
         error: 'Error with special characters',
         exitCode: -1,
@@ -681,16 +678,13 @@ const createScriptToastsConfig = () => ({
   errorDuration: 15000,
 });
 describe('runScriptAndHandle with scriptRecorder', () => {
-  const mockWriteLine = jest.fn().mockResolvedValue(undefined);
+  const mockWriteLine = vi.fn().mockResolvedValue(undefined);
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should call scriptRecorder.logScript on success with saveToFile', async () => {
-    const {
-      runScript,
-    } = require('../../.opencode/plugins/features/scripts/run-script');
     runScript.mockResolvedValueOnce({
       output: 'test output',
       error: null,
@@ -721,9 +715,6 @@ describe('runScriptAndHandle with scriptRecorder', () => {
   });
 
   it('should truncate .sh script output', async () => {
-    const {
-      runScript,
-    } = require('../../.opencode/plugins/features/scripts/run-script');
     const longOutput = 'x'.repeat(20000);
     runScript.mockResolvedValueOnce({
       output: longOutput,
@@ -757,9 +748,6 @@ describe('runScriptAndHandle with scriptRecorder', () => {
   });
 
   it('should show error toast when script fails and showError is true', async () => {
-    const {
-      runScript,
-    } = require('../../.opencode/plugins/features/scripts/run-script');
     runScript.mockResolvedValueOnce({
       output: '',
       error: 'Script failed',
@@ -788,16 +776,13 @@ describe('runScriptAndHandle with scriptRecorder', () => {
   });
 
   describe('runScriptAndHandle scriptRecorder parameter', () => {
-    const mockWriteLine = jest.fn().mockResolvedValue(undefined);
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
 
     beforeEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     it('should destructure scriptRecorder from config', async () => {
-      const {
-        runScript,
-      } = require('../../.opencode/plugins/features/scripts/run-script');
       runScript.mockResolvedValueOnce({
         output: 'output',
         error: null,
@@ -824,16 +809,13 @@ describe('runScriptAndHandle with scriptRecorder', () => {
     });
 
     describe('runScriptAndHandle line coverage', () => {
-      const mockWriteLine = jest.fn().mockResolvedValue(undefined);
+      const mockWriteLine = vi.fn().mockResolvedValue(undefined);
 
       beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
       });
 
       it('should use DEFAULT_SESSION_ID when sessionId not provided (line 42)', async () => {
-        const {
-          runScript,
-        } = require('../../.opencode/plugins/features/scripts/run-script');
         runScript.mockResolvedValueOnce({
           output: 'output',
           error: null,
@@ -858,9 +840,6 @@ describe('runScriptAndHandle with scriptRecorder', () => {
       });
 
       it('should call useGlobalToastQueue.add when showError is true (line 88)', async () => {
-        const {
-          runScript,
-        } = require('../../.opencode/plugins/features/scripts/run-script');
         runScript.mockResolvedValueOnce({
           output: '',
           error: 'failed',
@@ -893,9 +872,6 @@ describe('runScriptAndHandle with scriptRecorder', () => {
       });
 
       it('should truncate .sh output (line 101)', async () => {
-        const {
-          runScript,
-        } = require('../../.opencode/plugins/features/scripts/run-script');
         const longOutput = 'x'.repeat(20000);
         runScript.mockResolvedValueOnce({
           output: longOutput,
@@ -927,13 +903,10 @@ describe('runScriptAndHandle with scriptRecorder', () => {
 
       describe('Specific branch coverage', () => {
         beforeEach(() => {
-          jest.clearAllMocks();
+          vi.clearAllMocks();
         });
 
         it('covers showError branch (line 88)', async () => {
-          const {
-            runScript,
-          } = require('../../.opencode/plugins/features/scripts/run-script');
           runScript.mockResolvedValueOnce({
             output: '',
             error: 'error',
@@ -972,13 +945,10 @@ describe('runScriptAndHandle with scriptRecorder', () => {
 
         describe('Branch coverage tests', () => {
           beforeEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
           });
 
           it('covers showError=false branch (line 88)', async () => {
-            const {
-              runScript,
-            } = require('../../.opencode/plugins/features/scripts/run-script');
             runScript.mockResolvedValueOnce({
               output: '',
               error: 'error',
@@ -1014,9 +984,6 @@ describe('runScriptAndHandle with scriptRecorder', () => {
           });
 
           it('covers non-.sh script branch (line 101)', async () => {
-            const {
-              runScript,
-            } = require('../../.opencode/plugins/features/scripts/run-script');
             runScript.mockResolvedValueOnce({
               output: 'output',
               error: null,
@@ -1035,7 +1002,7 @@ describe('runScriptAndHandle with scriptRecorder', () => {
               },
               scriptToasts: createScriptToastsConfig(),
               sessionId: 'test-session',
-              scriptRecorder: { logScript: jest.fn() },
+              scriptRecorder: { logScript: vi.fn() },
             };
 
             await runScriptAndHandle(config);

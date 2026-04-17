@@ -219,10 +219,10 @@ describe('event-recorder', () => {
 });
 
 describe('createEventRecorder', () => {
-  const mockWriteLine = jest.fn();
+  const mockWriteLine = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockWriteLine.mockResolvedValue(undefined);
   });
 

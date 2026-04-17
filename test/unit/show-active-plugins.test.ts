@@ -1,32 +1,33 @@
 import { showActivePluginsToast } from '../../.opencode/plugins/features/messages/show-active-plugins';
-import { getPluginStatus } from '../../.opencode/plugins/features/messages/plugin-status';
+import {
+  _getPluginStatus,
+  _formatPluginStatus,
+} from '../../.opencode/plugins/features/messages/plugin-status';
 
-jest.mock('../../.opencode/plugins/features/messages/plugin-status', () => ({
-  getPluginStatus: jest.fn(),
-  formatPluginStatus: jest.fn(),
+const { mockGetPluginStatus, mockFormatPluginStatus } = vi.hoisted(() => ({
+  mockGetPluginStatus: vi.fn(),
+  mockFormatPluginStatus: vi.fn(),
 }));
 
-jest.mock('../../.opencode/plugins/config', () => ({
+vi.mock('../../.opencode/plugins/features/messages/plugin-status', () => ({
+  getPluginStatus: mockGetPluginStatus,
+  formatPluginStatus: mockFormatPluginStatus,
+}));
+
+vi.mock('../../.opencode/plugins/config', () => ({
   userConfig: {
     showPluginStatus: true,
     pluginStatusDisplayMode: 'user-only',
   },
 }));
 
-const mockGetPluginStatus = getPluginStatus as jest.MockedFunction<
-  typeof getPluginStatus
->;
-const mockFormatPluginStatus = jest.requireMock(
-  '../../.opencode/plugins/features/messages/plugin-status'
-).formatPluginStatus;
-
 describe('showActivePluginsToast', () => {
-  let mockQueue: { add: jest.Mock };
+  let mockQueue: { add: vi.Mock };
   const mockStatuses = [{ name: 'test-plugin', status: 'active' as const }];
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockQueue = { add: jest.fn() };
+    vi.clearAllMocks();
+    mockQueue = { add: vi.fn() };
     mockGetPluginStatus.mockReturnValue(mockStatuses);
     mockFormatPluginStatus.mockReturnValue('Test plugins summary');
   });
@@ -119,20 +120,28 @@ describe('showActivePluginsToast', () => {
 });
 
 describe('when showPluginStatus is disabled', () => {
-  let mockQueue: { add: jest.Mock };
+  let mockQueue: { add: vi.Mock };
 
   beforeEach(() => {
-    mockQueue = { add: jest.fn() };
+    mockQueue = { add: vi.fn() };
   });
 
   it('should return early and not add toast', async () => {
-    const { userConfig: userConfigMock } =
-      await import('../../.opencode/plugins/config');
-    userConfigMock.showPluginStatus = false;
+    vi.resetModules();
+    vi.doMock('../../.opencode/plugins/config', () => ({
+      userConfig: {
+        showPluginStatus: false,
+        pluginStatusDisplayMode: 'user-only',
+      },
+    }));
 
-    await showActivePluginsToast(mockQueue);
+    const { showActivePluginsToast: showDisabled } =
+      await import('../../.opencode/plugins/features/messages/show-active-plugins');
+    await showDisabled(mockQueue);
 
     expect(mockQueue.add).not.toHaveBeenCalled();
-    userConfigMock.showPluginStatus = true;
+
+    vi.resetModules();
+    vi.doUnmock('../../.opencode/plugins/config');
   });
 });

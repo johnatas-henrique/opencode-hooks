@@ -132,7 +132,7 @@ describe('script-recorder', () => {
 
   describe('createScriptRecorder', () => {
     it('should create recorder with logScript function', () => {
-      const mockWriteLine = jest.fn();
+      const mockWriteLine = vi.fn();
       const deps = { writeLine: mockWriteLine };
       const recorder = createScriptRecorder(defaultConfig, deps);
 
@@ -140,7 +140,7 @@ describe('script-recorder', () => {
     });
 
     it('should call writeLine with correct fileType when logging', async () => {
-      const mockWriteLine = jest.fn().mockResolvedValue(undefined);
+      const mockWriteLine = vi.fn().mockResolvedValue(undefined);
       const deps = { writeLine: mockWriteLine };
       const recorder = createScriptRecorder(defaultConfig, deps);
 
@@ -153,7 +153,7 @@ describe('script-recorder', () => {
     });
 
     it('should not call writeLine when disabled', async () => {
-      const mockWriteLine = jest.fn();
+      const mockWriteLine = vi.fn();
       const deps = { writeLine: mockWriteLine };
       const config = { ...defaultConfig, enabled: false };
       const recorder = createScriptRecorder(config, deps);
@@ -167,7 +167,7 @@ describe('script-recorder', () => {
     });
 
     it('should pass record data to writeLine', async () => {
-      const mockWriteLine = jest.fn().mockResolvedValue(undefined);
+      const mockWriteLine = vi.fn().mockResolvedValue(undefined);
       const deps = { writeLine: mockWriteLine };
       const recorder = createScriptRecorder(defaultConfig, deps);
 

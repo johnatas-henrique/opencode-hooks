@@ -33,8 +33,8 @@ describe('EventConfigResolverImpl', () => {
         buildMessage: () => 'Test Message',
       },
     },
-    getEventConfig: jest.fn(),
-    getToolConfigs: jest.fn(),
+    getEventConfig: vi.fn(),
+    getToolConfigs: vi.fn(),
   };
 
   const resolver = new EventConfigResolverImpl(mockContext);
@@ -43,7 +43,7 @@ describe('EventConfigResolverImpl', () => {
     const userConfig: EventOverride = {
       allowedFields: ['customField'],
     };
-    (mockContext.getEventConfig as jest.Mock).mockReturnValue(userConfig);
+    (mockContext.getEventConfig as vi.Mock).mockReturnValue(userConfig);
 
     const result = resolver.resolve('test.event');
     expect(result.allowedFields).toEqual(['customField']);
@@ -53,7 +53,7 @@ describe('EventConfigResolverImpl', () => {
     const userConfig: EventOverride = {
       enabled: true,
     };
-    (mockContext.getEventConfig as jest.Mock).mockReturnValue(userConfig);
+    (mockContext.getEventConfig as vi.Mock).mockReturnValue(userConfig);
 
     const result = resolver.resolve('test.event');
     expect(result.allowedFields).toEqual(['field1']);

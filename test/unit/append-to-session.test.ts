@@ -2,12 +2,12 @@ import { appendToSession } from '../../.opencode/plugins/features/messages/appen
 import { MAX_PROMPT_LENGTH } from '../../.opencode/plugins/core/constants';
 
 describe('append-to-session', () => {
-  let mockClient: { session: { prompt: jest.Mock } };
+  let mockClient: { session: { prompt: vi.Mock } };
 
   beforeEach(() => {
     mockClient = {
       session: {
-        prompt: jest.fn().mockResolvedValue(undefined),
+        prompt: vi.fn().mockResolvedValue(undefined),
       },
     };
   });
@@ -15,7 +15,7 @@ describe('append-to-session', () => {
   it('should call session.prompt with truncated text when exceeding max length', async () => {
     const longText = 'a'.repeat(MAX_PROMPT_LENGTH + 100);
     await appendToSession(
-      { client: mockClient } as { client: { session: { prompt: jest.Mock } } },
+      { client: mockClient } as { client: { session: { prompt: vi.Mock } } },
       'session-123',
       longText
     );
@@ -36,7 +36,7 @@ describe('append-to-session', () => {
   it('should call session.prompt with full text when under max length', async () => {
     const shortText = 'short text';
     await appendToSession(
-      { client: mockClient } as { client: { session: { prompt: jest.Mock } } },
+      { client: mockClient } as { client: { session: { prompt: vi.Mock } } },
       'session-456',
       shortText
     );
@@ -54,7 +54,7 @@ describe('append-to-session', () => {
 
   it('should call session.prompt with empty output', async () => {
     await appendToSession(
-      { client: mockClient } as { client: { session: { prompt: jest.Mock } } },
+      { client: mockClient } as { client: { session: { prompt: vi.Mock } } },
       'session-789',
       ''
     );
