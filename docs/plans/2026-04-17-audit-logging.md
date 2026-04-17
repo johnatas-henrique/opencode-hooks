@@ -1,5 +1,8 @@
 # Plan: Plugin Audit Logging System
 
+> **ARCHIVED:** 2026-04-17
+> **Reason:** All 6 phases completed - audit-logger, event-recorder, script-recorder, error-recorder, config, archive implemented.
+
 > Source PRD: `docs/prds/2026-04-16-audit-logging-system.md`
 
 ## Architectural Decisions

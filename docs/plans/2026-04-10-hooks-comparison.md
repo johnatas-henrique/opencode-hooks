@@ -1,5 +1,8 @@
 # Plan: Hooks Comparison and Implementation
 
+> **ARCHIVED:** 2026-04-17
+> **Reason:** Research completed - documented 31 ECC hooks for reference. Implementation pending (out of scope for current phase).
+
 **Date:** 2026-04-09  
 **Project:** opencode-hooks
 

@@ -1,5 +1,8 @@
 # Jest → Vitest Migration Fixes
 
+> **ARCHIVED:** 2026-04-17
+> **Reason:** Migration complete - 38 test files, 847 tests passing, vitest.config.ts with 95% thresholds configured.
+
 **Date:** 2026-04-17
 **Goal:** Fix all remaining Jest→Vitest migration issues in opencode-hooks project
 

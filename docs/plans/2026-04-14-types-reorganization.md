@@ -1,8 +1,11 @@
 # OpenCode Hooks - Types Reorganization Plan
 
+> **ARCHIVED:** 2026-04-17
+> **Reason:** Types reorganized - types/index.ts barrel file created with events, config, scripts, toast, plugin, core, audit, messages, block-system, persistence exports. All imports updated.
+
 **Created:** 2026-04-14 02:50  
 **Agent:** plan  
-**Status:** Draft - Ready for Implementation
+**Status:** Completed
 
 ---
 
