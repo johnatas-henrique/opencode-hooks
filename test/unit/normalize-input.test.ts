@@ -33,7 +33,9 @@ describe('normalizeInputForHandler', () => {
 
       const result = normalizeInputForHandler('shell.env', input);
 
-      expect(result.properties.cwd).toBe('/home/user');
+      expect((result.properties as Record<string, unknown>).cwd).toBe(
+        '/home/user'
+      );
     });
   });
 
@@ -47,8 +49,10 @@ describe('normalizeInputForHandler', () => {
 
       const result = normalizeInputForHandler('permission.ask', input);
 
-      expect(result.properties.sessionID).toBe('ses_123');
-      expect(result.properties.tool).toBe('bash');
+      expect((result.properties as Record<string, unknown>).sessionID).toBe(
+        'ses_123'
+      );
+      expect((result.properties as Record<string, unknown>).tool).toBe('bash');
     });
   });
 
@@ -62,8 +66,12 @@ describe('normalizeInputForHandler', () => {
 
       const result = normalizeInputForHandler('command.execute.before', input);
 
-      expect(result.properties.command).toBe('npm test');
-      expect(result.properties.sessionID).toBe('ses_123');
+      expect((result.properties as Record<string, unknown>).command).toBe(
+        'npm test'
+      );
+      expect((result.properties as Record<string, unknown>).sessionID).toBe(
+        'ses_123'
+      );
     });
   });
 
@@ -75,7 +83,9 @@ describe('normalizeInputForHandler', () => {
 
       const result = normalizeInputForHandler('tool.definition', input);
 
-      expect(result.properties.toolID).toBe('my-tool');
+      expect((result.properties as Record<string, unknown>).toolID).toBe(
+        'my-tool'
+      );
     });
   });
 
@@ -92,9 +102,15 @@ describe('normalizeInputForHandler', () => {
         input
       );
 
-      expect(result.properties.sessionID).toBe('ses_123');
-      expect(result.properties.messageID).toBe('msg_456');
-      expect(result.properties.partID).toBe('part_789');
+      expect((result.properties as Record<string, unknown>).sessionID).toBe(
+        'ses_123'
+      );
+      expect((result.properties as Record<string, unknown>).messageID).toBe(
+        'msg_456'
+      );
+      expect((result.properties as Record<string, unknown>).partID).toBe(
+        'part_789'
+      );
     });
   });
 

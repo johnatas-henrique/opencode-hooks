@@ -1,6 +1,7 @@
 import { EventConfigResolverImpl } from '../../.opencode/plugins/features/events/resolvers/event-config.resolver';
-import type { ConfigResolverContext } from '../../.opencode/plugins/features/events/interfaces';
+import type { ConfigResolverContext } from '../../.opencode/plugins/types/events';
 import type { EventOverride } from '../../.opencode/plugins/types/config';
+import type { Mock } from 'vitest';
 
 describe('EventConfigResolverImpl', () => {
   const mockContext: ConfigResolverContext = {
@@ -43,7 +44,7 @@ describe('EventConfigResolverImpl', () => {
     const userConfig: EventOverride = {
       allowedFields: ['customField'],
     };
-    (mockContext.getEventConfig as vi.Mock).mockReturnValue(userConfig);
+    (mockContext.getEventConfig as Mock).mockReturnValue(userConfig);
 
     const result = resolver.resolve('test.event');
     expect(result.allowedFields).toEqual(['customField']);

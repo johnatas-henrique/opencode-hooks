@@ -1,3 +1,4 @@
+import type { MockedFunction } from 'vitest';
 import {
   waitForToastSilence,
   countToastsInLog,
@@ -9,7 +10,7 @@ vi.mock('fs/promises', () => ({
 
 import { readFile } from 'fs/promises';
 
-const mockReadFile = readFile as vi.MockedFunction<typeof readFile>;
+const mockReadFile = readFile as MockedFunction<typeof readFile>;
 
 describe('toast-silence-detector', () => {
   beforeEach(() => {

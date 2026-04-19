@@ -10,6 +10,7 @@ vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
   showToastStaggered: vi.fn(),
 }));
 
+import type { Mock } from 'vitest';
 import {
   runScriptAndHandle,
   resetSubagentTracking,
@@ -30,7 +31,10 @@ vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
 import { runScript } from '../../.opencode/plugins/features/scripts/run-script';
 import { appendToSession } from '../../.opencode/plugins/features/messages/append-to-session';
 import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
-import type { ResolvedEventConfig } from '../../.opencode/plugins/core/config';
+import type { ResolvedEventConfig } from '../../.opencode/plugins/types/config';
+
+const mockRunScript = runScript as Mock;
+const mockAppendToSession = appendToSession as Mock;
 
 const createResolvedConfig = (
   overrides: Partial<ResolvedEventConfig> = {}
@@ -60,31 +64,32 @@ const createResolvedConfig = (
   ...overrides,
 });
 
-const createMockCtx = () => ({
-  $: {
-    client: {},
-    project: {},
-    directory: '',
-    worktree: '',
-    serverUrl: new URL('http://localhost'),
-  },
-});
+const createMockCtx = () =>
+  ({
+    $: {
+      client: {},
+      project: {},
+      directory: '',
+      worktree: '',
+      serverUrl: new URL('http://localhost'),
+    },
+  }) as unknown as Parameters<typeof runScriptAndHandle>[0]['ctx'];
 
 describe('run-script-handler.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetSubagentTracking();
-    (runScript as vi.Mock).mockResolvedValue({
+    mockRunScript.mockResolvedValue({
       output: 'output',
       error: null,
       exitCode: 0,
     });
-    (appendToSession as vi.Mock).mockResolvedValue(undefined);
+    mockAppendToSession.mockResolvedValue(undefined);
   });
 
   describe('error handling', () => {
     it('should handle error with special characters', async () => {
-      (runScript as vi.Mock).mockResolvedValueOnce({
+      mockRunScript.mockResolvedValueOnce({
         output: '',
         error: 'Error with special characters',
         exitCode: -1,
@@ -116,7 +121,7 @@ describe('run-script-handler.ts', () => {
         },
       };
 
-      const result = await runScriptAndHandle(config);
+      const result = await runScriptAndHandle(config as never);
 
       expect(result).toEqual({
         script: 'failing-script.sh',
@@ -162,7 +167,7 @@ describe('runScriptAndHandle with scriptRecorder', () => {
       });
 
       it('should use DEFAULT_SESSION_ID when sessionId not provided (line 42)', async () => {
-        runScript.mockResolvedValueOnce({
+        mockRunScript.mockResolvedValueOnce({
           output: 'output',
           error: null,
           exitCode: 0,
@@ -180,7 +185,7 @@ describe('runScriptAndHandle with scriptRecorder', () => {
           // sessionId not provided - should use DEFAULT_SESSION_ID
         };
 
-        await runScriptAndHandle(config);
+        await runScriptAndHandle(config as never);
 
         expect(mockWriteLine).toHaveBeenCalled();
       });
@@ -191,7 +196,7 @@ describe('runScriptAndHandle with scriptRecorder', () => {
         });
 
         it('covers showError branch (line 88)', async () => {
-          runScript.mockResolvedValueOnce({
+          mockRunScript.mockResolvedValueOnce({
             output: '',
             error: 'error',
             exitCode: 1,
@@ -222,7 +227,7 @@ describe('runScriptAndHandle with scriptRecorder', () => {
             sessionId: 'test-session',
           };
 
-          await runScriptAndHandle(config);
+          await runScriptAndHandle(config as never);
 
           expect(mockToastAdd).toHaveBeenCalled();
         });
@@ -233,7 +238,7 @@ describe('runScriptAndHandle with scriptRecorder', () => {
           });
 
           it('covers showError=false branch (line 88)', async () => {
-            runScript.mockResolvedValueOnce({
+            mockRunScript.mockResolvedValueOnce({
               output: '',
               error: 'error',
               exitCode: 1,
@@ -262,13 +267,13 @@ describe('runScriptAndHandle with scriptRecorder', () => {
               sessionId: 'test-session',
             };
 
-            await runScriptAndHandle(config);
+            await runScriptAndHandle(config as never);
 
             expect(mockToastAdd).not.toHaveBeenCalled();
           });
 
           it('covers non-.sh script branch (line 101)', async () => {
-            runScript.mockResolvedValueOnce({
+            mockRunScript.mockResolvedValueOnce({
               output: 'output',
               error: null,
               exitCode: 0,
@@ -289,7 +294,7 @@ describe('runScriptAndHandle with scriptRecorder', () => {
               scriptRecorder: { logScript: vi.fn() },
             };
 
-            await runScriptAndHandle(config);
+            await runScriptAndHandle(config as never);
 
             expect(config.scriptRecorder.logScript).toHaveBeenCalledWith(
               expect.objectContaining({ script: 'node-script.js' }),

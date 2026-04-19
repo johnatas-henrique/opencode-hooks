@@ -17,7 +17,7 @@ describe('run-script', () => {
         }),
       };
       return result;
-    });
+    }) as unknown as PluginInput['$'];
   });
 
   it('should run script with arguments', async () => {
@@ -56,7 +56,7 @@ describe('run-script', () => {
           throw new Error('Script execution failed');
         }),
       };
-    });
+    }) as unknown as PluginInput['$'];
 
     const result = await runScript(
       mockDollar as PluginInput['$'],

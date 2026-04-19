@@ -2,14 +2,9 @@ import {
   createAuditLogger,
   createGzipFile,
 } from '../../.opencode/plugins/features/audit/audit-logger';
-import type { AuditConfig } from '../../.opencode/plugins/features/audit/types';
-import {
-  appendFile as mockedAppendFile,
-  mkdir as mockedMkdir,
-  readdir as mockedReaddir,
-  unlink as mockedUnlink,
-  stat as mockedStat,
-} from 'fs/promises';
+import type { AuditConfig } from '../../.opencode/plugins/types/audit';
+import { vi } from 'vitest';
+import * as fsPromises from 'fs/promises';
 
 const mockGzipFile = vi.fn();
 
@@ -22,6 +17,12 @@ vi.mock('fs/promises', () => ({
   rename: vi.fn(),
   open: vi.fn(),
 }));
+
+const mockedAppendFile = vi.mocked(fsPromises.appendFile);
+const mockedMkdir = vi.mocked(fsPromises.mkdir);
+const mockedReaddir = vi.mocked(fsPromises.readdir);
+const mockedUnlink = vi.mocked(fsPromises.unlink);
+const mockedStat = vi.mocked(fsPromises.stat);
 
 describe('audit-logger', () => {
   const BASE_PATH = '/tmp/audit-test';
@@ -97,8 +98,8 @@ describe('audit-logger', () => {
   describe('cleanup', () => {
     it('should delete files older than maxAgeDays', async () => {
       const oldDate = Date.now() - 31 * 24 * 60 * 60 * 1000;
-      mockedStat.mockResolvedValue({ size: 1024, mtimeMs: oldDate });
-      mockedReaddir.mockResolvedValue(['old-file.jsonl.gz']);
+      mockedStat.mockResolvedValue({ size: 1024, mtimeMs: oldDate } as never);
+      mockedReaddir.mockResolvedValue(['old-file.jsonl.gz'] as never);
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
@@ -114,8 +115,11 @@ describe('audit-logger', () => {
 
     it('should not delete recent files', async () => {
       const recentDate = Date.now() - 1 * 24 * 60 * 60 * 1000;
-      mockedStat.mockResolvedValue({ size: 1024, mtimeMs: recentDate });
-      mockedReaddir.mockResolvedValue(['recent-file.jsonl.gz']);
+      mockedStat.mockResolvedValue({
+        size: 1024,
+        mtimeMs: recentDate,
+      } as never);
+      mockedReaddir.mockResolvedValue(['recent-file.jsonl.gz'] as never);
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
@@ -130,7 +134,10 @@ describe('audit-logger', () => {
     });
 
     it('should skip non-gzip files', async () => {
-      mockedReaddir.mockResolvedValue(['regular-file.jsonl', 'another.txt']);
+      mockedReaddir.mockResolvedValue([
+        'regular-file.jsonl',
+        'another.txt',
+      ] as never);
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
@@ -170,8 +177,11 @@ describe('audit-logger', () => {
     it('should trigger rotation when file exceeds maxSizeMB', async () => {
       const maxSizeBytes = defaultConfig.maxSizeMB * 1024 * 1024;
       mockedStat
-        .mockResolvedValueOnce({ size: maxSizeBytes, mtimeMs: Date.now() })
-        .mockResolvedValue({ size: 100, mtimeMs: Date.now() });
+        .mockResolvedValueOnce({
+          size: maxSizeBytes,
+          mtimeMs: Date.now(),
+        } as never)
+        .mockResolvedValue({ size: 100, mtimeMs: Date.now() } as never);
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
@@ -188,7 +198,10 @@ describe('audit-logger', () => {
     });
 
     it('should not trigger rotation when file is under limit', async () => {
-      mockedStat.mockResolvedValue({ size: 1024, mtimeMs: Date.now() });
+      mockedStat.mockResolvedValue({
+        size: 1024,
+        mtimeMs: Date.now(),
+      } as never);
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,

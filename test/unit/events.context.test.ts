@@ -1,4 +1,4 @@
-import { ConfigResolverContext } from '.opencode/plugins/types';
+import type { ConfigResolverContext } from '../../.opencode/plugins/types/events';
 import { createFactory } from '../../.opencode/plugins/features/events/context';
 
 describe('context exports', () => {

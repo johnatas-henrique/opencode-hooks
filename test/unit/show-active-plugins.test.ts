@@ -1,8 +1,5 @@
 import { showActivePluginsToast } from '../../.opencode/plugins/features/messages/show-active-plugins';
-import {
-  _getPluginStatus,
-  _formatPluginStatus,
-} from '../../.opencode/plugins/features/messages/plugin-status';
+import type { ToastQueue } from '../../.opencode/plugins/types/toast';
 
 const { mockGetPluginStatus, mockFormatPluginStatus } = vi.hoisted(() => ({
   mockGetPluginStatus: vi.fn(),
@@ -22,12 +19,20 @@ vi.mock('../../.opencode/plugins/config', () => ({
 }));
 
 describe('showActivePluginsToast', () => {
-  let mockQueue: { add: vi.Mock };
+  let mockQueue: ToastQueue;
   const mockStatuses = [{ name: 'test-plugin', status: 'active' as const }];
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockQueue = { add: vi.fn() };
+    mockQueue = {
+      add: vi.fn(),
+      addMultiple: vi.fn(),
+      clear: vi.fn(),
+      flush: vi.fn().mockResolvedValue(undefined),
+      get pending() {
+        return 0;
+      },
+    };
     mockGetPluginStatus.mockReturnValue(mockStatuses);
     mockFormatPluginStatus.mockReturnValue('Test plugins summary');
   });
@@ -58,10 +63,18 @@ describe('showActivePluginsToast', () => {
 });
 
 describe('when showPluginStatus is disabled', () => {
-  let mockQueue: { add: vi.Mock };
+  let mockQueue: ToastQueue;
 
   beforeEach(() => {
-    mockQueue = { add: vi.fn() };
+    mockQueue = {
+      add: vi.fn(),
+      addMultiple: vi.fn(),
+      clear: vi.fn(),
+      flush: vi.fn().mockResolvedValue(undefined),
+      get pending() {
+        return 0;
+      },
+    };
   });
 
   it('should return early and not add toast', async () => {

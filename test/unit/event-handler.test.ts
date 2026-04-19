@@ -1,20 +1,19 @@
 import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
-import type {
-  PluginInput,
-  PluginClient,
-  PluginDollar,
-} from '../__mocks__/@opencode-ai/plugin';
+import type { PluginInput } from '../__mocks__/@opencode-ai/plugin';
 
 const createMockCtx = (
-  client: PluginClient,
-  dollar: PluginDollar
+  client: MockClient,
+  dollar: () => Promise<{ exitCode: number; stdout: string; stderr: string }>
 ): PluginInput => ({
-  client,
-  $: dollar,
-  project: 'test-project',
-  directory: '/test/dir',
-  worktree: '/test/dir',
-  serverUrl: 'http://localhost:3000',
+  client: client as unknown as PluginInput['client'],
+  $: dollar as unknown as PluginInput['$'],
+  project: 'test-project' as unknown as PluginInput['project'],
+  directory: '/test/dir' as unknown as PluginInput['directory'],
+  worktree: '/test/dir' as unknown as PluginInput['worktree'],
+  serverUrl: 'http://localhost:3000' as unknown as PluginInput['serverUrl'],
+  experimental_workspace: {
+    register: vi.fn(),
+  } as unknown as PluginInput['experimental_workspace'],
 });
 
 const {
@@ -54,32 +53,41 @@ vi.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
       variant: 'success',
       duration: 2000,
       defaultScript: 'session-created.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Session Id: ${event.properties?.info?.id}\nTime: now`,
+      buildMessage: (event: Record<string, unknown>) => {
+        const props = event.properties as Record<string, unknown> | undefined;
+        const info = props?.info as Record<string, unknown> | undefined;
+        return `Session Id: ${String(info?.id ?? '')}\nTime: now`;
+      },
     },
     'tool.execute.before': {
       title: '====TOOL EXECUTE BEFORE====',
       variant: 'info',
       duration: 2000,
       defaultScript: 'tool-execute-before.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Tool: ${event.properties?.tool || 'unknown'}\nTime: now`,
+      buildMessage: (event: Record<string, unknown>) => {
+        const props = event.properties as Record<string, unknown> | undefined;
+        return `Tool: ${String(props?.tool ?? 'unknown')}\nTime: now`;
+      },
     },
     'tool.execute.after': {
       title: '====SUBAGENT CALLED====',
       variant: 'info',
       duration: 2000,
       defaultScript: 'tool-execute-after.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Session Id: ${event.properties?.sessionID || 'unknown'}\nTime: now`,
+      buildMessage: (event: Record<string, unknown>) => {
+        const props = event.properties as Record<string, unknown> | undefined;
+        return `Session Id: ${String(props?.sessionID ?? 'unknown')}\nTime: now`;
+      },
     },
     'tool.execute.after.subagent': {
       title: '====SUBAGENT CALLED====',
       variant: 'info',
       duration: 2000,
       defaultScript: 'log-agent.sh',
-      buildMessage: (event: Record<string, unknown>) =>
-        `Agent: ${event.properties?.subagentType || 'unknown'}\nTime: now`,
+      buildMessage: (event: Record<string, unknown>) => {
+        const props = event.properties as Record<string, unknown> | undefined;
+        return `Agent: ${String(props?.subagentType ?? 'unknown')}\nTime: now`;
+      },
     },
     'shell.env': {
       title: '====SHELL ENV====',
@@ -244,7 +252,7 @@ describe('event handler', () => {
       type: 'session.created',
       properties: { info: { id: 'session-1', title: 'Main' } },
     };
-    await plugin.event({ event: event1 });
+    await plugin.event!({ event: event1 as never });
 
     const toastCountAfterFirst = mockClient.tui.showToast.mock.calls.length;
 
@@ -254,7 +262,7 @@ describe('event handler', () => {
         info: { id: 'session-2', parentID: 'session-1', title: 'Subagent' },
       },
     };
-    await plugin.event({ event: event2 });
+    await plugin.event!({ event: event2 as never });
 
     expect(mockClient.tui.showToast.mock.calls.length).toBe(
       toastCountAfterFirst + 1
@@ -337,7 +345,7 @@ describe('executeHook - debug mode', () => {
       type: 'session.created',
       properties: { info: { id: 'test-session', title: 'Test' } },
     };
-    await plugin.event({ event: event as unknown });
+    await plugin.event!({ event: event as never });
 
     expect(mockHandleDebugLog).toHaveBeenCalled();
     vi.useRealTimers();
@@ -374,7 +382,7 @@ describe('new hooks', () => {
     };
     const output = { text: 'completed' };
 
-    await plugin['experimental.text.complete'](input, output);
+    await plugin['experimental.text.complete']!(input, output);
 
     expect(mockSaveToFile).toHaveBeenCalled();
   });
@@ -427,7 +435,7 @@ describe('plugin disabled', () => {
     const plugin = await DisabledHooks({
       client: mockClient,
       $: mockDollar,
-    } as unknown);
+    } as unknown as PluginInput);
 
     expect(plugin).toEqual({});
   });

@@ -28,7 +28,7 @@ describe('buildKeysMessage with allowedFields', () => {
   });
 
   it('should handle null properties', () => {
-    const event = { properties: null };
+    const event = { properties: null as unknown as Record<string, unknown> };
     const message = buildKeysMessageSimple(event);
     expect(message).toContain('Time:');
   });

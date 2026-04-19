@@ -1,4 +1,5 @@
-import { ConfigResolverContext } from '.opencode/plugins/types';
+import type { ConfigResolverContext } from '../../.opencode/plugins/types/events';
+import type { Mock } from 'vitest';
 import { ToolConfigResolverImpl } from '../../.opencode/plugins/features/events/resolvers/tool-config.resolver';
 
 describe('ToolConfigResolverImpl', () => {
@@ -50,7 +51,7 @@ describe('ToolConfigResolverImpl', () => {
       const context = createMockContext();
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getToolConfigs as vi.Mock).mockReturnValue({ myTool: false });
+      (context.getToolConfigs as Mock).mockReturnValue({ myTool: false });
 
       const result = resolver.resolve('tool.execute.after', 'myTool');
 
@@ -79,8 +80,8 @@ describe('ToolConfigResolverImpl', () => {
       };
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getToolConfigs as vi.Mock).mockReturnValue({});
-      (context.getEventConfig as vi.Mock).mockReturnValue(undefined);
+      (context.getToolConfigs as Mock).mockReturnValue({});
+      (context.getEventConfig as Mock).mockReturnValue(undefined);
 
       const result = resolver.resolve('tool.execute.after', 'bash');
 
@@ -94,7 +95,7 @@ describe('ToolConfigResolverImpl', () => {
       const context = createMockContext();
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getEventConfig as vi.Mock).mockReturnValue({
+      (context.getEventConfig as Mock).mockReturnValue({
         toast: {
           title: 'Event Title',
           variant: 'error' as const,
@@ -102,11 +103,20 @@ describe('ToolConfigResolverImpl', () => {
         },
       });
 
-      const result = resolver.resolveBase('tool.execute.after', {});
+      const result = (
+        resolver as unknown as {
+          resolveBase: (
+            eventType: string,
+            input: Record<string, unknown>
+          ) => unknown;
+        }
+      ).resolveBase('tool.execute.after', {});
 
-      expect(result.toastTitle).toBe('Event Title');
-      expect(result.toastVariant).toBe('error');
-      expect(result.toastDuration).toBe(5000);
+      expect((result as Record<string, unknown>).toastTitle).toBe(
+        'Event Title'
+      );
+      expect((result as Record<string, unknown>).toastVariant).toBe('error');
+      expect((result as Record<string, unknown>).toastDuration).toBe(5000);
     });
 
     it('should return default values when no handler exists', () => {
@@ -115,14 +125,21 @@ describe('ToolConfigResolverImpl', () => {
       });
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getEventConfig as vi.Mock).mockReturnValue(undefined);
+      (context.getEventConfig as Mock).mockReturnValue(undefined);
 
-      const result = resolver.resolveBase('unknown.event', {});
+      const result = (
+        resolver as unknown as {
+          resolveBase: (
+            eventType: string,
+            input: Record<string, unknown>
+          ) => unknown;
+        }
+      ).resolveBase('unknown.event', {});
 
-      expect(result.toastTitle).toBe('');
-      expect(result.toastVariant).toBe('info');
-      expect(result.toastDuration).toBe(2000);
-      expect(result.toastMessage).toBe('');
+      expect((result as Record<string, unknown>).toastTitle).toBe('');
+      expect((result as Record<string, unknown>).toastVariant).toBe('info');
+      expect((result as Record<string, unknown>).toastDuration).toBe(2000);
+      expect((result as Record<string, unknown>).toastMessage).toBe('');
     });
   });
 
@@ -140,10 +157,10 @@ describe('ToolConfigResolverImpl', () => {
       };
       const resolver = new ToolConfigResolverImpl(context);
 
-      (context.getToolConfigs as vi.Mock).mockReturnValue({
+      (context.getToolConfigs as Mock).mockReturnValue({
         myTool: { enabled: true },
       });
-      (context.getEventConfig as vi.Mock).mockReturnValue(undefined);
+      (context.getEventConfig as Mock).mockReturnValue(undefined);
 
       const result = resolver.resolve('tool.execute.after', 'myTool');
       expect(result.toastMessage).toBe('');

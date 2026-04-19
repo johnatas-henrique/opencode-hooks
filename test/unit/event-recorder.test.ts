@@ -1,3 +1,9 @@
+import type {
+  ToolExecuteAfterInput,
+  ToolExecuteBeforeInput,
+  ToolExecuteAfterOutput,
+} from '../../.opencode/plugins/types/core';
+import type { AuditConfig } from '../../.opencode/plugins/types/audit';
 import {
   createToolExecuteAfterRecord,
   createSessionEventRecord,
@@ -8,20 +14,29 @@ import {
 describe('event-recorder', () => {
   describe('extractTool', () => {
     it('should return unknown when tool is undefined', () => {
-      expect(extractTool({})).toBe('unknown');
+      expect(extractTool({} as ToolExecuteBeforeInput)).toBe('unknown');
     });
   });
 
   describe('extractSession', () => {
     it('should return unknown when no session identifier', () => {
-      expect(extractSession({})).toBe('unknown');
+      expect(extractSession({} as ToolExecuteBeforeInput)).toBe('unknown');
     });
   });
 
   describe('createToolExecuteAfterRecord', () => {
     it('should create record with error status for non-zero exit', () => {
-      const input = { tool: 'bash', sessionID: 'session-123' };
-      const output = { metadata: { exit: 1 } };
+      const input: ToolExecuteAfterInput = {
+        tool: 'bash',
+        sessionID: 'session-123',
+        callID: 'call-1',
+        args: {},
+      };
+      const output = {
+        title: '',
+        output: '',
+        metadata: { exit: 1 },
+      } as ToolExecuteAfterOutput;
       const record = createToolExecuteAfterRecord(input, output, true);
 
       expect(record).not.toBeNull();
@@ -82,12 +97,13 @@ describe('createEventRecorder', () => {
           errors: 'plugin-errors.jsonl',
         },
       };
-      const recorder = createEventRecorder(config, {
+      const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
       });
       await recorder.logToolExecuteBefore({
         tool: 'bash',
         sessionID: 'session-123',
+        callID: 'call-1',
       });
 
       expect(mockWriteLine).not.toHaveBeenCalled();
@@ -110,12 +126,12 @@ describe('createEventRecorder', () => {
           errors: 'plugin-errors.jsonl',
         },
       };
-      const recorder = createEventRecorder(defaultConfig, {
+      const recorder = createEventRecorder(defaultConfig as AuditConfig, {
         writeLine: mockWriteLine,
       });
       await recorder.logToolExecuteAfter(
-        { tool: 'bash', sessionID: 'session-123' },
-        { metadata: { exit: 0 } }
+        { tool: 'bash', sessionID: 'session-123', callID: 'call-1', args: {} },
+        { title: '', output: '', metadata: { exit: 0 } }
       );
 
       expect(mockWriteLine).toHaveBeenCalledWith(
@@ -145,10 +161,12 @@ describe('createEventRecorder', () => {
         errors: 'plugin-errors.jsonl',
       },
     };
-    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
+    const recorder = createEventRecorder(config as AuditConfig, {
+      writeLine: mockWriteLine,
+    });
     await recorder.logToolExecuteAfter(
-      { tool: 'bash', sessionID: 'session-123' },
-      { metadata: { exit: 0 } }
+      { tool: 'bash', sessionID: 'session-123', callID: 'call-1', args: {} },
+      { title: '', output: '', metadata: { exit: 0 } }
     );
 
     expect(mockWriteLine).not.toHaveBeenCalled();
@@ -170,7 +188,7 @@ describe('createEventRecorder', () => {
           errors: 'plugin-errors.jsonl',
         },
       };
-      const recorder = createEventRecorder(config, {
+      const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
       });
       await recorder.logSessionEvent('session.created', {

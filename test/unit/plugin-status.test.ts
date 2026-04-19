@@ -16,10 +16,10 @@ vi.mock('os', () => ({
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { homedir } from 'os';
 
-const mockReadFileSync = readFileSync as vi.MockedFunction<typeof readFileSync>;
-const mockReaddirSync = readdirSync as vi.MockedFunction<typeof readdirSync>;
-const mockExistsSync = existsSync as vi.MockedFunction<typeof existsSync>;
-const mockHomedir = homedir as vi.MockedFunction<typeof homedir>;
+const mockReadFileSync = readFileSync as unknown as ReturnType<typeof vi.fn>;
+const mockReaddirSync = readdirSync as unknown as ReturnType<typeof vi.fn>;
+const mockExistsSync = existsSync as unknown as ReturnType<typeof vi.fn>;
+const mockHomedir = homedir as unknown as ReturnType<typeof vi.fn>;
 
 describe('plugin-status', () => {
   beforeEach(() => {
@@ -45,10 +45,7 @@ describe('plugin-status', () => {
 
     it('should return null when no .log files after filter', () => {
       mockExistsSync.mockReturnValue(true);
-      mockReaddirSync.mockReturnValue([
-        'readme.txt',
-        'config.json',
-      ] as string[]);
+      mockReaddirSync.mockReturnValue(['readme.txt', 'config.json'] as never);
       const result = getPluginStatus();
       expect(result).toEqual([]);
     });
@@ -60,7 +57,7 @@ describe('plugin-status', () => {
       ].join('\n');
 
       mockExistsSync.mockReturnValue(true);
-      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as string[]);
+      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as never);
       mockReadFileSync.mockReturnValue(logWithFailedAfterLoading);
 
       const result = getPluginStatus();
@@ -78,7 +75,7 @@ describe('plugin-status', () => {
       ].join('\n');
 
       mockExistsSync.mockReturnValue(true);
-      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as string[]);
+      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as never);
       mockReadFileSync.mockReturnValue(mixedLog);
 
       const result = getPluginStatus();
@@ -96,7 +93,7 @@ describe('plugin-status', () => {
       ].join('\n');
 
       mockExistsSync.mockReturnValue(true);
-      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as string[]);
+      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as never);
       mockReadFileSync.mockReturnValue(malformedLog);
 
       const result = getPluginStatus();
@@ -107,7 +104,7 @@ describe('plugin-status', () => {
 
     it('should return empty array when file read fails', () => {
       mockExistsSync.mockReturnValue(true);
-      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as string[]);
+      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as never);
       mockReadFileSync.mockImplementation(() => {
         throw new Error('Permission denied');
       });
@@ -122,7 +119,7 @@ describe('plugin-status', () => {
       ].join('\n');
 
       mockExistsSync.mockReturnValue(true);
-      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as string[]);
+      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as never);
       mockReadFileSync.mockReturnValue(logWithNoName);
 
       const result = getPluginStatus();
@@ -137,7 +134,7 @@ describe('plugin-status', () => {
       ].join('\n');
 
       mockExistsSync.mockReturnValue(true);
-      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as string[]);
+      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as never);
       mockReadFileSync.mockReturnValue(logWithErrorNoTag);
 
       const result = getPluginStatus();
@@ -154,7 +151,7 @@ describe('plugin-status', () => {
       ].join('\n');
 
       mockExistsSync.mockReturnValue(true);
-      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as string[]);
+      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as never);
       mockReadFileSync.mockReturnValue(logWithDuplicateNames);
 
       const result = getPluginStatus();
@@ -167,7 +164,7 @@ describe('plugin-status', () => {
       ].join('\n');
 
       mockExistsSync.mockReturnValue(true);
-      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as string[]);
+      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as never);
       mockReadFileSync.mockReturnValue(logWithWarnNoIncompatible);
 
       const result = getPluginStatus();
@@ -181,7 +178,7 @@ describe('plugin-status', () => {
         'dev.log',
         '2026-04-03T143022.log',
         '2026-04-02T120000.log',
-      ] as string[]);
+      ] as never);
       mockReadFileSync.mockReturnValue(sampleLog);
 
       const result = getPluginStatus();
@@ -426,9 +423,11 @@ describe('plugin-status', () => {
             name: 'old-plugin',
             status: 'incompatible' as const,
           },
-        ] as string[];
+        ] as unknown as ReturnType<typeof formatPluginStatus> extends string
+          ? never[]
+          : never;
 
-        const result = formatPluginStatus(statuses, 'all-labeled');
+        const result = formatPluginStatus(statuses as never, 'all-labeled');
 
         expect(result).toContain('old-plugin (user)');
       });

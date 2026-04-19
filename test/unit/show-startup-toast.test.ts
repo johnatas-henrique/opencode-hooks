@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { showStartupToast } from '../../.opencode/plugins/features/messages/show-startup-toast';
 import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
 import { getLatestLogFile } from '../../.opencode/plugins/features/messages/plugin-status';
@@ -67,8 +68,8 @@ describe('showStartupToast', () => {
   });
 
   it('should not wait for toast silence when logFile is null', async () => {
-    (getLatestLogFile as vi.Mock).mockReturnValue(null);
-    (waitForToastSilence as vi.Mock).mockReturnValue({
+    (getLatestLogFile as Mock).mockReturnValue(null);
+    (waitForToastSilence as Mock).mockReturnValue({
       promise: Promise.resolve(),
       cleanup: vi.fn(),
     });
@@ -80,12 +81,12 @@ describe('showStartupToast', () => {
 
   it('should handle error when showActivePluginsToast fails', async () => {
     const mockCleanup = vi.fn();
-    (getLatestLogFile as vi.Mock).mockReturnValue('/test/logfile.log');
-    (waitForToastSilence as vi.Mock).mockReturnValue({
+    (getLatestLogFile as Mock).mockReturnValue('/test/logfile.log');
+    (waitForToastSilence as Mock).mockReturnValue({
       promise: Promise.resolve(),
       cleanup: mockCleanup,
     });
-    (showActivePluginsToast as vi.Mock).mockRejectedValue(
+    (showActivePluginsToast as Mock).mockRejectedValue(
       new Error('Plugin scan failed')
     );
 

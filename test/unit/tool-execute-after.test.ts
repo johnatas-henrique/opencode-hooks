@@ -16,7 +16,13 @@ const { mockShowStartupToast } = vi.hoisted(() => {
 let capturedShowFn: ((toast: unknown) => void) | null = null;
 
 vi.mock('../../.opencode/plugins/config', async () => {
-  const actual = await vi.importActual('../../.opencode/plugins/config');
+  const actual = (await vi.importActual('../../.opencode/plugins/config')) as {
+    userConfig: {
+      events: Record<string, unknown>;
+      tools: Record<string, unknown>;
+      scripts: Record<string, unknown>;
+    };
+  };
   return {
     ...actual,
     userConfig: {
@@ -123,9 +129,9 @@ describe('saveToFile', () => {
 
   beforeEach(() => {
     mockClient = createMockClient();
-    mockDollar = {
+    mockDollar = vi.fn(() => ({
       spawn: vi.fn().mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' }),
-    };
+    })) as unknown as () => unknown;
     vi.clearAllMocks();
     capturedShowFn = null;
     mockRunScript.mockResolvedValue({ output: '', error: '', exitCode: 0 });
@@ -149,7 +155,9 @@ describe('saveToFile', () => {
   });
 
   it('should be called for enabled events with logToFile', async () => {
-    const ctx = createMockCtx(mockClient, mockDollar);
+    const ctx = createMockCtx(mockClient, mockDollar) as unknown as Parameters<
+      typeof OpencodeHooks
+    >[0];
     const plugin = await OpencodeHooks(ctx);
     const events = [
       { type: 'session.created', properties: { info: createMockSession() } },
@@ -168,7 +176,7 @@ describe('saveToFile', () => {
       { type: 'session.updated', properties: { info: createMockSession() } },
     ];
     for (const event of events) {
-      await plugin.event({ event });
+      await plugin.event!({ event: event as never });
     }
     // Plugin startup + session.created + session.deleted + session.updated (com info)
     expect(mockSaveToFile).toHaveBeenCalled();

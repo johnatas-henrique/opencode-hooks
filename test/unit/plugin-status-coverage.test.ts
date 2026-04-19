@@ -1,5 +1,6 @@
 import { getLatestLogFile } from '../../.opencode/plugins/features/messages/plugin-status';
 import * as fs from 'fs';
+import type { Mock } from 'vitest';
 
 vi.mock('fs', () => ({
   existsSync: vi.fn(),
@@ -7,9 +8,9 @@ vi.mock('fs', () => ({
   readFileSync: vi.fn(),
 }));
 
-const mockExistsSync = fs.existsSync as vi.Mock;
-const mockReaddirSync = fs.readdirSync as vi.Mock;
-const mockReadFileSync = fs.readFileSync as vi.Mock;
+const mockExistsSync = fs.existsSync as Mock;
+const mockReaddirSync = fs.readdirSync as Mock;
+const mockReadFileSync = fs.readFileSync as Mock;
 
 describe('getLatestLogFile coverage', () => {
   beforeEach(() => {

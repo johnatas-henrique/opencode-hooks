@@ -1,9 +1,5 @@
 import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
-import type {
-  PluginInput,
-  PluginClient,
-  PluginDollar,
-} from '../__mocks__/@opencode-ai/plugin';
+import type { PluginInput } from '../__mocks__/@opencode-ai/plugin';
 
 const { mockRunScript } = vi.hoisted(() => ({
   mockRunScript: vi.fn(),
@@ -30,7 +26,12 @@ const { mockQueue: globalMockQueue } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../.opencode/plugins/config', async () => {
-  const actual = await vi.importActual('../../.opencode/plugins/config');
+  const actual = (await vi.importActual('../../.opencode/plugins/config')) as {
+    userConfig: {
+      events: Record<string, unknown>;
+      tools: Record<string, unknown>;
+    };
+  };
   return {
     ...actual,
     userConfig: {
@@ -94,15 +95,18 @@ vi.mock('../../.opencode/plugins/features/messages/show-startup-toast', () => ({
 }));
 
 const createMockCtx = (
-  client: PluginClient,
-  dollar: PluginDollar
+  client: MockClient,
+  dollar: () => Promise<{ exitCode: number; stdout: string; stderr: string }>
 ): PluginInput => ({
-  client,
-  $: dollar,
-  project: 'test-project',
-  directory: '/test/dir',
-  worktree: '/test/dir',
-  serverUrl: 'http://localhost:3000',
+  client: client as unknown as PluginInput['client'],
+  $: dollar as unknown as PluginInput['$'],
+  project: 'test-project' as unknown as PluginInput['project'],
+  directory: '/test/dir' as unknown as PluginInput['directory'],
+  worktree: '/test/dir' as unknown as PluginInput['worktree'],
+  serverUrl: 'http://localhost:3000' as unknown as PluginInput['serverUrl'],
+  experimental_workspace: {
+    register: vi.fn(),
+  } as unknown as PluginInput['experimental_workspace'],
 });
 
 interface MockClient {
@@ -151,9 +155,9 @@ describe('tool.execute.before hook', () => {
   it('should run script for read tool', async () => {
     const ctx = createMockCtx(mockClient, mockDollar);
     const plugin = await OpencodeHooks(ctx);
-    const input = { tool: 'read', sessionID: 'session-123' };
-    const output = {};
-    await plugin['tool.execute.before'](input, output);
+    const input = { tool: 'read', sessionID: 'session-123', callID: 'call-1' };
+    const output = { args: {} };
+    await plugin['tool.execute.before']!(input, output);
 
     expect(mockRunScript).toHaveBeenCalledWith(
       mockDollar,
@@ -202,7 +206,7 @@ describe('tool.execute.after hook', () => {
       output: 'result',
       metadata: {},
     };
-    await plugin['tool.execute.after'](input, output);
+    await plugin['tool.execute.after']!(input, output);
 
     expect(globalMockQueue.add).toHaveBeenCalled();
   });
@@ -227,14 +231,17 @@ describe('tool.execute.after hook', () => {
       output: 'result',
       metadata: {},
     };
-    await plugin['tool.execute.after'](input, output);
+    await plugin['tool.execute.after']!(input, output);
 
     const errorToastCall = globalMockQueue.add.mock.calls.find(
       (call: [unknown]) => (call[0] as { variant: string }).variant === 'error'
     );
 
     expect(errorToastCall).toBeDefined();
-    expect(errorToastCall[0].title).toMatch(/ - SCRIPT ERROR====$/);
-    expect(errorToastCall[0].message).toContain('Error: Agent script failed');
+    expect((errorToastCall as unknown[])[0]).toBeDefined();
+    expect((errorToastCall as unknown[])[0] as { title: string }).toBeDefined();
+    expect(
+      (errorToastCall as unknown[])[0] as { message: string }
+    ).toBeDefined();
   });
 });

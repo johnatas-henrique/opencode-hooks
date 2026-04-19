@@ -1,3 +1,4 @@
+import type { Mock, MockedFunction } from 'vitest';
 import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
 import * as fs from 'fs/promises';
 
@@ -6,7 +7,7 @@ vi.mock('fs/promises', () => ({
   mkdir: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockAppendFile = fs.appendFile as vi.MockedFunction<typeof fs.appendFile>;
+const mockAppendFile = fs.appendFile as MockedFunction<typeof fs.appendFile>;
 
 describe('save-to-file', () => {
   const LOG_DIR = './production/session-logs';
@@ -18,7 +19,7 @@ describe('save-to-file', () => {
 
   it('should show toast on filesystem error', async () => {
     const mockShowToast = vi.fn();
-    (fs.appendFile as vi.Mock).mockRejectedValueOnce(new Error('Disk full'));
+    (fs.appendFile as Mock).mockRejectedValueOnce(new Error('Disk full'));
 
     await saveToFile({ content: 'test', showToast: mockShowToast });
 
@@ -31,7 +32,7 @@ describe('save-to-file', () => {
   });
 
   it('should not throw on filesystem error', async () => {
-    (fs.appendFile as vi.Mock).mockRejectedValueOnce(new Error('Disk full'));
+    (fs.appendFile as Mock).mockRejectedValueOnce(new Error('Disk full'));
 
     await expect(saveToFile({ content: 'test' })).resolves.not.toThrow();
   });

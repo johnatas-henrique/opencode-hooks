@@ -1,5 +1,6 @@
 import { createResolvers } from '../helpers';
 import { createUserConfig } from '../helpers';
+import type { UserEventsConfig } from '../../.opencode/plugins/types/config';
 
 describe('events - resolveEventConfig', () => {
   it('should return defaults for event not listed', () => {
@@ -19,7 +20,7 @@ describe('events - resolveEventConfig', () => {
   it('should return toast: false when default toast is object with enabled: false', () => {
     const config = createUserConfig({
       default: { toast: { enabled: false } },
-      events: { 'session.test': true },
+      events: { 'session.test': true } as UserEventsConfig['events'],
     });
     const { eventResolver } = createResolvers(config);
     const result = eventResolver.resolve('session.test');
@@ -42,7 +43,7 @@ describe('events - resolveToolConfig', () => {
 
   it('should return enabled: false for event config boolean false', () => {
     const config = createUserConfig({
-      events: { 'session.test': false },
+      events: { 'session.test': false } as UserEventsConfig['events'],
     });
     const { eventResolver } = createResolvers(config);
     const result = eventResolver.resolve('session.test');
@@ -52,7 +53,7 @@ describe('events - resolveToolConfig', () => {
 
   it('should return empty string when buildMessage throws', () => {
     const config = createUserConfig({
-      events: { 'session.test': {} },
+      events: { 'session.test': {} } as UserEventsConfig['events'],
     });
     const { eventResolver } = createResolvers(config, {
       'session.test': {

@@ -18,12 +18,16 @@ vi.mock('../../.opencode/plugins/core/constants', () => ({
   BLOCKED_EVENTS_LOG_FILE: 'blocked-events.log',
 }));
 
+import { vi } from 'vitest';
+import type { Mock } from 'vitest';
 import {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
 } from '../../.opencode/plugins/types/core';
 import { executeBlocking } from '../../.opencode/plugins/features/block-system/block-handler';
 import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
+
+const mockSaveToFile = saveToFile as Mock;
 
 describe('block-handler', () => {
   const input: ToolExecuteBeforeInput = {
@@ -48,7 +52,7 @@ describe('block-handler', () => {
     });
 
     it('logs raw data when data is not an object with eventType', () => {
-      saveToFile.mockClear();
+      mockSaveToFile.mockClear();
 
       const block = [{ check: () => true, message: 'blocked' }];
       expect(() =>
@@ -62,7 +66,7 @@ describe('block-handler', () => {
         )
       ).toThrow('blocked');
 
-      const call = saveToFile.mock.calls[0][0];
+      const call = mockSaveToFile.mock.calls[0][0];
       expect(call.content).toBeDefined();
     });
   });
