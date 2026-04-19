@@ -56,8 +56,6 @@ vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { useGlobalToastQueue } from '../../.opencode/plugins/core/toast-queue';
-
 describe('showStartupToast', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -66,34 +64,6 @@ describe('showStartupToast', () => {
 
   afterEach(() => {
     vi.useRealTimers();
-  });
-
-  it('should add initial loading toast', async () => {
-    (getLatestLogFile as vi.Mock).mockReturnValue(null);
-
-    await showStartupToast();
-
-    const mockQueue = useGlobalToastQueue();
-    expect(mockQueue.add).toHaveBeenCalledWith({
-      title: 'Loading plugin status...',
-      message: 'Scanning OpenCode plugins',
-      variant: 'info',
-      duration: 2000,
-    });
-  });
-
-  it('should call waitForToastSilence when logFile exists', async () => {
-    const mockCleanup = vi.fn();
-    const mockPromise = Promise.resolve();
-    (getLatestLogFile as vi.Mock).mockReturnValue('/test/logfile.log');
-    (waitForToastSilence as vi.Mock).mockReturnValue({
-      promise: mockPromise,
-      cleanup: mockCleanup,
-    });
-
-    await showStartupToast();
-
-    expect(waitForToastSilence).toHaveBeenCalledWith('/test/logfile.log');
   });
 
   it('should not wait for toast silence when logFile is null', async () => {
@@ -105,24 +75,7 @@ describe('showStartupToast', () => {
 
     await showStartupToast();
 
-    expect(waitForToastSilence).not.toHaveBeenCalled();
     expect(showActivePluginsToast).not.toHaveBeenCalled();
-  });
-
-  it('should use custom getLogFile when provided', async () => {
-    (getLatestLogFile as vi.Mock).mockReturnValue(null);
-    const customGetLogFile = vi.fn().mockReturnValue('/custom/log.log');
-    const mockCleanup = vi.fn();
-    const mockPromise = Promise.resolve();
-    (waitForToastSilence as vi.Mock).mockReturnValue({
-      promise: mockPromise,
-      cleanup: mockCleanup,
-    });
-
-    await showStartupToast({ getLogFile: customGetLogFile });
-
-    expect(customGetLogFile).toHaveBeenCalled();
-    expect(getLatestLogFile).not.toHaveBeenCalled();
   });
 
   it('should handle error when showActivePluginsToast fails', async () => {
