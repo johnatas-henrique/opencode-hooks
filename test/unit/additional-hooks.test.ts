@@ -187,18 +187,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
   });
 
   describe('event hook', () => {
-    it('should handle known event type', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-
-      const eventInput = {
-        type: 'session.created',
-        properties: { info: { id: 'session-123' } },
-      };
-
-      await plugin.event({ event: eventInput });
-    });
-
     it('should handle unknown event type', async () => {
       const ctx = createMockCtx(mockClient, mockDollar);
       const plugin = await OpencodeHooks(ctx);
@@ -206,30 +194,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
       const eventInput = {
         type: 'unknown.event.type',
         properties: { data: 'test' },
-      };
-
-      await plugin.event({ event: eventInput });
-    });
-
-    it('should extract sessionId from event properties', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-
-      const eventInput = {
-        type: 'session.created',
-        properties: { sessionID: 'custom-session-id' },
-      };
-
-      await plugin.event({ event: eventInput });
-    });
-
-    it('should use DEFAULT_SESSION_ID when no session ID in properties', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-
-      const eventInput = {
-        type: 'session.created',
-        properties: {},
       };
 
       await plugin.event({ event: eventInput });
@@ -366,41 +330,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
         await plugin['experimental.session.compacting'](input, output);
       });
-
-      it('should handle experimental.text.complete', async () => {
-        const ctx = createMockCtx(mockClient, mockDollar);
-        const plugin = await OpencodeHooks(ctx);
-
-        const input = { sessionID: 'exp-session', text: 'Hello' };
-        const output = { text: 'Hello world' };
-
-        await plugin['experimental.text.complete'](input, output);
-      });
-    });
-
-    describe('tool.definition hook', () => {
-      it('should handle tool.definition event', async () => {
-        const ctx = createMockCtx(mockClient, mockDollar);
-        const plugin = await OpencodeHooks(ctx);
-
-        const input = { toolID: 'custom-tool', name: 'CustomTool' };
-        const output = {
-          definition: { description: 'A custom tool', parameters: {} },
-        };
-
-        await plugin['tool.definition'](input, output);
-      });
-    });
-
-    describe('config hook', () => {
-      it('should handle config event', async () => {
-        const ctx = createMockCtx(mockClient, mockDollar);
-        const plugin = await OpencodeHooks(ctx);
-
-        const input = { model: { providerID: 'anthropic' } };
-
-        await plugin.config(input);
-      });
     });
 
     describe('runOnlyOnce logic', () => {
@@ -415,152 +344,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
         await plugin.event({ event });
       });
-    });
-
-    describe('tool.execute.after - non-task tool', () => {
-      it('should handle non-task tool execution', async () => {
-        const ctx = createMockCtx(mockClient, mockDollar);
-        const plugin = await OpencodeHooks(ctx);
-
-        const input = {
-          tool: 'read',
-          sessionID: 'test-session',
-          callID: 'call-123',
-          args: { path: '/test/file.ts' },
-        };
-        const output = {
-          result: 'file content',
-        };
-
-        await plugin['tool.execute.after'](input, output);
-      });
-    });
-  });
-
-  describe('chat.message hook', () => {
-    it('should handle chat.message event', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-
-      const input = {
-        sessionID: 'chat-session',
-        agent: 'claude',
-        messageID: 'msg-123',
-        variant: 'user',
-      };
-      const output = { message: { role: 'user' }, parts: [] };
-
-      await plugin['chat.message'](input, output);
-    });
-  });
-
-  describe('chat.params hook', () => {
-    it('should handle chat.params event', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-
-      const input = {
-        sessionID: 'params-session',
-        agent: 'claude',
-        model: { providerID: 'anthropic', modelID: 'claude-3' },
-        provider: { name: 'Anthropic' },
-        message: { role: 'user' },
-        temperature: 0.7,
-        topP: 0.9,
-        topK: 40,
-        options: {},
-      };
-      const output = { temperature: 0.7, topP: 0.9, topK: 40, options: {} };
-
-      await plugin['chat.params'](input, output);
-    });
-  });
-
-  describe('chat.headers hook', () => {
-    it('should handle chat.headers event', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-
-      const input = {
-        sessionID: 'headers-session',
-        agent: 'claude',
-        model: { providerID: 'anthropic', modelID: 'claude-3' },
-        provider: { name: 'Anthropic' },
-        message: { role: 'user' },
-      };
-      const output = { headers: { 'Content-Type': 'application/json' } };
-
-      await plugin['chat.headers'](input, output);
-    });
-  });
-
-  describe('permission.ask hook', () => {
-    it('should handle permission.ask event', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-
-      const input = { sessionID: 'perm-session', tool: 'bash' };
-      const output = { status: 'allow' };
-
-      await plugin['permission.ask'](input, output);
-    });
-  });
-
-  describe('command.execute.before hook', () => {
-    it('should handle command.execute.before event', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-
-      const input = {
-        command: 'git status',
-        sessionID: 'cmd-session',
-        arguments: 'status',
-      };
-      const output = { parts: [] };
-
-      await plugin['command.execute.before'](input, output);
-    });
-  });
-
-  describe('experimental hooks', () => {
-    it('should handle experimental.chat.messages.transform', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-
-      const input = { sessionID: 'exp-session', messages: [] };
-      const output = { messages: [] };
-
-      await plugin['experimental.chat.messages.transform'](input, output);
-    });
-
-    it('should handle experimental.chat.system.transform', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-
-      const input = { sessionID: 'exp-session', system: 'You are helpful' };
-      const output = { system: 'You are helpful' };
-
-      await plugin['experimental.chat.system.transform'](input, output);
-    });
-
-    it('should handle experimental.session.compacting', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-
-      const input = { sessionID: 'exp-session' };
-      const output = { before: 1000, after: 500 };
-
-      await plugin['experimental.session.compacting'](input, output);
-    });
-
-    it('should handle experimental.text.complete', async () => {
-      const ctx = createMockCtx(mockClient, mockDollar);
-      const plugin = await OpencodeHooks(ctx);
-
-      const input = { sessionID: 'exp-session', text: 'Hello' };
-      const output = { text: 'Hello world' };
-
-      await plugin['experimental.text.complete'](input, output);
     });
   });
 

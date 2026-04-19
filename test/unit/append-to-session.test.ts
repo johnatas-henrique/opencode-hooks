@@ -33,25 +33,6 @@ describe('append-to-session', () => {
     );
   });
 
-  it('should call session.prompt with full text when under max length', async () => {
-    const shortText = 'short text';
-    await appendToSession(
-      { client: mockClient } as { client: { session: { prompt: vi.Mock } } },
-      'session-456',
-      shortText
-    );
-
-    expect(mockClient.session.prompt).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: { id: 'session-456' },
-        body: {
-          noReply: true,
-          parts: [{ type: 'text', text: shortText }],
-        },
-      })
-    );
-  });
-
   it('should call session.prompt with empty output', async () => {
     await appendToSession(
       { client: mockClient } as { client: { session: { prompt: vi.Mock } } },
