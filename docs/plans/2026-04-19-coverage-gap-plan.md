@@ -89,6 +89,33 @@
 
 ## Rules
 
+## Execution Table
+
+| Step | Phase      | Action                                    | Files  | Expected Outcome                         | Status |
+| ---- | ---------- | ----------------------------------------- | ------ | ---------------------------------------- | ------ |
+| 1    | Helpers    | Create `create-config.test.ts`            | 1 file | 4 tests, lines 69-79 covered             | ⏳     |
+| 2    | Helpers    | Create `create-handler.test.ts`           | 1 file | 5 tests, lines 23-43 covered             | ⏳     |
+| 3    | Core       | Extend `opencode-hooks.test.ts`           | 1 file | 2 tests, lines 80-88 covered             | ⏳     |
+| 4    | Core       | Extend `toast-queue.test.ts`              | 1 file | 6 tests, lines 53-59,71,97,110 covered   | ⏳     |
+| 5    | Core       | Extend `block-handler.test.ts`            | 1 file | 1 test, line 16 covered                  | ⏳     |
+| 6    | Core       | Extend `events.test.ts`                   | 1 file | 2 tests, line 45 covered                 | ⏳     |
+| 7    | Feature    | Extend `save-to-file-resolution.test.ts`  | 1 file | 1 test, line 30 covered                  | ⏳     |
+| 8    | Feature    | Extend `toast-resolution.test.ts`         | 1 file | 2 tests, lines 31,47 covered             | ⏳     |
+| 9    | Feature    | Extend `save-to-file-persistence.test.ts` | 1 file | 1 test, line 37 covered                  | ⏳     |
+| 10   | Feature    | Extend `run-script.test.ts`               | 1 file | 1 test, line 48 covered                  | ⏳     |
+| 11   | Feature    | Extend `block-system.test.ts`             | 1 file | 1 test, line 55 covered                  | ⏳     |
+| 12   | Validation | Run `npm run test:unit -- --coverage`     | -      | All 4 metrics ≥ 99.9%                    | ⏳     |
+| 13   | Validation | Run `npm run lint`                        | -      | 0 errors                                 | ⏳     |
+| 14   | Validation | Run `npx tsc --noEmit`                    | -      | 0 errors                                 | ⏳     |
+| 15   | Validation | Commit                                    | -      | `test: add coverage for 11 source files` | ⏳     |
+
+## Success Criteria
+
+- [ ] `npm run test:unit -- --coverage` shows Statements ≥ 99.9%, Branch ≥ 99.9%, Functions ≥ 99.9%, Lines ≥ 99.9%
+- [ ] `npm run lint` returns 0 errors
+- [ ] `npx tsc --noEmit` returns 0 errors
+- [ ] All tests pass (469 → ~494+)
+- [ ] Single commit with proper conventional commit message
 - No `any` types
 - No ESLint/TS rule disabling
 - Proper type assertions only
