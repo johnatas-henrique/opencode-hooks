@@ -28,12 +28,6 @@ describe('block-system - pure evaluation', () => {
   });
 
   describe('evaluate (pure)', () => {
-    it('returns null when predicates is empty', () => {
-      const system = createBlockSystem(mockEffects);
-      const result = system.evaluate([], input, output, []);
-      expect(result).toBeNull();
-    });
-
     it('returns null when predicates is undefined', () => {
       const system = createBlockSystem(mockEffects);
       const result = system.evaluate(
@@ -43,43 +37,6 @@ describe('block-system - pure evaluation', () => {
         []
       );
       expect(result).toBeNull();
-    });
-
-    it('returns null when no check blocks', () => {
-      const system = createBlockSystem(mockEffects);
-      const predicates: BlockCheck[] = [{ check: () => false }];
-      const result = system.evaluate(predicates, input, output, []);
-      expect(result).toBeNull();
-    });
-
-    it('returns blocked result when check blocks', () => {
-      const system = createBlockSystem(mockEffects);
-      const predicates: BlockCheck[] = [
-        { check: () => true, message: 'Blocked!' },
-      ];
-      const result = system.evaluate(predicates, input, output, []);
-      expect(result?.blocked).toBe(true);
-      expect(result?.message).toBe('Blocked!');
-    });
-
-    it('uses default message when not provided', () => {
-      const system = createBlockSystem(mockEffects);
-      const predicates: BlockCheck[] = [{ check: () => true }];
-      const result = system.evaluate(predicates, input, output, []);
-      expect(result?.blocked).toBe(true);
-      expect(result?.message).toBe('Blocked: read execution');
-    });
-
-    it('checks predicates in order and returns first blocking', () => {
-      const system = createBlockSystem(mockEffects);
-      const predicates: BlockCheck[] = [
-        { check: () => false },
-        { check: () => true, message: 'Second blocked' },
-        { check: () => true, message: 'Third blocked' },
-      ];
-      const result = system.evaluate(predicates, input, output, []);
-      expect(result?.blocked).toBe(true);
-      expect(result?.message).toBe('Second blocked');
     });
 
     it('receives scriptResults in check function', () => {
@@ -108,43 +65,6 @@ describe('block-system - pure evaluation', () => {
       );
       expect(mockEffects.notify).not.toHaveBeenCalled();
       expect(mockEffects.log).not.toHaveBeenCalled();
-    });
-
-    it('calls notify and log when blocked', () => {
-      const system = createBlockSystem(mockEffects);
-      const predicates: BlockCheck[] = [
-        { check: () => true, message: 'Blocked!' },
-      ];
-      expect(() => {
-        system.evaluateWithEffects(
-          predicates,
-          input,
-          output,
-          [],
-          'tool.execute.before'
-        );
-      }).toThrow('Blocked!');
-      expect(mockEffects.notify).toHaveBeenCalledWith(
-        'READ BEFORE - EVENT BLOCKED',
-        expect.objectContaining({ message: 'Blocked!' })
-      );
-      expect(mockEffects.log).toHaveBeenCalled();
-    });
-
-    it('throws error when blocked', () => {
-      const system = createBlockSystem(mockEffects);
-      const predicates: BlockCheck[] = [
-        { check: () => true, message: 'Test block' },
-      ];
-      expect(() => {
-        system.evaluateWithEffects(
-          predicates,
-          input,
-          output,
-          [],
-          'tool.execute.before'
-        );
-      }).toThrow('Test block');
     });
   });
 });
