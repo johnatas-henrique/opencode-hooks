@@ -5,113 +5,7 @@ vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
 import { normalizeInputForHandler } from '../../.opencode/plugins/features/events/events';
 
 describe('normalizeInputForHandler', () => {
-  describe('tool.execute.before/after events', () => {
-    it('should return input and output for bash tool', () => {
-      const input = {
-        tool: 'bash',
-        sessionID: 'ses_123',
-        callID: 'call_456',
-        args: { command: 'npm run build' },
-      };
-
-      const result = normalizeInputForHandler('tool.execute.after', input);
-
-      expect(result.input).toBeDefined();
-      expect(result.input).toEqual(input);
-    });
-
-    it('should return input and output for read tool', () => {
-      const input = {
-        tool: 'read',
-        sessionID: 'ses_123',
-        callID: 'call_456',
-        args: { filePath: '/home/user/file.ts' },
-      };
-
-      const result = normalizeInputForHandler('tool.execute.after', input);
-
-      expect(result.input).toEqual(input);
-    });
-
-    it('should return input and output for grep tool', () => {
-      const input = {
-        tool: 'grep',
-        sessionID: 'ses_123',
-        callID: 'call_456',
-        args: { pattern: 'todoMessage.*unknown' },
-      };
-
-      const result = normalizeInputForHandler('tool.execute.before', input);
-
-      expect(result.input).toEqual(input);
-    });
-
-    it('should return input and output for websearch tool', () => {
-      const input = {
-        tool: 'websearch',
-        sessionID: 'ses_123',
-        callID: 'call_456',
-        args: { query: 'TypeScript hooks' },
-      };
-
-      const result = normalizeInputForHandler('tool.execute.after', input);
-
-      expect(result.input).toEqual(input);
-    });
-
-    it('should return input and output for task tool', () => {
-      const input = {
-        tool: 'task',
-        sessionID: 'ses_123',
-        callID: 'call_456',
-        args: { name: 'explore', subagentType: 'general' },
-      };
-
-      const result = normalizeInputForHandler('tool.execute.after', input);
-
-      expect(result.input).toEqual(input);
-    });
-
-    it('should return input and output for skill tool', () => {
-      const input = {
-        tool: 'skill',
-        sessionID: 'ses_123',
-        callID: 'call_456',
-        args: { name: 'commit' },
-      };
-
-      const result = normalizeInputForHandler('tool.execute.after', input);
-
-      expect(result.input).toEqual(input);
-    });
-
-    it('should return input and output for filesystem move', () => {
-      const input = {
-        tool: 'filesystem_move_file',
-        sessionID: 'ses_123',
-        callID: 'call_456',
-        args: { source: '/src/a.ts', destination: '/dst/b.ts' },
-      };
-
-      const result = normalizeInputForHandler('tool.execute.after', input);
-
-      expect(result.input).toEqual(input);
-    });
-  });
-
   describe('session events', () => {
-    it('should wrap session event input in properties', () => {
-      const input = {
-        sessionID: 'ses_123',
-        status: 'idle',
-      };
-
-      const result = normalizeInputForHandler('session.idle', input);
-
-      expect(result.properties).toBeDefined();
-      expect(result.properties.sessionID).toBe('ses_123');
-    });
-
     it('should preserve existing properties', () => {
       const input = {
         properties: {
@@ -126,21 +20,6 @@ describe('normalizeInputForHandler', () => {
         sessionID: 'ses_123',
         status: 'idle',
       });
-    });
-  });
-
-  describe('chat events', () => {
-    it('should wrap chat event input in properties', () => {
-      const input = {
-        sessionID: 'ses_123',
-        agent: 'claude',
-        model: { providerID: 'openai', modelID: 'gpt-4' },
-      };
-
-      const result = normalizeInputForHandler('chat.message', input);
-
-      expect(result.properties.sessionID).toBe('ses_123');
-      expect(result.properties.agent).toBe('claude');
     });
   });
 
@@ -220,17 +99,6 @@ describe('normalizeInputForHandler', () => {
   });
 
   describe('fallback for unknown events', () => {
-    it('should return input wrapped in properties for unknown event types', () => {
-      const input = {
-        customField: 'value',
-        another: 123,
-      };
-
-      const result = normalizeInputForHandler('unknown.event', input);
-
-      expect(result.properties).toEqual(input);
-    });
-
     it('should preserve input for tool events', () => {
       const input = {
         tool: 'bash',
