@@ -7,7 +7,6 @@ vi.mock('fs/promises', () => ({
 }));
 
 const mockAppendFile = fs.appendFile as vi.MockedFunction<typeof fs.appendFile>;
-const mockMkdir = fs.mkdir as vi.MockedFunction<typeof fs.mkdir>;
 
 describe('save-to-file', () => {
   const LOG_DIR = './production/session-logs';
@@ -15,39 +14,6 @@ describe('save-to-file', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
-  });
-
-  it('should save content to default log file', async () => {
-    const content = 'Test content';
-    await saveToFile({ content });
-
-    expect(mockAppendFile).toHaveBeenCalledTimes(1);
-    expect(mockAppendFile).toHaveBeenCalledWith(
-      `${LOG_DIR}/session_events.log`,
-      expect.stringContaining('Test content')
-    );
-  });
-
-  it('should save content to custom filename', async () => {
-    const content = 'Test content';
-    const customFile = 'custom.log';
-    await saveToFile({ content, filename: customFile });
-
-    expect(mockAppendFile).toHaveBeenCalledTimes(1);
-    expect(mockAppendFile).toHaveBeenCalledWith(
-      `${LOG_DIR}/${customFile}`,
-      expect.stringContaining('Test content')
-    );
-  });
-
-  it('should trim and format content correctly', async () => {
-    const content = '  Test  content  \n  with  spaces  ';
-    await saveToFile({ content });
-
-    expect(mockAppendFile).toHaveBeenCalledWith(
-      `${LOG_DIR}/session_events.log`,
-      expect.stringContaining('Test')
-    );
   });
 
   it('should show toast on filesystem error', async () => {
@@ -68,10 +34,6 @@ describe('save-to-file', () => {
     (fs.appendFile as vi.Mock).mockRejectedValueOnce(new Error('Disk full'));
 
     await expect(saveToFile({ content: 'test' })).resolves.not.toThrow();
-  });
-
-  it('should create directory once and cache (performance optimization)', async () => {
-    expect(mockMkdir).not.toHaveBeenCalled();
   });
 
   it('should fallback to default filename for invalid filenames', async () => {

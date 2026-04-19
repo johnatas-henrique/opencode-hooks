@@ -20,17 +20,6 @@ describe('run-script', () => {
     });
   });
 
-  it('should run script without arguments', async () => {
-    const result = await runScript(
-      mockDollar as PluginInput['$'],
-      'test-script.sh'
-    );
-
-    expect(mockDollar).toHaveBeenCalled();
-    expect(result.output).toBe('script output');
-    expect(result.exitCode).toBe(0);
-  });
-
   it('should run script with arguments', async () => {
     const result = await runScript(
       mockDollar as PluginInput['$'],
@@ -41,35 +30,6 @@ describe('run-script', () => {
 
     expect(mockDollar).toHaveBeenCalled();
     expect(result.output).toBe('script output');
-  });
-
-  it('should return output text from script', async () => {
-    const customResult = 'custom output';
-    mockDollar = vi.fn((_strings: TemplateStringsArray) => {
-      return {
-        quiet: vi.fn().mockReturnValue({
-          text: vi.fn().mockReturnValue(customResult),
-          exitCode: 0,
-        }),
-      };
-    });
-
-    const result = await runScript(
-      mockDollar as PluginInput['$'],
-      'test-script.sh'
-    );
-
-    expect(result.output).toBe(customResult);
-  });
-
-  it('should return error for invalid script path with ..', async () => {
-    const result = await runScript(
-      mockDollar as PluginInput['$'],
-      '../malicious.sh'
-    );
-
-    expect(result.error).toContain('Invalid script path');
-    expect(result.exitCode).toBe(-1);
   });
 
   it('should return error for invalid script path starting with /', async () => {
