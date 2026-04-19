@@ -20,7 +20,7 @@
     "isolatedModules": true,
     "skipLibCheck": true
   },
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules", "docs/testing/examples"],
   "include": [
     "./src/**/*.tsx",
     "./src/**/*.ts",

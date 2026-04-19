@@ -1,4 +1,5 @@
 import type { PluginInput } from '@opencode-ai/plugin';
+import type { MockedFunction } from 'vitest';
 
 export const mockUserConfig = {
   enabled: true,
@@ -174,7 +175,7 @@ export const mockRunScript = {
 export const createMockDollar = (
   output = 'script output',
   exitCode = 0
-): vi.MockedFunction<PluginInput['$']> => {
+): MockedFunction<PluginInput['$']> => {
   return vi.fn((_strings: TemplateStringsArray) => {
     const result = {
       quiet: vi.fn().mockReturnValue({
@@ -183,7 +184,7 @@ export const createMockDollar = (
       }),
     };
     return result;
-  }) as unknown as vi.MockedFunction<PluginInput['$']>;
+  }) as unknown as MockedFunction<PluginInput['$']>;
 };
 
 export const mockToastQueue = {
