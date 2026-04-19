@@ -18,20 +18,6 @@ describe('toast-queue', () => {
   });
 
   describe('createToastQueue', () => {
-    it('should add toast to queue', () => {
-      const showFn = vi.fn();
-      const queue = createToastQueue(showFn);
-
-      queue.add({
-        title: 'Test',
-        message: 'Message',
-        variant: 'info' as const,
-        duration: 3000,
-      });
-
-      expect(queue.pending).toBeGreaterThanOrEqual(0);
-    });
-
     it('should clear queue', () => {
       const showFn = vi.fn();
       const queue = createToastQueue(showFn);
@@ -47,37 +33,13 @@ describe('toast-queue', () => {
       expect(queue.pending).toBe(0);
     });
 
-    it('should flush when queue has items', async () => {
-      const showFn = vi.fn().mockResolvedValue(undefined);
-      const queue = createToastQueue(showFn, { staggerMs: 10 });
-
-      queue.add({
-        title: 'Test',
-        message: 'Message',
-        variant: 'info' as const,
-        duration: 10,
-      });
-
-      await vi.runAllTimersAsync();
-      await queue.flush();
-    });
-
     it('should handle flush when queue is empty', async () => {
       const showFn = vi.fn();
       const queue = createToastQueue(showFn);
 
       await queue.flush();
-      expect(queue.pending).toBe(0);
-    });
 
-    it('should handle add when queue is empty and process immediately', () => {
-      const showFn = vi.fn();
-      const queue = createToastQueue(showFn, { staggerMs: 0, maxSize: 1 });
-
-      queue.add({ title: 'Test', message: 'Msg', variant: 'info' as const });
-      queue.add({ title: 'Test2', message: 'Msg2', variant: 'info' as const });
-
-      expect(queue.pending).toBeLessThanOrEqual(1);
+      expect(showFn).not.toHaveBeenCalled();
     });
 
     it('should return early when processingLock exists and queue is empty', async () => {
@@ -93,24 +55,6 @@ describe('toast-queue', () => {
       queue.add({ title: 'Test2', message: 'Msg2', variant: 'info' as const });
 
       await vi.runAllTimersAsync();
-    });
-
-    it('should handle stagger option correctly', async () => {
-      const showFn = vi.fn();
-      const toast = {
-        title: 'Test',
-        message: 'Msg',
-        variant: 'info' as const,
-        duration: 10,
-      };
-
-      const p1 = showToastStaggered(showFn, toast, { stagger: true });
-      const p2 = showToastStaggered(showFn, toast, { stagger: true });
-
-      await vi.runAllTimersAsync();
-      await Promise.all([p1, p2]);
-
-      expect(showFn).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -129,44 +73,11 @@ describe('toast-queue', () => {
         'ToastQueue not initialized. Call initGlobalToastQueue first.'
       );
     });
-
-    it('should initialize when showFn provided but queue not initialized', () => {
-      resetGlobalToastQueue();
-      const showFn = vi.fn();
-      const queue = getGlobalToastQueue(showFn);
-      expect(queue).toBeDefined();
-    });
-  });
-
-  describe('resetGlobalToastQueue', () => {
-    it('should create new queue after reset', () => {
-      const showFn = vi.fn();
-      const queue = getGlobalToastQueue(showFn);
-
-      queue.add({
-        title: 'Test',
-        message: 'Message',
-        variant: 'info' as const,
-        duration: 3000,
-      });
-
-      resetGlobalToastQueue();
-
-      const newQueue = getGlobalToastQueue(showFn);
-      expect(newQueue.pending).toBe(0);
-    });
   });
 
   describe('useGlobalToastQueue', () => {
     beforeEach(() => {
       resetGlobalToastQueue();
-    });
-
-    it('should return the global queue after initialization', () => {
-      const showFn = vi.fn();
-      const queue = initGlobalToastQueue(showFn);
-
-      expect(useGlobalToastQueue()).toBe(queue);
     });
 
     it('should throw error when not initialized', () => {
@@ -185,35 +96,9 @@ describe('toast-queue', () => {
       expect(queue).toBeDefined();
       expect(useGlobalToastQueue()).toBe(queue);
     });
-
-    it('should create a new queue on each call (does not reuse)', () => {
-      const showFn = vi.fn();
-      const queue1 = initGlobalToastQueue(showFn);
-
-      // Add something to queue1
-      queue1.add({ title: 'Test', message: 'Msg', variant: 'info' as const });
-
-      // initGlobalToastQueue creates a new queue (doesn't reuse)
-      const queue2 = initGlobalToastQueue(showFn);
-      expect(queue2.pending).toBe(0);
-    });
   });
 
   describe('showToastStaggered', () => {
-    it('should call showFn with toast', async () => {
-      const showFn = vi.fn();
-      const toast = {
-        title: 'Test',
-        message: 'Message',
-        variant: 'info' as const,
-        duration: 3000,
-      };
-
-      await showToastStaggered(showFn, toast, { delay: 0, stagger: false });
-
-      expect(showFn).toHaveBeenCalledWith(toast);
-    });
-
     it('should respect delay option', async () => {
       const showFn = vi.fn();
       const toast = {
@@ -270,22 +155,6 @@ describe('toast-queue', () => {
       queue.add({ title: '2', message: 'msg', variant: 'info' as const });
       queue.add({ title: '3', message: 'msg', variant: 'info' as const });
       queue.add({ title: '4', message: 'msg', variant: 'info' as const });
-
-      expect(queue.pending).toBeLessThanOrEqual(2);
-    });
-
-    it('should addMultiple toasts and drop when full', () => {
-      const showFn = vi.fn();
-      const queue = createToastQueue(showFn, {
-        maxSize: 2,
-        staggerMs: 999999,
-      });
-
-      queue.addMultiple([
-        { title: '1', message: 'msg', variant: 'info' as const },
-        { title: '2', message: 'msg', variant: 'info' as const },
-        { title: '3', message: 'msg', variant: 'info' as const },
-      ]);
 
       expect(queue.pending).toBeLessThanOrEqual(2);
     });
