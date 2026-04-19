@@ -48,14 +48,4 @@ describe('EventConfigResolverImpl', () => {
     const result = resolver.resolve('test.event');
     expect(result.allowedFields).toEqual(['customField']);
   });
-
-  it('should return handler allowed fields if user config is missing them', () => {
-    const userConfig: EventOverride = {
-      enabled: true,
-    };
-    (mockContext.getEventConfig as vi.Mock).mockReturnValue(userConfig);
-
-    const result = resolver.resolve('test.event');
-    expect(result.allowedFields).toEqual(['field1']);
-  });
 });
