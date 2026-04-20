@@ -105,11 +105,7 @@ describe('resolveSaveToFile - resolveToolConfig', () => {
         enabled: true,
         default: {},
         events: {
-          'tool.execute.after': {
-            saveToFile: {
-              template: 'event base template',
-            },
-          },
+          'tool.execute.after': {},
         },
         tools: {
           'tool.execute.after': {
