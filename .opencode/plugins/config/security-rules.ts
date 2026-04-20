@@ -33,8 +33,8 @@ export const blockNoVerify: BlockPredicate = (_, output) => {
 
 export const blockProtectedBranch: BlockPredicate = (_, output) => {
   const cmd = output.args.command as string;
-  if (!/\bgit\s+push\b/.test(cmd ?? '')) return false;
-  return /\b(main|master|develop)\b/.test(cmd ?? '');
+  if (!cmd || !/\bgit\s+push\b/.test(cmd)) return false;
+  return /\b(main|master|develop)\b/.test(cmd);
 };
 
 export const blockSecrets: BlockPredicate = (_, output) => {

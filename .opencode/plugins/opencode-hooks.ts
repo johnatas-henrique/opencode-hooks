@@ -20,7 +20,6 @@ import { resolveEventConfig, resolveToolConfig } from './features/events';
 import { handleDebugLog } from './core/debug';
 import { runScriptAndHandle, addSubagentSession } from './features/scripts';
 import { EventType } from './types/config';
-import { normalizeInputForHandler as normalizeInput } from './features/events';
 import { userConfig } from './config';
 import {
   UNKNOWN_EVENT_LOG_FILE,
@@ -105,17 +104,7 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
   }
 
   if (resolved.toast) {
-    const handler = handlers[eventType];
-
-    const normalized = normalizeInput(
-      eventType,
-      input as Record<string, unknown>,
-      output
-    );
-
-    const message =
-      resolved.toastMessage ||
-      (handler ? handler.buildMessage(normalized) : eventType);
+    const message = resolved.toastMessage!;
 
     useGlobalToastQueue().add({
       title: resolved.toastTitle,
@@ -202,7 +191,7 @@ export const OpencodeHooks: Plugin = async (
       body: {
         title: toast.title,
         message: toast.message,
-        variant: toast.variant ?? 'info',
+        variant: toast.variant!,
         duration: toast.duration,
       },
     });

@@ -83,6 +83,38 @@ describe('security-rules', () => {
       const output = mockOutput({});
       expect(blockProtectedBranch(mockInput, output, mockResults)).toBe(false);
     });
+
+    it('should block push to main', () => {
+      const output = mockOutput({ command: 'git push origin main' });
+      expect(blockProtectedBranch(mockInput, output, mockResults)).toBe(true);
+    });
+
+    it('should block push to master', () => {
+      const output = mockOutput({ command: 'git push origin master' });
+      expect(blockProtectedBranch(mockInput, output, mockResults)).toBe(true);
+    });
+
+    it('should block push to develop', () => {
+      const output = mockOutput({ command: 'git push origin develop' });
+      expect(blockProtectedBranch(mockInput, output, mockResults)).toBe(true);
+    });
+
+    it('should not block non-git commands', () => {
+      const output = mockOutput({ command: 'npm run build' });
+      expect(blockProtectedBranch(mockInput, output, mockResults)).toBe(false);
+    });
+
+    it('should not block git commands that are not push', () => {
+      const output = mockOutput({ command: 'git status' });
+      expect(blockProtectedBranch(mockInput, output, mockResults)).toBe(false);
+    });
+
+    it('should block main in any position', () => {
+      const output = mockOutput({
+        command: 'git push origin --set-upstream main',
+      });
+      expect(blockProtectedBranch(mockInput, output, mockResults)).toBe(true);
+    });
   });
 
   describe('blockSecrets', () => {

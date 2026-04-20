@@ -35,6 +35,12 @@ describe('toast resolution', () => {
       expect(result).toBe(true);
     });
 
+    it('should use ?? fallback when enabled is explicitly undefined', () => {
+      const eventCfg: EventConfig = { toast: { enabled: undefined } };
+      const result = resolveToastEnabled(eventCfg, undefined);
+      expect(result).toBe(true);
+    });
+
     it('should return true from toast object with variant only', () => {
       const eventCfg: EventConfig = { toast: { variant: 'warning' } };
       const result = resolveToastEnabled(eventCfg, undefined);
@@ -79,6 +85,12 @@ describe('toast resolution', () => {
 
     it('should return true when default toast enabled not set', () => {
       const defaultCfg: EventOverride = { toast: { variant: 'warning' } };
+      const result = resolveDefaultToast(defaultCfg);
+      expect(result).toBe(true);
+    });
+
+    it('should use ?? fallback when default toast enabled is explicitly undefined', () => {
+      const defaultCfg: EventOverride = { toast: { enabled: undefined } };
       const result = resolveDefaultToast(defaultCfg);
       expect(result).toBe(true);
     });
