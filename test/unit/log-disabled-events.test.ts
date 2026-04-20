@@ -53,7 +53,8 @@ describe('OpencodeHooks - logDisabledEvents', () => {
     stderr: string;
   }>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    vi.resetModules();
     mockClient = createMockClient();
     mockDollar = vi
       .fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>()
@@ -63,11 +64,29 @@ describe('OpencodeHooks - logDisabledEvents', () => {
         stderr: '',
       });
     vi.clearAllMocks();
+
+    vi.doMock('../../.opencode/plugins/core/toast-queue', () => ({
+      initGlobalToastQueue: vi.fn(),
+      useGlobalToastQueue: () => globalMockQueue,
+    }));
+
+    vi.doMock('../../.opencode/plugins/features/scripts/run-script', () => ({
+      runScript: vi.fn(),
+    }));
+
+    vi.doMock(
+      '../../.opencode/plugins/features/messages/show-startup-toast',
+      () => ({
+        showStartupToast: vi.fn().mockResolvedValue(undefined),
+      })
+    );
+
+    vi.doMock('../../.opencode/plugins/audit', () => ({
+      initAuditLogging: vi.fn().mockResolvedValue(undefined),
+    }));
   });
 
   it('should call saveToFile when event is disabled and logDisabledEvents is true', async () => {
-    vi.resetModules();
-
     vi.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
@@ -89,26 +108,6 @@ describe('OpencodeHooks - logDisabledEvents', () => {
         saveToFile: mockSaveToFile,
       })
     );
-
-    vi.doMock('../../.opencode/plugins/core/toast-queue', () => ({
-      initGlobalToastQueue: vi.fn(),
-      useGlobalToastQueue: () => globalMockQueue,
-    }));
-
-    vi.doMock('../../.opencode/plugins/features/scripts/run-script', () => ({
-      runScript: vi.fn(),
-    }));
-
-    vi.doMock(
-      '../../.opencode/plugins/features/messages/show-startup-toast',
-      () => ({
-        showStartupToast: vi.fn().mockResolvedValue(undefined),
-      })
-    );
-
-    vi.doMock('../../.opencode/plugins/audit', () => ({
-      initAuditLogging: vi.fn().mockResolvedValue(undefined),
-    }));
 
     const { OpencodeHooks: FreshPlugin } =
       await import('../../.opencode/plugins/opencode-hooks');
@@ -134,8 +133,6 @@ describe('OpencodeHooks - logDisabledEvents', () => {
   });
 
   it('should not call saveToFile when event is disabled and logDisabledEvents is false', async () => {
-    vi.resetModules();
-
     vi.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
@@ -158,26 +155,6 @@ describe('OpencodeHooks - logDisabledEvents', () => {
       })
     );
 
-    vi.doMock('../../.opencode/plugins/core/toast-queue', () => ({
-      initGlobalToastQueue: vi.fn(),
-      useGlobalToastQueue: () => globalMockQueue,
-    }));
-
-    vi.doMock('../../.opencode/plugins/features/scripts/run-script', () => ({
-      runScript: vi.fn(),
-    }));
-
-    vi.doMock(
-      '../../.opencode/plugins/features/messages/show-startup-toast',
-      () => ({
-        showStartupToast: vi.fn().mockResolvedValue(undefined),
-      })
-    );
-
-    vi.doMock('../../.opencode/plugins/audit', () => ({
-      initAuditLogging: vi.fn().mockResolvedValue(undefined),
-    }));
-
     const { OpencodeHooks: FreshPlugin } =
       await import('../../.opencode/plugins/opencode-hooks');
     const ctx = createMockCtx(mockClient, mockDollar);
@@ -195,8 +172,6 @@ describe('OpencodeHooks - logDisabledEvents', () => {
   });
 
   it('should call toast queue add when saving disabled event', async () => {
-    vi.resetModules();
-
     vi.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
@@ -218,26 +193,6 @@ describe('OpencodeHooks - logDisabledEvents', () => {
         saveToFile: mockSaveToFile,
       })
     );
-
-    vi.doMock('../../.opencode/plugins/core/toast-queue', () => ({
-      initGlobalToastQueue: vi.fn(),
-      useGlobalToastQueue: () => globalMockQueue,
-    }));
-
-    vi.doMock('../../.opencode/plugins/features/scripts/run-script', () => ({
-      runScript: vi.fn(),
-    }));
-
-    vi.doMock(
-      '../../.opencode/plugins/features/messages/show-startup-toast',
-      () => ({
-        showStartupToast: vi.fn().mockResolvedValue(undefined),
-      })
-    );
-
-    vi.doMock('../../.opencode/plugins/audit', () => ({
-      initAuditLogging: vi.fn().mockResolvedValue(undefined),
-    }));
 
     const { OpencodeHooks: FreshPlugin } =
       await import('../../.opencode/plugins/opencode-hooks');
