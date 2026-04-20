@@ -22,36 +22,49 @@
 | `save-to-file.ts` (persistence) | 37              | 94.73%   | 100%    | branch not covered                                         |
 | `run-script.ts`                 | 48              | 92.85%   | 100%    | branch not covered                                         |
 | `block-system.ts`               | 55              | 91.66%   | 100%    | branch not covered                                         |
-| `create-config.ts`              | 69-79           | 100%     | 33.33%  | helper functions not tested                                |
-| `create-handler.ts`             | 23-43           | 0%       | 0%      | helper functions not tested                                |
+
+**NOTE:** `create-config.ts` and `create-handler.ts` are TEST HELPER code (in `test/helpers/`), not production code. They do NOT need tests.
 
 ## Execution Plan
 
-### Phase 1: Test Helpers (easiest wins)
+### Status Progress
 
-| #   | File                                  | Tests to Add                                           | Target Lines |
-| --- | ------------------------------------- | ------------------------------------------------------ | ------------ |
-| 1   | `test/helpers/create-config.test.ts`  | 4 tests: `withEvent`, `withToolEvent` with variations  | 69-79        |
-| 2   | `test/helpers/create-handler.test.ts` | 5 tests: `createHandler`, `createHandlers`, edge cases | 23-43        |
+| Metric       | Before | After  | Target | Gap    |
+| ------------ | ------ | ------ | ------ | ------ |
+| % Statements | 98.99% | 99.63% | 99.9+  | +0.64% |
+| % Branches   | 97.39% | 98.86% | 99.9+  | +2.81% |
+| % Functions  | 96.72% | 100%   | 99.9+  | +2.81% |
+| % Lines      | 98.94% | 99.72% | 99.9+  | +0.67% |
 
-### Phase 2: Core Plugin Files
+### Completed Gaps
 
-| #   | File                               | Tests to Add                                                            | Target Lines    |
-| --- | ---------------------------------- | ----------------------------------------------------------------------- | --------------- |
-| 3   | `test/unit/opencode-hooks.test.ts` | 2 tests: `logDisabledEvents=true` with disabled event                   | 80-88           |
-| 4   | `test/unit/toast-queue.test.ts`    | 6 tests: re-entry lock, dropped toasts, addMultiple drop, timer cleanup | 53-59,71,97,110 |
-| 5   | `test/unit/block-handler.test.ts`  | 1 test: `notify` with `details.message` undefined                       | 16              |
-| 6   | `test/unit/events.test.ts`         | 2 tests: `getHandler` with existing and non-existing event              | 45              |
+| #   | File                                                     | Action                                      | Status |
+| --- | -------------------------------------------------------- | ------------------------------------------- | ------ |
+| 3   | `.opencode/plugins/opencode-hooks.ts`                    | Test logDisabledEvents with events disabled | ✅     |
+| 5   | `.opencode/plugins/block-system/block-handler.ts`        | Test missing branch for check.check         | ✅     |
+| 6   | `.opencode/plugins/features/events/events.ts`            | Cover missing function                      | ✅     |
+| 9   | `.opencode/plugins/features/persistence/save-to-file.ts` | 1 test: branch 37                           | ✅     |
+| 10  | `.opencode/plugins/features/scripts/run-script.ts`       | 1 test: branch 48                           | ✅     |
+| 11  | `.opencode/plugins/plugins/types/block-system.ts`        | 1 test: branch 55                           | ✅     |
 
-### Phase 3: Feature Files
+### Pending Gaps
 
-| #   | File                                         | Tests to Add                  | Target Lines |
-| --- | -------------------------------------------- | ----------------------------- | ------------ |
-| 7   | `test/unit/save-to-file-resolution.test.ts`  | 1 test: error handling branch | 30           |
-| 8   | `test/unit/toast-resolution.test.ts`         | 2 tests: branches 31,47       | 31,47        |
-| 9   | `test/unit/save-to-file-persistence.test.ts` | 1 test: branch 37             | 37           |
-| 10  | `test/unit/run-script.test.ts`               | 1 test: branch 48             | 48           |
-| 11  | `test/unit/block-system.test.ts`             | 1 test: branch 55             | 55           |
+| #   | File                                                           | Action                     | Target Lines |
+| --- | -------------------------------------------------------------- | -------------------------- | ------------ |
+| 7   | `.opencode/plugins/features/events/resolution/save-to-file.ts` | Test error handling branch | 30           |
+| 8   | `.opencode/plugins/features/events/resolution/toast.ts`        | 2 tests: branches 31,47    | 31,47        |
+
+### Complex Gaps (Deferred)
+
+| #   | File                                    | Action                              | Reason                              |
+| --- | --------------------------------------- | ----------------------------------- | ----------------------------------- |
+| 4   | `.opencode/plugins/core/toast-queue.ts` | Test re-entry lock + dropped toasts | Requires extensive mock refactoring |
+
+### Large Gaps (Deferred)
+
+| #   | File                                  | Action                | Reason                |
+| --- | ------------------------------------- | --------------------- | --------------------- |
+| ❌  | `.opencode/plugins/opencode-hooks.ts` | Lines 218,205,386-561 | Large gap (176 lines) |
 
 ### Phase 4: Validation
 
