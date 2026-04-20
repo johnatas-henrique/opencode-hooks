@@ -1,6 +1,7 @@
 import { createResolvers } from '../helpers';
 import { createUserConfig } from '../helpers';
 import type { UserEventsConfig } from '../../.opencode/plugins/types/config';
+import { getHandler } from '../../.opencode/plugins/features/events/events';
 
 describe('events - resolveEventConfig', () => {
   it('should return defaults for event not listed', () => {
@@ -77,5 +78,10 @@ describe('events - resolveToolConfig', () => {
     const result = toolResolver.resolve('invalid', 'task');
 
     expect(result.enabled).toBe(true);
+  });
+
+  it('getHandler should return handler for valid event type', () => {
+    const handler = getHandler('session.created');
+    expect(handler).toBeDefined();
   });
 });
