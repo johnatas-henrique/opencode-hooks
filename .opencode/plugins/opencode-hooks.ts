@@ -88,19 +88,13 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
   }
 
   if (params.eventRecorder) {
-    if (eventType.startsWith('tool.execute.')) {
-      if (toolName) {
-        await params.eventRecorder.logToolExecuteBefore({
-          tool: toolName,
-          sessionID: sessionId,
-          callID: '',
-        });
-      }
-    } else if (eventType === 'session.created') {
-      await params.eventRecorder.logSessionEvent(eventType, {
-        sessionID: sessionId,
-      });
-    }
+    // Log ALL events with sanitized input/output for debug
+    await params.eventRecorder.logEvent(eventType, {
+      sessionID: sessionId,
+      input: input,
+      output: output,
+      tool: toolName,
+    });
   }
 
   if (resolved.toast) {
@@ -224,15 +218,24 @@ export const OpencodeHooks: Plugin = async (
       const isKnownEvent = !!handlers[event.type];
 
       if (!isKnownEvent) {
-        await saveToFile({
-          content: JSON.stringify({
-            timestamp,
-            type: 'UNKNOWN_EVENT',
-            data: event,
-          }),
-          showToast: useGlobalToastQueue().add,
-          filename: UNKNOWN_EVENT_LOG_FILE,
-        });
+        const eventRecorder = getEventRecorder();
+        if (eventRecorder) {
+          eventRecorder
+            .logEvent('unknown', {
+              input: { event },
+            })
+            .catch(() => {});
+        } else {
+          saveToFile({
+            content: JSON.stringify({
+              timestamp,
+              type: 'UNKNOWN_EVENT',
+              data: event,
+            }),
+            showToast: useGlobalToastQueue().add,
+            filename: UNKNOWN_EVENT_LOG_FILE,
+          });
+        }
       }
 
       const resolved = resolveEventConfig(
@@ -620,15 +623,15 @@ export const OpencodeHooks: Plugin = async (
     },
 
     config: async (input: Record<string, unknown>) => {
-      const { agent, command, ...rest } = input;
+      const { agent, command, sessionID, ...rest } = input;
+      const eventRecorder = getEventRecorder();
 
-      await saveToFile({
-        content: JSON.stringify({
-          timestamp: new Date().toISOString(),
-          type: 'CONFIG_FILE',
-          data: rest,
-        }),
-      });
+      if (eventRecorder) {
+        await eventRecorder.logEvent('config.file.updated', {
+          sessionID: String(sessionID || 'unknown'),
+          input: rest,
+        });
+      }
     },
 
     auth: {
