@@ -1,7 +1,7 @@
 import type { TuiToast } from '@opencode-ai/plugin/tui';
-import type { ToastQueue, ToastQueueOptions } from '../types/toast';
-import { saveToFile } from '../features/persistence/save-to-file';
 import { STAGGER_MS, TOAST_DURATION, DEFAULT_SESSION_ID } from './constants';
+import { getErrorRecorder } from '../features/audit';
+import type { ToastQueue, ToastQueueOptions } from '../types/toast';
 
 let activeToast: Promise<void> | null = null;
 let globalToastQueue: ToastQueue | null = null;
@@ -80,21 +80,24 @@ export function createToastQueue(
     await processingLock;
   };
 
-  const logDroppedToast = (title: string) => {
-    saveToFile({
-      content: JSON.stringify({
-        timestamp: new Date().toISOString(),
-        type: 'QUEUE_ERROR',
-        data: title,
-      }),
-    });
+  const logDroppedToast = (toast: TuiToast) => {
+    const errorRecorder = getErrorRecorder();
+    if (errorRecorder) {
+      errorRecorder.logError({
+        eventType: 'toast.queue.overflow',
+        error: new Error(
+          `Toast queue overflow: dropped toast "${toast.title || DEFAULT_SESSION_ID}"`
+        ),
+        skipStack: true,
+      });
+    }
   };
 
   const queueObj = {
     add: (toast: TuiToast) => {
       if (queue.length >= maxSize) {
         const dropped = queue.shift();
-        logDroppedToast(dropped?.title || DEFAULT_SESSION_ID);
+        if (dropped) logDroppedToast(dropped);
       }
       if (toast.variant === 'error') {
         queue.unshift(toast);
@@ -107,7 +110,7 @@ export function createToastQueue(
       for (const toast of toasts) {
         if (queue.length >= maxSize) {
           const dropped = queue.shift();
-          logDroppedToast(dropped?.title || DEFAULT_SESSION_ID);
+          if (dropped) logDroppedToast(dropped);
         }
         if (toast.variant === 'error') {
           queue.unshift(toast);
