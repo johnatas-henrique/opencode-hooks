@@ -14,6 +14,7 @@ import { TOAST_DURATION, DISABLED_CONFIG } from '../../../core/constants';
 import { normalizeInputForHandler } from './normalize-input';
 import { buildToastMessage } from './build-message';
 import { saveToFile } from '../../persistence/save-to-file';
+import { getEventRecorder } from '../../audit/plugin-integration';
 import { UNKNOWN_EVENT_LOG_FILE } from '../../../core/constants';
 
 function isEventOverride(cfg: EventConfig): cfg is EventOverride {
@@ -80,15 +81,22 @@ export class EventConfigResolverImpl implements EventConfigResolver {
     if (userEventConfig === undefined) {
       const hasHandler = !!handler;
       if (!hasHandler) {
-        const timestamp = new Date().toISOString();
-        saveToFile({
-          content: JSON.stringify({
-            timestamp,
-            type: 'UNKNOWN_EVENT_IN_RESOLVE',
-            data: eventType,
-          }),
-          filename: UNKNOWN_EVENT_LOG_FILE,
-        });
+        const eventRecorder = getEventRecorder();
+        const logData = {
+          timestamp: new Date().toISOString(),
+          type: 'UNKNOWN_EVENT_IN_RESOLVE',
+          data: eventType,
+          context: 'resolver',
+        };
+        if (eventRecorder) {
+          // Fire and forget - log async without blocking
+          eventRecorder.logEvent('unknown', { input: logData }).catch(() => {});
+        } else {
+          saveToFile({
+            content: JSON.stringify(logData),
+            filename: UNKNOWN_EVENT_LOG_FILE,
+          });
+        }
       }
       const allowedFields = handler?.allowedFields;
       return {
