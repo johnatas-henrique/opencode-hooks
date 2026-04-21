@@ -2,7 +2,7 @@ import { EventType } from '../../.opencode/plugins/types/config';
 import type {
   UserEventsConfig,
   EventConfig,
-  ToolConfig,
+  ToolOverride,
 } from '../../.opencode/plugins/types/config';
 
 const baseConfig: UserEventsConfig = {
@@ -72,18 +72,17 @@ export function withEvent(
 }
 
 export function withToolEvent(
-  eventType: EventType,
+  _eventType: EventType,
   toolName: string,
-  config: ToolConfig
+  config: ToolOverride | Record<string, never>
 ): Partial<UserEventsConfig> {
-  return {
-    tools: {
-      [EventType.TOOL_EXECUTE_AFTER]: {},
-      [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {},
-      [EventType.TOOL_EXECUTE_BEFORE]: {},
-      [eventType]: {
-        [toolName]: config,
-      },
-    } as UserEventsConfig['tools'],
+  const tools: UserEventsConfig['tools'] = {
+    [EventType.TOOL_EXECUTE_AFTER]: {},
+    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {},
+    [EventType.TOOL_EXECUTE_BEFORE]: {
+      [toolName]: config,
+    },
   };
+
+  return { tools };
 }

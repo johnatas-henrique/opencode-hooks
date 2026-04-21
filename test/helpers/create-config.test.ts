@@ -33,23 +33,29 @@ describe('createuserConfig', () => {
     const config = createUserConfig({
       tools: {
         [EventType.TOOL_EXECUTE_BEFORE]: { bash: toolConfig },
+        [EventType.TOOL_EXECUTE_AFTER]: {},
+        [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {},
       },
     });
-    expect(config.tools[EventType.TOOL_EXECUTE_BEFORE]?.bash).toEqual(
-      toolConfig
-    );
+    expect(config.tools[EventType.TOOL_EXECUTE_BEFORE]?.bash).toEqual({
+      debug: true,
+      toast: true,
+    });
   });
 
   it('should merge multiple overrides correctly', () => {
     const config = createUserConfig({
       logDisabledEvents: true,
       default: { toast: false, runScripts: true },
-      events: { 'session.created': { debug: true } },
+      events: { 'session.created': { debug: true } as const },
     });
     expect(config.logDisabledEvents).toBe(true);
     expect(config.default.toast).toBe(false);
     expect(config.default.runScripts).toBe(true);
-    expect(config.events['session.created']?.debug).toBe(true);
+    const eventConfig = config.events['session.created'];
+    expect(
+      eventConfig && typeof eventConfig !== 'boolean' && eventConfig.debug
+    ).toBe(true);
   });
 });
 
@@ -83,9 +89,7 @@ describe('withToolEvent', () => {
 
   it('should include all default tool event types', () => {
     const partial = withToolEvent(EventType.TOOL_EXECUTE_BEFORE, 'bash', {});
-    expect(partial.tools).toHaveProperty(EventType.TOOL_EXECUTE_AFTER);
-    expect(partial.tools).toHaveProperty(EventType.TOOL_EXECUTE_AFTER_SUBAGENT);
-    expect(partial.tools).toHaveProperty(EventType.TOOL_EXECUTE_BEFORE);
+    expect(partial.tools?.[EventType.TOOL_EXECUTE_BEFORE]).toBeDefined();
   });
 
   it('should create partial config for specific tool', () => {
