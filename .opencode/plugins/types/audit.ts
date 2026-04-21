@@ -1,11 +1,18 @@
 export type AuditLogLevel = 'debug' | 'audit';
 
-export type AuditFileType = 'events' | 'scripts' | 'errors';
+export type AuditFileType =
+  | 'events'
+  | 'scripts'
+  | 'errors'
+  | 'security'
+  | 'debug';
 
 export interface AuditFilesConfig {
   events: string;
   scripts: string;
   errors: string;
+  security?: string;
+  debug?: string;
 }
 
 export interface AuditRetentionConfig {
@@ -20,6 +27,8 @@ export interface AuditConfig {
   maxAgeDays: number;
   truncationKB: number;
   files: AuditFilesConfig;
+  maxFieldSize?: number; // Max characters per field (default: 1000)
+  maxArrayItems?: number; // Max items per array (default: 50)
 }
 
 export interface AuditFileStat {
@@ -66,6 +75,8 @@ export interface AuditRecord {
   duration?: number;
   error?: string;
   directory?: string;
+  input?: Record<string, unknown>; // Sanitized input data
+  output?: Record<string, unknown>; // Sanitized output data
   [key: string]: unknown;
 }
 
@@ -106,6 +117,26 @@ export interface ErrorRecord {
   [key: string]: unknown;
 }
 
+export interface SecurityRecord {
+  ts: string;
+  event: 'block.security';
+  session?: string;
+  toolName?: string;
+  rule: string;
+  reason?: string;
+  input?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export interface DebugRecord {
+  ts: string;
+  event: 'debug';
+  message: string;
+  level?: 'info' | 'warn' | 'error';
+  data?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
 export interface SessionInput {
   sessionID?: string;
   info?: {
@@ -122,10 +153,12 @@ export const DEFAULT_AUDIT_CONFIG: AuditConfig = {
   maxSizeMB: 10,
   maxAgeDays: 30,
   truncationKB: 10,
+  maxFieldSize: 1000,
+  maxArrayItems: 50,
   files: {
-    events: 'plugin-events.jsonl',
-    scripts: 'plugin-scripts.jsonl',
-    errors: 'plugin-errors.jsonl',
+    events: 'plugin-events.json',
+    scripts: 'plugin-scripts.json',
+    errors: 'plugin-errors.json',
   },
 };
 export interface AuditLogger {
@@ -160,6 +193,16 @@ export interface EventRecorder {
     }
   ): Promise<void>;
   logSessionEvent(eventType: string, input: SessionInput): Promise<void>;
+  logEvent(
+    eventType: string,
+    data: {
+      sessionID?: string;
+      input?: Record<string, unknown>;
+      output?: Record<string, unknown>;
+      tool?: string;
+      context?: string;
+    }
+  ): Promise<void>;
 }
 
 export interface ScriptRecorderDependencies {
@@ -204,6 +247,7 @@ export interface ConfigErrorContext {
 export interface CodeErrorContext {
   error: Error;
   context?: string;
+  skipStack?: boolean; // If true, stack trace will not be included in the error record
 }
 
 export type ErrorContext = ConfigErrorContext | CodeErrorContext;
@@ -214,5 +258,19 @@ export interface ArchiveDependencies {
     options?: { recursive?: boolean }
   ) => Promise<void | string>;
   rename: (src: string, dest: string) => Promise<void>;
-  stat?: (path: string) => Promise<{ existsSync?: boolean }>;
+  stat?: (path: string) => Promise<unknown>;
+  unlink?: (path: string) => Promise<void>;
+  open?: (
+    path: string,
+    flags: string
+  ) => Promise<{
+    write: (
+      buffer: Buffer,
+      offset: number,
+      length: number,
+      position: number
+    ) => Promise<number>;
+    close: () => Promise<void>;
+  }>;
+  readFile?: (path: string, encoding: string) => Promise<string>;
 }
