@@ -41,12 +41,18 @@ export function createErrorRecord(
   }
 
   const codeContext = context as CodeErrorContext;
-  return {
+  const record: ErrorRecord = {
     ...base,
     error: codeContext.error.message,
-    stack: codeContext.error.stack,
     context: codeContext.context,
   };
+
+  // Only include stack trace if not explicitly skipped
+  if (!codeContext.skipStack) {
+    record.stack = codeContext.error.stack;
+  }
+
+  return record;
 }
 
 export function createErrorRecorder(

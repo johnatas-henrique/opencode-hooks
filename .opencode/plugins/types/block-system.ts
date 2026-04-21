@@ -9,7 +9,7 @@ export interface BlockResult {
 
 export interface BlockEffects {
   notify: (title: string, details?: { message: string }) => void;
-  log: (data: unknown) => void;
+  log: (data: unknown) => void | Promise<void>;
 }
 
 export interface BlockSystem {
@@ -56,11 +56,12 @@ export function createBlockSystem(effects: BlockEffects): BlockSystem {
         effects.notify(`${input.tool.toUpperCase()} BEFORE - EVENT BLOCKED`, {
           message,
         });
-        effects.log({
+        const logData = {
           timestamp: new Date().toISOString(),
           type: 'EVENT_BLOCKED',
           data: { eventType, input, output, blockCheck: result.predicate },
-        });
+        };
+        Promise.resolve(effects.log(logData)).catch(() => {});
         throw new Error(message);
       }
     },

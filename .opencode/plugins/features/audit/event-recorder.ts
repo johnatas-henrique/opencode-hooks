@@ -107,11 +107,150 @@ export function createSessionEventRecord(
   };
 }
 
+// ============================================
+// Sanitization and Truncation Functions
+// ============================================
+
+const SENSITIVE_FIELDS = [
+  'password',
+  'token',
+  'secret',
+  'apiKey',
+  'authorization',
+  'auth',
+  'credential',
+  'key',
+  'privateKey',
+  'cookie',
+  'content',
+  'env',
+  'messages',
+  'parts',
+];
+
+function isSensitiveField(key: string): boolean {
+  const lowerKey = key.toLowerCase();
+  return SENSITIVE_FIELDS.some((sensitive) => lowerKey.includes(sensitive));
+}
+
+function sanitizeAndTruncate(
+  data: Record<string, unknown>,
+  maxSize: number,
+  maxArrayItems: number
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(data)) {
+    // Redact sensitive string fields (shows size for debug context)
+    if (isSensitiveField(key) && typeof value === 'string') {
+      result[key] = `[REDACTED: ${value.length} chars]`;
+      continue;
+    }
+
+    // Truncate large strings
+    if (typeof value === 'string' && value.length > maxSize) {
+      result[key] = value.substring(0, maxSize) + '... [truncated]';
+      continue;
+    }
+
+    // Handle nested objects (deep sanitization)
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      result[key] = sanitizeAndTruncate(
+        value as Record<string, unknown>,
+        maxSize,
+        maxArrayItems
+      );
+      continue;
+    }
+
+    // Handle arrays (limit items + sanitize)
+    if (Array.isArray(value)) {
+      const sanitized = value
+        .slice(0, maxArrayItems)
+        .map((item) =>
+          typeof item === 'object' && item !== null
+            ? sanitizeAndTruncate(
+                item as Record<string, unknown>,
+                maxSize,
+                maxArrayItems
+              )
+            : item
+        );
+      if (value.length > maxArrayItems) {
+        sanitized.push(`... [${value.length - maxArrayItems} more items]`);
+      }
+      result[key] = sanitized;
+      continue;
+    }
+
+    result[key] = value;
+  }
+
+  return result;
+}
+
+// ============================================
+// Generic Event Record Creation
+// ============================================
+
+export function createGenericEventRecord(
+  eventType: string,
+  input: Record<string, unknown> | undefined,
+  output: Record<string, unknown> | undefined,
+  toolName: string | undefined,
+  shouldLogResult: boolean,
+  maxFieldSize: number,
+  maxArrayItems: number
+): AuditRecord | null {
+  if (!shouldLogResult) {
+    return null;
+  }
+
+  // Extract session ID before sanitization
+  let sessionId = 'unknown';
+  if (input?.sessionID && typeof input.sessionID === 'string') {
+    sessionId = input.sessionID;
+  } else if (
+    input?.info &&
+    typeof input.info === 'object' &&
+    input.info !== null &&
+    'id' in input.info &&
+    typeof (input.info as Record<string, unknown>).id === 'string'
+  ) {
+    sessionId = (input.info as Record<string, unknown>).id as string;
+  }
+
+  const record: AuditRecord = {
+    ts: new Date().toISOString(),
+    event: eventType,
+    session: sessionId,
+  };
+
+  // Add tool name if available
+  if (toolName || input?.tool) {
+    record.tool = String(toolName || input?.tool);
+  }
+
+  // Add sanitized input
+  if (input && Object.keys(input).length > 0) {
+    record.input = sanitizeAndTruncate(input, maxFieldSize, maxArrayItems);
+  }
+
+  // Add sanitized output
+  if (output && Object.keys(output).length > 0) {
+    record.output = sanitizeAndTruncate(output, maxFieldSize, maxArrayItems);
+  }
+
+  return record;
+}
+
 export function createEventRecorder(
   config: AuditConfig,
   deps: EventRecorderDependencies
 ) {
   const canLog = shouldLogEvents(config);
+  const maxFieldSize = config.maxFieldSize ?? 1000;
+  const maxArrayItems = config.maxArrayItems ?? 50;
 
   async function logToolExecuteBefore(
     input: ToolExecuteBeforeInput
@@ -142,9 +281,43 @@ export function createEventRecorder(
     }
   }
 
+  async function logEvent(
+    eventType: string,
+    data: {
+      sessionID?: string;
+      input?: Record<string, unknown>;
+      output?: Record<string, unknown>;
+      tool?: string;
+      context?: string;
+    }
+  ): Promise<void> {
+    // Merge sessionID into input for proper extraction
+    const inputWithSession = data.input
+      ? { ...data.input, sessionID: data.sessionID ?? '' }
+      : { sessionID: data.sessionID ?? '' };
+
+    const record = createGenericEventRecord(
+      eventType,
+      inputWithSession,
+      data.output,
+      data.tool,
+      canLog,
+      maxFieldSize,
+      maxArrayItems
+    );
+    if (record !== null) {
+      if (data.context) {
+        const recordWithContext: AuditRecord & { context?: string } = record;
+        recordWithContext.context = data.context;
+      }
+      await deps.writeLine('events', record);
+    }
+  }
+
   return {
     logToolExecuteBefore,
     logToolExecuteAfter,
     logSessionEvent,
+    logEvent,
   };
 }

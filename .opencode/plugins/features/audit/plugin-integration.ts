@@ -11,54 +11,60 @@ import {
   AUDIT_ERRORS_FILE,
   AUDIT_ARCHIVE_DIR,
 } from '../../core/constants';
-import { archiveLogFiles } from './audit-logger';
+import { archiveLogFilesWithLock } from './audit-logger';
 import type { ScriptRecorder } from '../../types/audit';
 
-let initialized = false;
+let initPromise: Promise<void> | null = null;
 let auditLogger: ReturnType<typeof createAuditLogger>;
 let eventRecorder: ReturnType<typeof createEventRecorder>;
 let scriptRecorder: ReturnType<typeof createScriptRecorder>;
 let errorRecorder: ReturnType<typeof createErrorRecorder>;
 
-export async function initAuditLogging(config?: AuditConfig): Promise<void> {
-  if (initialized) return;
+export function initAuditLogging(config?: AuditConfig): Promise<void> {
+  if (initPromise) return initPromise;
 
-  const auditConfig = config ?? DEFAULT_AUDIT_CONFIG;
+  initPromise = (async () => {
+    const auditConfig = config ?? DEFAULT_AUDIT_CONFIG;
 
-  auditLogger = createAuditLogger({
-    basePath: LOG_DIR,
-    config: auditConfig,
-  });
+    auditLogger = createAuditLogger({
+      basePath: LOG_DIR,
+      config: auditConfig,
+    });
 
-  eventRecorder = createEventRecorder(auditConfig, {
-    writeLine: auditLogger.writeLine.bind(auditLogger),
-  });
+    eventRecorder = createEventRecorder(auditConfig, {
+      writeLine: auditLogger.writeLine.bind(auditLogger),
+    });
 
-  scriptRecorder = createScriptRecorder(auditConfig, {
-    writeLine: auditLogger.writeLine.bind(auditLogger),
-  });
+    scriptRecorder = createScriptRecorder(auditConfig, {
+      writeLine: auditLogger.writeLine.bind(auditLogger),
+    });
 
-  errorRecorder = createErrorRecorder(auditConfig, {
-    writeLine: auditLogger.writeLine.bind(auditLogger),
-  });
+    errorRecorder = createErrorRecorder(auditConfig, {
+      writeLine: auditLogger.writeLine.bind(auditLogger),
+    });
 
-  await archiveLogFiles(LOG_DIR, LOG_DIR + '/' + AUDIT_ARCHIVE_DIR, {
-    events: AUDIT_EVENTS_FILE,
-    scripts: AUDIT_SCRIPTS_FILE,
-    errors: AUDIT_ERRORS_FILE,
-  });
+    await archiveLogFilesWithLock(LOG_DIR, LOG_DIR + '/' + AUDIT_ARCHIVE_DIR, {
+      events: AUDIT_EVENTS_FILE,
+      scripts: AUDIT_SCRIPTS_FILE,
+      errors: AUDIT_ERRORS_FILE,
+    });
+  })();
 
-  initialized = true;
+  return initPromise;
 }
 
 export function getEventRecorder() {
-  return initialized ? eventRecorder : undefined;
+  return initPromise ? eventRecorder : undefined;
 }
 
 export function getScriptRecorder(): ScriptRecorder | undefined {
-  return initialized ? scriptRecorder : undefined;
+  return initPromise ? scriptRecorder : undefined;
 }
 
 export function getErrorRecorder() {
-  return initialized ? errorRecorder : undefined;
+  return initPromise ? errorRecorder : undefined;
+}
+
+export function resetAuditLogging() {
+  initPromise = null;
 }
