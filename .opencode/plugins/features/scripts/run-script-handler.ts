@@ -68,20 +68,35 @@ export async function runScriptAndHandle(
     const eventInfo =
       eventType.startsWith('tool.execute.') && toolName ? toolName : eventType;
 
-    await saveToFile({
-      content: JSON.stringify({
-        timestamp,
-        type: 'SCRIPT_ERROR',
-        data: {
-          eventType,
-          toolName,
-          script,
-          error: result.error,
-          exitCode: result.exitCode,
-        },
-      }),
-      showToast: useGlobalToastQueue().add,
-    });
+    const scriptData = {
+      script,
+      args: scriptArg ? [scriptArg] : [],
+      startTime: new Date(timestamp).getTime(),
+    };
+    const scriptResult = {
+      output: result.output ?? '',
+      error: result.error,
+      exitCode: result.exitCode,
+    };
+
+    if (scriptRecorder) {
+      await scriptRecorder.logScript(scriptData, scriptResult);
+    } else {
+      await saveToFile({
+        content: JSON.stringify({
+          timestamp,
+          type: 'SCRIPT_ERROR',
+          data: {
+            eventType,
+            toolName,
+            script,
+            error: result.error,
+            exitCode: result.exitCode,
+          },
+        }),
+        showToast: useGlobalToastQueue().add,
+      });
+    }
 
     if (showError) {
       useGlobalToastQueue().add({
