@@ -1,6 +1,7 @@
 import { TOAST_DURATION } from '../core/constants';
 import { EventType } from '../types/config';
 import type { UserEventsConfig } from '../types/config';
+import { DEFAULT_AUDIT_CONFIG } from '../types/audit';
 import {
   blockEnvFiles,
   blockGitForce,
@@ -42,6 +43,17 @@ export const userConfig: UserEventsConfig = {
   // toast: false = don't show toasts for all events (too noisy)
   // runScripts: false = scripts are opt-in, not by default
 
+  audit: {
+    enabled: true,
+    level: 'debug',
+    maxSizeMB: 10,
+    maxAgeDays: 30,
+    truncationKB: 10,
+    maxFieldSize: 1000, // Max characters per field (for debug logging)
+    maxArrayItems: 50, // Max items per array (for debug logging)
+    files: DEFAULT_AUDIT_CONFIG.files,
+  },
+
   events: {
     [EventType.SERVER_CONNECTED]: { enabled: false },
     [EventType.SERVER_INSTANCE_DISPOSED]: { enabled: true },
@@ -54,18 +66,22 @@ export const userConfig: UserEventsConfig = {
     },
     [EventType.SESSION_COMPACTED]: { toast: true },
     [EventType.SESSION_DELETED]: { toast: true },
-    [EventType.SESSION_IDLE]: { enabled: false },
-    [EventType.SESSION_DIFF]: { enabled: false },
+    [EventType.SESSION_IDLE]: {
+      toast: true,
+      runScripts: true,
+      scripts: ['server-connected.sh'],
+    },
+    [EventType.SESSION_DIFF]: { toast: true },
     [EventType.SESSION_ERROR]: { toast: true },
-    [EventType.SESSION_STATUS]: { enabled: false },
-    [EventType.SESSION_UPDATED]: { enabled: false },
-    [EventType.SESSION_UNKNOWN]: { enabled: false },
+    [EventType.SESSION_STATUS]: { toast: true },
+    [EventType.SESSION_UPDATED]: { toast: true },
+    [EventType.SESSION_UNKNOWN]: { toast: true },
 
-    [EventType.MESSAGE_PART_DELTA]: { enabled: false },
-    [EventType.MESSAGE_PART_REMOVED]: { enabled: false },
-    [EventType.MESSAGE_PART_UPDATED]: { enabled: false },
-    [EventType.MESSAGE_REMOVED]: { enabled: false },
-    [EventType.MESSAGE_UPDATED]: { enabled: false },
+    [EventType.MESSAGE_PART_DELTA]: { toast: true },
+    [EventType.MESSAGE_PART_REMOVED]: { toast: true },
+    [EventType.MESSAGE_PART_UPDATED]: { toast: true },
+    [EventType.MESSAGE_REMOVED]: { toast: true },
+    [EventType.MESSAGE_UPDATED]: { toast: true },
 
     [EventType.FILE_EDITED]: { enabled: false },
     [EventType.FILE_WATCHER_UPDATED]: { enabled: false },
