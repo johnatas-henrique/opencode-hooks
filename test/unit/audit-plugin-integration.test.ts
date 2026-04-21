@@ -12,6 +12,7 @@ vi.mock('../../.opencode/plugins/features/audit/audit-logger', () => ({
     cleanup: vi.fn(),
   })),
   archiveLogFiles: vi.fn().mockResolvedValue(undefined),
+  archiveLogFilesWithLock: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../../.opencode/plugins/features/audit/event-recorder', () => ({
@@ -77,6 +78,18 @@ describe('Audit Plugin Integration', () => {
       const secondEventRecorder = getEventRecorder();
 
       expect(firstEventRecorder).toBe(secondEventRecorder);
+    });
+
+    it('should handle concurrent calls - return same promise', async () => {
+      const promise1 = initAuditLogging();
+      const promise2 = initAuditLogging();
+      const promise3 = initAuditLogging();
+
+      expect(promise1).toBe(promise2);
+      expect(promise2).toBe(promise3);
+
+      await Promise.all([promise1, promise2, promise3]);
+      expect(getEventRecorder()).toBeDefined();
     });
   });
 });

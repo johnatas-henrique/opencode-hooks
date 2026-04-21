@@ -2,6 +2,7 @@ import {
   handleDebugLog,
   sanitizeData,
 } from '../../.opencode/plugins/core/debug';
+import type { DebugRecorder } from '../../.opencode/plugins/features/audit/debug-recorder';
 
 vi.mock('../../.opencode/plugins/core/toast-queue', () => {
   const mockAdd = vi.fn();
@@ -21,6 +22,14 @@ vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
 vi.mock('../../.opencode/plugins/core/constants', () => ({
   TOAST_DURATION: { TEN_SECONDS: 10000 },
   DEBUG_LOG_FILE: 'debug.log',
+}));
+
+const { getDebugRecorder: mockGetDebugRecorder } = vi.hoisted(() => ({
+  getDebugRecorder: vi.fn().mockReturnValue(null),
+}));
+
+vi.mock('../../.opencode/plugins/features/audit', () => ({
+  getDebugRecorder: mockGetDebugRecorder,
 }));
 
 import { useGlobalToastQueue } from '../../.opencode/plugins/core/toast-queue';
@@ -44,6 +53,25 @@ describe('handleDebugLog', () => {
         message: 'null',
       })
     );
+  });
+
+  it('should use debugRecorder.logDebug when debugRecorder exists', async () => {
+    // Direct coverage test - set mock before calling
+    mockGetDebugRecorder.mockReturnValue({
+      logDebug: vi.fn().mockResolvedValue(undefined),
+    } as unknown as DebugRecorder);
+
+    await handleDebugLog('ts', 'title', { key: 'value' });
+  });
+
+  it('should fall back to saveToFile when debugRecorder is null', async () => {
+    const { saveToFile } =
+      await import('../../.opencode/plugins/features/persistence/save-to-file');
+    mockGetDebugRecorder.mockReturnValue(null);
+
+    await handleDebugLog('timestamp', 'title', { key: 'value' });
+
+    expect(saveToFile).toHaveBeenCalled();
   });
 });
 

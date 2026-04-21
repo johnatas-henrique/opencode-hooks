@@ -1,4 +1,6 @@
 import {
+  archiveLogFiles,
+  archiveLogFilesWithLock,
   createAuditLogger,
   createGzipFile,
 } from '../../.opencode/plugins/features/audit/audit-logger';
@@ -23,6 +25,7 @@ const mockedMkdir = vi.mocked(fsPromises.mkdir);
 const mockedReaddir = vi.mocked(fsPromises.readdir);
 const mockedUnlink = vi.mocked(fsPromises.unlink);
 const mockedStat = vi.mocked(fsPromises.stat);
+const mockedRename = vi.mocked(fsPromises.rename);
 
 describe('audit-logger', () => {
   const BASE_PATH = '/tmp/audit-test';
@@ -34,9 +37,9 @@ describe('audit-logger', () => {
     maxAgeDays: 30,
     truncationKB: 10,
     files: {
-      events: 'plugin-events.jsonl',
-      scripts: 'plugin-scripts.jsonl',
-      errors: 'plugin-errors.jsonl',
+      events: 'plugin-events.json',
+      scripts: 'plugin-scripts.json',
+      errors: 'plugin-errors.json',
     },
   };
 
@@ -59,6 +62,46 @@ describe('audit-logger', () => {
       });
       await logger.writeLine('events', { event: 'test' });
       expect(mockedAppendFile).not.toHaveBeenCalled();
+    });
+
+    it('should write when enabled (debug level)', async () => {
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: { ...defaultConfig, level: 'debug', enabled: true },
+        deps: { appendFile: mockedAppendFile, mkdir: mockedMkdir },
+      });
+      await logger.writeLine('events', { event: 'test' });
+      expect(mockedAppendFile).toHaveBeenCalled();
+    });
+
+    it('should skip events file in audit mode', async () => {
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: { ...defaultConfig, level: 'audit', enabled: true },
+        deps: { appendFile: mockedAppendFile, mkdir: mockedMkdir },
+      });
+      await logger.writeLine('events', { event: 'test' });
+      expect(mockedAppendFile).not.toHaveBeenCalled();
+    });
+
+    it('should write to scripts file in audit mode', async () => {
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: { ...defaultConfig, level: 'audit', enabled: true },
+        deps: { appendFile: mockedAppendFile, mkdir: mockedMkdir },
+      });
+      await logger.writeLine('scripts', { script: 'test.sh' });
+      expect(mockedAppendFile).toHaveBeenCalled();
+    });
+
+    it('should write to errors file in audit mode', async () => {
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: { ...defaultConfig, level: 'audit', enabled: true },
+        deps: { appendFile: mockedAppendFile, mkdir: mockedMkdir },
+      });
+      await logger.writeLine('errors', { error: 'Test error' });
+      expect(mockedAppendFile).toHaveBeenCalled();
     });
 
     it('should handle write errors gracefully', async () => {
@@ -89,7 +132,7 @@ describe('audit-logger', () => {
       });
       await logger.rotate('events');
       expect(mockGzipFile).toHaveBeenCalledWith(
-        `${BASE_PATH}/plugin-events.jsonl`,
+        `${BASE_PATH}/plugin-events.json`,
         expect.stringContaining('plugin-events-')
       );
     });
@@ -99,7 +142,7 @@ describe('audit-logger', () => {
     it('should delete files older than maxAgeDays', async () => {
       const oldDate = Date.now() - 31 * 24 * 60 * 60 * 1000;
       mockedStat.mockResolvedValue({ size: 1024, mtimeMs: oldDate } as never);
-      mockedReaddir.mockResolvedValue(['old-file.jsonl.gz'] as never);
+      mockedReaddir.mockResolvedValue(['old-file.json.gz'] as never);
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
@@ -119,7 +162,7 @@ describe('audit-logger', () => {
         size: 1024,
         mtimeMs: recentDate,
       } as never);
-      mockedReaddir.mockResolvedValue(['recent-file.jsonl.gz'] as never);
+      mockedReaddir.mockResolvedValue(['recent-file.json.gz'] as never);
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
@@ -135,7 +178,7 @@ describe('audit-logger', () => {
 
     it('should skip non-gzip files', async () => {
       mockedReaddir.mockResolvedValue([
-        'regular-file.jsonl',
+        'regular-file.json',
         'another.txt',
       ] as never);
       const logger = createAuditLogger({
@@ -217,6 +260,76 @@ describe('audit-logger', () => {
       expect(mockGzipFile).not.toHaveBeenCalled();
     });
   });
+
+  describe('getRotatePath default path', () => {
+    it('should use default plugin-{fileType}.json when config.files[fileType] is undefined (line 181)', async () => {
+      const customConfig = {
+        enabled: true,
+        level: 'debug',
+        maxSizeMB: 10,
+        maxAgeDays: 30,
+        truncationKB: 10,
+        files: {
+          // 'events' is undefined - triggers default path
+        },
+      };
+
+      // Mock stat to succeed so getRotatePath completes execution
+      mockedStat.mockResolvedValue({ size: 100 } as never);
+
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: customConfig as AuditConfig,
+        deps: {
+          appendFile: mockedAppendFile,
+          mkdir: mockedMkdir,
+          stat: mockedStat,
+          readdir: mockedReaddir,
+          unlink: mockedUnlink,
+          gzipFile: mockGzipFile,
+        },
+      });
+
+      await logger.rotate('events');
+      // getRotatePath uses fallback `plugin-${fileType}.json` when config.files[fileType] is undefined
+      expect(mockGzipFile).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('plugin-events-')
+      );
+    });
+
+    it('should use provided config.files[fileType] when defined', async () => {
+      const customConfig = {
+        enabled: true,
+        level: 'debug',
+        maxSizeMB: 10,
+        maxAgeDays: 30,
+        truncationKB: 10,
+        files: {
+          events: 'custom-events.json',
+        },
+      };
+
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: customConfig as AuditConfig,
+        deps: {
+          appendFile: mockedAppendFile,
+          mkdir: mockedMkdir,
+          stat: mockedStat,
+          readdir: mockedReaddir,
+          unlink: mockedUnlink,
+          gzipFile: mockGzipFile,
+        },
+      });
+
+      await logger.rotate('events');
+      expect(mockGzipFile).toHaveBeenCalledWith(
+        `${BASE_PATH}/custom-events.json`,
+        expect.stringContaining('custom-events-')
+      );
+    });
+  });
 });
 
 describe('createGzipFile', () => {
@@ -275,5 +388,352 @@ describe('createGzipFile', () => {
     await expect(gzipFile('/source', '/dest')).rejects.toThrow(
       'Pipeline error'
     );
+  });
+});
+
+describe('archiveLogFilesWithLock', () => {
+  it('should remove stale lock and acquire lock when lock is expired', async () => {
+    const mockOpen = vi
+      .fn()
+      .mockRejectedValueOnce({ code: 'EEXIST' }) // First open fails (EEXIST)
+      .mockResolvedValueOnce({ close: vi.fn() }); // Second open succeeds after unlink
+    const mockUnlink = vi.fn().mockResolvedValue(undefined);
+    const mockStat = vi.fn().mockResolvedValue({});
+    const mockMkdir = vi.fn().mockResolvedValue(undefined);
+    const mockRename = vi.fn().mockResolvedValue(undefined);
+    const oldLockTime = Date.now() - 40000; // Older than 30 second timeout
+    const mockReadFile = vi.fn().mockResolvedValue(`${oldLockTime}-instance`);
+
+    await archiveLogFilesWithLock(
+      '/base',
+      '/archive',
+      {
+        events: 'events.json',
+        scripts: 'scripts.json',
+        errors: 'errors.json',
+      },
+      {
+        open: mockOpen,
+        unlink: mockUnlink,
+        stat: mockStat,
+        mkdir: mockMkdir,
+        rename: mockRename,
+        readFile: mockReadFile,
+      }
+    );
+
+    expect(mockUnlink).toHaveBeenCalled();
+    expect(mockOpen).toHaveBeenCalledTimes(2);
+  });
+
+  it('should skip when lock file cannot be read (catch at line 94)', async () => {
+    const mockOpen = vi.fn().mockRejectedValue({ code: 'EEXIST' });
+    const mockMkdir = vi.fn().mockResolvedValue(undefined);
+    const mockReadFile = vi.fn().mockRejectedValue(new Error('Cannot read'));
+
+    await archiveLogFilesWithLock(
+      '/base',
+      '/archive',
+      {
+        events: 'events.json',
+        scripts: 'scripts.json',
+        errors: 'errors.json',
+      },
+      {
+        open: mockOpen,
+        mkdir: mockMkdir,
+        readFile: mockReadFile,
+      }
+    );
+    // Should skip - caught at line 94
+    expect(mockMkdir).not.toHaveBeenCalled();
+  });
+
+  it('should skip when another process holds valid lock', async () => {
+    const mockOpen = vi.fn().mockRejectedValue({ code: 'EEXIST' });
+    const mockMkdir = vi.fn().mockResolvedValue(undefined);
+    const mockReadFile = vi
+      .fn()
+      .mockResolvedValue(`${Date.now()}-other-instance`);
+
+    await archiveLogFilesWithLock(
+      '/base',
+      '/archive',
+      {
+        events: 'events.json',
+        scripts: 'scripts.json',
+        errors: 'errors.json',
+      },
+      {
+        open: mockOpen,
+        mkdir: mockMkdir,
+        readFile: mockReadFile,
+      }
+    );
+    // Should skip because lock is still valid
+    expect(mockMkdir).not.toHaveBeenCalled();
+  });
+
+  it('should throw when lock acquisition fails with non-EEXIST error (line 98)', async () => {
+    const nonEexistError = new Error('EPERM');
+    const mockMkdir = vi.fn().mockResolvedValue(undefined);
+
+    await expect(
+      archiveLogFilesWithLock(
+        '/base',
+        '/archive',
+        {
+          events: 'events.json',
+          scripts: 'scripts.json',
+          errors: 'errors.json',
+        },
+        {
+          open: vi.fn().mockRejectedValue(nonEexistError),
+          mkdir: mockMkdir,
+        }
+      )
+    ).rejects.toThrow('EPERM');
+  });
+
+  it('should handle stale lock detection edge case - skip when lockTime is NaN', async () => {
+    // Covers: !isNaN(lockTime) check - when lockTime is NaN, it skips stale path
+    const mockOpen = vi.fn().mockRejectedValue({ code: 'EEXIST' });
+    const mockMkdir = vi.fn().mockResolvedValue(undefined);
+    const mockReadFile = vi.fn().mockResolvedValue('not-a-number-instance');
+
+    await archiveLogFilesWithLock(
+      '/base',
+      '/archive',
+      {
+        events: 'events.json',
+        scripts: 'scripts.json',
+        errors: 'errors.json',
+      },
+      {
+        open: mockOpen,
+        mkdir: mockMkdir,
+        readFile: mockReadFile,
+      }
+    );
+
+    // Should skip because isNaN(lockTime) is true, so stale lock branch not taken
+    expect(mockMkdir).not.toHaveBeenCalled();
+  });
+});
+
+describe('archiveLogFiles', () => {
+  it('should use custom mkdir when provided (line 29)', async () => {
+    const customMkdir = vi.fn().mockResolvedValue(undefined);
+    const customRename = vi.fn().mockResolvedValue(undefined);
+    const customStat = vi.fn().mockResolvedValue({ size: 1024 } as never);
+
+    await archiveLogFiles(
+      '/base',
+      '/archive',
+      {
+        events: 'events.json',
+        scripts: 'scripts.json',
+        errors: 'errors.json',
+      },
+      {
+        mkdir: customMkdir,
+        rename: customRename,
+        stat: customStat,
+      }
+    );
+
+    expect(customMkdir).toHaveBeenCalledWith('/archive', { recursive: true });
+    // Custom mkdir used instead of default - covers line 29 branch
+    expect(customMkdir).toHaveBeenCalled();
+  });
+
+  it('should use custom rename when provided (line 30)', async () => {
+    const customMkdir = vi.fn().mockResolvedValue(undefined);
+    const customRename = vi.fn().mockResolvedValue(undefined);
+    const customStat = vi.fn().mockResolvedValue({ size: 1024 } as never);
+
+    await archiveLogFiles(
+      '/base',
+      '/archive',
+      {
+        events: 'events.json',
+        scripts: 'scripts.json',
+        errors: 'errors.json',
+      },
+      {
+        mkdir: customMkdir,
+        rename: customRename,
+        stat: customStat,
+      }
+    );
+
+    expect(customRename).toHaveBeenCalled();
+  });
+
+  it('should use custom stat when provided (line 31)', async () => {
+    const customMkdir = vi.fn().mockResolvedValue(undefined);
+    const customRename = vi.fn().mockResolvedValue(undefined);
+    const customStat = vi.fn().mockResolvedValue({ size: 1024 } as never);
+
+    await archiveLogFiles(
+      '/base',
+      '/archive',
+      {
+        events: 'events.json',
+        scripts: 'scripts.json',
+        errors: 'errors.json',
+      },
+      {
+        mkdir: customMkdir,
+        rename: customRename,
+        stat: customStat,
+      }
+    );
+
+    expect(customStat).toHaveBeenCalled();
+  });
+});
+
+describe('archiveLogFiles', () => {
+  it('should use custom mkdir when provided (line 29)', async () => {
+    const customMkdir = vi.fn().mockResolvedValue(undefined);
+    const customRename = vi.fn().mockResolvedValue(undefined);
+    const customStat = vi.fn().mockResolvedValue({ size: 1024 } as never);
+
+    await archiveLogFiles(
+      '/base',
+      '/archive',
+      {
+        events: 'events.json',
+        scripts: 'scripts.json',
+        errors: 'errors.json',
+      },
+      {
+        mkdir: customMkdir,
+        rename: customRename,
+        stat: customStat,
+      }
+    );
+
+    expect(customMkdir).toHaveBeenCalledWith('/archive', { recursive: true });
+    expect(customMkdir).toHaveBeenCalled();
+  });
+
+  it('should use custom rename when provided (line 30)', async () => {
+    const customMkdir = vi.fn().mockResolvedValue(undefined);
+    const customRename = vi.fn().mockResolvedValue(undefined);
+    const customStat = vi.fn().mockResolvedValue({ size: 1024 } as never);
+
+    await archiveLogFiles(
+      '/base',
+      '/archive',
+      {
+        events: 'events.json',
+        scripts: 'scripts.json',
+        errors: 'errors.json',
+      },
+      {
+        mkdir: customMkdir,
+        rename: customRename,
+        stat: customStat,
+      }
+    );
+
+    expect(customRename).toHaveBeenCalled();
+  });
+
+  it('should use custom stat when provided (line 31)', async () => {
+    const customMkdir = vi.fn().mockResolvedValue(undefined);
+    const customRename = vi.fn().mockResolvedValue(undefined);
+    const customStat = vi.fn().mockResolvedValue({ size: 1024 } as never);
+
+    await archiveLogFiles(
+      '/base',
+      '/archive',
+      {
+        events: 'events.json',
+        scripts: 'scripts.json',
+        errors: 'errors.json',
+      },
+      {
+        mkdir: customMkdir,
+        rename: customRename,
+        stat: customStat,
+      }
+    );
+
+    expect(customStat).toHaveBeenCalled();
+  });
+
+  it('should use default mkdir when deps.mkdir is undefined (branch coverage)', async () => {
+    const customStat = vi.fn().mockResolvedValue({ size: 1024 } as never);
+    const customRename = vi.fn().mockResolvedValue(undefined);
+
+    // Provide deps but with mkdir undefined - should fall back to default
+    await archiveLogFiles(
+      '/base',
+      '/archive',
+      {
+        events: 'events.json',
+        scripts: 'scripts.json',
+        errors: 'errors.json',
+      },
+      {
+        // mkdir not provided - uses default
+        rename: customRename,
+        stat: customStat,
+      }
+    );
+
+    // Default mkdir should be used (fs.promises.mkdir mocked)
+    expect(mockedMkdir).toHaveBeenCalled();
+  });
+
+  it('should use default rename when deps.rename is undefined (branch coverage)', async () => {
+    const customMkdir = vi.fn().mockResolvedValue(undefined);
+    const customStat = vi.fn().mockResolvedValue({ size: 1024 } as never);
+
+    // Provide deps but with rename undefined - should fall back to default
+    await archiveLogFiles(
+      '/base',
+      '/archive',
+      {
+        events: 'events.json',
+        scripts: 'scripts.json',
+        errors: 'errors.json',
+      },
+      {
+        mkdir: customMkdir,
+        // rename not provided - uses default
+        stat: customStat,
+      }
+    );
+
+    // Default rename should be used (fs.promises.rename mocked)
+    expect(mockedRename).toHaveBeenCalled();
+  });
+
+  it('should use default stat when deps.stat is undefined (branch coverage)', async () => {
+    const customMkdir = vi.fn().mockResolvedValue(undefined);
+    const customRename = vi.fn().mockResolvedValue(undefined);
+
+    // Provide deps but with stat undefined - should fall back to default
+    await archiveLogFiles(
+      '/base',
+      '/archive',
+      {
+        events: 'events.json',
+        scripts: 'scripts.json',
+        errors: 'errors.json',
+      },
+      {
+        mkdir: customMkdir,
+        rename: customRename,
+        // stat not provided - uses default
+      }
+    );
+
+    // Default stat should be used (fs/promises.stat mocked)
+    expect(mockedStat).toHaveBeenCalled();
   });
 });

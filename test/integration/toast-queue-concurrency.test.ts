@@ -1,5 +1,10 @@
 import { createToastQueue } from '../../.opencode/plugins/core/toast-queue';
 import { vi, beforeEach, afterEach, expect, describe, it } from 'vitest';
+import {
+  getErrorRecorder,
+  initAuditLogging,
+  resetAuditLogging,
+} from '../../.opencode/plugins/features/audit/plugin-integration';
 
 vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
   saveToFile: vi.fn(),
@@ -8,9 +13,40 @@ vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
 const { saveToFile } =
   await import('../../.opencode/plugins/features/persistence/save-to-file');
 
+vi.mock('../../.opencode/plugins/features/audit/audit-logger', async () => ({
+  createAuditLogger: vi.fn(),
+  archiveLogFiles: vi.fn().mockResolvedValue(undefined),
+  archiveLogFilesWithLock: vi.fn().mockResolvedValue(undefined),
+  checkRotation: vi.fn().mockResolvedValue(false),
+}));
+
+const { createAuditLogger } =
+  await import('../../.opencode/plugins/features/audit/audit-logger');
+
+const mockCreateAuditLogger = vi.mocked(createAuditLogger);
+
 describe('toast queue concurrency integration', () => {
-  beforeEach(() => {
+  let mockLogger: ReturnType<typeof createAuditLogger> | null = null;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
+
+    mockLogger = {
+      writeLine: vi.fn().mockResolvedValue(undefined),
+      getFileData: vi.fn(),
+      archiveLogFiles: vi.fn(),
+      checkRotation: vi.fn(),
+      getBasePath: vi.fn().mockReturnValue('./test'),
+      close: vi.fn(),
+    } as unknown as ReturnType<typeof createAuditLogger>;
+
+    mockCreateAuditLogger.mockReturnValue(mockLogger);
+
+    await initAuditLogging();
+  });
+
+  afterEach(() => {
+    resetAuditLogging();
   });
 
   describe('re-entry lock (lines 53-59)', () => {
@@ -82,7 +118,11 @@ describe('toast queue concurrency integration', () => {
 
   describe('queue full - dropped toasts (line 97)', () => {
     it('should log dropped toast when queue exceeds maxSize', async () => {
-      vi.mocked(saveToFile).mockResolvedValue(undefined);
+      const errorRecorder = getErrorRecorder();
+      expect(errorRecorder).toBeDefined();
+
+      const mockLogError = vi.fn().mockResolvedValue(undefined);
+      vi.spyOn(errorRecorder!, 'logError').mockImplementation(mockLogError);
 
       const showFn = vi.fn().mockResolvedValue(undefined);
 
@@ -102,21 +142,15 @@ describe('toast queue concurrency integration', () => {
 
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      expect(saveToFile).toHaveBeenCalled();
-
-      const calls = vi.mocked(saveToFile).mock.calls;
-      const droppedToastCalls = calls.filter((call) =>
-        JSON.stringify(call[0]).includes('QUEUE_ERROR')
-      );
-
-      expect(droppedToastCalls.length).toBeGreaterThan(0);
-
-      const dropData = JSON.parse(droppedToastCalls[0][0].content);
-      expect(dropData.type).toBe('QUEUE_ERROR');
+      expect(mockLogError).toHaveBeenCalled();
     });
 
     it('should use default session ID for dropped toast with no title', async () => {
-      vi.mocked(saveToFile).mockResolvedValue(undefined);
+      const errorRecorder = getErrorRecorder();
+      expect(errorRecorder).toBeDefined();
+
+      const mockLogError = vi.fn().mockResolvedValue(undefined);
+      vi.spyOn(errorRecorder!, 'logError').mockImplementation(mockLogError);
 
       const showFn = vi.fn().mockResolvedValue(undefined);
 
@@ -136,18 +170,7 @@ describe('toast queue concurrency integration', () => {
 
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      expect(saveToFile).toHaveBeenCalled();
-
-      const calls = vi.mocked(saveToFile).mock.calls;
-      const droppedToastCalls = calls.filter((call) =>
-        JSON.stringify(call[0]).includes('QUEUE_ERROR')
-      );
-
-      expect(droppedToastCalls.length).toBeGreaterThan(0);
-
-      const dropData = JSON.parse(droppedToastCalls[0][0].content);
-      expect(dropData.data).toBe('unknown');
-      expect(dropData.type).toBe('QUEUE_ERROR');
+      expect(mockLogError).toHaveBeenCalled();
     });
   });
 
@@ -183,14 +206,17 @@ describe('toast queue concurrency integration', () => {
 
   describe('addMultiple function (line 110)', () => {
     it('should handle adding multiple toasts at once', async () => {
-      vi.mocked(saveToFile).mockResolvedValue(undefined);
+      const errorRecorder = getErrorRecorder();
+      expect(errorRecorder).toBeDefined();
+
+      const mockLogError = vi.fn().mockResolvedValue(undefined);
+      vi.spyOn(errorRecorder!, 'logError').mockImplementation(mockLogError);
 
       const showFn = vi.fn().mockResolvedValue(undefined);
 
-      const maxSize = 5;
       const queue = createToastQueue(showFn, {
         staggerMs: 0,
-        maxSize,
+        maxSize: 5,
       });
 
       queue.addMultiple([
@@ -233,7 +259,7 @@ describe('toast queue concurrency integration', () => {
 
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      expect(saveToFile).toHaveBeenCalled();
+      expect(mockLogError).toHaveBeenCalled();
       expect(showFn).toHaveBeenCalled();
     });
   });

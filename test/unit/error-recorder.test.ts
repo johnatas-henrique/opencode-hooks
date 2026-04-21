@@ -9,9 +9,9 @@ describe('error-recorder', () => {
     maxAgeDays: 30,
     truncationKB: 10,
     files: {
-      events: 'plugin-events.jsonl',
-      scripts: 'plugin-scripts.jsonl',
-      errors: 'plugin-errors.jsonl',
+      events: 'plugin-events.json',
+      scripts: 'plugin-scripts.json',
+      errors: 'plugin-errors.json',
     },
   };
 
@@ -56,6 +56,30 @@ describe('error-recorder', () => {
       const recordArg = mockWriteLine.mock.calls[0][1];
       expect(recordArg.type).toBe('code');
       expect(recordArg.stack).toBeDefined();
+    });
+
+    it('should not include stack when skipStack is true', async () => {
+      const mockWriteLine = vi.fn();
+      const recorder = createErrorRecorder(
+        {
+          enabled: true,
+          level: 'debug',
+          maxSizeMB: 10,
+          maxAgeDays: 30,
+          truncationKB: 10,
+          files: { events: 'e.json', scripts: 's.json', errors: 'err.json' },
+        },
+        { writeLine: mockWriteLine }
+      );
+
+      await recorder.logError({
+        error: new Error('Code error'),
+        context: 'handler',
+        skipStack: true,
+      });
+
+      const recordArg = mockWriteLine.mock.calls[0][1];
+      expect(recordArg.stack).toBeUndefined();
     });
   });
 });

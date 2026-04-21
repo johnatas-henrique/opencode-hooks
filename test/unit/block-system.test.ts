@@ -66,5 +66,25 @@ describe('block-system - pure evaluation', () => {
       expect(mockEffects.notify).not.toHaveBeenCalled();
       expect(mockEffects.log).not.toHaveBeenCalled();
     });
+
+    it('calls log effect when blocked', async () => {
+      const system = createBlockSystem(mockEffects);
+      const predicates: BlockCheck[] = [
+        { check: () => true, message: 'test-rule' },
+      ];
+      try {
+        await system.evaluateWithEffects(
+          predicates,
+          input,
+          output,
+          [],
+          'tool.execute.before'
+        );
+      } catch (_e) {
+        // Expected to throw
+      }
+      await Promise.resolve();
+      expect(mockEffects.log).toHaveBeenCalled();
+    });
   });
 });

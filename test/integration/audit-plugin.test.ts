@@ -12,6 +12,7 @@ vi.mock('../../.opencode/plugins/features/audit/audit-logger', () => ({
     cleanup: vi.fn(),
   })),
   archiveLogFiles: vi.fn().mockResolvedValue(undefined),
+  archiveLogFilesWithLock: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../../.opencode/plugins/features/audit/event-recorder', () => ({

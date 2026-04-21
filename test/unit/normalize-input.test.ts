@@ -127,4 +127,19 @@ describe('normalizeInputForHandler', () => {
       expect(result.input).toEqual(input);
     });
   });
+
+  describe('custom event with properties', () => {
+    it('should return properties when eventType is custom with properties object', () => {
+      const input = {
+        properties: { customField: 'value', nested: { key: 'val' } },
+        otherField: 'test',
+      };
+
+      const result = normalizeInputForHandler('custom.event.type', input);
+
+      expect(result).toEqual({
+        properties: { customField: 'value', nested: { key: 'val' } },
+      });
+    });
+  });
 });
