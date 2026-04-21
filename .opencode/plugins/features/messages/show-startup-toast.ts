@@ -3,6 +3,7 @@ import { showActivePluginsToast } from './show-active-plugins';
 import { waitForToastSilence } from './toast-silence-detector';
 import { useGlobalToastQueue } from '../../core/toast-queue';
 import { saveToFile } from '../persistence/save-to-file';
+import { getErrorRecorder } from '../audit/plugin-integration';
 import { TIMER, TOAST_DURATION } from '../../core/constants';
 import type { StartupToastOptions } from '../../types/messages';
 
@@ -42,13 +43,21 @@ export async function showStartupToast(
           duration: TOAST_DURATION.FIVE_SECONDS,
         });
       } catch (err) {
-        await saveToFile({
-          content: JSON.stringify({
-            timestamp: new Date().toISOString(),
-            type: 'PLUGIN_ERROR',
-            data: err,
-          }),
-        });
+        const errorRecorder = getErrorRecorder();
+        if (errorRecorder) {
+          await errorRecorder.logError({
+            error: err instanceof Error ? err : new Error(String(err)),
+            context: 'showStartupToast',
+          });
+        } else {
+          await saveToFile({
+            content: JSON.stringify({
+              timestamp: new Date().toISOString(),
+              type: 'PLUGIN_ERROR',
+              data: err,
+            }),
+          });
+        }
       }
     });
   }
