@@ -8,6 +8,15 @@ import { useGlobalToastQueue } from '../../core/toast-queue';
 import { saveToFile } from '../persistence/save-to-file';
 import { BLOCKED_EVENTS_LOG_FILE } from '../../core/constants';
 import { createBlockSystem } from './block-system';
+import { getSecurityRecorder } from '../audit/security-recorder';
+
+interface BlockLogData {
+  sessionID?: string;
+  toolName?: string;
+  rule: string;
+  reason?: string;
+  input?: Record<string, unknown>;
+}
 
 const defaultEffects = {
   notify: (title: string, details?: { message: string }) => {
@@ -18,11 +27,23 @@ const defaultEffects = {
       duration: 10000,
     });
   },
-  log: (data: unknown) => {
-    saveToFile({
-      content: JSON.stringify(data),
-      filename: BLOCKED_EVENTS_LOG_FILE,
-    });
+  log: async (data: unknown) => {
+    const securityRecorder = getSecurityRecorder();
+    const logData = data as BlockLogData;
+    if (securityRecorder) {
+      await securityRecorder.logSecurity({
+        sessionID: logData.sessionID,
+        toolName: logData.toolName,
+        rule: logData.rule,
+        reason: logData.reason,
+        input: logData.input,
+      });
+    } else {
+      saveToFile({
+        content: JSON.stringify(data),
+        filename: BLOCKED_EVENTS_LOG_FILE,
+      });
+    }
   },
 };
 
@@ -48,16 +69,30 @@ export function executeBlocking(
   }
 
   getBlockSystem();
+  const logToSecurity = async (data: unknown) => {
+    const securityRecorder = getSecurityRecorder();
+    const logData = data as BlockLogData;
+    if (securityRecorder) {
+      await securityRecorder.logSecurity({
+        sessionID: logData.sessionID,
+        toolName: logData.toolName,
+        rule: logData.rule,
+        reason: logData.reason,
+        input: logData.input,
+      });
+    } else {
+      saveToFile({
+        content: JSON.stringify(data),
+        filename: logFilename,
+      });
+    }
+  };
+
   const effects =
     logFilename !== BLOCKED_EVENTS_LOG_FILE
       ? {
           notify: defaultEffects.notify,
-          log: (data: unknown) => {
-            saveToFile({
-              content: JSON.stringify(data),
-              filename: logFilename,
-            });
-          },
+          log: logToSecurity,
         }
       : defaultEffects;
 
