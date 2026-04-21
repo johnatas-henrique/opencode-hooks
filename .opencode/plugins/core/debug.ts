@@ -1,5 +1,6 @@
 import { useGlobalToastQueue } from './toast-queue';
 import { saveToFile } from '../features/persistence/save-to-file';
+import { getDebugRecorder } from '../features/audit/debug-recorder';
 import { TOAST_DURATION, DEBUG_LOG_FILE } from './constants';
 
 const SENSITIVE_KEYS = [
@@ -64,13 +65,25 @@ export async function handleDebugLog(
     duration: TOAST_DURATION.TEN_SECONDS,
   });
 
-  await saveToFile({
-    content: JSON.stringify({
-      timestamp,
-      type: 'DEBUG',
-      data: sanitizedData,
-    }),
-    filename: DEBUG_LOG_FILE,
-    showToast: useGlobalToastQueue().add,
-  });
+  const debugRecorder = getDebugRecorder();
+  const recordData =
+    typeof sanitizedData === 'object' && sanitizedData !== null
+      ? (sanitizedData as Record<string, unknown>)
+      : undefined;
+  if (debugRecorder) {
+    await debugRecorder.logDebug({
+      message: title,
+      data: recordData,
+    });
+  } else {
+    await saveToFile({
+      content: JSON.stringify({
+        timestamp,
+        type: 'DEBUG',
+        data: sanitizedData,
+      }),
+      filename: DEBUG_LOG_FILE,
+      showToast: useGlobalToastQueue().add,
+    });
+  }
 }
