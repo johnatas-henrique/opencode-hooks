@@ -4,11 +4,11 @@ import type { BlockCheck, ScriptResult } from './config';
 export interface BlockResult {
   blocked: boolean;
   predicate: BlockCheck;
-  message?: string;
+  message: string;
 }
 
 export interface BlockEffects {
-  notify: (title: string, details?: { message: string }) => void;
+  notify: (title: string, details: { message: string }) => void;
   log: (data: unknown) => void | Promise<void>;
 }
 
@@ -41,7 +41,7 @@ export function createBlockSystem(effects: BlockEffects): BlockSystem {
           return {
             blocked: true,
             predicate,
-            message: predicate.message || `Blocked: ${input.tool} execution`,
+            message: predicate.message,
           };
         }
       }
@@ -52,9 +52,8 @@ export function createBlockSystem(effects: BlockEffects): BlockSystem {
     evaluateWithEffects(predicates, input, output, scriptResults, eventType) {
       const result = this.evaluate(predicates, input, output, scriptResults);
       if (result?.blocked) {
-        const message = result.message || `Blocked: ${input.tool} execution`;
         effects.notify(`${input.tool.toUpperCase()} BEFORE - EVENT BLOCKED`, {
-          message,
+          message: result.message,
         });
         const logData = {
           timestamp: new Date().toISOString(),
@@ -62,7 +61,7 @@ export function createBlockSystem(effects: BlockEffects): BlockSystem {
           data: { eventType, input, output, blockCheck: result.predicate },
         };
         Promise.resolve(effects.log(logData)).catch(() => {});
-        throw new Error(message);
+        throw new Error(result.message);
       }
     },
   };

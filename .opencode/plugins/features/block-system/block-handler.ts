@@ -19,10 +19,10 @@ interface BlockLogData {
 }
 
 const defaultEffects = {
-  notify: (title: string, details?: { message: string }) => {
+  notify: (title: string, details: { message: string }) => {
     useGlobalToastQueue().add({
       title,
-      message: details?.message || '',
+      message: details.message,
       variant: 'error',
       duration: 10000,
     });

@@ -99,7 +99,7 @@ export type BlockPredicate = (
 
 export interface BlockCheck {
   check: BlockPredicate;
-  message?: string;
+  message: string;
 }
 
 export interface FileTemplate {
