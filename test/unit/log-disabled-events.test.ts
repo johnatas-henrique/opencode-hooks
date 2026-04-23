@@ -1,9 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { PluginInput } from '@opencode-ai/plugin';
+import type { EventRecorder } from '../../.opencode/plugins/types/audit';
+
+// Mock EventRecorder's logEvent
+const { mockLogEvent } = vi.hoisted(() => ({
+  mockLogEvent: vi.fn().mockResolvedValue(undefined),
+}));
+
+const createMockEventRecorder = (): EventRecorder => ({
+  logEvent: mockLogEvent,
+  logToolExecuteBefore: async () => {},
+  logToolExecuteAfter: async () => {},
+  logSessionEvent: async () => {},
+});
 
 const createMockCtx = (
   client: MockClient,
-  dollar: () => Promise<{ exitCode: number; stdout: string; stderr: string }>
+  dollar: ReturnType<typeof vi.fn>
 ): PluginInput => ({
   client: client as unknown as PluginInput['client'],
   $: dollar as unknown as PluginInput['$'],
@@ -17,19 +30,15 @@ const createMockCtx = (
 });
 
 interface MockClient {
-  tui: {
-    showToast: ReturnType<typeof vi.fn>;
-  };
+  tui: { showToast: ReturnType<typeof vi.fn> };
 }
 
 const createMockClient = (): MockClient => ({
-  tui: {
-    showToast: vi.fn().mockResolvedValue(undefined),
-  },
+  tui: { showToast: vi.fn().mockResolvedValue(undefined) },
 });
 
-const { mockQueue: globalMockQueue } = vi.hoisted(() => {
-  const mockQueue = {
+const { mockQueue: globalMockQueue } = vi.hoisted(() => ({
+  mockQueue: {
     add: vi.fn(),
     addMultiple: vi.fn(),
     clear: vi.fn(),
@@ -37,32 +46,19 @@ const { mockQueue: globalMockQueue } = vi.hoisted(() => {
     get pending() {
       return 0;
     },
-  };
-  return { mockQueue };
-});
-
-const { mockSaveToFile } = vi.hoisted(() => ({
-  mockSaveToFile: vi.fn().mockResolvedValue(undefined),
+  },
 }));
 
 describe('OpencodeHooks - logDisabledEvents', () => {
   let mockClient: MockClient;
-  let mockDollar: () => Promise<{
-    exitCode: number;
-    stdout: string;
-    stderr: string;
-  }>;
+  let mockDollar: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     vi.resetModules();
     mockClient = createMockClient();
     mockDollar = vi
-      .fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>()
-      .mockResolvedValue({
-        exitCode: 0,
-        stdout: '',
-        stderr: '',
-      });
+      .fn()
+      .mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' });
     vi.clearAllMocks();
 
     vi.doMock('../../.opencode/plugins/core/toast-queue', () => ({
@@ -76,143 +72,176 @@ describe('OpencodeHooks - logDisabledEvents', () => {
 
     vi.doMock(
       '../../.opencode/plugins/features/messages/show-startup-toast',
-      () => ({
-        showStartupToast: vi.fn().mockResolvedValue(undefined),
-      })
+      () => ({ showStartupToast: vi.fn().mockResolvedValue(undefined) })
     );
 
-    vi.doMock('../../.opencode/plugins/audit', () => ({
+    vi.doMock('../../.opencode/plugins/features/audit', () => ({
       initAuditLogging: vi.fn().mockResolvedValue(undefined),
+      getEventRecorder: vi.fn().mockReturnValue(undefined),
+      getScriptRecorder: vi.fn().mockReturnValue(undefined),
+      getErrorRecorder: vi.fn().mockReturnValue(undefined),
+      createEventRecorder: vi.fn(),
     }));
   });
 
-  it('should call saveToFile when event is disabled and logDisabledEvents is true', async () => {
+  it('should call eventRecorder.logEvent when event is disabled and logDisabledEvents is true', async () => {
+    vi.doMock(
+      '../../.opencode/plugins/features/audit/plugin-integration',
+      () => ({
+        getEventRecorder: () => createMockEventRecorder(),
+      })
+    );
+
     vi.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         toast: false,
-        saveToFile: true,
+        logToAudit: true,
         appendToSession: false,
         runScripts: false,
         logDisabledEvents: true,
-        events: {
-          'session.created': false,
-        },
+        events: { 'session.created': false },
         tools: {},
+        default: {
+          debug: false,
+          toast: false,
+          runScripts: false,
+          runOnlyOnce: false,
+          logToAudit: true,
+          appendToSession: false,
+        },
+        scriptToasts: {
+          showOutput: true,
+          showError: true,
+          outputVariant: 'info',
+          errorVariant: 'error',
+          outputDuration: 5000,
+          errorDuration: 15000,
+          outputTitle: 'Output',
+          errorTitle: 'Error',
+        },
       },
     }));
 
-    vi.doMock(
-      '../../.opencode/plugins/features/persistence/save-to-file',
-      () => ({
-        saveToFile: mockSaveToFile,
-      })
-    );
-
     const { OpencodeHooks: FreshPlugin } =
       await import('../../.opencode/plugins/opencode-hooks');
-    const ctx = createMockCtx(mockClient, mockDollar);
-    const plugin = await FreshPlugin(ctx);
-
-    mockSaveToFile.mockClear();
+    const plugin = await FreshPlugin(createMockCtx(mockClient, mockDollar));
 
     const event = {
       type: 'session.created',
-      properties: { info: { id: 'session-1', title: 'Test' } },
+      properties: { info: { id: 's1', title: 'Test' } },
     };
     await plugin.event!({ event: event as never });
 
-    expect(mockSaveToFile).toHaveBeenCalledWith({
-      content: expect.stringContaining('"type":"EVENT_DISABLED"'),
-      showToast: expect.any(Function),
-    });
-    expect(mockSaveToFile.mock.calls[0][0].content).toContain(
-      '"data":"session.created"'
+    expect(mockLogEvent).toHaveBeenCalledWith(
+      'EVENT_DISABLED',
+      expect.objectContaining({ sessionID: 's1', context: 'session.created' })
     );
-    expect(mockSaveToFile.mock.calls[0][0].content).toContain('"timestamp"');
   });
 
-  it('should not call saveToFile when event is disabled and logDisabledEvents is false', async () => {
+  it('should not call eventRecorder.logEvent when event is disabled and logDisabledEvents is false', async () => {
+    vi.doMock(
+      '../../.opencode/plugins/features/audit/plugin-integration',
+      () => ({
+        getEventRecorder: () => createMockEventRecorder(),
+      })
+    );
+
     vi.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         toast: false,
-        saveToFile: true,
+        logToAudit: true,
         appendToSession: false,
         runScripts: false,
         logDisabledEvents: false,
-        events: {
-          'session.created': false,
-        },
+        events: { 'session.created': false },
         tools: {},
+        default: {
+          debug: false,
+          toast: false,
+          runScripts: false,
+          runOnlyOnce: false,
+          logToAudit: true,
+          appendToSession: false,
+        },
+        scriptToasts: {
+          showOutput: true,
+          showError: true,
+          outputVariant: 'info',
+          errorVariant: 'error',
+          outputDuration: 5000,
+          errorDuration: 15000,
+          outputTitle: 'Output',
+          errorTitle: 'Error',
+        },
       },
     }));
 
-    vi.doMock(
-      '../../.opencode/plugins/features/persistence/save-to-file',
-      () => ({
-        saveToFile: mockSaveToFile,
-      })
-    );
-
     const { OpencodeHooks: FreshPlugin } =
       await import('../../.opencode/plugins/opencode-hooks');
-    const ctx = createMockCtx(mockClient, mockDollar);
-    const plugin = await FreshPlugin(ctx);
-
-    mockSaveToFile.mockClear();
+    const plugin = await FreshPlugin(createMockCtx(mockClient, mockDollar));
+    // Clear any log calls from plugin initialization
+    vi.clearAllMocks();
 
     const event = {
       type: 'session.created',
-      properties: { info: { id: 'session-1', title: 'Test' } },
+      properties: { info: { id: 's1', title: 'Test' } },
     };
     await plugin.event!({ event: event as never });
 
-    expect(mockSaveToFile).not.toHaveBeenCalled();
+    expect(mockLogEvent).not.toHaveBeenCalled();
   });
 
-  it('should call toast queue add when saving disabled event', async () => {
+  it('should not show toast when event is disabled', async () => {
+    vi.doMock(
+      '../../.opencode/plugins/features/audit/plugin-integration',
+      () => ({
+        getEventRecorder: () => createMockEventRecorder(),
+      })
+    );
+
     vi.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         toast: false,
-        saveToFile: true,
+        logToAudit: true,
         appendToSession: false,
         runScripts: false,
         logDisabledEvents: true,
-        events: {
-          'tool.execute.before': false,
-        },
+        events: { 'session.created': false },
         tools: {},
+        default: {
+          debug: false,
+          toast: false,
+          runScripts: false,
+          runOnlyOnce: false,
+          logToAudit: true,
+          appendToSession: false,
+        },
+        scriptToasts: {
+          showOutput: true,
+          showError: true,
+          outputVariant: 'info',
+          errorVariant: 'error',
+          outputDuration: 5000,
+          errorDuration: 15000,
+          outputTitle: 'Output',
+          errorTitle: 'Error',
+        },
       },
     }));
 
-    vi.doMock(
-      '../../.opencode/plugins/features/persistence/save-to-file',
-      () => ({
-        saveToFile: mockSaveToFile,
-      })
-    );
-
     const { OpencodeHooks: FreshPlugin } =
       await import('../../.opencode/plugins/opencode-hooks');
-    const ctx = createMockCtx(mockClient, mockDollar);
-    const plugin = await FreshPlugin(ctx);
-
-    mockSaveToFile.mockClear();
-    globalMockQueue.add.mockClear();
+    const plugin = await FreshPlugin(createMockCtx(mockClient, mockDollar));
 
     const event = {
-      type: 'tool.execute.before',
-      properties: { tool: 'bash', callID: 'call-1' },
+      type: 'session.created',
+      properties: { info: { id: 's1', title: 'Test' } },
     };
     await plugin.event!({ event: event as never });
 
-    expect(mockSaveToFile).toHaveBeenCalledTimes(1);
     expect(globalMockQueue.add).not.toHaveBeenCalled();
-
-    const showToastFn = mockSaveToFile.mock.calls[0][0].showToast;
-    showToastFn();
-    expect(globalMockQueue.add).toHaveBeenCalledTimes(1);
   });
 });

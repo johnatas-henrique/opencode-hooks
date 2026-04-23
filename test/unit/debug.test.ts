@@ -4,19 +4,24 @@ import {
 } from '../../.opencode/plugins/core/debug';
 import type { DebugRecorder } from '../../.opencode/plugins/features/audit/debug-recorder';
 
-vi.mock('../../.opencode/plugins/core/toast-queue', () => {
+// Use vi.hoisted to isolate mocks properly - factory functions create fresh mocks per test run
+const {
+  mockAdd: _mockAdd,
+  mockUseGlobalToastQueue,
+  mockGetDebugRecorder,
+} = vi.hoisted(() => {
   const mockAdd = vi.fn();
-  const mockQueue = {
-    add: mockAdd,
-  };
+  const mockUseGlobalToastQueue = vi.fn(() => ({ add: mockAdd }));
+  const mockGetDebugRecorder = vi.fn().mockReturnValue(null);
   return {
-    useGlobalToastQueue: vi.fn(() => mockQueue),
-    __mockAdd: mockAdd,
+    mockAdd,
+    mockUseGlobalToastQueue,
+    mockGetDebugRecorder,
   };
 });
 
-vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: vi.fn().mockResolvedValue(undefined),
+vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
+  useGlobalToastQueue: mockUseGlobalToastQueue,
 }));
 
 vi.mock('../../.opencode/plugins/core/constants', () => ({
@@ -24,11 +29,7 @@ vi.mock('../../.opencode/plugins/core/constants', () => ({
   DEBUG_LOG_FILE: 'debug.log',
 }));
 
-const { getDebugRecorder: mockGetDebugRecorder } = vi.hoisted(() => ({
-  getDebugRecorder: vi.fn().mockReturnValue(null),
-}));
-
-vi.mock('../../.opencode/plugins/features/audit', () => ({
+vi.mock('../../.opencode/plugins/features/audit/debug-recorder', () => ({
   getDebugRecorder: mockGetDebugRecorder,
 }));
 
@@ -37,6 +38,8 @@ import { useGlobalToastQueue } from '../../.opencode/plugins/core/toast-queue';
 describe('handleDebugLog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset mock return value for each test
+    mockGetDebugRecorder.mockReturnValue(null);
   });
 
   it('should handle null value', async () => {
@@ -57,21 +60,37 @@ describe('handleDebugLog', () => {
 
   it('should use debugRecorder.logDebug when debugRecorder exists', async () => {
     // Direct coverage test - set mock before calling
+    const mockLogDebug = vi.fn().mockResolvedValue(undefined);
     mockGetDebugRecorder.mockReturnValue({
-      logDebug: vi.fn().mockResolvedValue(undefined),
+      logDebug: mockLogDebug,
     } as unknown as DebugRecorder);
 
-    await handleDebugLog('ts', 'title', { key: 'value' });
+    // Use non-sensitive key to avoid redaction
+    await handleDebugLog('ts', 'title', { nonSensitive: 'value' });
+
+    expect(mockLogDebug).toHaveBeenCalledWith({
+      message: 'title',
+      data: { nonSensitive: 'value' },
+    });
   });
 
-  it('should fall back to saveToFile when debugRecorder is null', async () => {
-    const { saveToFile } =
-      await import('../../.opencode/plugins/features/persistence/save-to-file');
-    mockGetDebugRecorder.mockReturnValue(null);
+  it('should handle non-object data gracefully in debugRecorder', async () => {
+    // Line 69-73 branch: data isobject but sanitizedData also has data
+    const mockLogDebug = vi.fn().mockResolvedValue(undefined);
+    mockGetDebugRecorder.mockReturnValue({
+      logDebug: mockLogDebug,
+    } as unknown as DebugRecorder);
 
-    await handleDebugLog('timestamp', 'title', { key: 'value' });
+    // Non-object data - should not call debugRecorder.logDebug
+    await handleDebugLog('ts', 'title', 'string data');
 
-    expect(saveToFile).toHaveBeenCalled();
+    // Toast should still be called with string representation
+    const mockQueue = useGlobalToastQueue();
+    expect(mockQueue.add).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: '"string data"',
+      })
+    );
   });
 });
 

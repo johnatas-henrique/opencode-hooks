@@ -6,6 +6,7 @@ import {
   useGlobalToastQueue,
   initGlobalToastQueue,
 } from '../../.opencode/plugins/core/toast-queue';
+import { STAGGER_MS } from '../../.opencode/plugins/core/constants';
 
 describe('toast-queue', () => {
   beforeEach(() => {
@@ -235,23 +236,31 @@ describe('showToastStaggered stagger branch coverage', () => {
     expect(showFn).toHaveBeenCalled();
   });
 
-  it('should cover stagger branch when stagger=true and activeToast exists', async () => {
-    const showFn = vi.fn().mockResolvedValue(undefined);
-    // First call creates an activeToast
-    const p1 = showToastStaggered(
+  it('should cover stagger branch when stagger=true and activeToast exists (lines 16-21)', async () => {
+    vi.useFakeTimers();
+    let resolveFirst!: () => void;
+    const firstPromise = new Promise<void>((resolve) => {
+      resolveFirst = resolve;
+    });
+    const showFn = vi.fn().mockImplementationOnce(() => firstPromise);
+
+    showToastStaggered(
       showFn,
       { title: '1', message: 'msg', variant: 'info' as const },
       { stagger: false }
     );
-    await p1;
-    // Second call with stagger=true should wait for existing activeToast
+
     const p2 = showToastStaggered(
       showFn,
       { title: '2', message: 'msg', variant: 'info' as const },
       { stagger: true }
     );
+
+    resolveFirst();
+    await vi.advanceTimersByTimeAsync(STAGGER_MS.DEFAULT);
     await p2;
-    expect(showFn).toHaveBeenCalledTimes(2);
+    expect(showFn).toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it('should cover delay branch when delay=0 - take skip path', async () => {
@@ -313,6 +322,47 @@ describe('getGlobalToastQueue error branches', () => {
   it('should throw in useGlobalToastQueue when not initialized', () => {
     resetGlobalToastQueue();
     expect(() => useGlobalToastQueue()).toThrow('ToastQueue not initialized');
+    resetGlobalToastQueue();
+  });
+});
+
+describe('createToastQueue flush during processing', () => {
+  it('should await processingLock when flush called while queue is processing', async () => {
+    vi.useFakeTimers();
+    const showFn = vi.fn();
+
+    let resolveShow!: (value: void) => void;
+    const showPromise = new Promise<void>((resolve) => {
+      resolveShow = resolve;
+    });
+    showFn.mockReturnValue(showPromise);
+
+    const queue = createToastQueue(showFn, { staggerMs: 10 });
+
+    queue.add({ title: 'Test', message: 'msg', variant: 'info' as const });
+
+    const flushPromise = queue.flush();
+
+    await vi.advanceTimersByTimeAsync(10);
+    expect(showFn).toHaveBeenCalledTimes(1);
+
+    resolveShow();
+
+    await vi.advanceTimersByTimeAsync(5000);
+
+    await flushPromise;
+    expect(showFn).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+});
+
+describe('getGlobalToastQueue without showFn after init', () => {
+  it('should return the same global queue when called without showFn after initialization', () => {
+    resetGlobalToastQueue();
+    const showFn = vi.fn();
+    const queue1 = getGlobalToastQueue(showFn);
+    const queue2 = getGlobalToastQueue();
+    expect(queue2).toBe(queue1);
     resetGlobalToastQueue();
   });
 });

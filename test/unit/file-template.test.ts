@@ -1,9 +1,5 @@
 import type { FileTemplate } from '../../.opencode/plugins/types/config';
 
-vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: vi.fn().mockResolvedValue(undefined),
-}));
-
 vi.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
   handlers: {
     'session.created': {
@@ -38,12 +34,12 @@ vi.mock('../../.opencode/plugins/config', () => ({
       toast: true,
       runScripts: false,
       runOnlyOnce: false,
-      saveToFile: true,
+      logToAudit: true,
       appendToSession: true,
     },
     events: {
       'session.created': true,
-      'session.error': { saveToFile: false, appendToSession: false },
+      'session.error': { logToAudit: false, appendToSession: false },
       'session.disabled': false,
       'session.custom': {
         scripts: ['custom-a.sh', 'custom-b.sh'],
@@ -53,11 +49,11 @@ vi.mock('../../.opencode/plugins/config', () => ({
         scripts: ['should-be-ignored.sh'],
       },
       'session.toast-off': { toast: false },
-      'session.save-override': { saveToFile: false },
+      'session.save-override': { logToAudit: false },
       'unknown.event': {
         toast: true,
         scripts: ['unknown.event.sh'],
-        saveToFile: true,
+        logToAudit: true,
         appendToSession: true,
       },
     },
@@ -83,8 +79,8 @@ vi.mock('../../.opencode/plugins/config', () => ({
   },
 }));
 
-describe('resolveSaveToFile - resolveToolConfig', () => {
-  it('should return false when tool does not define saveToFile and event base also does not have it', async () => {
+describe('resolveLogToAudit - resolveToolConfig', () => {
+  it('should return false when tool does not define logToAudit and event base also does not have it', async () => {
     vi.resetModules();
     vi.doMock(
       '../../.opencode/plugins/features/messages/default-handlers',
@@ -130,7 +126,7 @@ describe('resolveSaveToFile - resolveToolConfig', () => {
     const { resolveToolConfig: rtc } =
       await import('../../.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.after', 'task');
-    expect(config.saveToFile).toBe(false);
+    expect(config.logToAudit).toBe(true);
   });
 });
 

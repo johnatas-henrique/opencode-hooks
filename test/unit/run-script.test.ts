@@ -1,7 +1,3 @@
-vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: vi.fn().mockResolvedValue(undefined),
-}));
-
 import { runScript } from '../../.opencode/plugins/features/scripts/run-script';
 import type { PluginInput } from '@opencode-ai/plugin';
 
@@ -64,6 +60,24 @@ describe('run-script', () => {
     );
 
     expect(result.error).toContain('Script execution failed');
+    expect(result.exitCode).toBe(-1);
+  });
+
+  it('should handle non-Error objects in catch block (line 48)', async () => {
+    mockDollar = vi.fn((_strings: TemplateStringsArray) => {
+      return {
+        quiet: vi.fn().mockImplementation(() => {
+          throw 'string error';
+        }),
+      };
+    }) as unknown as PluginInput['$'];
+
+    const result = await runScript(
+      mockDollar as PluginInput['$'],
+      'string-error.sh'
+    );
+
+    expect(result.error).toBe('string error');
     expect(result.exitCode).toBe(-1);
   });
 });

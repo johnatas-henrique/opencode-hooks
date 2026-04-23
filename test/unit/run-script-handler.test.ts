@@ -24,13 +24,8 @@ vi.mock('../../.opencode/plugins/features/messages/append-to-session', () => ({
   appendToSession: vi.fn(),
 }));
 
-vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: vi.fn().mockResolvedValue(undefined),
-}));
-
 import { runScript } from '../../.opencode/plugins/features/scripts/run-script';
 import { appendToSession } from '../../.opencode/plugins/features/messages/append-to-session';
-import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
 import type { ResolvedEventConfig } from '../../.opencode/plugins/types/config';
 
 const mockRunScript = runScript as Mock;
@@ -48,7 +43,7 @@ const createResolvedConfig = (
   toastDuration: 5000,
   scripts: [],
   runScripts: false,
-  saveToFile: false,
+  logToAudit: false,
   appendToSession: false,
   runOnlyOnce: false,
   scriptToasts: {
@@ -104,7 +99,7 @@ describe('run-script-handler.ts', () => {
         timestamp: '2026-01-01T00:00:00Z',
         eventType: 'test.event',
         resolved: createResolvedConfig({
-          saveToFile: true,
+          logToAudit: true,
           appendToSession: false,
           runOnlyOnce: false,
         }),
@@ -127,14 +122,6 @@ describe('run-script-handler.ts', () => {
         script: 'failing-script.sh',
         output: undefined,
       });
-
-      expect(saveToFile).toHaveBeenCalledWith(
-        expect.objectContaining({
-          content: expect.stringContaining(
-            '"error":"Error with special characters"'
-          ),
-        })
-      );
     });
   });
 });
@@ -159,6 +146,134 @@ describe('runScriptAndHandle with scriptRecorder', () => {
       vi.clearAllMocks();
     });
 
+    describe('appendToSession coverage (line 111)', () => {
+      beforeEach(() => {
+        vi.clearAllMocks();
+      });
+
+      it('should call appendToSession when resolved.appendToSession is true', async () => {
+        mockRunScript.mockResolvedValueOnce({
+          output: 'session output',
+          error: null,
+          exitCode: 0,
+        });
+
+        const ctx = createMockCtx();
+        const config = {
+          ctx,
+          script: 'test.sh',
+          timestamp: '2024-01-01',
+          eventType: 'test.event',
+          resolved: createResolvedConfig({ appendToSession: true }),
+          scriptToasts: createScriptToastsConfig(),
+          sessionId: 'test-session',
+        };
+
+        await runScriptAndHandle(config as never);
+
+        expect(mockAppendToSession).toHaveBeenCalledWith(
+          ctx,
+          'test-session',
+          'session output'
+        );
+      });
+
+      it('should NOT call appendToSession when appendToSession is false', async () => {
+        mockRunScript.mockResolvedValueOnce({
+          output: 'session output',
+          error: null,
+          exitCode: 0,
+        });
+
+        const ctx = createMockCtx();
+        const config = {
+          ctx,
+          script: 'test.sh',
+          timestamp: '2024-01-01',
+          eventType: 'test.event',
+          resolved: createResolvedConfig({ appendToSession: false }),
+          scriptToasts: createScriptToastsConfig(),
+          sessionId: 'test-session',
+        };
+
+        await runScriptAndHandle(config as never);
+
+        expect(mockAppendToSession).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('scriptRecorder error path (line 82)', () => {
+      beforeEach(() => {
+        vi.clearAllMocks();
+      });
+
+      it('should call scriptRecorder.logScript on error path when scriptRecorder provided', async () => {
+        const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+        mockRunScript.mockResolvedValueOnce({
+          output: '',
+          error: 'some error',
+          exitCode: 1,
+        });
+
+        const ctx = createMockCtx();
+        const config = {
+          ctx,
+          script: 'error.sh',
+          timestamp: '2024-01-01',
+          eventType: 'test.event',
+          resolved: createResolvedConfig({ logToAudit: false }),
+          scriptToasts: {
+            showOutput: false,
+            outputTitle: 'Output',
+            showError: false,
+            outputVariant: 'info',
+            errorVariant: 'error',
+            errorTitle: 'Error',
+            outputDuration: 5000,
+            errorDuration: 15000,
+          },
+          scriptRecorder: { logScript: mockWriteLine },
+          sessionId: 'test-session',
+        };
+
+        await runScriptAndHandle(config as never);
+
+        expect(mockWriteLine).toHaveBeenCalled();
+      });
+    });
+
+    describe('Tool execute event type branch (line 68)', () => {
+      beforeEach(() => {
+        vi.clearAllMocks();
+      });
+
+      it('should handle tool.execute.before event type with toolName', async () => {
+        mockRunScript.mockResolvedValueOnce({
+          output: 'output',
+          error: null,
+          exitCode: 0,
+        });
+
+        const ctx = createMockCtx();
+        const config = {
+          ctx,
+          script: 'test.sh',
+          scriptArg: 'arg',
+          timestamp: '2024-01-01',
+          eventType: 'tool.execute.before',
+          toolName: 'read',
+          resolved: createResolvedConfig({ logToAudit: true }),
+          scriptToasts: createScriptToastsConfig(),
+          sessionId: 'test-session',
+        };
+
+        await runScriptAndHandle(config as never);
+
+        // eventInfo uses toolName for tool.execute.* events
+        expect(mockRunScript).toHaveBeenCalled();
+      });
+    });
+
     describe('runScriptAndHandle line coverage', () => {
       const mockWriteLine = vi.fn().mockResolvedValue(undefined);
 
@@ -179,7 +294,7 @@ describe('runScriptAndHandle with scriptRecorder', () => {
           script: 'test.sh',
           timestamp: '2024-01-01',
           eventType: 'test.event',
-          resolved: createResolvedConfig({ saveToFile: true }),
+          resolved: createResolvedConfig({ logToAudit: true }),
           scriptToasts: createScriptToastsConfig(),
           scriptRecorder: { logScript: mockWriteLine },
           // sessionId not provided - should use DEFAULT_SESSION_ID
@@ -286,7 +401,7 @@ describe('runScriptAndHandle with scriptRecorder', () => {
               timestamp: '2024-01-01',
               eventType: 'test.event',
               resolved: {
-                ...createResolvedConfig({ saveToFile: true }),
+                ...createResolvedConfig({ logToAudit: true }),
                 scriptToasts: createScriptToastsConfig(),
               },
               scriptToasts: createScriptToastsConfig(),

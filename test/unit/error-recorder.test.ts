@@ -5,14 +5,13 @@ describe('error-recorder', () => {
   const defaultConfig: AuditConfig = {
     enabled: true,
     level: 'debug',
+    basePath: '/tmp/audit-test',
     maxSizeMB: 10,
     maxAgeDays: 30,
     truncationKB: 10,
-    files: {
-      events: 'plugin-events.json',
-      scripts: 'plugin-scripts.json',
-      errors: 'plugin-errors.json',
-    },
+    maxFieldSize: 1000,
+    maxArrayItems: 50,
+    largeFields: [],
   };
 
   describe('createErrorRecorder', () => {
@@ -64,10 +63,13 @@ describe('error-recorder', () => {
         {
           enabled: true,
           level: 'debug',
+          basePath: '/tmp/audit-test',
           maxSizeMB: 10,
           maxAgeDays: 30,
           truncationKB: 10,
-          files: { events: 'e.json', scripts: 's.json', errors: 'err.json' },
+          maxFieldSize: 1000,
+          maxArrayItems: 50,
+          largeFields: [],
         },
         { writeLine: mockWriteLine }
       );

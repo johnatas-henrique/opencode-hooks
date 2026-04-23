@@ -14,6 +14,7 @@ import {
   extractSession,
   extractDirectory,
   createGenericEventRecord,
+  setGlobalTruncationKB,
 } from '../../.opencode/plugins/features/audit/event-recorder';
 
 describe('event-recorder', () => {
@@ -139,12 +140,10 @@ describe('createEventRecorder', () => {
         truncationKB: 10,
         maxFieldSize: 1000,
         maxArrayItems: 50,
-        files: {
-          events: 'plugin-events.json',
-          scripts: 'plugin-scripts.json',
-          errors: 'plugin-errors.json',
-        },
+        basePath: '/tmp/audit-test/test',
+        largeFields: [],
       };
+
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
       });
@@ -177,12 +176,8 @@ describe('createEventRecorder', () => {
         truncationKB: 10,
         maxFieldSize: 1000,
         maxArrayItems: 50,
-        files: {
-          events: 'plugin-events.json',
-          scripts: 'plugin-scripts.json',
-          errors: 'plugin-errors.json',
-        },
       };
+
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
       });
@@ -206,12 +201,10 @@ describe('createEventRecorder', () => {
         truncationKB: 10,
         maxFieldSize: 1000,
         maxArrayItems: 50,
-        files: {
-          events: 'plugin-events.json',
-          scripts: 'plugin-scripts.json',
-          errors: 'plugin-errors.json',
-        },
+        basePath: '/tmp/audit-test/test',
+        largeFields: [],
       };
+
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
       });
@@ -238,12 +231,10 @@ describe('createEventRecorder', () => {
         truncationKB: 10,
         maxFieldSize: 1000,
         maxArrayItems: 50,
-        files: {
-          events: 'plugin-events.json',
-          scripts: 'plugin-scripts.json',
-          errors: 'plugin-errors.json',
-        },
+        basePath: '/tmp/audit-test/test',
+        largeFields: [],
       };
+
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
       });
@@ -269,12 +260,10 @@ describe('createEventRecorder', () => {
         truncationKB: 10,
         maxFieldSize: 1000,
         maxArrayItems: 50,
-        files: {
-          events: 'plugin-events.json',
-          scripts: 'plugin-scripts.json',
-          errors: 'plugin-errors.json',
-        },
+        basePath: '/tmp/audit-test/test',
+        largeFields: [],
       };
+
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
       });
@@ -297,11 +286,8 @@ describe('createEventRecorder', () => {
         maxSizeMB: 10,
         maxAgeDays: 30,
         truncationKB: 10,
-        files: {
-          events: 'plugin-events.json',
-          scripts: 'plugin-scripts.json',
-          errors: 'plugin-errors.json',
-        },
+        maxFieldSize: 1000,
+        maxArrayItems: 50,
       };
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
@@ -323,11 +309,10 @@ describe('createEventRecorder', () => {
         maxSizeMB: 10,
         maxAgeDays: 30,
         truncationKB: 10,
-        files: {
-          events: 'plugin-events.json',
-          scripts: 'plugin-scripts.json',
-          errors: 'plugin-errors.json',
-        },
+        maxFieldSize: 1000,
+        maxArrayItems: 50,
+        basePath: '/tmp/audit-test/test',
+        largeFields: [],
       };
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
@@ -352,11 +337,10 @@ describe('createEventRecorder', () => {
         maxSizeMB: 10,
         maxAgeDays: 30,
         truncationKB: 10,
-        files: {
-          events: 'plugin-events.json',
-          scripts: 'plugin-scripts.json',
-          errors: 'plugin-errors.json',
-        },
+        maxFieldSize: 1000,
+        maxArrayItems: 50,
+        basePath: '/tmp/audit-test/test',
+        largeFields: [],
       };
       const recorder = createEventRecorder(defaultConfig as AuditConfig, {
         writeLine: mockWriteLine,
@@ -387,11 +371,10 @@ describe('createEventRecorder', () => {
       maxSizeMB: 10,
       maxAgeDays: 30,
       truncationKB: 10,
-      files: {
-        events: 'plugin-events.json',
-        scripts: 'plugin-scripts.json',
-        errors: 'plugin-errors.json',
-      },
+      maxFieldSize: 1000,
+      maxArrayItems: 50,
+      basePath: '/tmp/audit-test/test',
+      largeFields: [],
     };
     const recorder = createEventRecorder(config as AuditConfig, {
       writeLine: mockWriteLine,
@@ -409,16 +392,15 @@ describe('createEventRecorder', () => {
       const { createEventRecorder } =
         await import('../../.opencode/plugins/features/audit/event-recorder');
       const config = {
-        enabled: false,
-        level: 'debug',
+        enabled: true,
+        level: 'audit',
         maxSizeMB: 10,
         maxAgeDays: 30,
         truncationKB: 10,
-        files: {
-          events: 'plugin-events.json',
-          scripts: 'plugin-scripts.json',
-          errors: 'plugin-errors.json',
-        },
+        maxFieldSize: 1000,
+        maxArrayItems: 50,
+        basePath: '/tmp/audit-test/test',
+        largeFields: [],
       };
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
@@ -438,11 +420,10 @@ describe('createEventRecorder', () => {
         maxSizeMB: 10,
         maxAgeDays: 30,
         truncationKB: 10,
-        files: {
-          events: 'plugin-events.json',
-          scripts: 'plugin-scripts.json',
-          errors: 'plugin-errors.json',
-        },
+        maxFieldSize: 1000,
+        maxArrayItems: 50,
+        basePath: '/tmp/audit-test/test',
+        largeFields: [],
       };
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
@@ -474,6 +455,7 @@ describe('createGenericEventRecord', () => {
       output,
       'read',
       true,
+      [],
       1000,
       50
     );
@@ -498,6 +480,7 @@ describe('createGenericEventRecord', () => {
       undefined,
       undefined,
       true,
+      [],
       1000,
       50
     );
@@ -513,6 +496,7 @@ describe('createGenericEventRecord', () => {
       undefined,
       'read',
       false,
+      [],
       1000,
       50
     );
@@ -533,6 +517,7 @@ describe('createGenericEventRecord', () => {
       undefined,
       undefined,
       true,
+      [],
       1000,
       50
     );
@@ -554,6 +539,7 @@ describe('createGenericEventRecord', () => {
       undefined,
       undefined,
       true,
+      [],
       1000,
       50
     );
@@ -578,6 +564,7 @@ describe('createGenericEventRecord', () => {
       undefined,
       undefined,
       true,
+      [],
       1000,
       50
     );
@@ -603,6 +590,7 @@ describe('createGenericEventRecord', () => {
       undefined,
       undefined,
       true,
+      [],
       1000,
       50
     );
@@ -625,6 +613,7 @@ describe('createGenericEventRecord', () => {
       undefined,
       undefined,
       true,
+      [],
       1000,
       50
     );
@@ -640,14 +629,151 @@ describe('createGenericEventRecord', () => {
       {},
       undefined,
       true,
+      [],
       1000,
       50
     );
 
     expect(record).not.toBeNull();
     expect(record?.event).toBe('session.idle');
-    // Empty objects are not included in the record
     expect(record?.input).toBeUndefined();
     expect(record?.output).toBeUndefined();
+  });
+});
+
+describe('setGlobalTruncationKB', () => {
+  it('should set global truncation KB value', () => {
+    setGlobalTruncationKB(5);
+    const input = {
+      content: 'x'.repeat(10000),
+      sessionID: 'session-123',
+    };
+
+    const record = createGenericEventRecord(
+      'tool.execute.before',
+      input,
+      undefined,
+      undefined,
+      true,
+      ['content'],
+      1000,
+      50
+    );
+
+    const content = record?.input?.content as string;
+    expect(content).toContain('... [truncated]');
+    expect(content.length).toBeLessThan(10000);
+  });
+});
+
+describe('LARGE_FIELDS truncation (line 166)', () => {
+  beforeEach(() => {
+    setGlobalTruncationKB(10);
+  });
+
+  it('should truncate patch field when larger than truncationKB', () => {
+    const input = {
+      patch: 'y'.repeat(20000),
+      sessionID: 'session-123',
+    };
+
+    const record = createGenericEventRecord(
+      'tool.execute.before',
+      input,
+      undefined,
+      undefined,
+      true,
+      ['patch', 'diff', 'content', 'snapshot', 'output', 'result', 'text'],
+      1000,
+      50
+    );
+
+    const patch = record?.input?.patch as string;
+    expect(patch).toContain('... [truncated]');
+    expect(patch).not.toBe('y'.repeat(20000));
+  });
+
+  it('should truncate diff field', () => {
+    const input = {
+      diff: 'z'.repeat(25000),
+      sessionID: 'session-123',
+    };
+
+    const record = createGenericEventRecord(
+      'tool.execute.after',
+      input,
+      undefined,
+      undefined,
+      true,
+      ['patch', 'diff', 'content', 'snapshot', 'output', 'result', 'text'],
+      1000,
+      50
+    );
+
+    const diff = record?.input?.diff as string;
+    expect(diff).toContain('... [truncated]');
+  });
+
+  it('should truncate diff field inside properties (session.diff structure)', () => {
+    const input = {
+      type: 'session.diff',
+      properties: {
+        sessionID: 'session-123',
+        diff: [
+          {
+            file: 'settings.ts',
+            patch: 'x'.repeat(20000), // Long patch inside diff array
+          },
+        ],
+      },
+    };
+
+    const record = createGenericEventRecord(
+      'session.diff',
+      input,
+      undefined,
+      undefined,
+      true,
+      ['patch', 'diff', 'content', 'snapshot', 'output', 'result', 'text'],
+      1000,
+      50
+    );
+
+    // The diff array should be present
+    const recordInput = record?.input as Record<string, unknown>;
+    const properties = recordInput?.properties as
+      | Record<string, unknown>
+      | undefined;
+    const diffArray = properties?.diff as unknown;
+    expect(diffArray).toBeDefined();
+    expect(Array.isArray(diffArray)).toBe(true);
+
+    // The patch inside the first diff item should be truncated
+    const firstPatch = (diffArray as Record<string, unknown>[])[0]
+      ?.patch as string;
+    expect(firstPatch).toContain('... [truncated]');
+    expect(firstPatch.length).toBeLessThan(20000);
+  });
+
+  it('should truncate content field when it is LARGE_FIELD', () => {
+    const input = {
+      content: 'w'.repeat(30000),
+      sessionID: 'session-123',
+    };
+
+    const record = createGenericEventRecord(
+      'tool.execute.after',
+      input,
+      undefined,
+      undefined,
+      true,
+      ['patch', 'diff', 'content', 'snapshot', 'output', 'result', 'text'],
+      1000,
+      50
+    );
+
+    const content = record?.input?.content as string;
+    expect(content).toContain('... [truncated]');
+    expect(content.length).toBeLessThan(30000);
   });
 });

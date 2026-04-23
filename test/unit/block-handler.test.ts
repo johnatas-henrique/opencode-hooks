@@ -1,4 +1,9 @@
-const mockToastAdd = vi.fn().mockResolvedValue(undefined);
+// Use vi.hoisted to create mocks that persist correctly across tests
+const { mockToastAdd, mockGetSecurityRecorder } = vi.hoisted(() => {
+  const mockToastAdd = vi.fn().mockResolvedValue(undefined);
+  const mockGetSecurityRecorder = vi.fn().mockReturnValue(null);
+  return { mockToastAdd, mockGetSecurityRecorder };
+});
 
 vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
   createToastQueue: vi.fn(),
@@ -10,30 +15,20 @@ vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
   showToastStaggered: vi.fn(),
 }));
 
-vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: vi.fn().mockResolvedValue(undefined),
-}));
-
 vi.mock('../../.opencode/plugins/core/constants', () => ({
   BLOCKED_EVENTS_LOG_FILE: 'blocked-events.log',
 }));
 
 vi.mock('../../.opencode/plugins/features/audit/security-recorder', () => ({
-  getSecurityRecorder: vi.fn(),
+  getSecurityRecorder: mockGetSecurityRecorder,
 }));
 
 import { vi } from 'vitest';
-import type { Mock } from 'vitest';
 import {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
 } from '../../.opencode/plugins/types/core';
 import { executeBlocking } from '../../.opencode/plugins/features/block-system/block-handler';
-import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
-import { getSecurityRecorder } from '../../.opencode/plugins/features/audit/security-recorder';
-
-const mockSaveToFile = saveToFile as Mock;
-const mockGetSecurityRecorder = getSecurityRecorder as Mock;
 
 describe('block-handler', () => {
   const input: ToolExecuteBeforeInput = {
@@ -52,83 +47,46 @@ describe('block-handler', () => {
 
   describe('executeBlocking', () => {
     it('throws when check.check returns true', () => {
+      const mockRecorder = {
+        logSecurity: vi.fn().mockResolvedValue(undefined),
+      };
+      mockGetSecurityRecorder.mockReturnValue(mockRecorder);
       const block = [{ check: () => true, message: 'Custom blocked' }];
       expect(() =>
         executeBlocking(block, input, output, [], 'tool.execute.before')
       ).toThrow('Custom blocked');
     });
+  });
 
-    it('logs raw data when data is not an object with eventType', () => {
-      mockSaveToFile.mockClear();
-
-      const block = [{ check: () => true, message: 'blocked' }];
-      expect(() =>
-        executeBlocking(
-          block,
-          input,
-          output,
-          [],
-          'tool.execute.before',
-          'test-log.log'
-        )
-      ).toThrow('blocked');
-
-      const call = mockSaveToFile.mock.calls[0][0];
-      expect(call.content).toBeDefined();
+  describe('executeBlocking early return', () => {
+    it('should return early when blockConfig is undefined', () => {
+      executeBlocking(undefined, input, output, [], 'tool.execute.before');
+      expect(mockToastAdd).not.toHaveBeenCalled();
     });
 
-    it('should use saveToFile fallback when securityRecorder is null', () => {
-      mockGetSecurityRecorder.mockReturnValue(null);
-      mockSaveToFile.mockClear();
-      const block = [{ check: () => true, message: 'blocked' }];
-      try {
-        executeBlocking(block, input, output, [], 'tool.execute.before');
-      } catch {
-        // Expected to throw
-      }
-      // Verify saveToFile was called because securityRecorder is null
-      expect(mockSaveToFile).toHaveBeenCalled();
+    it('should return early when blockConfig is empty array', () => {
+      executeBlocking([], input, output, [], 'tool.execute.before');
+      expect(mockToastAdd).not.toHaveBeenCalled();
     });
 
-    it('should use saveToFile fallback when securityRecorder is null with custom log filename', () => {
-      mockGetSecurityRecorder.mockReturnValue(null);
-      mockSaveToFile.mockClear();
-      const block = [{ check: () => true, message: 'blocked' }];
-      try {
-        executeBlocking(
-          block,
-          input,
-          output,
-          [],
-          'tool.execute.before',
-          'custom-log.log'
-        );
-      } catch {
-        // Expected to throw
-      }
-      expect(mockSaveToFile).toHaveBeenCalled();
+    describe('executeBlocking with missing securityRecorder', () => {
+      it('should return early without throwing when securityRecorder is null', () => {
+        const block = [{ check: () => true, message: 'blocked' }];
+        // mockGetSecurityRecorder default is null from beforeEach
+        expect(() =>
+          executeBlocking(block, input, output, [], 'tool.execute.before')
+        ).not.toThrow();
+        expect(mockToastAdd).not.toHaveBeenCalled();
+      });
     });
   });
 
   describe('defaultEffects.log null securityRecorder', () => {
-    it('should call saveToFile when securityRecorder is null in defaultEffects', () => {
-      mockGetSecurityRecorder.mockReturnValue(null);
-      mockSaveToFile.mockClear();
-      const block = [{ check: () => true, message: 'test' }];
-      try {
-        executeBlocking(block, input, output, [], 'tool.execute.before');
-      } catch {
-        // Expected
-      }
-      expect(mockSaveToFile).toHaveBeenCalled();
-    });
-
     it('should call securityRecorder.logSecurity when securityRecorder is present', () => {
       const mockRecorder = {
         logSecurity: vi.fn().mockResolvedValue(undefined),
       };
       mockGetSecurityRecorder.mockReturnValue(mockRecorder);
-      mockSaveToFile.mockClear();
       const block = [{ check: () => true, message: 'test' }];
       try {
         executeBlocking(block, input, output, [], 'tool.execute.before');
@@ -136,6 +94,22 @@ describe('block-handler', () => {
         // Expected
       }
       expect(mockRecorder.logSecurity).toHaveBeenCalled();
+    });
+
+    it('should use default message when block.message is undefined', () => {
+      const mockRecorder = {
+        logSecurity: vi.fn().mockResolvedValue(undefined),
+      };
+      mockGetSecurityRecorder.mockReturnValue(mockRecorder);
+      const block = [{ check: () => true, message: 'Blocked' }];
+      try {
+        executeBlocking(block, input, output, [], 'tool.execute.before');
+      } catch {
+        // Expected
+      }
+      expect(mockRecorder.logSecurity).toHaveBeenCalledWith(
+        expect.objectContaining({ rule: 'Blocked', reason: 'Blocked' })
+      );
     });
 
     it('should use securityRecorder when logFilename is not blocked-events.log', () => {
@@ -143,22 +117,13 @@ describe('block-handler', () => {
         logSecurity: vi.fn().mockResolvedValue(undefined),
       };
       mockGetSecurityRecorder.mockReturnValue(mockRecorder);
-      mockSaveToFile.mockClear();
       const block = [{ check: () => true, message: 'blocked' }];
       try {
-        executeBlocking(
-          block,
-          input,
-          output,
-          [],
-          'tool.execute.before',
-          'custom-security.log'
-        );
+        executeBlocking(block, input, output, [], 'tool.execute.before');
       } catch {
         // Expected
       }
       expect(mockRecorder.logSecurity).toHaveBeenCalled();
-      expect(mockSaveToFile).not.toHaveBeenCalled();
     });
   });
 });

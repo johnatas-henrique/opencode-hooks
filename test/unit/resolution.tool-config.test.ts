@@ -12,7 +12,7 @@ describe('ToolConfigResolverImpl', () => {
       toast: true,
       debug: false,
       runScripts: false,
-      saveToFile: true,
+      logToAudit: true,
       appendToSession: false,
     },
     scriptToasts: {
@@ -67,7 +67,7 @@ describe('ToolConfigResolverImpl', () => {
           toast: true,
           debug: false,
           runScripts: true,
-          saveToFile: true,
+          logToAudit: true,
           appendToSession: false,
         },
       });

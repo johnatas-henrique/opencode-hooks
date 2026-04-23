@@ -1,30 +1,43 @@
-import type { Mock } from 'vitest';
 import { showStartupToast } from '../../.opencode/plugins/features/messages/show-startup-toast';
-import { saveToFile } from '../../.opencode/plugins/features/persistence/save-to-file';
-import { getLatestLogFile } from '../../.opencode/plugins/features/messages/plugin-status';
-import { showActivePluginsToast } from '../../.opencode/plugins/features/messages/show-active-plugins';
-import { waitForToastSilence } from '../../.opencode/plugins/features/messages/toast-silence-detector';
 
-const _mockAdd = vi.fn();
-const _mockAddMultiple = vi.fn();
-const _mockClear = vi.fn();
-const _mockFlush = vi.fn().mockResolvedValue(undefined);
+// Use vi.hoisted for isolated mocks that persist correctly
+const {
+  mockAdd,
+  mockAddMultiple,
+  mockClear,
+  mockFlush,
+  mockGetLatestLogFile,
+  mockWaitForToastSilence,
+  mockShowActivePluginsToast,
+  mockLogError,
+  mockGetErrorRecorder,
+} = vi.hoisted(() => ({
+  mockAdd: vi.fn(),
+  mockAddMultiple: vi.fn(),
+  mockClear: vi.fn(),
+  mockFlush: vi.fn().mockResolvedValue(undefined),
+  mockGetLatestLogFile: vi.fn(),
+  mockWaitForToastSilence: vi.fn(),
+  mockShowActivePluginsToast: vi.fn().mockResolvedValue(undefined),
+  mockLogError: vi.fn().mockResolvedValue(undefined),
+  mockGetErrorRecorder: vi.fn().mockReturnValue(null),
+}));
 
 vi.mock('../../.opencode/plugins/features/messages/plugin-status', () => ({
-  getLatestLogFile: vi.fn(),
+  getLatestLogFile: mockGetLatestLogFile,
 }));
 
 vi.mock(
   '../../.opencode/plugins/features/messages/show-active-plugins',
   () => ({
-    showActivePluginsToast: vi.fn().mockResolvedValue(undefined),
+    showActivePluginsToast: mockShowActivePluginsToast,
   })
 );
 
 vi.mock(
   '../../.opencode/plugins/features/messages/toast-silence-detector',
   () => ({
-    waitForToastSilence: vi.fn(),
+    waitForToastSilence: mockWaitForToastSilence,
   })
 );
 
@@ -33,28 +46,18 @@ vi.mock('../../.opencode/plugins/core/constants', () => ({
   TOAST_DURATION: { TWO_SECONDS: 2000, TEN_SECONDS: 10000, FIVE_SECONDS: 5000 },
 }));
 
-vi.mock('../../.opencode/plugins/core/toast-queue', () => {
-  const mockAdd = vi.fn();
-  const mockAddMultiple = vi.fn();
-  const mockClear = vi.fn();
-  const mockFlush = vi.fn().mockResolvedValue(undefined);
-  return {
-    useGlobalToastQueue: vi.fn(() => ({
-      add: mockAdd,
-      addMultiple: mockAddMultiple,
-      clear: mockClear,
-      flush: mockFlush,
-      pending: 0,
-    })),
-    __mockAdd: mockAdd,
-    __mockAddMultiple: mockAddMultiple,
-    __mockClear: mockClear,
-    __mockFlush: mockFlush,
-  };
-});
+vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
+  useGlobalToastQueue: vi.fn(() => ({
+    add: mockAdd,
+    addMultiple: mockAddMultiple,
+    clear: mockClear,
+    flush: mockFlush,
+    pending: 0,
+  })),
+}));
 
-vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: vi.fn().mockResolvedValue(undefined),
+vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
+  getErrorRecorder: mockGetErrorRecorder,
 }));
 
 describe('showStartupToast', () => {
@@ -68,35 +71,83 @@ describe('showStartupToast', () => {
   });
 
   it('should not wait for toast silence when logFile is null', async () => {
-    (getLatestLogFile as Mock).mockReturnValue(null);
-    (waitForToastSilence as Mock).mockReturnValue({
+    mockGetLatestLogFile.mockReturnValue(null);
+    mockWaitForToastSilence.mockReturnValue({
       promise: Promise.resolve(),
       cleanup: vi.fn(),
     });
 
     await showStartupToast();
 
-    expect(showActivePluginsToast).not.toHaveBeenCalled();
+    expect(mockShowActivePluginsToast).not.toHaveBeenCalled();
   });
 
   it('should handle error when showActivePluginsToast fails', async () => {
     const mockCleanup = vi.fn();
-    (getLatestLogFile as Mock).mockReturnValue('/test/logfile.log');
-    (waitForToastSilence as Mock).mockReturnValue({
+    mockGetLatestLogFile.mockReturnValue('/test/logfile.log');
+    mockWaitForToastSilence.mockReturnValue({
       promise: Promise.resolve(),
       cleanup: mockCleanup,
     });
-    (showActivePluginsToast as Mock).mockRejectedValue(
+    mockShowActivePluginsToast.mockRejectedValue(
       new Error('Plugin scan failed')
     );
+    mockGetErrorRecorder.mockReturnValue(null);
 
     await showStartupToast();
     await vi.runAllTimersAsync();
 
-    expect(saveToFile).toHaveBeenCalledWith(
+    // No errorRecorder present, so no error logging should happen
+    expect(mockLogError).not.toHaveBeenCalled();
+  });
+
+  it('should use errorRecorder.logError when errorRecorder is present (line 48)', async () => {
+    const mockCleanup = vi.fn();
+    mockGetLatestLogFile.mockReturnValue('/test/logfile.log');
+    mockWaitForToastSilence.mockReturnValue({
+      promise: Promise.resolve(),
+      cleanup: mockCleanup,
+    });
+    mockShowActivePluginsToast.mockRejectedValue(
+      new Error('Plugin scan failed')
+    );
+    mockGetErrorRecorder.mockReturnValue({
+      logError: mockLogError,
+    });
+
+    await showStartupToast();
+    await vi.runAllTimersAsync();
+
+    expect(mockLogError).toHaveBeenCalledWith(
       expect.objectContaining({
-        content: expect.stringContaining('PLUGIN_ERROR'),
+        error: expect.any(Error),
+        context: 'showStartupToast',
       })
     );
+  });
+
+  it('should convert non-Error thrown to Error in errorRecorder.logError', async () => {
+    const mockCleanup = vi.fn();
+    mockGetLatestLogFile.mockReturnValue('/test/logfile.log');
+    mockWaitForToastSilence.mockReturnValue({
+      promise: Promise.resolve(),
+      cleanup: mockCleanup,
+    });
+    mockShowActivePluginsToast.mockRejectedValue('string error');
+    mockGetErrorRecorder.mockReturnValue({
+      logError: mockLogError,
+    });
+
+    await showStartupToast();
+    await vi.runAllTimersAsync();
+
+    expect(mockLogError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.any(Error),
+        context: 'showStartupToast',
+      })
+    );
+    const loggedError = mockLogError.mock.calls[0][0].error;
+    expect(loggedError.message).toBe('string error');
   });
 });

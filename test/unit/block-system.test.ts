@@ -121,4 +121,26 @@ describe('block-system - pure evaluation', () => {
       expect(result?.message).toBe('Test blocked');
     });
   });
+
+  it('should swallow errors from effects.log and still throw block error', () => {
+    const failingLog = vi.fn().mockRejectedValue(new Error('log failure'));
+    const notifyingEffects = {
+      notify: vi.fn(),
+      log: failingLog,
+    };
+    const system = createBlockSystem(notifyingEffects);
+    const predicates: BlockCheck[] = [
+      { check: () => true, message: 'blocked' },
+    ];
+
+    expect(() =>
+      system.evaluateWithEffects(predicates, input, output, [], 'event')
+    ).toThrow('blocked');
+
+    expect(failingLog).toHaveBeenCalled();
+    expect(notifyingEffects.notify).toHaveBeenCalledWith(
+      expect.stringContaining('BEFORE - EVENT BLOCKED'),
+      expect.objectContaining({ message: 'blocked' })
+    );
+  });
 });

@@ -14,7 +14,7 @@ describe('events - resolveEventConfig', () => {
     expect(config.toastVariant).toBe('warning');
     expect(config.toastDuration).toBe(5000);
     expect(config.scripts).toEqual([]);
-    expect(config.saveToFile).toBe(true);
+    expect(config.logToAudit).toBe(true);
     expect(config.appendToSession).toBe(true);
   });
 

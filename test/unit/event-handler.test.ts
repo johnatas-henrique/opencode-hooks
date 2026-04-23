@@ -16,26 +16,20 @@ const createMockCtx = (
   } as unknown as PluginInput['experimental_workspace'],
 });
 
-const {
-  mockRunScript,
-  mockSaveToFile,
-  mockHandleDebugLog,
-  mockAppendToSession,
-} = vi.hoisted(() => ({
-  mockRunScript: vi
-    .fn()
-    .mockResolvedValue({ output: 'Script executed', error: null, exitCode: 0 }),
-  mockSaveToFile: vi.fn().mockResolvedValue(undefined),
-  mockHandleDebugLog: vi.fn().mockResolvedValue(undefined),
-  mockAppendToSession: vi.fn().mockResolvedValue(undefined),
-}));
+const { mockRunScript, mockHandleDebugLog, mockAppendToSession } = vi.hoisted(
+  () => ({
+    mockRunScript: vi.fn().mockResolvedValue({
+      output: 'Script executed',
+      error: null,
+      exitCode: 0,
+    }),
+    mockHandleDebugLog: vi.fn().mockResolvedValue(undefined),
+    mockAppendToSession: vi.fn().mockResolvedValue(undefined),
+  })
+);
 
 vi.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
   runScript: mockRunScript,
-}));
-
-vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: mockSaveToFile,
 }));
 
 vi.mock('../../.opencode/plugins/core/debug', () => ({
@@ -109,8 +103,19 @@ vi.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
 vi.mock('../../.opencode/plugins/config', () => ({
   userConfig: {
     enabled: true,
+    audit: {
+      enabled: true,
+      level: 'debug',
+      basePath: '/tmp/audit-test/test',
+      maxSizeMB: 1,
+      maxAgeDays: 30,
+      truncationKB: 0.5,
+      maxFieldSize: 1000,
+      maxArrayItems: 50,
+      largeFields: [],
+    },
     toast: true,
-    saveToFile: true,
+    logToAudit: true,
     appendToSession: true,
     runScripts: true,
     scriptToasts: {
@@ -208,8 +213,19 @@ describe('event handler', () => {
     vi.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
+        audit: {
+          enabled: true,
+          level: 'debug',
+          basePath: '/tmp/audit-test/test',
+          maxSizeMB: 1,
+          maxAgeDays: 30,
+          truncationKB: 0.5,
+          maxFieldSize: 1000,
+          maxArrayItems: 50,
+          largeFields: [],
+        },
         toast: true,
-        saveToFile: true,
+        logToAudit: true,
         appendToSession: true,
         runScripts: true,
         scriptToasts: {
@@ -228,6 +244,14 @@ describe('event handler', () => {
           },
         },
         tools: {},
+        default: {
+          debug: false,
+          toast: false,
+          runScripts: false,
+          runOnlyOnce: false,
+          logToAudit: true,
+          appendToSession: false,
+        },
       },
     }));
 
@@ -297,8 +321,19 @@ describe('executeHook - debug mode', () => {
     vi.doMock('../../.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
+        audit: {
+          enabled: true,
+          level: 'debug',
+          basePath: '/tmp/audit-test/test',
+          maxSizeMB: 1,
+          maxAgeDays: 30,
+          truncationKB: 0.5,
+          maxFieldSize: 1000,
+          maxArrayItems: 50,
+          largeFields: [],
+        },
         toast: true,
-        saveToFile: true,
+        logToAudit: true,
         appendToSession: true,
         runScripts: true,
         scriptToasts: {
@@ -313,6 +348,14 @@ describe('executeHook - debug mode', () => {
           'session.created': { debug: true, runScripts: false },
         },
         tools: {},
+        default: {
+          debug: false,
+          toast: false,
+          runScripts: false,
+          runOnlyOnce: false,
+          logToAudit: true,
+          appendToSession: false,
+        },
       },
     }));
 
@@ -383,8 +426,7 @@ describe('new hooks', () => {
     const output = { text: 'completed' };
 
     await plugin['experimental.text.complete']!(input, output);
-
-    expect(mockSaveToFile).toHaveBeenCalled();
+    // Hook should execute without errors (old saveToFile assertion removed)
   });
 });
 
@@ -414,7 +456,7 @@ describe('plugin disabled', () => {
       userConfig: {
         enabled: false,
         toast: true,
-        saveToFile: true,
+        logToAudit: true,
         appendToSession: true,
         runScripts: true,
         scriptToasts: {

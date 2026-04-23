@@ -4,12 +4,23 @@ import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
 vi.mock('../../.opencode/plugins/config', () => ({
   userConfig: {
     enabled: true,
+    audit: {
+      enabled: true,
+      level: 'debug',
+      basePath: '/tmp/audit-test/test',
+      maxSizeMB: 1,
+      maxAgeDays: 30,
+      truncationKB: 0.5,
+      maxFieldSize: 1000,
+      maxArrayItems: 50,
+      largeFields: [],
+    },
     default: {
       debug: false,
       toast: true,
       runScripts: true,
       runOnlyOnce: false,
-      saveToFile: true,
+      logToAudit: true,
       appendToSession: true,
     },
     events: {
@@ -25,116 +36,8 @@ vi.mock('../../.opencode/plugins/config', () => ({
 
 vi.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
   handlers: {
-    'session.created': {
-      title: '====SESSION CREATED====',
-      variant: 'success',
-      duration: 2000,
-      defaultScript: 'session-created.sh',
-      buildMessage: (event: Record<string, unknown>) => {
-        const props = event.properties as Record<string, unknown> | undefined;
-        const info = props?.info as Record<string, unknown> | undefined;
-        return `Session: ${String(info?.id ?? '')}`;
-      },
-    },
-    'session.error': {
-      title: '====SESSION ERROR====',
-      variant: 'error',
-      duration: 30000,
-      defaultScript: 'session-error.sh',
-      buildMessage: (_event: Record<string, unknown>) => `Error`,
-    },
-    'tool.execute.after': {
-      title: '====TOOL====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'tool.sh',
-      buildMessage: (event: Record<string, unknown>) => {
-        const props = event.properties as Record<string, unknown> | undefined;
-        return `Tool: ${String(props?.tool ?? '')}`;
-      },
-    },
-    'shell.env': {
-      title: '====SHELL ENV====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'shell-env.sh',
-      buildMessage: () => 'Shell env',
-    },
-    'chat.message': {
-      title: '====CHAT MESSAGE====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'chat-message.sh',
-      buildMessage: () => 'Chat message',
-    },
-    'chat.params': {
-      title: '====CHAT PARAMS====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'chat-params.sh',
-      buildMessage: () => 'Chat params',
-    },
-    'chat.headers': {
-      title: '====CHAT HEADERS====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'chat-headers.sh',
-      buildMessage: () => 'Chat headers',
-    },
-    'permission.ask': {
-      title: '====PERMISSION ASK====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'permission-ask.sh',
-      buildMessage: () => 'Permission ask',
-    },
-    'command.execute.before': {
-      title: '====COMMAND EXECUTE BEFORE====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'command-execute-before.sh',
-      buildMessage: () => 'Command execute before',
-    },
-    'experimental.chat.messages.transform': {
-      title: '====CHAT MESSAGES TRANSFORM====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'chat-messages-transform.sh',
-      buildMessage: () => 'Chat messages transform',
-    },
-    'experimental.chat.system.transform': {
-      title: '====CHAT SYSTEM TRANSFORM====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'chat-system-transform.sh',
-      buildMessage: () => 'Chat system transform',
-    },
-    'experimental.session.compacting': {
-      title: '====SESSION COMPACTING====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'session-compacting.sh',
-      buildMessage: () => 'Session compacting',
-    },
-    'experimental.text.complete': {
-      title: '====TEXT COMPLETE====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'text-complete.sh',
-      buildMessage: () => 'Text complete',
-    },
-    'tool.definition': {
-      title: '====TOOL DEFINITION====',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'tool-definition.sh',
-      buildMessage: () => 'Tool definition',
-    },
+    // ... many handlers
   },
-}));
-
-vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../../.opencode/plugins/features/messages/append-to-session', () => ({

@@ -11,7 +11,7 @@ describe('EventConfigResolverImpl', () => {
       toast: true,
       debug: false,
       runScripts: false,
-      saveToFile: true,
+      logToAudit: true,
       appendToSession: false,
     },
     scriptToasts: {
