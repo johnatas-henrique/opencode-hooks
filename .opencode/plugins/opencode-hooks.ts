@@ -14,24 +14,21 @@ import type {
   ToolExecuteBeforeOutput,
 } from './types/core';
 import { initGlobalToastQueue, useGlobalToastQueue } from './core/toast-queue';
-import { saveToFile } from './features/persistence/save-to-file';
 import { handlers, showStartupToast } from './features/messages';
 import { resolveEventConfig, resolveToolConfig } from './features/events';
 import { handleDebugLog } from './core/debug';
+import {
+  getEventRecorder,
+  archiveAllJsonFiles,
+} from './features/audit/plugin-integration';
 import { runScriptAndHandle, addSubagentSession } from './features/scripts';
 import { EventType } from './types/config';
 import { userConfig } from './config';
-import {
-  UNKNOWN_EVENT_LOG_FILE,
-  DEFAULT_SESSION_ID,
-  BLOCKED_EVENTS_LOG_FILE,
-  TOOL,
-} from './core/constants';
+import { DEFAULT_SESSION_ID, TOOL } from './core/constants';
 import type { ResolvedEventConfig, ScriptResult } from './types/config';
 import { executeBlocking } from './features/block-system';
 import {
   initAuditLogging,
-  getEventRecorder,
   getScriptRecorder,
   createEventRecorder,
 } from './features/audit';
@@ -76,14 +73,13 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     if (!userConfig.logDisabledEvents) {
       return;
     }
-    await saveToFile({
-      content: JSON.stringify({
-        timestamp,
-        type: 'EVENT_DISABLED',
-        data: eventType,
-      }),
-      showToast: useGlobalToastQueue().add,
-    });
+    const eventRecorder = getEventRecorder();
+    if (eventRecorder) {
+      await eventRecorder.logEvent('EVENT_DISABLED', {
+        sessionID: sessionId,
+        context: eventType,
+      });
+    }
     return;
   }
 
@@ -157,20 +153,16 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     output: r.output,
   }));
 
-  const inputAsBeforeInput = input as ToolExecuteBeforeInput | undefined;
-
-  executeBlocking(
-    resolved.block,
-    {
-      tool: toolName ?? '',
-      sessionID: sessionId,
-      callID: inputAsBeforeInput?.callID ?? '',
-    },
-    output as ToolExecuteBeforeOutput,
-    scriptResults,
-    eventType,
-    BLOCKED_EVENTS_LOG_FILE
-  );
+  // Execute blocking checks only for tool.execute.before events
+  if (eventType === EventType.TOOL_EXECUTE_BEFORE && resolved.block?.length) {
+    executeBlocking(
+      resolved.block,
+      input as ToolExecuteBeforeInput,
+      output as ToolExecuteBeforeOutput,
+      scriptResults,
+      eventType
+    );
+  }
 }
 
 let hasShownToast = false;
@@ -191,14 +183,6 @@ export const OpencodeHooks: Plugin = async (
     });
   });
 
-  await saveToFile({
-    content: JSON.stringify({
-      timestamp: new Date().toISOString(),
-      type: 'PLUGIN_START',
-      data: '|==========OpencodeHooks plugin initialized==========|',
-    }),
-  });
-
   if (!hasShownToast) {
     hasShownToast = true;
     await showStartupToast();
@@ -209,32 +193,34 @@ export const OpencodeHooks: Plugin = async (
   }
 
   await initAuditLogging(userConfig.audit);
+
   const eventRecorder = getEventRecorder();
+  if (eventRecorder) {
+    await eventRecorder.logEvent('PLUGIN_START', {
+      context: 'OpencodeHooks plugin initialized',
+    });
+  }
+
   const scriptRecorder = getScriptRecorder();
 
   const hooks: Hooks = {
     event: async ({ event }) => {
-      const timestamp = new Date().toISOString();
       const isKnownEvent = !!handlers[event.type];
 
+      const props = event.properties as Record<string, unknown>;
+      const info = props?.info as Record<string, unknown> | undefined;
+      const rawId = info?.id ?? props?.sessionID;
+      const sessionId = typeof rawId === 'string' ? rawId : DEFAULT_SESSION_ID;
+
       if (!isKnownEvent) {
-        const eventRecorder = getEventRecorder();
-        if (eventRecorder) {
-          eventRecorder
-            .logEvent('unknown', {
+        const rec = getEventRecorder();
+        if (rec) {
+          await rec
+            .logEvent('UNKNOWN_EVENT', {
+              sessionID: sessionId,
               input: { event },
             })
             .catch(() => {});
-        } else {
-          saveToFile({
-            content: JSON.stringify({
-              timestamp,
-              type: 'UNKNOWN_EVENT',
-              data: event,
-            }),
-            showToast: useGlobalToastQueue().add,
-            filename: UNKNOWN_EVENT_LOG_FILE,
-          });
         }
       }
 
@@ -242,11 +228,6 @@ export const OpencodeHooks: Plugin = async (
         event.type,
         event.properties as Record<string, unknown>
       );
-
-      const props = event.properties as Record<string, unknown>;
-      const info = props?.info as Record<string, unknown> | undefined;
-      const rawId = info?.id ?? props?.sessionID;
-      const sessionId = typeof rawId === 'string' ? rawId : DEFAULT_SESSION_ID;
 
       if (event.type === EventType.SESSION_CREATED && info?.parentID) {
         addSubagentSession(sessionId);
@@ -258,10 +239,13 @@ export const OpencodeHooks: Plugin = async (
         resolved,
         sessionId,
         input: event,
-
         eventRecorder,
         scriptRecorder,
       });
+
+      if (event.type === 'server.instance.disposed') {
+        await archiveAllJsonFiles(userConfig.audit.basePath);
+      }
     },
 
     'tool.execute.before': async (
