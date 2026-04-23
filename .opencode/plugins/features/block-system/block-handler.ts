@@ -5,8 +5,6 @@ import type {
 import type { BlockCheck, ScriptResult } from '../../types/config';
 import type { BlockSystem } from '../../types/block-system';
 import { useGlobalToastQueue } from '../../core/toast-queue';
-import { saveToFile } from '../persistence/save-to-file';
-import { BLOCKED_EVENTS_LOG_FILE } from '../../core/constants';
 import { createBlockSystem } from './block-system';
 import { getSecurityRecorder } from '../audit/security-recorder';
 
@@ -38,11 +36,6 @@ const defaultEffects = {
         reason: logData.reason,
         input: logData.input,
       });
-    } else {
-      saveToFile({
-        content: JSON.stringify(data),
-        filename: BLOCKED_EVENTS_LOG_FILE,
-      });
     }
   },
 };
@@ -61,42 +54,30 @@ export function executeBlocking(
   input: ToolExecuteBeforeInput,
   output: ToolExecuteBeforeOutput,
   scriptResults: ScriptResult[],
-  eventType: string,
-  logFilename: string = BLOCKED_EVENTS_LOG_FILE
+  eventType: string
 ): void {
   if (!blockConfig || blockConfig.length === 0) {
     return;
   }
 
   getBlockSystem();
-  const logToSecurity = async (data: unknown) => {
-    const securityRecorder = getSecurityRecorder();
-    const logData = data as BlockLogData;
-    if (securityRecorder) {
-      await securityRecorder.logSecurity({
-        sessionID: logData.sessionID,
-        toolName: logData.toolName,
-        rule: logData.rule,
-        reason: logData.reason,
-        input: logData.input,
-      });
-    } else {
-      saveToFile({
-        content: JSON.stringify(data),
-        filename: logFilename,
-      });
-    }
+  const securityRecorder = getSecurityRecorder();
+  if (!securityRecorder) {
+    return; // Não temos como logar, apenas notifique via toast
+  }
+
+  const logData = {
+    sessionID: input.sessionID,
+    toolName: input.tool,
+    rule: blockConfig[0].message || 'Blocked',
+    reason: blockConfig[0].message || 'Blocked',
+    input: input,
   };
 
-  const effects =
-    logFilename !== BLOCKED_EVENTS_LOG_FILE
-      ? {
-          notify: defaultEffects.notify,
-          log: logToSecurity,
-        }
-      : defaultEffects;
+  // Logassíncrono, não bloqueante
+  securityRecorder.logSecurity(logData).catch(() => {});
 
-  const customSystem = createBlockSystem(effects);
+  const customSystem = createBlockSystem(defaultEffects);
   customSystem.evaluateWithEffects(
     blockConfig,
     input,
