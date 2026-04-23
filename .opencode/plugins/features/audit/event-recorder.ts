@@ -133,14 +133,32 @@ function isSensitiveField(key: string): boolean {
   return SENSITIVE_FIELDS.some((sensitive) => lowerKey.includes(sensitive));
 }
 
+let globalTruncationKB = 10;
+
+export function setGlobalTruncationKB(kb: number) {
+  globalTruncationKB = kb;
+}
+
 function sanitizeAndTruncate(
   data: Record<string, unknown>,
-  maxSize: number,
+  largeFields: string[],
+  maxFieldSize: number,
   maxArrayItems: number
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
+  const maxBytes = Math.floor(globalTruncationKB * 1024);
 
   for (const [key, value] of Object.entries(data)) {
+    // Truncate known-large fields to truncationKB limit
+    if (
+      largeFields.includes(key) &&
+      typeof value === 'string' &&
+      value.length > maxBytes
+    ) {
+      result[key] = value.substring(0, maxBytes) + '... [truncated]';
+      continue;
+    }
+
     // Redact sensitive string fields (shows size for debug context)
     if (isSensitiveField(key) && typeof value === 'string') {
       result[key] = `[REDACTED: ${value.length} chars]`;
@@ -148,8 +166,8 @@ function sanitizeAndTruncate(
     }
 
     // Truncate large strings
-    if (typeof value === 'string' && value.length > maxSize) {
-      result[key] = value.substring(0, maxSize) + '... [truncated]';
+    if (typeof value === 'string' && value.length > maxFieldSize) {
+      result[key] = value.substring(0, maxFieldSize) + '... [truncated]';
       continue;
     }
 
@@ -157,7 +175,8 @@ function sanitizeAndTruncate(
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
       result[key] = sanitizeAndTruncate(
         value as Record<string, unknown>,
-        maxSize,
+        largeFields,
+        maxFieldSize,
         maxArrayItems
       );
       continue;
@@ -171,7 +190,8 @@ function sanitizeAndTruncate(
           typeof item === 'object' && item !== null
             ? sanitizeAndTruncate(
                 item as Record<string, unknown>,
-                maxSize,
+                largeFields,
+                maxFieldSize,
                 maxArrayItems
               )
             : item
@@ -199,6 +219,7 @@ export function createGenericEventRecord(
   output: Record<string, unknown> | undefined,
   toolName: string | undefined,
   shouldLogResult: boolean,
+  largeFields: string[],
   maxFieldSize: number,
   maxArrayItems: number
 ): AuditRecord | null {
@@ -233,12 +254,22 @@ export function createGenericEventRecord(
 
   // Add sanitized input
   if (input && Object.keys(input).length > 0) {
-    record.input = sanitizeAndTruncate(input, maxFieldSize, maxArrayItems);
+    record.input = sanitizeAndTruncate(
+      input,
+      largeFields,
+      maxFieldSize,
+      maxArrayItems
+    );
   }
 
   // Add sanitized output
   if (output && Object.keys(output).length > 0) {
-    record.output = sanitizeAndTruncate(output, maxFieldSize, maxArrayItems);
+    record.output = sanitizeAndTruncate(
+      output,
+      largeFields,
+      maxFieldSize,
+      maxArrayItems
+    );
   }
 
   return record;
@@ -249,8 +280,10 @@ export function createEventRecorder(
   deps: EventRecorderDependencies
 ) {
   const canLog = shouldLogEvents(config);
-  const maxFieldSize = config.maxFieldSize ?? 1000;
-  const maxArrayItems = config.maxArrayItems ?? 50;
+  const maxFieldSize = config.maxFieldSize;
+  const maxArrayItems = config.maxArrayItems;
+  const largeFields = config.largeFields;
+  globalTruncationKB = config.truncationKB;
 
   async function logToolExecuteBefore(
     input: ToolExecuteBeforeInput
@@ -302,6 +335,7 @@ export function createEventRecorder(
       data.output,
       data.tool,
       canLog,
+      largeFields,
       maxFieldSize,
       maxArrayItems
     );

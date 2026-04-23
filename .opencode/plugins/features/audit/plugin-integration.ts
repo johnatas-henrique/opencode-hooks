@@ -1,18 +1,10 @@
-import { createAuditLogger } from './audit-logger';
+import { createAuditLogger, archiveFileIfNeeded } from './audit-logger';
 import { createEventRecorder } from './event-recorder';
 import { createScriptRecorder } from './script-recorder';
 import { createErrorRecorder } from './error-recorder';
-import { DEFAULT_AUDIT_CONFIG } from '../../types/audit';
 import type { AuditConfig } from '../../types/audit';
-import {
-  LOG_DIR,
-  AUDIT_EVENTS_FILE,
-  AUDIT_SCRIPTS_FILE,
-  AUDIT_ERRORS_FILE,
-  AUDIT_ARCHIVE_DIR,
-} from '../../core/constants';
-import { archiveLogFilesWithLock } from './audit-logger';
 import type { ScriptRecorder } from '../../types/audit';
+import { readdir, rename, mkdir, stat } from 'fs/promises';
 
 let initPromise: Promise<void> | null = null;
 let auditLogger: ReturnType<typeof createAuditLogger>;
@@ -20,33 +12,25 @@ let eventRecorder: ReturnType<typeof createEventRecorder>;
 let scriptRecorder: ReturnType<typeof createScriptRecorder>;
 let errorRecorder: ReturnType<typeof createErrorRecorder>;
 
-export function initAuditLogging(config?: AuditConfig): Promise<void> {
+export function initAuditLogging(config: AuditConfig): Promise<void> {
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
-    const auditConfig = config ?? DEFAULT_AUDIT_CONFIG;
-
     auditLogger = createAuditLogger({
-      basePath: LOG_DIR,
-      config: auditConfig,
+      basePath: config.basePath,
+      config,
     });
 
-    eventRecorder = createEventRecorder(auditConfig, {
+    eventRecorder = createEventRecorder(config, {
       writeLine: auditLogger.writeLine.bind(auditLogger),
     });
 
-    scriptRecorder = createScriptRecorder(auditConfig, {
+    scriptRecorder = createScriptRecorder(config, {
       writeLine: auditLogger.writeLine.bind(auditLogger),
     });
 
-    errorRecorder = createErrorRecorder(auditConfig, {
+    errorRecorder = createErrorRecorder(config, {
       writeLine: auditLogger.writeLine.bind(auditLogger),
-    });
-
-    await archiveLogFilesWithLock(LOG_DIR, LOG_DIR + '/' + AUDIT_ARCHIVE_DIR, {
-      events: AUDIT_EVENTS_FILE,
-      scripts: AUDIT_SCRIPTS_FILE,
-      errors: AUDIT_ERRORS_FILE,
     });
   })();
 
@@ -67,4 +51,28 @@ export function getErrorRecorder() {
 
 export function resetAuditLogging() {
   initPromise = null;
+}
+
+export async function archiveAllJsonFiles(basePath: string): Promise<void> {
+  try {
+    const files = await readdir(basePath);
+
+    const jsonFiles = files.filter(
+      (f) => f.endsWith('.json') && !f.includes('-archive')
+    );
+
+    const archiveDir = `${basePath}/plugin-archive`;
+    await mkdir(archiveDir, { recursive: true });
+
+    for (const file of jsonFiles) {
+      const filePath = `${basePath}/${file}`;
+      await archiveFileIfNeeded(filePath, archiveDir, 0, {
+        mkdir,
+        rename,
+        stat,
+      });
+    }
+  } catch {
+    // Silently ignore - app is shutting down, no one to see errors
+  }
 }
