@@ -15,5 +15,4 @@ export {
   resolveDefaultToast,
 } from './resolution/toast';
 export { getBooleanField } from './resolution/boolean-field';
-export { resolveSaveToFile } from './resolution/save-to-file';
 export { resolveEventConfig, resolveToolConfig } from './events';
