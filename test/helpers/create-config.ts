@@ -8,6 +8,17 @@ import type {
 const baseConfig: UserEventsConfig = {
   enabled: true,
   logDisabledEvents: false,
+  audit: {
+    enabled: true,
+    level: 'debug',
+    basePath: '/tmp/audit-test',
+    maxSizeMB: 10,
+    maxAgeDays: 30,
+    truncationKB: 0.5,
+    maxFieldSize: 1000,
+    maxArrayItems: 50,
+    largeFields: [],
+  },
   showPluginStatus: true,
   pluginStatusDisplayMode: 'user-only',
   scriptToasts: {
@@ -25,7 +36,7 @@ const baseConfig: UserEventsConfig = {
     toast: true,
     runScripts: false,
     runOnlyOnce: false,
-    saveToFile: true,
+    logToAudit: true,
     appendToSession: true,
   },
   events: {},

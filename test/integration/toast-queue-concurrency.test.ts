@@ -5,18 +5,22 @@ import {
   initAuditLogging,
   resetAuditLogging,
 } from '../../.opencode/plugins/features/audit/plugin-integration';
+import type { AuditConfig } from '../../.opencode/plugins/types/audit';
 
-vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: vi.fn(),
-}));
-
-const { saveToFile } =
-  await import('../../.opencode/plugins/features/persistence/save-to-file');
+const TEST_CONFIG: AuditConfig = {
+  enabled: true,
+  level: 'debug',
+  basePath: './test-audit',
+  maxSizeMB: 10,
+  maxAgeDays: 30,
+  truncationKB: 10,
+  maxFieldSize: 1000,
+  maxArrayItems: 50,
+  largeFields: [],
+};
 
 vi.mock('../../.opencode/plugins/features/audit/audit-logger', async () => ({
   createAuditLogger: vi.fn(),
-  archiveLogFiles: vi.fn().mockResolvedValue(undefined),
-  archiveLogFilesWithLock: vi.fn().mockResolvedValue(undefined),
   checkRotation: vi.fn().mockResolvedValue(false),
 }));
 
@@ -34,7 +38,6 @@ describe('toast queue concurrency integration', () => {
     mockLogger = {
       writeLine: vi.fn().mockResolvedValue(undefined),
       getFileData: vi.fn(),
-      archiveLogFiles: vi.fn(),
       checkRotation: vi.fn(),
       getBasePath: vi.fn().mockReturnValue('./test'),
       close: vi.fn(),
@@ -42,7 +45,7 @@ describe('toast queue concurrency integration', () => {
 
     mockCreateAuditLogger.mockReturnValue(mockLogger);
 
-    await initAuditLogging();
+    await initAuditLogging(TEST_CONFIG);
   });
 
   afterEach(() => {
@@ -181,7 +184,6 @@ describe('toast queue concurrency integration', () => {
 
     it('should clean up active timers during toast processing', async () => {
       vi.useFakeTimers();
-      vi.mocked(saveToFile).mockResolvedValue(undefined);
 
       const showFn = vi.fn().mockResolvedValue(undefined);
 

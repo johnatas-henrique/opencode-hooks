@@ -25,7 +25,7 @@ export const createUserConfigWithScripts = (
   showPluginStatus: boolean;
   pluginStatusDisplayMode: string;
   toast: boolean;
-  saveToFile: boolean;
+  logToAudit: boolean;
   appendToSession: boolean;
   runScripts: boolean;
   scriptToasts: ScriptToastsConfig;
@@ -37,7 +37,7 @@ export const createUserConfigWithScripts = (
   showPluginStatus: true,
   pluginStatusDisplayMode: 'user-only',
   toast: true,
-  saveToFile: true,
+  logToAudit: true,
   appendToSession: true,
   runScripts: true,
   scriptToasts: defaultScriptToasts,

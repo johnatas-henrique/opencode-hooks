@@ -4,15 +4,25 @@ import {
   getScriptRecorder,
   getErrorRecorder,
 } from '../../.opencode/plugins/features/audit/plugin-integration';
+import type { AuditConfig } from '../../.opencode/plugins/types/audit';
+
+const TEST_CONFIG: AuditConfig = {
+  enabled: true,
+  level: 'debug',
+  basePath: './test-audit',
+  maxSizeMB: 10,
+  maxAgeDays: 30,
+  truncationKB: 10,
+  maxFieldSize: 1000,
+  maxArrayItems: 50,
+  largeFields: [],
+};
 
 vi.mock('../../.opencode/plugins/features/audit/audit-logger', () => ({
   createAuditLogger: vi.fn(() => ({
     writeLine: vi.fn(),
-    rotate: vi.fn(),
     cleanup: vi.fn(),
   })),
-  archiveLogFiles: vi.fn().mockResolvedValue(undefined),
-  archiveLogFilesWithLock: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../../.opencode/plugins/features/audit/event-recorder', () => ({
@@ -63,7 +73,7 @@ describe('Audit Plugin Integration', () => {
 
   describe('initAuditLogging', () => {
     it('should initialize and return recorders', async () => {
-      await initAuditLogging();
+      await initAuditLogging(TEST_CONFIG);
 
       expect(getEventRecorder()).toBeDefined();
       expect(getScriptRecorder()).toBeDefined();
@@ -71,10 +81,10 @@ describe('Audit Plugin Integration', () => {
     });
 
     it('should be idempotent - calling twice should not reinitialize', async () => {
-      await initAuditLogging();
+      await initAuditLogging(TEST_CONFIG);
       const firstEventRecorder = getEventRecorder();
 
-      await initAuditLogging();
+      await initAuditLogging(TEST_CONFIG);
       const secondEventRecorder = getEventRecorder();
 
       expect(firstEventRecorder).toBe(secondEventRecorder);

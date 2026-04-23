@@ -1,7 +1,3 @@
-vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: vi.fn().mockResolvedValue(undefined),
-}));
-
 import {
   resolveEventConfig,
   resolveToolConfig,
@@ -41,11 +37,11 @@ vi.mock('../../.opencode/plugins/config', () => ({
       toast: false,
       runScripts: false,
       runOnlyOnce: false,
-      saveToFile: false,
+      logToAudit: false,
       appendToSession: false,
     },
     events: {
-      'session.created': { toast: true, saveToFile: true },
+      'session.created': { toast: true, logToAudit: true },
       'session.error': { toast: true },
       'session.compacted': { toast: true, scripts: ['pre-compact.sh'] },
       'tool.execute.after': { toast: false },
@@ -67,7 +63,7 @@ describe('Integration: Event Flow', () => {
       expect(config.enabled).toBe(true);
       expect(config.toast).toBe(true);
       expect(config.toastTitle).toBe('====SESSION CREATED====');
-      expect(config.saveToFile).toBe(true);
+      expect(config.logToAudit).toBe(true);
     });
 
     it('should resolve session.error config', () => {
@@ -83,7 +79,7 @@ describe('Integration: Event Flow', () => {
 
       expect(config.enabled).toBe(true);
       expect(config.toast).toBe(false);
-      expect(config.saveToFile).toBe(false);
+      expect(config.logToAudit).toBe(true); // default.logToAudit is true
     });
   });
 
