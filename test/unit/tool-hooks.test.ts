@@ -5,10 +5,6 @@ const { mockRunScript } = vi.hoisted(() => ({
   mockRunScript: vi.fn(),
 }));
 
-const { mockSaveToFile } = vi.hoisted(() => ({
-  mockSaveToFile: vi.fn().mockResolvedValue(undefined),
-}));
-
 let capturedShowFn: ((toast: unknown) => void) | null = null;
 
 const { mockQueue: globalMockQueue } = vi.hoisted(() => ({
@@ -74,10 +70,6 @@ vi.mock('../../.opencode/plugins/config', async () => {
 
 vi.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
   runScript: mockRunScript,
-}));
-
-vi.mock('../../.opencode/plugins/features/persistence/save-to-file', () => ({
-  saveToFile: mockSaveToFile,
 }));
 
 vi.mock('../../.opencode/plugins/core/toast-queue', () => ({

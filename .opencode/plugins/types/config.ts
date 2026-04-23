@@ -27,7 +27,7 @@ export interface EventOverride {
   scripts?: string[];
   runScripts?: boolean;
   runOnlyOnce?: boolean;
-  saveToFile?: boolean | FileTemplate;
+  logToAudit?: boolean;
   appendToSession?: boolean;
   allowedFields?: string[];
 }
@@ -54,7 +54,7 @@ export interface ScriptToastsConfig {
 export interface UserEventsConfig {
   enabled: boolean;
   logDisabledEvents: boolean;
-  audit?: AuditConfig;
+  audit: AuditConfig;
   showPluginStatus: boolean;
   pluginStatusDisplayMode: PluginStatusDisplayMode;
   scriptToasts: ScriptToastsConfig;
@@ -77,7 +77,7 @@ export interface ResolvedEventConfig {
   toastDuration: number;
   scripts: string[];
   runScripts: boolean;
-  saveToFile: boolean | FileTemplate;
+  logToAudit: boolean;
   appendToSession: boolean;
   runOnlyOnce: boolean;
   scriptToasts: ScriptToastsConfig;
@@ -111,11 +111,11 @@ export interface FileTemplate {
 export interface ToolOverride {
   enabled?: boolean;
   debug?: boolean;
-  toast?: boolean | ToastOverride;
+  toast?: boolean | ToolOverride;
   scripts?: string[];
   runScripts?: boolean;
   runOnlyOnce?: boolean;
-  saveToFile?: boolean | FileTemplate;
+  logToAudit?: boolean;
   appendToSession?: boolean;
   block?: BlockCheck[];
   messageFn?: (input: unknown, output?: unknown) => string | undefined;
