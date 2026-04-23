@@ -7,28 +7,16 @@ export type AuditFileType =
   | 'security'
   | 'debug';
 
-export interface AuditFilesConfig {
-  events: string;
-  scripts: string;
-  errors: string;
-  security?: string;
-  debug?: string;
-}
-
-export interface AuditRetentionConfig {
-  maxAgeDays: number;
-  maxSizeMB: number;
-}
-
 export interface AuditConfig {
   enabled: boolean;
   level: AuditLogLevel;
+  basePath: string;
   maxSizeMB: number;
   maxAgeDays: number;
   truncationKB: number;
-  files: AuditFilesConfig;
-  maxFieldSize?: number; // Max characters per field (default: 1000)
-  maxArrayItems?: number; // Max items per array (default: 50)
+  maxFieldSize: number;
+  maxArrayItems: number;
+  largeFields: string[];
 }
 
 export interface AuditFileStat {
@@ -42,10 +30,10 @@ export interface AuditLoggerDependencies {
     path: string,
     options?: { recursive?: boolean }
   ) => Promise<void | string>;
-  stat?: (path: string) => Promise<AuditFileStat>;
+  stat: (path: string) => Promise<AuditFileStat>;
   readdir: (path: string) => Promise<string[]>;
   unlink: (path: string) => Promise<void>;
-  gzipFile: (sourcePath: string, destPath: string) => Promise<void>;
+  rename: (src: string, dest: string) => Promise<void>;
 }
 
 export interface FileHandle {
@@ -147,26 +135,11 @@ export interface SessionInput {
   directory?: string;
 }
 
-export const DEFAULT_AUDIT_CONFIG: AuditConfig = {
-  enabled: true,
-  level: 'debug',
-  maxSizeMB: 10,
-  maxAgeDays: 30,
-  truncationKB: 10,
-  maxFieldSize: 1000,
-  maxArrayItems: 50,
-  files: {
-    events: 'plugin-events.json',
-    scripts: 'plugin-scripts.json',
-    errors: 'plugin-errors.json',
-  },
-};
 export interface AuditLogger {
   writeLine(
     fileType: AuditFileType,
     data: Record<string, unknown>
   ): Promise<void>;
-  rotate(fileType: AuditFileType): Promise<void>;
   cleanup(): Promise<void>;
 }
 
@@ -258,19 +231,13 @@ export interface ArchiveDependencies {
     options?: { recursive?: boolean }
   ) => Promise<void | string>;
   rename: (src: string, dest: string) => Promise<void>;
-  stat?: (path: string) => Promise<unknown>;
-  unlink?: (path: string) => Promise<void>;
+  stat: (path: string) => Promise<AuditFileStat>;
+  unlink: (path: string) => Promise<void>;
+  readFile?: (path: string, encoding: string) => Promise<string>;
+  appendFile?: (path: string, data: string) => Promise<void>;
+  readdir?: (path: string) => Promise<string[]>;
   open?: (
     path: string,
     flags: string
-  ) => Promise<{
-    write: (
-      buffer: Buffer,
-      offset: number,
-      length: number,
-      position: number
-    ) => Promise<number>;
-    close: () => Promise<void>;
-  }>;
-  readFile?: (path: string, encoding: string) => Promise<string>;
+  ) => Promise<{ close: () => Promise<void> }>;
 }

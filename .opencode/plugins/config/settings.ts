@@ -1,7 +1,6 @@
 import { TOAST_DURATION } from '../core/constants';
 import { EventType } from '../types/config';
 import type { UserEventsConfig } from '../types/config';
-import { DEFAULT_AUDIT_CONFIG } from '../types/audit';
 import {
   blockEnvFiles,
   blockGitForce,
@@ -34,24 +33,33 @@ export const userConfig: UserEventsConfig = {
     toast: false,
     runScripts: false,
     runOnlyOnce: false,
-    saveToFile: true,
+    logToAudit: true,
     appendToSession: false,
   },
 
   // Opinionated defaults - good for most projects
-  // saveToFile: true = logs all events to production/session-logs/
+  // logToAudit: true = logs all events to audit system
   // toast: false = don't show toasts for all events (too noisy)
   // runScripts: false = scripts are opt-in, not by default
 
   audit: {
     enabled: true,
-    level: 'debug',
-    maxSizeMB: 10,
+    level: 'audit',
+    basePath: './production/session-logs',
+    maxSizeMB: 2,
     maxAgeDays: 30,
-    truncationKB: 10,
-    maxFieldSize: 1000, // Max characters per field (for debug logging)
-    maxArrayItems: 50, // Max items per array (for debug logging)
-    files: DEFAULT_AUDIT_CONFIG.files,
+    truncationKB: 0.5,
+    maxFieldSize: 1000,
+    maxArrayItems: 50,
+    largeFields: [
+      'patch',
+      'diff',
+      'content',
+      'snapshot',
+      'output',
+      'result',
+      'text',
+    ],
   },
 
   events: {
@@ -119,12 +127,15 @@ export const userConfig: UserEventsConfig = {
   tools: {
     [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
       task: {
-        saveToFile: true,
+        logToAudit: true,
+      },
+      skill: {
+        logToAudit: true,
       },
     },
     [EventType.TOOL_EXECUTE_AFTER]: {
       task: {},
-      skill: { saveToFile: true },
+      skill: { logToAudit: true },
       bash: {},
       write: {},
       edit: {},

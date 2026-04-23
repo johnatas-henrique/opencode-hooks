@@ -25,19 +25,13 @@ export const TIMER = {
   OVERWRITE_CHECK_INTERVAL: 3000,
 } as const;
 
-export const LOG_FILE = 'session_events.log';
-export const DEBUG_LOG_FILE = 'session_debug_events.log';
-export const UNKNOWN_EVENT_LOG_FILE = 'session_unknown_events.log';
-export const BLOCKED_EVENTS_LOG_FILE = 'blocked-events.log';
-export const LOG_DIR = './production/session-logs';
+// Audit file names (used by audit system)
 export const AUDIT_EVENTS_FILE = 'plugin-events.json';
 export const AUDIT_SCRIPTS_FILE = 'plugin-scripts.json';
 export const AUDIT_ERRORS_FILE = 'plugin-errors.json';
 export const AUDIT_SECURITY_FILE = 'plugin-security.json';
 export const AUDIT_DEBUG_FILE = 'plugin-debug.json';
 export const AUDIT_ARCHIVE_DIR = 'audit-archive';
-
-export const SCRIPTS_DIR = '.opencode/scripts';
 
 export const MAX_PROMPT_LENGTH = 10000;
 
@@ -50,6 +44,7 @@ export const TRUNCATE_LENGTH = 1000;
 
 export const DISABLED_CONFIG: ResolvedEventConfig = {
   enabled: false,
+  debug: false,
   toast: false,
   toastTitle: '',
   toastMessage: '',
@@ -57,10 +52,9 @@ export const DISABLED_CONFIG: ResolvedEventConfig = {
   toastDuration: 0,
   scripts: [],
   runScripts: false,
-  saveToFile: false,
+  logToAudit: false,
   appendToSession: false,
   runOnlyOnce: false,
-  debug: false,
   scriptToasts: {
     showOutput: true,
     showError: true,
