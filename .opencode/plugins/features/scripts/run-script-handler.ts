@@ -8,7 +8,6 @@ import { useGlobalToastQueue } from '../../core/toast-queue';
 import { DEFAULT_SESSION_ID } from '../../core/constants';
 import type { EventScriptConfig } from '../../types/scripts';
 import type { ScriptRecorder } from '../../types/audit';
-import { saveToFile } from '../persistence/save-to-file';
 import { truncateOutput } from '../audit/script-recorder';
 
 const subagentSessionIds = new Set<string>();
@@ -81,21 +80,6 @@ export async function runScriptAndHandle(
 
     if (scriptRecorder) {
       await scriptRecorder.logScript(scriptData, scriptResult);
-    } else {
-      await saveToFile({
-        content: JSON.stringify({
-          timestamp,
-          type: 'SCRIPT_ERROR',
-          data: {
-            eventType,
-            toolName,
-            script,
-            error: result.error,
-            exitCode: result.exitCode,
-          },
-        }),
-        showToast: useGlobalToastQueue().add,
-      });
     }
 
     if (showError) {
@@ -110,7 +94,7 @@ export async function runScriptAndHandle(
     return { script, output: undefined };
   }
 
-  if (resolved.saveToFile && result.output) {
+  if (resolved.logToAudit && result.output) {
     const outputToLog = script.endsWith('.sh')
       ? truncateOutput(result.output)
       : result.output;

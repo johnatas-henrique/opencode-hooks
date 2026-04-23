@@ -8,14 +8,15 @@ import type {
   EventConfig,
   EventOverride,
 } from '../../../types/config';
-import { getBooleanField, resolveSaveToFile } from '../resolution';
-import { resolveScripts, resolveToastOverride } from '../resolution';
+import {
+  resolveScripts,
+  resolveToastOverride,
+  getBooleanField,
+} from '../resolution';
 import { TOAST_DURATION, DISABLED_CONFIG } from '../../../core/constants';
 import { normalizeInputForHandler } from './normalize-input';
 import { buildToastMessage } from './build-message';
-import { saveToFile } from '../../persistence/save-to-file';
 import { getEventRecorder } from '../../audit/plugin-integration';
-import { UNKNOWN_EVENT_LOG_FILE } from '../../../core/constants';
 
 function isEventOverride(cfg: EventConfig): cfg is EventOverride {
   return typeof cfg === 'object' && cfg !== null;
@@ -89,13 +90,7 @@ export class EventConfigResolverImpl implements EventConfigResolver {
           context: 'resolver',
         };
         if (eventRecorder) {
-          // Fire and forget - log async without blocking
           eventRecorder.logEvent('unknown', { input: logData }).catch(() => {});
-        } else {
-          saveToFile({
-            content: JSON.stringify(logData),
-            filename: UNKNOWN_EVENT_LOG_FILE,
-          });
         }
       }
       const allowedFields = handler?.allowedFields;
@@ -117,7 +112,7 @@ export class EventConfigResolverImpl implements EventConfigResolver {
         toastVariant: handler?.variant ?? 'info',
         toastDuration: handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
         scripts: [],
-        saveToFile: resolveSaveToFile(true, defaultCfg),
+        logToAudit: true,
         appendToSession: getBooleanField(
           true,
           defaultCfg,
@@ -174,7 +169,7 @@ export class EventConfigResolverImpl implements EventConfigResolver {
       toastDuration:
         toastCfg?.duration ?? handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
       scripts,
-      saveToFile: resolveSaveToFile(userEventConfig, defaultCfg),
+      logToAudit: userOverride?.logToAudit ?? defaultCfg.logToAudit ?? true,
       appendToSession: getBooleanField(
         userEventConfig,
         defaultCfg,

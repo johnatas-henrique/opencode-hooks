@@ -8,8 +8,11 @@ import type {
   ToolConfig,
   ToolOverride,
 } from '../../../types/config';
-import { getBooleanField, resolveSaveToFile } from '../resolution';
-import { resolveScripts, resolveToastOverride } from '../resolution';
+import {
+  getBooleanField,
+  resolveScripts,
+  resolveToastOverride,
+} from '../resolution';
 import { TOAST_DURATION } from '../../../core/constants';
 import { normalizeInputForHandler } from './normalize-input';
 import { buildToastMessage } from './build-message';
@@ -87,7 +90,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       toastDuration: handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
       scripts,
       runScripts,
-      saveToFile: resolveSaveToFile(undefined, defaultCfg),
+      logToAudit: defaultCfg.logToAudit ?? true,
       appendToSession: getBooleanField(
         true,
         defaultCfg,
@@ -120,7 +123,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
         toastDuration: 0,
         scripts: [],
         runScripts: false,
-        saveToFile: false,
+        logToAudit: false,
         appendToSession: false,
         runOnlyOnce: false,
         debug: false,
@@ -225,7 +228,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       toastVariant: toastCfg?.variant ?? baseWithToolHandler.toastVariant,
       toastDuration: toastCfg?.duration ?? baseWithToolHandler.toastDuration,
       scripts,
-      saveToFile: resolveSaveToFile(toolConfig, defaultCfg),
+      logToAudit: getBooleanField(toolConfig, defaultCfg, 'logToAudit', true),
       appendToSession: getBooleanField(
         toolConfig,
         defaultCfg,
@@ -292,7 +295,12 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       toastDuration:
         toastCfg?.duration ?? handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
       scripts,
-      saveToFile: resolveSaveToFile(userEventConfig ?? false, defaultCfg),
+      logToAudit: getBooleanField(
+        userEventConfig ?? false,
+        defaultCfg,
+        'logToAudit',
+        true
+      ),
       appendToSession: getBooleanField(
         userEventConfig ?? false,
         defaultCfg,
