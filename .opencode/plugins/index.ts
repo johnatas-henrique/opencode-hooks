@@ -15,11 +15,6 @@ export {
   TIMEOUT,
   STAGGER_MS,
   TIMER,
-  LOG_FILE,
-  DEBUG_LOG_FILE,
-  UNKNOWN_EVENT_LOG_FILE,
-  BLOCKED_EVENTS_LOG_FILE,
-  LOG_DIR,
   SCRIPTS_DIR,
   MAX_PROMPT_LENGTH,
   TOOL,
@@ -76,6 +71,5 @@ export {
 export type { ScriptRunResult, EventScriptConfig } from './types/scripts';
 
 export { executeBlocking } from './features/block-system';
-export { saveToFile } from './features/persistence/save-to-file';
 
 export { EventType } from './types/config';
