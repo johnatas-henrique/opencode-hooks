@@ -49,7 +49,7 @@ function createDefaultDeps(): AuditLoggerDependencies {
 
 export function createAuditLogger(options: AuditLoggerOptions): AuditLogger {
   const { basePath, config } = options;
-  const deps = createDefaultDeps();
+  const deps = { ...createDefaultDeps(), ...options.deps };
   const writeQueue = new Map<string, Promise<void>>();
 
   function getFilePath(fileType: AuditFileType): string {
