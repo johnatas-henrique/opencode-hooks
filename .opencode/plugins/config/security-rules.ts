@@ -1,9 +1,3 @@
-// Blocks - Security predicates for OpenCode Hooks
-// These are used to block dangerous operations in the vibecoding workflow
-//
-// Import these in settings.ts to enable:
-// import { blockEnvFiles, blockGitForce, blockNoVerify } from './blocks';
-
 import type { BlockPredicate } from '../types/config';
 
 export const blockEnvFiles: BlockPredicate = (_, output) =>
