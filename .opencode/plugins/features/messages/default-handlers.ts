@@ -1,5 +1,8 @@
 import { TOAST_DURATION } from '../../core/constants';
-import { buildKeysMessage, buildKeysMessageSimple } from '../message-formatter';
+import {
+  buildKeysMessage,
+  buildKeysMessageSimple,
+} from '../message-formatter/build-keys-message';
 
 import type { EventHandler } from '../../types/events';
 import type { HandlerConfig } from '../../types/messages';

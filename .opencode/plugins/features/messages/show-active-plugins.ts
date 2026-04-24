@@ -1,5 +1,5 @@
 import { getPluginStatus, formatPluginStatus } from './plugin-status';
-import { userConfig } from '../../config';
+import { userConfig } from '../../config/settings';
 import { TOAST_DURATION } from '../../core/constants';
 import type { ToastQueue } from '../../types/toast';
 
