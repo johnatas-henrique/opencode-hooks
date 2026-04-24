@@ -44,9 +44,9 @@ export const userConfig: UserEventsConfig = {
 
   audit: {
     enabled: true,
-    level: 'audit',
+    level: 'debug',
     basePath: './production/session-logs',
-    maxSizeMB: 2,
+    maxSizeMB: 3,
     maxAgeDays: 30,
     logTruncationKB: 0.5,
     maxFieldSize: 1000,
@@ -79,17 +79,17 @@ export const userConfig: UserEventsConfig = {
       runScripts: true,
       scripts: ['server-connected.sh'],
     },
-    [EventType.SESSION_DIFF]: { toast: true },
+    [EventType.SESSION_DIFF]: { enabled: false },
     [EventType.SESSION_ERROR]: { toast: true },
-    [EventType.SESSION_STATUS]: { toast: true },
-    [EventType.SESSION_UPDATED]: { toast: true },
+    [EventType.SESSION_STATUS]: { enabled: false },
+    [EventType.SESSION_UPDATED]: { enabled: false },
     [EventType.SESSION_UNKNOWN]: { toast: true },
 
-    [EventType.MESSAGE_PART_DELTA]: { toast: true },
-    [EventType.MESSAGE_PART_REMOVED]: { toast: true },
-    [EventType.MESSAGE_PART_UPDATED]: { toast: true },
-    [EventType.MESSAGE_REMOVED]: { toast: true },
-    [EventType.MESSAGE_UPDATED]: { toast: true },
+    [EventType.MESSAGE_PART_DELTA]: { enabled: false },
+    [EventType.MESSAGE_PART_REMOVED]: { enabled: false },
+    [EventType.MESSAGE_PART_UPDATED]: { enabled: false },
+    [EventType.MESSAGE_REMOVED]: { enabled: false },
+    [EventType.MESSAGE_UPDATED]: { enabled: false },
 
     [EventType.FILE_EDITED]: { enabled: false },
     [EventType.FILE_WATCHER_UPDATED]: { enabled: false },
@@ -106,7 +106,7 @@ export const userConfig: UserEventsConfig = {
 
     [EventType.TODO_UPDATED]: { enabled: false },
 
-    [EventType.SHELL_ENV]: { toast: true },
+    [EventType.SHELL_ENV]: { enabled: false },
 
     [EventType.EXPERIMENTAL_SESSION_COMPACTING]: { toast: true },
 
