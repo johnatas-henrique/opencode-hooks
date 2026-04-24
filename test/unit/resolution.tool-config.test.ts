@@ -88,6 +88,41 @@ describe('ToolConfigResolverImpl', () => {
       expect(result.runScripts).toBe(true);
       expect(result.scripts).toContain('bash-after.sh');
     });
+
+    it('should use logToAudit from toolConfig when provided', () => {
+      const context = createMockContext();
+      const resolver = new ToolConfigResolverImpl(context);
+
+      (context.getToolConfigs as Mock).mockReturnValue({
+        myTool: { logToAudit: false },
+      });
+      (context.getEventConfig as Mock).mockReturnValue(undefined);
+
+      const result = resolver.resolve('tool.execute.after', 'myTool');
+
+      expect(result.logToAudit).toBe(false);
+    });
+
+    it('should use logToAudit false when defaultCfg.logToAudit is false', () => {
+      const context = createMockContext({
+        default: {
+          enabled: true,
+          toast: true,
+          debug: false,
+          runScripts: false,
+          logToAudit: false,
+          appendToSession: false,
+        },
+      });
+      const resolver = new ToolConfigResolverImpl(context);
+
+      (context.getToolConfigs as Mock).mockReturnValue({});
+      (context.getEventConfig as Mock).mockReturnValue(undefined);
+
+      const result = resolver.resolve('tool.execute.after', 'myTool');
+
+      expect(result.logToAudit).toBe(false);
+    });
   });
 
   describe('resolveBase()', () => {
@@ -140,6 +175,90 @@ describe('ToolConfigResolverImpl', () => {
       expect((result as Record<string, unknown>).toastVariant).toBe('info');
       expect((result as Record<string, unknown>).toastDuration).toBe(2000);
       expect((result as Record<string, unknown>).toastMessage).toBe('');
+    });
+
+    it('should default logToAudit to true when undefined', () => {
+      const context = createMockContext({
+        default: {
+          enabled: true,
+          toast: true,
+          debug: false,
+          runScripts: false,
+          logToAudit: undefined,
+          appendToSession: false,
+        },
+        handlers: {},
+      });
+      const resolver = new ToolConfigResolverImpl(context);
+
+      (context.getEventConfig as Mock).mockReturnValue(undefined);
+
+      const result = (
+        resolver as unknown as {
+          resolveBase: (
+            eventType: string,
+            input: Record<string, unknown>
+          ) => unknown;
+        }
+      ).resolveBase('unknown.event', {});
+
+      expect((result as Record<string, unknown>).logToAudit).toBe(true);
+    });
+
+    it('should use defaultCfg.logToAudit false when provided', () => {
+      const context = createMockContext({
+        default: {
+          enabled: true,
+          toast: true,
+          debug: false,
+          runScripts: false,
+          logToAudit: false,
+          appendToSession: false,
+        },
+        handlers: {},
+      });
+      const resolver = new ToolConfigResolverImpl(context);
+
+      (context.getEventConfig as Mock).mockReturnValue(undefined);
+
+      const result = (
+        resolver as unknown as {
+          resolveBase: (
+            eventType: string,
+            input: Record<string, unknown>
+          ) => unknown;
+        }
+      ).resolveBase('unknown.event', {});
+
+      expect((result as Record<string, unknown>).logToAudit).toBe(false);
+    });
+
+    it('should use defaultCfg.logToAudit true when provided', () => {
+      const context = createMockContext({
+        default: {
+          enabled: true,
+          toast: true,
+          debug: false,
+          runScripts: false,
+          logToAudit: true,
+          appendToSession: false,
+        },
+        handlers: {},
+      });
+      const resolver = new ToolConfigResolverImpl(context);
+
+      (context.getEventConfig as Mock).mockReturnValue(undefined);
+
+      const result = (
+        resolver as unknown as {
+          resolveBase: (
+            eventType: string,
+            input: Record<string, unknown>
+          ) => unknown;
+        }
+      ).resolveBase('unknown.event', {});
+
+      expect((result as Record<string, unknown>).logToAudit).toBe(true);
     });
   });
 

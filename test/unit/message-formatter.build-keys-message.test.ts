@@ -32,4 +32,11 @@ describe('buildKeysMessage with allowedFields', () => {
     const message = buildKeysMessageSimple(event);
     expect(message).toContain('Time:');
   });
+
+  it('should cover line 104 in buildKeysMessageSimple', () => {
+    const event = { properties: { key: 'value' } };
+    const message = buildKeysMessageSimple(event, ['key']);
+    expect(message).toContain('key:');
+    expect(message).toContain('value');
+  });
 });

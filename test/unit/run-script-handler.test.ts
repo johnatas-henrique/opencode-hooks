@@ -82,6 +82,49 @@ describe('run-script-handler.ts', () => {
     mockAppendToSession.mockResolvedValue(undefined);
   });
 
+  describe('line 76 - output nullish coalescing', () => {
+    it('should cover result.output ?? "" branch when output is null', async () => {
+      mockRunScript.mockResolvedValueOnce({
+        output: null,
+        error: 'error',
+        exitCode: 1,
+      });
+
+      const config = {
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
+        script: 'error-script.sh',
+        scriptArg: '',
+        timestamp: '2026-01-01T00:00:00Z',
+        eventType: 'test.event',
+        resolved: createResolvedConfig({
+          logToAudit: true,
+          appendToSession: false,
+          runOnlyOnce: false,
+        }),
+        sessionId: 'session-1',
+        scriptToasts: {
+          showOutput: true,
+          outputTitle: "'Script Output'",
+          showError: true,
+          outputVariant: 'info',
+          errorVariant: 'error',
+          errorTitle: "'Script Error'",
+          outputDuration: 5000,
+          errorDuration: 15000,
+        },
+      };
+
+      const result = await runScriptAndHandle(config as never);
+
+      expect(result).toEqual({
+        script: 'error-script.sh',
+        output: undefined,
+      });
+    });
+  });
+
   describe('error handling', () => {
     it('should handle error with special characters', async () => {
       mockRunScript.mockResolvedValueOnce({
