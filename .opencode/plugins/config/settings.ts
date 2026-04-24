@@ -48,7 +48,7 @@ export const userConfig: UserEventsConfig = {
     basePath: './production/session-logs',
     maxSizeMB: 2,
     maxAgeDays: 30,
-    truncationKB: 0.5,
+    logTruncationKB: 0.5,
     maxFieldSize: 1000,
     maxArrayItems: 50,
     largeFields: [

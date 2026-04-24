@@ -149,7 +149,7 @@ function sanitizeAndTruncate(
   const maxBytes = Math.floor(globalTruncationKB * 1024);
 
   for (const [key, value] of Object.entries(data)) {
-    // Truncate known-large fields to truncationKB limit
+    // Truncate known-large fields to logTruncationKB limit
     if (
       largeFields.includes(key) &&
       typeof value === 'string' &&
@@ -283,7 +283,7 @@ export function createEventRecorder(
   const maxFieldSize = config.maxFieldSize;
   const maxArrayItems = config.maxArrayItems;
   const largeFields = config.largeFields;
-  globalTruncationKB = config.truncationKB;
+  globalTruncationKB = config.logTruncationKB;
 
   async function logToolExecuteBefore(
     input: ToolExecuteBeforeInput

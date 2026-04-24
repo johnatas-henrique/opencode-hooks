@@ -13,7 +13,7 @@ const TEST_CONFIG: AuditConfig = {
   basePath: './test-audit',
   maxSizeMB: 10,
   maxAgeDays: 30,
-  truncationKB: 10,
+  logTruncationKB: 10,
   maxFieldSize: 1000,
   maxArrayItems: 50,
   largeFields: [],

@@ -14,7 +14,7 @@ const baseConfig: UserEventsConfig = {
     basePath: '/tmp/audit-test',
     maxSizeMB: 10,
     maxAgeDays: 30,
-    truncationKB: 0.5,
+    logTruncationKB: 0.5,
     maxFieldSize: 1000,
     maxArrayItems: 50,
     largeFields: [],

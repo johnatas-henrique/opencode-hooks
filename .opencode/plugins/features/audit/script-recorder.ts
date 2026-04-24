@@ -5,16 +5,11 @@ import type {
   ScriptInput,
 } from '../../types/audit';
 
-const TRUNCATION_KB = 10;
-
 export function shouldLogScripts(config: AuditConfig): boolean {
   return config.enabled;
 }
 
-export function truncateOutput(
-  output: string,
-  maxKb: number = TRUNCATION_KB
-): string {
+export function truncateOutput(output: string, maxKb: number): string {
   const maxBytes = maxKb * 1024;
   if (output.length <= maxBytes) {
     return output;
@@ -30,7 +25,8 @@ export function truncateOutput(
 export function createScriptRecord(
   input: ScriptInput,
   result: { output: string; error: string | null; exitCode: number },
-  shouldLogResult: boolean
+  shouldLogResult: boolean,
+  logTruncationKB: number
 ): ScriptRecord | null {
   if (!shouldLogResult) {
     return null;
@@ -39,7 +35,7 @@ export function createScriptRecord(
   const duration = input.startTime ? Date.now() - input.startTime : undefined;
 
   const output = input.script.endsWith('.sh')
-    ? truncateOutput(result.output)
+    ? truncateOutput(result.output, logTruncationKB)
     : result.output;
 
   return {
@@ -58,12 +54,13 @@ export function createScriptRecorder(
   deps: ScriptRecorderDependencies
 ) {
   const canLog = shouldLogScripts(config);
+  const logTruncationKB = config.logTruncationKB;
 
   async function logScript(
     input: ScriptInput,
     result: { output: string; error: string | null; exitCode: number }
   ): Promise<void> {
-    const record = createScriptRecord(input, result, canLog);
+    const record = createScriptRecord(input, result, canLog, logTruncationKB);
     if (record !== null) {
       await deps.writeLine('scripts', record);
     }

@@ -13,7 +13,7 @@ export interface AuditConfig {
   basePath: string;
   maxSizeMB: number;
   maxAgeDays: number;
-  truncationKB: number;
+  logTruncationKB: number;
   maxFieldSize: number;
   maxArrayItems: number;
   largeFields: string[];

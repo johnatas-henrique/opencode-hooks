@@ -6,6 +6,7 @@ import type {
 import { appendToSession } from '../messages/append-to-session';
 import { useGlobalToastQueue } from '../../core/toast-queue';
 import { DEFAULT_SESSION_ID } from '../../core/constants';
+import { userConfig } from '../../config/settings';
 import type { EventScriptConfig } from '../../types/scripts';
 import type { ScriptRecorder } from '../../types/audit';
 import { truncateOutput } from '../audit/script-recorder';
@@ -73,7 +74,7 @@ export async function runScriptAndHandle(
       startTime: new Date(timestamp).getTime(),
     };
     const scriptResult = {
-      output: result.output ?? '',
+      output: result.output,
       error: result.error,
       exitCode: result.exitCode,
     };
@@ -96,7 +97,7 @@ export async function runScriptAndHandle(
 
   if (resolved.logToAudit && result.output) {
     const outputToLog = script.endsWith('.sh')
-      ? truncateOutput(result.output)
+      ? truncateOutput(result.output, userConfig.audit.logTruncationKB)
       : result.output;
 
     if (scriptRecorder) {

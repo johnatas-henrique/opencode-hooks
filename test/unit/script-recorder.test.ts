@@ -12,7 +12,7 @@ describe('script-recorder', () => {
     basePath: '/tmp/audit-test',
     maxSizeMB: 10,
     maxAgeDays: 30,
-    truncationKB: 10,
+    logTruncationKB: 10,
     maxFieldSize: 1000,
     maxArrayItems: 50,
     largeFields: [],
@@ -34,7 +34,7 @@ describe('script-recorder', () => {
       const longOutput = 'x'.repeat(20 * 1024);
       const result = { output: longOutput, error: null, exitCode: 0 };
 
-      const record = createScriptRecord(input, result, true);
+      const record = createScriptRecord(input, result, true, 10);
 
       expect(record!.output!.length).toBe(10 * 1024);
     });
@@ -44,7 +44,7 @@ describe('script-recorder', () => {
       const longOutput = 'x'.repeat(20 * 1024);
       const result = { output: longOutput, error: null, exitCode: 0 };
 
-      const record = createScriptRecord(input, result, true);
+      const record = createScriptRecord(input, result, true, 10);
 
       expect(record!.output!.length).toBe(20 * 1024);
     });
@@ -53,7 +53,7 @@ describe('script-recorder', () => {
       const input = { script: 'test.sh' };
       const result = { output: '', error: null, exitCode: 0 };
 
-      const record = createScriptRecord(input, result, true);
+      const record = createScriptRecord(input, result, true, 10);
 
       expect(record!.args).toEqual([]);
     });
