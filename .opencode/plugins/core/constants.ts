@@ -40,7 +40,7 @@ export const TOOL = {
   SUBAGENT_TYPE_ARG: 'subagent_type',
 } as const;
 
-export const SCRIPTS_DIR = 'scripts';
+export const SCRIPTS_DIR = '.opencode/scripts';
 
 export const MAX_TOAST_LENGTH = 1000;
 
