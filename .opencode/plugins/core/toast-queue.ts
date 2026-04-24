@@ -1,6 +1,6 @@
 import type { TuiToast } from '@opencode-ai/plugin/tui';
 import { STAGGER_MS, TOAST_DURATION, DEFAULT_SESSION_ID } from './constants';
-import { getErrorRecorder } from '../features/audit';
+import { getErrorRecorder } from '../features/audit/plugin-integration';
 import type { ToastQueue, ToastQueueOptions } from '../types/toast';
 
 let activeToast: Promise<void> | null = null;
