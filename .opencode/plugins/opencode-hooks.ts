@@ -14,24 +14,29 @@ import type {
   ToolExecuteBeforeOutput,
 } from './types/core';
 import { initGlobalToastQueue, useGlobalToastQueue } from './core/toast-queue';
-import { handlers, showStartupToast } from './features/messages';
-import { resolveEventConfig, resolveToolConfig } from './features/events';
+import { handlers } from './features/messages/default-handlers';
+import { showStartupToast } from './features/messages/show-startup-toast';
+import {
+  resolveEventConfig,
+  resolveToolConfig,
+} from './features/events/events';
 import { handleDebugLog } from './core/debug';
 import {
   getEventRecorder,
   archiveAllJsonFiles,
 } from './features/audit/plugin-integration';
-import { runScriptAndHandle, addSubagentSession } from './features/scripts';
+import { runScriptAndHandle } from './features/scripts/run-script-handler';
+import { addSubagentSession } from './features/scripts/run-script-handler';
 import { EventType } from './types/config';
-import { userConfig } from './config';
+import { userConfig } from './config/settings';
 import { DEFAULT_SESSION_ID, TOOL } from './core/constants';
 import type { ResolvedEventConfig, ScriptResult } from './types/config';
-import { executeBlocking } from './features/block-system';
+import { executeBlocking } from './features/block-system/block-handler';
 import {
   initAuditLogging,
   getScriptRecorder,
-  createEventRecorder,
-} from './features/audit';
+} from './features/audit/plugin-integration';
+import { createEventRecorder } from './features/audit/event-recorder';
 import type { ScriptRecorder } from './types/audit';
 
 interface ExecuteHookParams {
