@@ -18,6 +18,7 @@ export interface ScriptRunnerDeps {
   scriptToasts: ScriptToastsConfig;
   scriptRecorder?: ScriptRecorder;
   toolName?: string;
+  timestamp?: string;
 }
 
 export interface RunScriptOptions {
@@ -56,7 +57,7 @@ export function createScriptRunner(deps: ScriptRunnerDeps) {
       ctx: deps.ctx,
       script,
       scriptArg: arg,
-      timestamp: Date.now().toString(),
+      timestamp: deps.timestamp ?? Date.now().toString(),
       eventType: deps.eventType,
       toolName: deps.toolName,
       resolved: effectiveResolved,

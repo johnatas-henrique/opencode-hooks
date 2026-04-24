@@ -25,8 +25,8 @@ import {
   getEventRecorder,
   archiveAllJsonFiles,
 } from './features/audit/plugin-integration';
-import { runScriptAndHandle } from './features/scripts/run-script-handler';
 import { addSubagentSession } from './features/scripts/run-script-handler';
+import { createScriptRunner } from './features/scripts/script-runner';
 import { EventType } from './types/config';
 import { userConfig } from './config/settings';
 import { DEFAULT_SESSION_ID, SCRIPTS_DIR, TOOL } from './core/constants';
@@ -118,21 +118,19 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     });
   }
 
+  const runner = createScriptRunner({
+    ctx,
+    sessionId,
+    eventType,
+    resolved,
+    scriptToasts: resolved.scriptToasts,
+    scriptRecorder: params.scriptRecorder,
+    toolName,
+    timestamp,
+  });
+
   const results = await Promise.all(
-    resolved.scripts.map((script) =>
-      runScriptAndHandle({
-        ctx,
-        script,
-        timestamp,
-        eventType,
-        resolved,
-        scriptToasts: resolved.scriptToasts,
-        sessionId,
-        toolName,
-        scriptArg,
-        scriptRecorder: params.scriptRecorder,
-      })
-    )
+    resolved.scripts.map((script) => runner(script, scriptArg))
   );
 
   const successfulScripts = results
