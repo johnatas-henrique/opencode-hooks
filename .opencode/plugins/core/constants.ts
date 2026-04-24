@@ -40,7 +40,9 @@ export const TOOL = {
   SUBAGENT_TYPE_ARG: 'subagent_type',
 } as const;
 
-export const TRUNCATE_LENGTH = 1000;
+export const SCRIPTS_DIR = 'scripts';
+
+export const MAX_TOAST_LENGTH = 1000;
 
 export const DISABLED_CONFIG: ResolvedEventConfig = {
   enabled: false,

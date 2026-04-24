@@ -1,10 +1,8 @@
-import { TRUNCATE_LENGTH } from '../../core/constants';
-
-export { TRUNCATE_LENGTH };
+import { MAX_TOAST_LENGTH } from '../../core/constants';
 
 export function truncate(
   str: string,
-  maxLength: number = TRUNCATE_LENGTH
+  maxLength: number = MAX_TOAST_LENGTH
 ): string {
   if (str.length > maxLength) {
     return str.slice(0, maxLength) + '...';

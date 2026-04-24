@@ -18,7 +18,7 @@ export {
   SCRIPTS_DIR,
   MAX_PROMPT_LENGTH,
   TOOL,
-  TRUNCATE_LENGTH,
+  MAX_TOAST_LENGTH,
   DISABLED_CONFIG,
 } from './core/constants';
 export {
@@ -56,9 +56,9 @@ export type { PluginStatus } from './types/plugin';
 export {
   resolveEventConfig,
   resolveToolConfig,
-  normalizeInputForHandler,
   DISABLED_CONFIG as DISABLED_EVENT_CONFIG,
 } from './features/events';
+export { normalizeInputForHandler } from './features/events/resolvers/normalize-input';
 export type { ResolvedEventConfig } from './types/config';
 
 export {
