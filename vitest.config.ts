@@ -9,7 +9,7 @@ export default defineConfig({
     clearMocks: true,
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'json'],
+      reporter: [['text', { maxCols: 120 }], 'html', 'json'],
       reportsDirectory: 'coverage',
       reportOnFailure: true,
       include: [
@@ -20,10 +20,10 @@ export default defineConfig({
         '!**/index.ts',
       ],
       thresholds: {
-        statements: 95,
-        branches: 95,
-        functions: 95,
-        lines: 95,
+        statements: 96,
+        branches: 96,
+        functions: 96,
+        lines: 96,
       },
     },
   },

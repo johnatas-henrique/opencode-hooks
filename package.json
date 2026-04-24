@@ -12,6 +12,7 @@
     "test:e2e": "bash test/e2e/session-lifecycle.sh && bash test/e2e/tool-execution.sh",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:cov": "vitest run --coverage",
+    "cov:nc": "FORCE_COLOR=1 vitest run --coverage  --coverage.skipFull | grep -v '^ ✓*'",
     "coverage:report": "FORCE_COLOR=1 vitest run --coverage --coverage.reporter=text-summary 2>&1 | grep -A 7 \"Coverage summary\"",
     "watch:cov": "FORCE_COLOR=1 vitest run --coverage 2>&1 | grep -e 'Tests ' -e 'All files' -e '% Stmts'",
     "lint": "eslint \"**/*.ts\" --ignore-pattern \"node_modules/**\" --ignore-pattern \"dist/**\" --ignore-pattern \"coverage/**\"",
