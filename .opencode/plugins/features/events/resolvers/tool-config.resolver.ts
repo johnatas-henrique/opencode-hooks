@@ -90,7 +90,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       toastDuration: handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
       scripts,
       runScripts,
-      logToAudit: defaultCfg.logToAudit ?? true,
+      logToAudit: getBooleanField(true, defaultCfg, 'logToAudit', true),
       appendToSession: getBooleanField(
         true,
         defaultCfg,
