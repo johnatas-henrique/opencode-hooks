@@ -10,7 +10,19 @@ const sanitizeArg = (arg: string): string => {
 
 const validateScriptPath = (scriptPath: string): boolean => {
   if (!scriptPath || typeof scriptPath !== 'string') return false;
-  if (scriptPath.includes('..') || scriptPath.startsWith('/')) return false;
+
+  // Bloquear path traversal (..)
+  if (scriptPath.includes('..')) return false;
+
+  // Bloquear paths absolutos (Unix e Windows)
+  if (scriptPath.startsWith('/') || scriptPath.startsWith('~')) return false;
+  if (/^[a-zA-Z]:\\/.test(scriptPath)) return false;
+
+  // Bloquear backslash (Windows path separator)
+  if (scriptPath.includes('\\')) return false;
+
+  // Permitir subdiretórios com / (ex: 'subdir/script.sh')
+
   return true;
 };
 
