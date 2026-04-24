@@ -29,7 +29,7 @@ import { runScriptAndHandle } from './features/scripts/run-script-handler';
 import { addSubagentSession } from './features/scripts/run-script-handler';
 import { EventType } from './types/config';
 import { userConfig } from './config/settings';
-import { DEFAULT_SESSION_ID, TOOL } from './core/constants';
+import { DEFAULT_SESSION_ID, SCRIPTS_DIR, TOOL } from './core/constants';
 import type { ResolvedEventConfig, ScriptResult } from './types/config';
 import { executeBlocking } from './features/block-system/block-handler';
 import {
@@ -38,6 +38,15 @@ import {
 } from './features/audit/plugin-integration';
 import { createEventRecorder } from './features/audit/event-recorder';
 import type { ScriptRecorder } from './types/audit';
+import fs from 'fs';
+import path from 'path';
+
+function validateScriptsDirectory(): void {
+  const scriptsDir = path.join(process.cwd(), SCRIPTS_DIR);
+  if (!fs.existsSync(scriptsDir) || !fs.statSync(scriptsDir).isDirectory()) {
+    throw new Error(`Scripts directory not found: ${scriptsDir}`);
+  }
+}
 
 interface ExecuteHookParams {
   ctx: PluginInput;
@@ -196,6 +205,9 @@ export const OpencodeHooks: Plugin = async (
   if (!userConfig.enabled) {
     return {};
   }
+
+  // Validate scripts directory exists at startup
+  validateScriptsDirectory();
 
   await initAuditLogging(userConfig.audit);
 
