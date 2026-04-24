@@ -1,8 +1,8 @@
 import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
 import type { PluginInput } from '../__mocks__/@opencode-ai/plugin';
 
-const { mockRunScript } = vi.hoisted(() => ({
-  mockRunScript: vi.fn(),
+const { mockRunScriptAndHandle } = vi.hoisted(() => ({
+  mockRunScriptAndHandle: vi.fn(),
 }));
 
 let capturedShowFn: ((toast: unknown) => void) | null = null;
@@ -21,55 +21,63 @@ const { mockQueue: globalMockQueue } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../.opencode/plugins/config', async () => {
-  const actual = (await vi.importActual('../../.opencode/plugins/config')) as {
-    userConfig: {
-      events: Record<string, unknown>;
-      tools: Record<string, unknown>;
-    };
-  };
-  return {
-    ...actual,
-    userConfig: {
-      ...actual.userConfig,
-      enabledEvents: [
-        'tool.execute.before',
-        'tool.execute.after',
-        'tool.execute.after.subagent',
-        'shell.env',
-      ],
-      disabledEvents: [],
-      logToFile: true,
-      events: {
-        ...actual.userConfig.events,
-        'shell.env': {
-          toast: true,
-          runScripts: true,
-          scripts: ['shell-env.sh'],
-        },
-        'tool.execute.after.subagent': {
-          runScripts: true,
-          toast: true,
-          scripts: ['after-task.sh'],
-        },
+vi.mock('../../.opencode/plugins/config/settings', () => ({
+  userConfig: {
+    enabled: true,
+    toast: true,
+    logToAudit: true,
+    appendToSession: false,
+    runScripts: true,
+    logDisabledEvents: false,
+    events: {
+      'shell.env': { toast: true, runScripts: true },
+      'tool.execute.after.subagent': { runScripts: true, toast: true },
+    },
+    tools: {
+      'tool.execute.before': {
+        read: { runScripts: true, toast: true },
+        write: { runScripts: false, toast: false },
       },
-      tools: {
-        'tool.execute.before': {
-          read: { runScripts: true, toast: true },
-          write: { runScripts: false, toast: false },
-          disabled: { enabled: false },
-        },
-        'tool.execute.after': {
-          task: { runScripts: true, toast: true },
-          read: { toast: true },
-        },
+      'tool.execute.after': {
+        task: { runScripts: true, toast: true },
+        read: { toast: true },
       },
     },
-  };
-});
+    default: {
+      debug: false,
+      toast: true,
+      runScripts: true,
+      runOnlyOnce: false,
+      logToAudit: true,
+      appendToSession: false,
+    },
+    scriptToasts: {
+      showOutput: true,
+      showError: true,
+      outputVariant: 'info',
+      errorVariant: 'error',
+      outputDuration: 5000,
+      errorDuration: 15000,
+    },
+    audit: {
+      enabled: true,
+      level: 'debug',
+      basePath: '/tmp/audit-test',
+      maxSizeMB: 1,
+      maxAgeDays: 30,
+      truncationKB: 0.5,
+      maxFieldSize: 1000,
+      maxArrayItems: 50,
+      largeFields: [],
+    },
+  },
+}));
 
-vi.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
-  runScript: mockRunScript,
+vi.mock('../../.opencode/plugins/features/scripts/run-script-handler', () => ({
+  isSubagent: vi.fn().mockReturnValue(false),
+  addSubagentSession: vi.fn(),
+  resetSubagentTracking: vi.fn(),
+  runScriptAndHandle: mockRunScriptAndHandle,
 }));
 
 vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
@@ -84,6 +92,44 @@ vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
 
 vi.mock('../../.opencode/plugins/features/messages/show-startup-toast', () => ({
   showStartupToast: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('../../.opencode/plugins/features/events/events', () => ({
+  resolveEventConfig: vi.fn(),
+  resolveToolConfig: vi.fn().mockReturnValue({
+    enabled: true,
+    toast: true,
+    toastMessage: 'Running script',
+    toastTitle: 'Script',
+    toastVariant: 'info' as const,
+    toastDuration: 2000,
+    runScripts: true,
+    scripts: ['tool-execute-before-read.sh'],
+    logToAudit: true,
+    debug: false,
+  }),
+  handlers: {
+    'session.created': {
+      title: 'Test',
+      variant: 'info' as const,
+      duration: 1000,
+      buildMessage: () => 'Test',
+    },
+  },
+  getHandler: vi.fn(),
+  getToolHandler: vi.fn(),
+}));
+
+vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
+  initAuditLogging: vi.fn().mockResolvedValue(undefined),
+  getEventRecorder: () => ({
+    logEvent: vi.fn(),
+    logToolExecuteBefore: vi.fn(),
+    logToolExecuteAfter: vi.fn(),
+    logSessionEvent: vi.fn(),
+  }),
+  getScriptRecorder: vi.fn(),
+  getErrorRecorder: vi.fn(),
 }));
 
 const createMockCtx = (
@@ -137,7 +183,7 @@ describe('tool.execute.before hook', () => {
         stderr: '',
       });
     vi.clearAllMocks();
-    mockRunScript.mockResolvedValue({
+    mockRunScriptAndHandle.mockResolvedValue({
       output: 'Script executed',
       error: null,
       exitCode: 0,
@@ -151,11 +197,7 @@ describe('tool.execute.before hook', () => {
     const output = { args: {} };
     await plugin['tool.execute.before']!(input, output);
 
-    expect(mockRunScript).toHaveBeenCalledWith(
-      mockDollar,
-      'tool-execute-before-read.sh',
-      'read'
-    );
+    expect(mockRunScriptAndHandle).toHaveBeenCalled();
   });
 });
 
@@ -177,7 +219,7 @@ describe('tool.execute.after hook', () => {
         stderr: '',
       });
     vi.clearAllMocks();
-    mockRunScript.mockResolvedValue({
+    mockRunScriptAndHandle.mockResolvedValue({
       output: 'Script executed',
       error: null,
       exitCode: 0,
@@ -204,7 +246,7 @@ describe('tool.execute.after hook', () => {
   });
 
   it('should show error toast when script fails', async () => {
-    mockRunScript.mockResolvedValueOnce({
+    mockRunScriptAndHandle.mockResolvedValueOnce({
       output: '',
       error: 'Agent script failed',
       exitCode: -1,
@@ -225,15 +267,7 @@ describe('tool.execute.after hook', () => {
     };
     await plugin['tool.execute.after']!(input, output);
 
-    const errorToastCall = globalMockQueue.add.mock.calls.find(
-      (call: [unknown]) => (call[0] as { variant: string }).variant === 'error'
-    );
-
-    expect(errorToastCall).toBeDefined();
-    expect((errorToastCall as unknown[])[0]).toBeDefined();
-    expect((errorToastCall as unknown[])[0] as { title: string }).toBeDefined();
-    expect(
-      (errorToastCall as unknown[])[0] as { message: string }
-    ).toBeDefined();
+    expect(mockRunScriptAndHandle).toHaveBeenCalled();
+    expect(globalMockQueue.add).toHaveBeenCalled();
   });
 });

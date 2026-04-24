@@ -124,6 +124,16 @@ describe('audit-logger', () => {
         logger.writeLine('events', { event: 'test' })
       ).resolves.not.toThrow();
     });
+
+    it('should skip archive for non-archive file types', async () => {
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: { ...defaultConfig, maxSizeMB: 1 },
+        deps: { appendFile: mockAppendFile, mkdir: mockMkdir },
+      });
+      await logger.writeLine('security', { event: 'test' });
+      expect(mockAppendFile).toHaveBeenCalled();
+    });
   });
 
   describe('cleanup', () => {
@@ -201,6 +211,16 @@ describe('audit-logger', () => {
         deps: { unlink: mockUnlink, readdir: mockReaddir },
       });
       await expect(logger.cleanup()).resolves.not.toThrow();
+    });
+
+    it('should skip cleanup when stat dependency is missing', async () => {
+      const logger = createAuditLogger({
+        basePath: BASE_PATH,
+        config: defaultConfig,
+        deps: { readdir: mockReaddir, unlink: mockUnlink, stat: undefined },
+      });
+      await logger.cleanup();
+      expect(mockReaddir).not.toHaveBeenCalled();
     });
   });
 });
@@ -280,5 +300,16 @@ describe('archiveFileIfNeeded', () => {
         /plugin-events-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z\.json/
       )
     );
+  });
+
+  it('should use default fs dependencies when deps is not provided', async () => {
+    const { archiveFileIfNeeded } =
+      await import('../../.opencode/plugins/features/audit/audit-logger');
+    const result = await archiveFileIfNeeded(
+      '/nonexistent/file.json',
+      '/archive',
+      1024 * 1024
+    );
+    expect(result).toBe(false);
   });
 });

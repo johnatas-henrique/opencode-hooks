@@ -89,6 +89,38 @@ describe('ToolConfigResolverImpl', () => {
       expect(result.scripts).toContain('bash-after.sh');
     });
 
+    it('should use tool.execute.before handler when eventType contains .before (line 26)', () => {
+      const context = createMockContext({
+        default: {
+          enabled: true,
+          toast: true,
+          debug: false,
+          runScripts: true,
+          logToAudit: true,
+          appendToSession: false,
+        },
+        handlers: {
+          ...createMockContext().handlers,
+          'tool.execute.before.bash': {
+            title: 'Bash Before',
+            variant: 'info' as const,
+            duration: 2000,
+            defaultScript: 'bash-before.sh',
+            buildMessage: () => 'Bash Before Message',
+          },
+        },
+      });
+      const resolver = new ToolConfigResolverImpl(context);
+
+      (context.getToolConfigs as Mock).mockReturnValue({});
+      (context.getEventConfig as Mock).mockReturnValue(undefined);
+
+      const result = resolver.resolve('tool.execute.before', 'bash');
+
+      expect(result.toastTitle).toBe('Bash Before');
+      expect(result.scripts).toContain('bash-before.sh');
+    });
+
     it('should use logToAudit from toolConfig when provided', () => {
       const context = createMockContext();
       const resolver = new ToolConfigResolverImpl(context);

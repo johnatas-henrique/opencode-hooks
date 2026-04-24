@@ -6,7 +6,7 @@ import type {
   BlockCheck,
   ScriptResult,
 } from '../../.opencode/plugins/types/config';
-import { createBlockSystem } from '../../.opencode/plugins/features/block-system';
+import { createBlockSystem } from '../../.opencode/plugins/features/block-system/block-handler';
 
 describe('block-system - pure evaluation', () => {
   const input: ToolExecuteBeforeInput = {

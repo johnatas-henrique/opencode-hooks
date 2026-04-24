@@ -13,6 +13,7 @@ vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
 import type { Mock } from 'vitest';
 import {
   runScriptAndHandle,
+  addSubagentSession,
   resetSubagentTracking,
 } from '../../.opencode/plugins/features/scripts/run-script-handler';
 
@@ -80,6 +81,130 @@ describe('run-script-handler.ts', () => {
       exitCode: 0,
     });
     mockAppendToSession.mockResolvedValue(undefined);
+  });
+
+  describe('runOnlyOnce with subagent', () => {
+    it('should return early when runOnlyOnce is true and sessionId is subagent', async () => {
+      addSubagentSession('subagent-session');
+
+      const config = {
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
+        script: 'once-script.sh',
+        scriptArg: '',
+        timestamp: '2026-01-01T00:00:00Z',
+        eventType: 'test.event',
+        resolved: createResolvedConfig({
+          runOnlyOnce: true,
+          runScripts: true,
+        }),
+        sessionId: 'subagent-session',
+        scriptToasts: createScriptToastsConfig(),
+      };
+
+      await runScriptAndHandle(config as never);
+
+      expect(mockRunScript).not.toHaveBeenCalled();
+    });
+
+    it('should run script when runOnlyOnce is true but sessionId is not subagent', async () => {
+      const config = {
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
+        script: 'once-script.sh',
+        scriptArg: '',
+        timestamp: '2026-01-01T00:00:00Z',
+        eventType: 'test.event',
+        resolved: createResolvedConfig({
+          runOnlyOnce: true,
+          runScripts: true,
+        }),
+        sessionId: 'main-session',
+        scriptToasts: createScriptToastsConfig(),
+      };
+
+      await runScriptAndHandle(config as never);
+
+      expect(mockRunScript).toHaveBeenCalled();
+    });
+
+    it('should use toolName in error message when tool.execute event type (line 69 branch)', async () => {
+      mockRunScript.mockResolvedValueOnce({
+        output: '',
+        error: 'tool failed',
+        exitCode: 1,
+      });
+
+      const config = {
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
+        script: 'tool-script.sh',
+        scriptArg: '',
+        timestamp: '2026-01-01T00:00:00Z',
+        eventType: 'tool.execute.before',
+        toolName: 'read-file',
+        resolved: createResolvedConfig({
+          runScripts: true,
+        }),
+        sessionId: 'main-session',
+        scriptToasts: {
+          showOutput: false,
+          outputTitle: 'Output',
+          showError: true,
+          outputVariant: 'info',
+          errorVariant: 'error',
+          errorTitle: 'Error',
+          outputDuration: 5000,
+          errorDuration: 15000,
+        },
+      };
+
+      await runScriptAndHandle(config as never);
+
+      expect(mockToastAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('read-file'),
+        })
+      );
+    });
+
+    it('should pass scriptArg as array when scriptArg is truthy (line 105 branch)', async () => {
+      const mockLogScript = vi.fn().mockResolvedValue(undefined);
+      mockRunScript.mockResolvedValueOnce({
+        output: 'success output',
+        error: null,
+        exitCode: 0,
+      });
+
+      const config = {
+        ctx: createMockCtx() as unknown as Parameters<
+          typeof runScriptAndHandle
+        >[0],
+        script: 'arg-script.sh',
+        scriptArg: 'arg-value',
+        timestamp: '2026-01-01T00:00:00Z',
+        eventType: 'test.event',
+        resolved: createResolvedConfig({
+          runScripts: true,
+          logToAudit: true,
+        }),
+        sessionId: 'main-session',
+        scriptToasts: createScriptToastsConfig(),
+        scriptRecorder: { logScript: mockLogScript },
+      };
+
+      await runScriptAndHandle(config as never);
+
+      expect(mockLogScript).toHaveBeenCalledWith(
+        expect.objectContaining({
+          args: ['arg-value'],
+        }),
+        expect.any(Object)
+      );
+    });
   });
 
   describe('line 76 - output nullish coalescing', () => {

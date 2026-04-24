@@ -125,5 +125,21 @@ describe('block-handler', () => {
       }
       expect(mockRecorder.logSecurity).toHaveBeenCalled();
     });
+
+    it('should use default "Blocked" message when block.message is falsy (line 72-73)', () => {
+      const mockRecorder = {
+        logSecurity: vi.fn().mockResolvedValue(undefined),
+      };
+      mockGetSecurityRecorder.mockReturnValue(mockRecorder);
+      const block = [{ check: () => true, message: '' }];
+      try {
+        executeBlocking(block, input, output, [], 'tool.execute.before');
+      } catch {
+        // Expected
+      }
+      expect(mockRecorder.logSecurity).toHaveBeenCalledWith(
+        expect.objectContaining({ rule: 'Blocked', reason: 'Blocked' })
+      );
+    });
   });
 });

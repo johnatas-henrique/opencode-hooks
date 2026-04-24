@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
   createToastQueue,
   getGlobalToastQueue,
@@ -7,6 +8,14 @@ import {
   initGlobalToastQueue,
 } from '../../.opencode/plugins/core/toast-queue';
 import { STAGGER_MS } from '../../.opencode/plugins/core/constants';
+vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
+  getErrorRecorder: vi.fn(() => ({
+    logError: vi.fn(),
+  })),
+  initAuditLogging: vi.fn(),
+  getScriptRecorder: vi.fn(),
+  resetAuditLogging: vi.fn(),
+}));
 
 describe('toast-queue', () => {
   beforeEach(() => {
@@ -364,5 +373,67 @@ describe('getGlobalToastQueue without showFn after init', () => {
     const queue2 = getGlobalToastQueue();
     expect(queue2).toBe(queue1);
     resetGlobalToastQueue();
+  });
+});
+
+describe('dropped toast branch coverage with maxSize=0', () => {
+  it('should handle add when maxSize=0 and dropped is undefined (line 100)', () => {
+    const showFn = vi.fn();
+    const queue = createToastQueue(showFn, {
+      maxSize: 0,
+      staggerMs: 999999,
+    });
+
+    queue.add({ title: '1', message: 'msg', variant: 'info' as const });
+    expect(queue.pending).toBe(0);
+  });
+
+  it('should handle addMultiple when maxSize=0 and dropped is undefined (line 113)', () => {
+    const showFn = vi.fn();
+    const queue = createToastQueue(showFn, {
+      maxSize: 0,
+      staggerMs: 999999,
+    });
+
+    queue.addMultiple([
+      { title: '1', message: 'msg', variant: 'info' as const },
+    ]);
+    expect(queue.pending).toBe(0);
+  });
+});
+
+describe('processQueue line 53 - queue empty after await processingLock', () => {
+  it('should hit line 53 when queue empties while waiting for processingLock', async () => {
+    vi.useFakeTimers();
+    let resolveShow!: () => void;
+    const showPromise = new Promise<void>((resolve) => {
+      resolveShow = resolve;
+    });
+    const showFn = vi.fn().mockReturnValue(showPromise);
+
+    const queue = createToastQueue(showFn, { staggerMs: 10 });
+
+    // Start processing first toast
+    queue.add({ title: '1', message: 'msg', variant: 'info' as const });
+
+    // Wait for stagger timer to fire
+    await vi.advanceTimersByTimeAsync(10);
+    expect(showFn).toHaveBeenCalledTimes(1);
+
+    // Add second toast while first is processing (showFn hasn't resolved)
+    queue.add({ title: '2', message: 'msg', variant: 'info' as const });
+
+    // Clear queue - this simulates queue emptying while processQueue #2 waits
+    queue.clear();
+
+    // Resolve the show promise so processingLock completes
+    resolveShow();
+
+    // Wait for duration timer
+    await vi.advanceTimersByTimeAsync(5000);
+
+    // At this point, processQueue #2 should have hit line 53 (queue.length === 0)
+    expect(queue.pending).toBe(0);
+    vi.useRealTimers();
   });
 });

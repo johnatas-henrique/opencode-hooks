@@ -1,30 +1,10 @@
 import { showActivePluginsToast } from '../../.opencode/plugins/features/messages/show-active-plugins';
-import type { ToastQueue } from '../../.opencode/plugins/types/toast';
 
-const { mockGetPluginStatus, mockFormatPluginStatus } = vi.hoisted(() => ({
-  mockGetPluginStatus: vi.fn(),
-  mockFormatPluginStatus: vi.fn(),
-}));
-
-vi.mock('../../.opencode/plugins/features/messages/plugin-status', () => ({
-  getPluginStatus: mockGetPluginStatus,
-  formatPluginStatus: mockFormatPluginStatus,
-}));
-
-vi.mock('../../.opencode/plugins/config', () => ({
-  userConfig: {
-    showPluginStatus: true,
-    pluginStatusDisplayMode: 'user-only',
-  },
-}));
-
-describe('showActivePluginsToast', () => {
-  let mockQueue: ToastQueue;
-  const mockStatuses = [{ name: 'test-plugin', status: 'active' as const }];
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockQueue = {
+const { mockGetPluginStatus, mockFormatPluginStatus, mockQueue } = vi.hoisted(
+  () => ({
+    mockGetPluginStatus: vi.fn(),
+    mockFormatPluginStatus: vi.fn(),
+    mockQueue: {
       add: vi.fn(),
       addMultiple: vi.fn(),
       clear: vi.fn(),
@@ -32,8 +12,39 @@ describe('showActivePluginsToast', () => {
       get pending() {
         return 0;
       },
-    };
-    mockGetPluginStatus.mockReturnValue(mockStatuses);
+    },
+  })
+);
+
+vi.mock('../../.opencode/plugins/features/messages/plugin-status', () => ({
+  getPluginStatus: mockGetPluginStatus,
+  formatPluginStatus: mockFormatPluginStatus,
+}));
+
+vi.mock('../../.opencode/plugins/config/settings', () => ({
+  userConfig: {
+    showPluginStatus: true,
+    pluginStatusDisplayMode: 'user-only',
+    audit: {
+      enabled: true,
+      level: 'debug',
+      basePath: '/tmp/audit-test',
+      maxSizeMB: 1,
+      maxAgeDays: 30,
+      truncationKB: 0.5,
+      maxFieldSize: 1000,
+      maxArrayItems: 50,
+      largeFields: [],
+    },
+  },
+}));
+
+describe('showActivePluginsToast', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetPluginStatus.mockReturnValue([
+      { name: 'test-plugin', status: 'active' },
+    ]);
     mockFormatPluginStatus.mockReturnValue('Test plugins summary');
   });
 
@@ -56,33 +67,35 @@ describe('showActivePluginsToast', () => {
     await showActivePluginsToast(mockQueue);
 
     expect(mockFormatPluginStatus).toHaveBeenCalledWith(
-      mockStatuses,
+      [{ name: 'test-plugin', status: 'active' }],
       'user-only'
     );
   });
 });
 
 describe('when showPluginStatus is disabled', () => {
-  let mockQueue: ToastQueue;
-
   beforeEach(() => {
-    mockQueue = {
-      add: vi.fn(),
-      addMultiple: vi.fn(),
-      clear: vi.fn(),
-      flush: vi.fn().mockResolvedValue(undefined),
-      get pending() {
-        return 0;
-      },
-    };
+    vi.clearAllMocks();
   });
 
   it('should return early and not add toast', async () => {
     vi.resetModules();
-    vi.doMock('../../.opencode/plugins/config', () => ({
+
+    vi.doMock('../../.opencode/plugins/config/settings', () => ({
       userConfig: {
         showPluginStatus: false,
         pluginStatusDisplayMode: 'user-only',
+        audit: {
+          enabled: true,
+          level: 'debug',
+          basePath: '/tmp/audit-test',
+          maxSizeMB: 1,
+          maxAgeDays: 30,
+          truncationKB: 0.5,
+          maxFieldSize: 1000,
+          maxArrayItems: 50,
+          largeFields: [],
+        },
       },
     }));
 
@@ -91,8 +104,5 @@ describe('when showPluginStatus is disabled', () => {
     await showDisabled(mockQueue);
 
     expect(mockQueue.add).not.toHaveBeenCalled();
-
-    vi.resetModules();
-    vi.doUnmock('../../.opencode/plugins/config');
   });
 });
