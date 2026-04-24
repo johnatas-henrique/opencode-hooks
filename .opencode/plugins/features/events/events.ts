@@ -1,5 +1,5 @@
 import { handlers } from '../messages/default-handlers';
-import { userConfig } from '../../config';
+import { userConfig } from '../../config/settings';
 import { DISABLED_CONFIG } from '../../core/constants';
 import type { ResolvedEventConfig } from '../../types/config';
 import { createEventResolver, createToolResolver } from './context';

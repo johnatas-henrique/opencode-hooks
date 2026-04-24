@@ -1,4 +1,4 @@
-import { ResolvedScripts } from '../../../types';
+import type { ResolvedScripts } from '../../../types/events';
 import type { EventConfig } from '../../../types/config';
 
 export function resolveScripts(

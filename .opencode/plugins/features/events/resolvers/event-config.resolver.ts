@@ -8,11 +8,9 @@ import type {
   EventConfig,
   EventOverride,
 } from '../../../types/config';
-import {
-  resolveScripts,
-  resolveToastOverride,
-  getBooleanField,
-} from '../resolution';
+import { resolveScripts } from '../resolution/scripts';
+import { resolveToastOverride } from '../resolution/toast';
+import { getBooleanField } from '../resolution/boolean-field';
 import { TOAST_DURATION, DISABLED_CONFIG } from '../../../core/constants';
 import { normalizeInputForHandler } from './normalize-input';
 import { buildToastMessage } from './build-message';

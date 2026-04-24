@@ -8,11 +8,9 @@ import type {
   ToolConfig,
   ToolOverride,
 } from '../../../types/config';
-import {
-  getBooleanField,
-  resolveScripts,
-  resolveToastOverride,
-} from '../resolution';
+import { getBooleanField } from '../resolution/boolean-field';
+import { resolveScripts } from '../resolution/scripts';
+import { resolveToastOverride } from '../resolution/toast';
 import { TOAST_DURATION } from '../../../core/constants';
 import { normalizeInputForHandler } from './normalize-input';
 import { buildToastMessage } from './build-message';
