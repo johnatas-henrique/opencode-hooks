@@ -1,4 +1,4 @@
-import { normalizeInputForHandler } from '../../.opencode/plugins/features/events/events';
+import { normalizeInputForHandler } from '../../.opencode/plugins/features/events/resolvers/normalize-input';
 
 describe('normalizeInputForHandler (events.ts version)', () => {
   describe('shell.env coverage (line 11)', () => {
@@ -59,7 +59,7 @@ describe('normalizeInputForHandler', () => {
   });
 
   describe('shell.env event', () => {
-    it('should wrap shell.env input in properties with output', () => {
+    it('should wrap shell.env input in properties', () => {
       const input = {
         cwd: '/home/user',
         sessionID: 'ses_123',
@@ -71,6 +71,29 @@ describe('normalizeInputForHandler', () => {
       expect((result.properties as Record<string, unknown>).cwd).toBe(
         '/home/user'
       );
+    });
+  });
+
+  describe('line 10 branch - exact match shell.env', () => {
+    it('should cover line 10 when eventType exactly equals shell.env', () => {
+      const input = { test: 'value' };
+      const output = { result: 'output' };
+      const result = normalizeInputForHandler('shell.env', input, output);
+      expect(result).toHaveProperty('properties');
+      expect(result).toHaveProperty('output');
+    });
+  });
+
+  describe('line 22 branch - exact match command.execute.before', () => {
+    it('should cover line 22 when eventType exactly equals command.execute.before', () => {
+      const input = { command: 'ls' };
+      const output = { files: [] };
+      const result = normalizeInputForHandler(
+        'command.execute.before',
+        input,
+        output
+      );
+      expect(result).toHaveProperty('properties');
     });
   });
 

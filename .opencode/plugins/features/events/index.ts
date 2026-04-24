@@ -1,4 +1,3 @@
-export { normalizeInputForHandler } from './resolvers/normalize-input';
 export { DISABLED_CONFIG } from '../../core/constants';
 export {
   createContext,

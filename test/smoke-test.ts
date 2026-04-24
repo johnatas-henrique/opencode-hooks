@@ -3,7 +3,7 @@ import {
   buildAllKeysMessage,
   buildAllKeysMessageSimple,
 } from '../.opencode/plugins/features/messages/default-handlers';
-import { normalizeInputForHandler } from '../.opencode/plugins/features/events/events';
+import { normalizeInputForHandler } from '../.opencode/plugins/features/events/resolvers/normalize-input';
 
 const SENSITIVE_PATTERNS: [RegExp, string][] = [
   [/(api[_-]?key)[=:]\s*["']?[\w-]+["']?/gi, '$1'],

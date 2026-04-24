@@ -6,7 +6,7 @@ import type {
   ToolDefinition,
   ProviderContext,
 } from '@opencode-ai/plugin';
-import type { Model, UserMessage, Part, Message } from '@opencode-ai/sdk';
+import type { Model, UserMessage, Part } from '@opencode-ai/sdk';
 import type {
   ToolExecuteAfterInput,
   ToolExecuteAfterOutput,
@@ -359,7 +359,7 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: EventType.SHELL_ENV,
         resolved,
-        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+        sessionId: input.sessionID!,
         input: input,
         output: output,
         toolName: EventType.SHELL_ENV,
@@ -451,7 +451,7 @@ export const OpencodeHooks: Plugin = async (
 
     [EventType.PERMISSION_ASK]: async (
       input: {
-        sessionID?: string;
+        sessionID: string;
         tool?: string;
         id?: string;
         type?: string;
@@ -468,7 +468,7 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: EventType.PERMISSION_ASK,
         resolved,
-        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+        sessionId: input.sessionID,
         input: input,
         output: output,
 
@@ -499,10 +499,7 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: async (
-      input: Record<string, unknown>,
-      output: { messages: Array<{ info: Message; parts: Part[] }> }
-    ) => {
+    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: async (input, output) => {
       const resolved = resolveEventConfig(
         EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM,
         input

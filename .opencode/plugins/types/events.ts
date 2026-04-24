@@ -1,5 +1,13 @@
 import type { BuildMessageFn } from './messages';
 
+import type {
+  EventOverride,
+  ScriptToastsConfig,
+  EventConfig,
+  ToolConfig,
+  ResolvedEventConfig,
+} from './config';
+
 export interface EventHandler {
   title: string;
   variant: 'success' | 'warning' | 'error' | 'info';
@@ -68,13 +76,6 @@ export enum EventType {
   SESSION_UNKNOWN = 'session.unknown',
 }
 
-import type {
-  EventOverride,
-  ScriptToastsConfig,
-  EventConfig,
-  ToolConfig,
-} from './config';
-
 export type { EventOverride, ScriptToastsConfig, EventConfig, ToolConfig };
 
 export interface ConfigResolverContext {
@@ -98,7 +99,7 @@ export interface EventConfigResolver {
     eventType: string,
     input?: Record<string, unknown>,
     output?: Record<string, unknown>
-  ): import('./config').ResolvedEventConfig;
+  ): ResolvedEventConfig;
 }
 
 export interface ToolConfigResolver {
@@ -107,7 +108,7 @@ export interface ToolConfigResolver {
     toolName: string,
     input?: Record<string, unknown>,
     output?: Record<string, unknown>
-  ): import('./config').ResolvedEventConfig;
+  ): ResolvedEventConfig;
 }
 
 export interface BooleanFieldOptions {

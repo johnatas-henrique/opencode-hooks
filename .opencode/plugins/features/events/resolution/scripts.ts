@@ -1,10 +1,11 @@
+import { ResolvedScripts } from '../../../types';
 import type { EventConfig } from '../../../types/config';
 
 export function resolveScripts(
   cfg: EventConfig,
   handlerDefaultScript: string,
   eventBaseScripts: string[]
-): import('../../../types/events').ResolvedScripts {
+): ResolvedScripts {
   if (cfg === false) {
     return { scripts: [], runScripts: false };
   }

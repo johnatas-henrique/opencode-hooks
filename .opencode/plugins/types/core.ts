@@ -165,7 +165,7 @@ export interface SessionCreatedProps {
     title: string;
     parentID?: string;
   };
-  sessionID?: string;
+  sessionID: string;
 }
 
 export interface SessionErrorProps {
@@ -203,7 +203,7 @@ export interface SessionUpdateProps {
 // Server Events Properties
 export interface ServerInstanceDisposedProps {
   directory: string;
-  sessionID?: string;
+  sessionID?: string; // Optional: server events may not have session
 }
 
 // Tool Events Properties
@@ -250,7 +250,7 @@ export interface ChatHeadersProps {
 
 // Permission Events Properties
 export interface PermissionAskProps {
-  sessionID?: string;
+  sessionID: string;
   tool?: string;
   id?: string;
   type?: string;
@@ -263,7 +263,7 @@ export interface PermissionAskProps {
 // Shell Events Properties
 export interface ShellEnvProps {
   cwd: string;
-  sessionID?: string;
+  sessionID: string;
   callID?: string;
 }
 
@@ -281,12 +281,12 @@ export interface ToolDefinitionProps {
 
 // Experimental Events Properties
 export interface ExperimentalChatMessagesTransformProps {
-  sessionID?: string;
+  sessionID: string;
   messages: Message[];
 }
 
 export interface ExperimentalChatSystemTransformProps {
-  sessionID?: string;
+  sessionID: string;
   model: { providerID: string; modelID: string };
 }
 
