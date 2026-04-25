@@ -1,7 +1,7 @@
 # Codebase Architecture Deep-Dive Analysis
 
 **Date**: 2025-04-24  
-**Status**: Candidate identification complete; awaiting selection for deep-dive  
+**Status**: Candidate #2 (Script Execution & Audit Coupling) completed; refactoring in progress  
 **Goal**: Identify modules with high architectural friction and opportunities for deepening to improve testability, AI-navigability, and maintainability.
 
 ---
@@ -294,6 +294,29 @@ Group constants by **domain** into typed objects: `ToastConfig`, `ScriptConfig`,
 - Test coverage gaps are obvious
 - Impact on reliability is high
 - Implementation complexity is manageable
+
+---
+
+## Progress Log
+
+### ✅ Candidate #2 — Script Execution & Audit Coupling (Completed 2025-04-24)
+
+**Implementation**:
+
+- Created `types/executor.ts` with clean service interfaces
+- Built `ScriptExecutor` class in `features/scripts/script-executor.ts`
+- Added `adapters.ts` to bridge existing singletons to new interfaces
+- Refactored `run-script-handler.ts` to use the executor (behavior preserved)
+- Comprehensive unit tests for executor and adapters
+
+**Results**:
+
+- Coverage: 100% Statements, 100% Lines, 99.29% Branch, 98.75% Functions
+- Build + Lint passing
+- Behavior unchanged — all existing tests pass
+- Commit: `refactor(scripts): extract ScriptExecutor service with dependency injection`
+
+**Impact**: Separated concerns, improved testability, reduced coupling. The `runScriptAndHandle` function remains as compatibility layer; `createScriptRunner` already uses it.
 
 ---
 
