@@ -1,15 +1,16 @@
 import { runScript } from './run-script';
 import type {
-  ScriptRunResult,
   ScriptExecutionResult,
+  EventScriptConfig,
 } from '../../types/scripts';
-import { appendToSession } from '../messages/append-to-session';
-import { useGlobalToastQueue } from '../../core/toast-queue';
-import { DEFAULT_SESSION_ID } from '../../core/constants';
-import { userConfig } from '../../config/settings';
-import type { EventScriptConfig } from '../../types/scripts';
 import type { ScriptRecorder } from '../../types/audit';
-import { truncateOutput } from '../audit/script-recorder';
+import { ScriptExecutor } from './script-executor';
+import {
+  createAuditAdapter,
+  createSessionAdapter,
+  createToastAdapter,
+} from './adapters';
+import { DEFAULT_SESSION_ID } from '../../core/constants';
 
 const subagentSessionIds = new Set<string>();
 
@@ -28,89 +29,40 @@ export function resetSubagentTracking(): void {
 export async function runScriptAndHandle(
   config: EventScriptConfig & { scriptRecorder?: ScriptRecorder }
 ): Promise<ScriptExecutionResult> {
-  const {
-    ctx,
-    script,
-    scriptArg = '',
-    timestamp,
-    eventType,
-    toolName,
-    resolved,
-    scriptToasts,
-    sessionId = DEFAULT_SESSION_ID,
-    scriptRecorder,
-  } = config;
+  const { resolved, scriptToasts, scriptRecorder, timestamp } = config;
 
-  const { $ } = ctx;
+  // Build ScriptExecutor with injected dependencies
+  const executor = new ScriptExecutor({
+    executeScript: (script, arg) =>
+      runScript(config.ctx.$, script, ...(arg !== undefined ? [arg] : [])),
+    audit: createAuditAdapter(scriptRecorder),
+    session: createSessionAdapter(config),
+    toast: createToastAdapter(),
+    isSubagent: (sessionId) => isSubagent(sessionId),
+  });
 
-  if (resolved.runOnlyOnce) {
-    if (isSubagent(sessionId)) {
-      return { script, output: undefined };
+  // Execute using the executor
+  return executor.execute(
+    config.script,
+    config.scriptArg,
+    {
+      skipAudit: !resolved.logToAudit,
+      skipSession: !resolved.appendToSession,
+      suppressToast: !resolved.scriptToasts?.showError,
+      runOnlyOnce: resolved.runOnlyOnce,
+    },
+    {
+      eventType: config.eventType,
+      toolName: config.toolName,
+      toastTitle: resolved.toastTitle,
+      scriptToasts: {
+        showError: scriptToasts.showError,
+        errorVariant: scriptToasts.errorVariant,
+        errorDuration: scriptToasts.errorDuration,
+        errorTitle: scriptToasts.errorTitle,
+      },
+      timestamp: timestamp,
+      sessionId: config.sessionId || DEFAULT_SESSION_ID,
     }
-  }
-
-  const result: ScriptRunResult = scriptArg
-    ? await runScript($, script, scriptArg)
-    : await runScript($, script);
-
-  const effectiveScriptToasts = scriptToasts;
-  const eventTitle = resolved.toastTitle;
-
-  if (result.exitCode !== 0) {
-    const showError = effectiveScriptToasts.showError;
-    const errorVariant = effectiveScriptToasts.errorVariant;
-    const errorDuration = effectiveScriptToasts.errorDuration;
-    const errorTitle = eventTitle.replace(
-      /=+$/,
-      ` ${effectiveScriptToasts.errorTitle}====`
-    );
-
-    const eventInfo =
-      eventType.startsWith('tool.execute.') && toolName ? toolName : eventType;
-
-    const scriptData = {
-      script,
-      args: scriptArg ? [scriptArg] : [],
-      startTime: new Date(timestamp).getTime(),
-    };
-    const scriptResult = {
-      output: result.output,
-      error: result.error,
-      exitCode: result.exitCode,
-    };
-
-    if (scriptRecorder) {
-      await scriptRecorder.logScript(scriptData, scriptResult);
-    }
-
-    if (showError) {
-      useGlobalToastQueue().add({
-        title: errorTitle,
-        message: `Event: ${eventInfo}\nScript: ${script}\nError: ${result.error}\nExit Code: ${result.exitCode}\nCheck settings.ts`,
-        variant: errorVariant,
-        duration: errorDuration,
-      });
-    }
-
-    return { script, output: undefined };
-  }
-
-  if (resolved.logToAudit && result.output) {
-    const outputToLog = script.endsWith('.sh')
-      ? truncateOutput(result.output, userConfig.audit.logTruncationKB)
-      : result.output;
-
-    if (scriptRecorder) {
-      await scriptRecorder.logScript(
-        { script, args: scriptArg ? [scriptArg] : [], startTime: Date.now() },
-        { output: outputToLog, error: null, exitCode: result.exitCode }
-      );
-    }
-  }
-
-  if (resolved.appendToSession && result.output) {
-    await appendToSession(ctx, sessionId, result.output);
-  }
-
-  return { script, output: result.output };
+  );
 }
