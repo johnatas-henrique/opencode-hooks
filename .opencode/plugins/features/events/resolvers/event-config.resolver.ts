@@ -23,15 +23,15 @@ function isEventOverride(cfg: EventConfig): cfg is EventOverride {
 export class EventConfigResolverImpl implements EventConfigResolver {
   constructor(private context: ConfigResolverContext) {}
 
-  private getHandler(eventType: string): EventHandler | undefined {
+  public getHandler(eventType: string): EventHandler | undefined {
     return this.context.handlers[eventType];
   }
 
-  private getDefaultScript(eventType: string): string {
+  public getDefaultScript(eventType: string): string {
     return `${eventType.replace(/\./g, '-')}.sh`;
   }
 
-  private tryBuildMessage(
+  public tryBuildMessage(
     handler: EventHandler,
     eventType: string,
     input: Record<string, unknown>,
@@ -46,7 +46,7 @@ export class EventConfigResolverImpl implements EventConfigResolver {
     }
   }
 
-  private isEventDisabled(eventCfg: EventConfig): boolean {
+  public isEventDisabled(eventCfg: EventConfig): boolean {
     if (eventCfg === false) return true;
     if (isEventOverride(eventCfg)) {
       return eventCfg.enabled === false;
@@ -54,7 +54,7 @@ export class EventConfigResolverImpl implements EventConfigResolver {
     return false;
   }
 
-  private getAllowedFields(
+  public getAllowedFields(
     handler?: EventHandler,
     userConfig?: EventOverride
   ): string[] | undefined {
