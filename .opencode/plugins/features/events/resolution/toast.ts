@@ -28,9 +28,7 @@ export function resolveToastEnabled(
     if (typeof toast === 'boolean') {
       return toast;
     }
-    if (typeof toast === 'object') {
-      return toast.enabled ?? true;
-    }
+    return (toast as { enabled?: boolean }).enabled ?? true;
   }
   return resolveDefaultToast(defaultCfg);
 }

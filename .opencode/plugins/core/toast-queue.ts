@@ -1,9 +1,8 @@
 import type { TuiToast } from '@opencode-ai/plugin/tui';
-import { STAGGER_MS, TOAST_DURATION, DEFAULT_SESSION_ID } from './constants';
-import { getErrorRecorder } from '../features/audit/plugin-integration';
+import { STAGGER_MS } from './constants';
 import type { ToastQueue, ToastQueueOptions } from '../types/toast';
+import { ToastDirectorImpl } from '../features/core/toast-director';
 
-let activeToast: Promise<void> | null = null;
 let globalToastQueue: ToastQueue | null = null;
 
 export async function showToastStaggered(
@@ -11,139 +10,55 @@ export async function showToastStaggered(
   toast: TuiToast,
   options: ToastQueueOptions = {}
 ): Promise<void> {
-  const { delay = 0, stagger = true } = options;
-
-  if (stagger && activeToast) {
-    await activeToast;
-    await new Promise((resolve) => {
-      const t = setTimeout(resolve, STAGGER_MS.DEFAULT);
-      t.unref();
-    });
-  }
-
-  if (delay > 0) {
-    await new Promise((resolve) => {
-      const t = setTimeout(resolve, delay);
-      t.unref();
-    });
-  }
-
-  activeToast = Promise.resolve(showFn(toast));
-  await activeToast;
-  activeToast = null;
+  // Delegates to director-based implementation
+  const director = new ToastDirectorImpl(showFn, {
+    staggerMs: options.stagger ? STAGGER_MS.DEFAULT : 0,
+    maxSize: 50,
+  });
+  director.enqueue(toast);
+  await director.flush();
 }
 
 /**
  * Creates a toast queue with staggered processing.
- * @param showFn - Function to display the toast
- * @param options - Configuration options (staggerMs, maxSize)
+ * Now implemented as a thin wrapper around ToastDirectorImpl.
  */
 export function createToastQueue(
   showFn: (toast: TuiToast) => void | Promise<void>,
   options: { staggerMs?: number; maxSize?: number } = {}
-) {
-  const { staggerMs = STAGGER_MS.QUEUE, maxSize = 50 } = options;
-  const queue: TuiToast[] = [];
-  let processingLock: Promise<void> | null = null;
-  let activeTimers: ReturnType<typeof setTimeout>[] = [];
+): ToastQueue {
+  const director = new ToastDirectorImpl(showFn, options);
 
-  const processQueue = async () => {
-    if (processingLock) {
-      await processingLock;
-      if (queue.length === 0) return;
-    }
-
-    processingLock = (async () => {
-      while (queue.length > 0) {
-        const toast = queue.shift();
-        if (toast) {
-          const duration = toast.duration ?? TOAST_DURATION.FIVE_SECONDS;
-          await new Promise<void>((resolve) => {
-            const t = setTimeout(resolve, staggerMs);
-            t.unref();
-            activeTimers.push(t);
-          });
-          await Promise.resolve(showFn(toast));
-          await new Promise<void>((resolve) => {
-            const t = setTimeout(resolve, duration);
-            t.unref();
-          });
-          if (activeTimers.length > 0) {
-            activeTimers.shift();
-          }
-        }
-      }
-      processingLock = null;
-      activeTimers = [];
-    })();
-
-    await processingLock;
-  };
-
-  const logDroppedToast = (toast: TuiToast) => {
-    const errorRecorder = getErrorRecorder();
-    if (errorRecorder) {
-      errorRecorder.logError({
-        eventType: 'toast.queue.overflow',
-        error: new Error(
-          `Toast queue overflow: dropped toast "${toast.title || DEFAULT_SESSION_ID}"`
-        ),
-        skipStack: true,
-      });
-    }
-  };
-
-  const queueObj = {
-    add: (toast: TuiToast) => {
-      if (queue.length >= maxSize) {
-        const dropped = queue.shift();
-        if (dropped) logDroppedToast(dropped);
-      }
-      if (toast.variant === 'error') {
-        queue.unshift(toast);
-      } else {
-        queue.push(toast);
-      }
-      processQueue();
-    },
+  return {
+    add: (toast: TuiToast) => director.enqueue(toast),
     addMultiple: (toasts: TuiToast[]) => {
-      for (const toast of toasts) {
-        if (queue.length >= maxSize) {
-          const dropped = queue.shift();
-          if (dropped) logDroppedToast(dropped);
-        }
-        if (toast.variant === 'error') {
-          queue.unshift(toast);
-        } else {
-          queue.push(toast);
-        }
-      }
-      processQueue();
+      for (const t of toasts) director.enqueue(t);
     },
-    clear: () => {
-      queue.splice(0);
-      for (const t of activeTimers) clearTimeout(t);
-      activeTimers = [];
-    },
-    flush: async () => {
-      if (processingLock) {
-        await processingLock;
-      }
-    },
+    clear: () => director.clear(),
+    flush: () => director.flush(),
     get pending() {
-      return queue.length;
+      return director.pending;
     },
   };
-
-  return queueObj;
 }
 
 export function initGlobalToastQueue(
   showFn: (toast: TuiToast) => void | Promise<void>
 ): ToastQueue {
-  globalToastQueue = createToastQueue(showFn, {
+  const director = new ToastDirectorImpl(showFn, {
     staggerMs: STAGGER_MS.DEFAULT,
+    maxSize: 50,
   });
+
+  globalToastQueue = {
+    add: (t) => director.enqueue(t),
+    addMultiple: (ts) => ts.forEach((t) => director.enqueue(t)),
+    clear: () => director.clear(),
+    flush: () => director.flush(),
+    get pending() {
+      return director.pending;
+    },
+  };
   return globalToastQueue;
 }
 
