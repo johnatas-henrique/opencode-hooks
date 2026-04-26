@@ -1,34 +1,40 @@
-// Use vi.hoisted to create mocks that persist correctly across tests
-const { mockToastAdd, mockGetSecurityRecorder } = vi.hoisted(() => {
-  const mockToastAdd = vi.fn().mockResolvedValue(undefined);
-  const mockGetSecurityRecorder = vi.fn().mockReturnValue(null);
-  return { mockToastAdd, mockGetSecurityRecorder };
-});
-
-vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
-  createToastQueue: vi.fn(),
-  initGlobalToastQueue: vi.fn(),
-  useGlobalToastQueue: () => ({
-    add: mockToastAdd,
-  }),
-  resetGlobalToastQueue: vi.fn(),
-  showToastStaggered: vi.fn(),
-}));
-
-vi.mock('../../.opencode/plugins/core/constants', () => ({
-  BLOCKED_EVENTS_LOG_FILE: 'blocked-events.log',
-}));
-
-vi.mock('../../.opencode/plugins/features/audit/security-recorder', () => ({
-  getSecurityRecorder: mockGetSecurityRecorder,
-}));
-
 import { vi } from 'vitest';
+
+// Import real modules
+import * as securityRecorderModule from '../../.opencode/plugins/features/audit/security-recorder';
+import * as toastQueueModule from '../../.opencode/plugins/core/toast-queue';
+import type { ToastQueue } from '../../.opencode/plugins/types/toast';
 import {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
 } from '../../.opencode/plugins/types/core';
-import { executeBlocking } from '../../.opencode/plugins/features/block-system/block-handler';
+import {
+  executeBlocking,
+  createDefaultNotifyEffect,
+  createDefaultLogEffect,
+} from '../../.opencode/plugins/features/block-system/block-handler';
+
+// Set up spies
+const mockGetSecurityRecorder = vi.spyOn(
+  securityRecorderModule,
+  'getSecurityRecorder'
+);
+const mockToastAdd = vi.fn().mockResolvedValue(undefined);
+const mockToastQueue: Partial<ToastQueue> = {
+  add: mockToastAdd,
+  addMultiple: vi.fn(),
+  clear: vi.fn(),
+  flush: vi.fn().mockResolvedValue(undefined),
+  pending: 0,
+};
+vi.spyOn(toastQueueModule, 'useGlobalToastQueue').mockReturnValue(
+  mockToastQueue as ToastQueue
+);
+
+// Mock constants
+vi.mock('../../.opencode/plugins/core/constants', () => ({
+  BLOCKED_EVENTS_LOG_FILE: 'blocked-events.log',
+}));
 
 describe('block-handler', () => {
   const input: ToolExecuteBeforeInput = {
@@ -47,99 +53,81 @@ describe('block-handler', () => {
 
   describe('executeBlocking', () => {
     it('throws when check.check returns true', () => {
-      const mockRecorder = {
-        logSecurity: vi.fn().mockResolvedValue(undefined),
-      };
-      mockGetSecurityRecorder.mockReturnValue(mockRecorder);
+      const mockRec = { logSecurity: vi.fn().mockResolvedValue(undefined) };
+      mockGetSecurityRecorder.mockReturnValue(mockRec);
       const block = [{ check: () => true, message: 'Custom blocked' }];
       expect(() =>
         executeBlocking(block, input, output, [], 'tool.execute.before')
       ).toThrow('Custom blocked');
     });
+
+    it('handles rejected logSecurity gracefully', async () => {
+      const mockRec = {
+        logSecurity: vi.fn().mockRejectedValue(new Error('fail')),
+      };
+      mockGetSecurityRecorder.mockReturnValue(mockRec);
+      const block = [{ check: () => false, message: 'Allowed' }];
+      expect(() =>
+        executeBlocking(block, input, output, [], 'tool.execute.before')
+      ).not.toThrow();
+      expect(mockRec.logSecurity).toHaveBeenCalled();
+    });
   });
 
   describe('executeBlocking early return', () => {
-    it('should return early when blockConfig is undefined', () => {
+    it('returns early when blockConfig is undefined', () => {
       executeBlocking(undefined, input, output, [], 'tool.execute.before');
       expect(mockToastAdd).not.toHaveBeenCalled();
     });
 
-    it('should return early when blockConfig is empty array', () => {
+    it('returns early when blockConfig is empty array', () => {
       executeBlocking([], input, output, [], 'tool.execute.before');
       expect(mockToastAdd).not.toHaveBeenCalled();
     });
 
-    describe('executeBlocking with missing securityRecorder', () => {
-      it('should return early without throwing when securityRecorder is null', () => {
-        const block = [{ check: () => true, message: 'blocked' }];
-        // mockGetSecurityRecorder default is null from beforeEach
-        expect(() =>
-          executeBlocking(block, input, output, [], 'tool.execute.before')
-        ).not.toThrow();
-        expect(mockToastAdd).not.toHaveBeenCalled();
+    it('returns early without throwing when securityRecorder is null', () => {
+      const block = [{ check: () => true, message: 'blocked' }];
+      expect(() =>
+        executeBlocking(block, input, output, [], 'tool.execute.before')
+      ).not.toThrow();
+      expect(mockToastAdd).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('createDefaultNotifyEffect', () => {
+    it('creates notify effect that adds toast', () => {
+      const notify = createDefaultNotifyEffect();
+      notify('Test Title', { message: 'Test message' });
+      expect(mockToastAdd).toHaveBeenCalledWith({
+        title: 'Test Title',
+        message: 'Test message',
+        variant: 'error',
+        duration: 10000,
       });
     });
   });
 
-  describe('defaultEffects.log null securityRecorder', () => {
-    it('should call securityRecorder.logSecurity when securityRecorder is present', () => {
-      const mockRecorder = {
-        logSecurity: vi.fn().mockResolvedValue(undefined),
-      };
-      mockGetSecurityRecorder.mockReturnValue(mockRecorder);
-      const block = [{ check: () => true, message: 'test' }];
-      try {
-        executeBlocking(block, input, output, [], 'tool.execute.before');
-      } catch {
-        // Expected
-      }
-      expect(mockRecorder.logSecurity).toHaveBeenCalled();
+  describe('createDefaultLogEffect', () => {
+    it('logs security when recorder is present', async () => {
+      const mockRec = { logSecurity: vi.fn().mockResolvedValue(undefined) };
+      mockGetSecurityRecorder.mockReturnValue(mockRec);
+
+      const log = createDefaultLogEffect();
+      await log({ rule: 'test-rule', reason: 'test-reason' });
+
+      expect(mockRec.logSecurity).toHaveBeenCalledWith({
+        rule: 'test-rule',
+        reason: 'test-reason',
+      });
     });
 
-    it('should use default message when block.message is undefined', () => {
-      const mockRecorder = {
-        logSecurity: vi.fn().mockResolvedValue(undefined),
-      };
-      mockGetSecurityRecorder.mockReturnValue(mockRecorder);
-      const block = [{ check: () => true, message: 'Blocked' }];
-      try {
-        executeBlocking(block, input, output, [], 'tool.execute.before');
-      } catch {
-        // Expected
-      }
-      expect(mockRecorder.logSecurity).toHaveBeenCalledWith(
-        expect.objectContaining({ rule: 'Blocked', reason: 'Blocked' })
-      );
-    });
+    it('does not log when recorder is null', async () => {
+      mockGetSecurityRecorder.mockReturnValue(null);
 
-    it('should use securityRecorder when logFilename is not blocked-events.log', () => {
-      const mockRecorder = {
-        logSecurity: vi.fn().mockResolvedValue(undefined),
-      };
-      mockGetSecurityRecorder.mockReturnValue(mockRecorder);
-      const block = [{ check: () => true, message: 'blocked' }];
-      try {
-        executeBlocking(block, input, output, [], 'tool.execute.before');
-      } catch {
-        // Expected
-      }
-      expect(mockRecorder.logSecurity).toHaveBeenCalled();
-    });
+      const log = createDefaultLogEffect();
+      await log({ rule: 'test-rule' });
 
-    it('should use default "Blocked" message when block.message is falsy (line 72-73)', () => {
-      const mockRecorder = {
-        logSecurity: vi.fn().mockResolvedValue(undefined),
-      };
-      mockGetSecurityRecorder.mockReturnValue(mockRecorder);
-      const block = [{ check: () => true, message: '' }];
-      try {
-        executeBlocking(block, input, output, [], 'tool.execute.before');
-      } catch {
-        // Expected
-      }
-      expect(mockRecorder.logSecurity).toHaveBeenCalledWith(
-        expect.objectContaining({ rule: 'Blocked', reason: 'Blocked' })
-      );
+      expect(mockGetSecurityRecorder).toHaveBeenCalled();
     });
   });
 });

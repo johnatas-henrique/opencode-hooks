@@ -3,29 +3,24 @@ import type {
   ToolExecuteBeforeOutput,
 } from '../../types/core';
 import type { BlockCheck, ScriptResult } from '../../types/config';
-import type { BlockSystem } from '../../types/block-system';
+import type { BlockSystem, BlockLogData } from '../../types/block-system';
 import { useGlobalToastQueue } from '../../core/toast-queue';
-import { createBlockSystem } from './block-system';
+import { createBlockSystem } from '../../types/block-system';
 import { getSecurityRecorder } from '../audit/security-recorder';
 
-interface BlockLogData {
-  sessionID?: string;
-  toolName?: string;
-  rule: string;
-  reason?: string;
-  input?: Record<string, unknown>;
-}
-
-const defaultEffects = {
-  notify: (title: string, details: { message: string }) => {
+export function createDefaultNotifyEffect() {
+  return (title: string, details: { message: string }) => {
     useGlobalToastQueue().add({
       title,
       message: details.message,
       variant: 'error',
       duration: 10000,
     });
-  },
-  log: async (data: unknown) => {
+  };
+}
+
+export function createDefaultLogEffect() {
+  return async (data: unknown) => {
     const securityRecorder = getSecurityRecorder();
     const logData = data as BlockLogData;
     if (securityRecorder) {
@@ -37,12 +32,17 @@ const defaultEffects = {
         input: logData.input,
       });
     }
-  },
+  };
+}
+
+const defaultEffects = {
+  notify: createDefaultNotifyEffect(),
+  log: createDefaultLogEffect(),
 };
 
 let blockSystem: BlockSystem | null = null;
 
-function getBlockSystem(): BlockSystem {
+export function getBlockSystem(): BlockSystem {
   if (!blockSystem) {
     blockSystem = createBlockSystem(defaultEffects);
   }
@@ -86,5 +86,3 @@ export function executeBlocking(
     eventType
   );
 }
-
-export { createBlockSystem };

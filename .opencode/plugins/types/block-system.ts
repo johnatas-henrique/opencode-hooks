@@ -1,6 +1,14 @@
 import type { ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from './core';
 import type { BlockCheck, ScriptResult } from './config';
 
+export interface BlockLogData {
+  sessionID?: string;
+  toolName?: string;
+  rule: string;
+  reason?: string;
+  input?: Record<string, unknown>;
+}
+
 export interface BlockResult {
   blocked: boolean;
   predicate: BlockCheck;
