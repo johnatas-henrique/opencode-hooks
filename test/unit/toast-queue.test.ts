@@ -7,7 +7,10 @@ import {
   useGlobalToastQueue,
   initGlobalToastQueue,
 } from '../../.opencode/plugins/core/toast-queue';
-import { STAGGER_MS } from '../../.opencode/plugins/core/constants';
+import {
+  STAGGER_MS,
+  TOAST_DURATION,
+} from '../../.opencode/plugins/core/constants';
 vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
   getErrorRecorder: vi.fn(() => ({
     logError: vi.fn(),
@@ -89,6 +92,26 @@ describe('toast-queue', () => {
       const queue = initGlobalToastQueue(vi.fn());
       expect(queue).toBeDefined();
     });
+
+    it('should return queue with working add, addMultiple, clear, flush, pending', async () => {
+      const showFn = vi.fn();
+      const queue = initGlobalToastQueue(showFn);
+
+      queue.add({ title: 't1', message: 'm', variant: 'info' as const });
+      expect(queue.pending).toBe(1);
+
+      queue.addMultiple([
+        { title: 't2', message: 'm', variant: 'info' as const },
+      ]);
+      expect(queue.pending).toBe(2);
+
+      // Flush and wait for timers
+      await vi.runAllTimersAsync();
+      await queue.flush();
+
+      queue.clear();
+      expect(queue.pending).toBe(0);
+    });
   });
 });
 
@@ -161,16 +184,21 @@ describe('queue backpressure', () => {
 
 describe('showToastStaggered async edge cases', () => {
   it('should handle stagger=false to skip waiting', async () => {
+    vi.useFakeTimers();
     const showFn = vi.fn().mockResolvedValue(undefined);
-    await showToastStaggered(
+    const p = showToastStaggered(
       showFn,
       { title: 'test', message: 'msg', variant: 'info' as const },
       { stagger: false }
     );
+    await vi.advanceTimersByTimeAsync(TOAST_DURATION.FIVE_SECONDS);
+    await p;
     expect(showFn).toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it('should handle delay option', async () => {
+    vi.useFakeTimers();
     const showFn = vi.fn().mockResolvedValue(undefined);
     const promise = showToastStaggered(
       showFn,
@@ -182,35 +210,47 @@ describe('showToastStaggered async edge cases', () => {
       { delay: 100, stagger: false }
     );
     expect(showFn).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(100 + TOAST_DURATION.FIVE_SECONDS);
     await promise;
     expect(showFn).toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it('should wait for activeToast when stagger=true', async () => {
+    vi.useFakeTimers();
     const showFn = vi.fn().mockResolvedValue(undefined);
     const p1 = showToastStaggered(
       showFn,
       { title: '1', message: 'msg', variant: 'info' as const },
       { stagger: false }
     );
+    await vi.advanceTimersByTimeAsync(TOAST_DURATION.FIVE_SECONDS);
     await p1;
     const p2 = showToastStaggered(
       showFn,
       { title: '2', message: 'msg', variant: 'info' as const },
       { stagger: true }
     );
+    await vi.advanceTimersByTimeAsync(
+      STAGGER_MS.DEFAULT + TOAST_DURATION.FIVE_SECONDS
+    );
     await p2;
     expect(showFn).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
   });
 
   it('should handle delay > 0 branch', async () => {
+    vi.useFakeTimers();
     const showFn = vi.fn().mockResolvedValue(undefined);
-    await showToastStaggered(
+    const p = showToastStaggered(
       showFn,
       { title: 'test', message: 'msg' },
       { delay: 50, stagger: false }
     );
+    await vi.advanceTimersByTimeAsync(50 + TOAST_DURATION.FIVE_SECONDS);
+    await p;
     expect(showFn).toHaveBeenCalled();
+    vi.useRealTimers();
   });
 });
 
@@ -236,13 +276,17 @@ describe('getGlobalToastQueue with showFn', () => {
 
 describe('showToastStaggered stagger branch coverage', () => {
   it('should take else branch when stagger=false and no activeToast', async () => {
+    vi.useFakeTimers();
     const showFn = vi.fn().mockResolvedValue(undefined);
-    await showToastStaggered(
+    const p = showToastStaggered(
       showFn,
       { title: 'test', message: 'msg', variant: 'info' as const },
       { stagger: false }
     );
+    await vi.advanceTimersByTimeAsync(TOAST_DURATION.FIVE_SECONDS);
+    await p;
     expect(showFn).toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it('should cover stagger branch when stagger=true and activeToast exists (lines 16-21)', async () => {
@@ -267,19 +311,24 @@ describe('showToastStaggered stagger branch coverage', () => {
 
     resolveFirst();
     await vi.advanceTimersByTimeAsync(STAGGER_MS.DEFAULT);
+    await vi.advanceTimersByTimeAsync(TOAST_DURATION.FIVE_SECONDS);
     await p2;
     expect(showFn).toHaveBeenCalled();
     vi.useRealTimers();
   });
 
   it('should cover delay branch when delay=0 - take skip path', async () => {
+    vi.useFakeTimers();
     const showFn = vi.fn().mockResolvedValue(undefined);
-    await showToastStaggered(
+    const p = showToastStaggered(
       showFn,
       { title: 'test', message: 'msg' },
       { delay: 0, stagger: false }
     );
+    await vi.advanceTimersByTimeAsync(TOAST_DURATION.FIVE_SECONDS);
+    await p;
     expect(showFn).toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it('should cover delay branch when delay>0 - take execution path', async () => {
@@ -291,24 +340,29 @@ describe('showToastStaggered stagger branch coverage', () => {
       { delay: 100, stagger: false }
     );
     await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(TOAST_DURATION.FIVE_SECONDS);
     await p;
     expect(showFn).toHaveBeenCalled();
     vi.useRealTimers();
   });
 
   it('should cover stagger=false but activeToast exists scenario', async () => {
+    vi.useFakeTimers();
     const showFn = vi.fn().mockResolvedValue(undefined);
-    await showToastStaggered(
+    const p1 = showToastStaggered(
       showFn,
       { title: '1', message: 'msg', variant: 'info' as const },
       { stagger: false }
     );
-    await showToastStaggered(
+    const p2 = showToastStaggered(
       showFn,
       { title: '2', message: 'msg', variant: 'info' as const },
       { stagger: false }
     );
+    await vi.advanceTimersByTimeAsync(TOAST_DURATION.FIVE_SECONDS);
+    await Promise.all([p1, p2]);
     expect(showFn).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
   });
 });
 

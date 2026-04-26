@@ -20,6 +20,17 @@ describe('validateScriptsDirectory', () => {
     vi.resetModules();
   });
 
+  afterEach(() => {
+    // Cleanup temp directories
+    const tempDirs = ['test-temp', 'test-temp-file'];
+    tempDirs.forEach((dir) => {
+      const fullPath = path.join(originalCwd, dir);
+      if (fs.existsSync(fullPath)) {
+        fs.rmSync(fullPath, { recursive: true, force: true });
+      }
+    });
+  });
+
   it('should pass when .opencode/scripts exists', () => {
     // Assuming .opencode/scripts exists in project root (it does)
     expect(() => validateScriptsDirectory()).not.toThrow();

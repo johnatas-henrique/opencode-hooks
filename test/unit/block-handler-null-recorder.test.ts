@@ -20,7 +20,7 @@ vi.mock('../../.opencode/plugins/features/audit/security-recorder', () => ({
   getSecurityRecorder: vi.fn(),
 }));
 
-vi.mock('../../.opencode/plugins/features/block-system/block-system', () => ({
+vi.mock('../../.opencode/plugins/types/block-system', () => ({
   createBlockSystem: vi.fn(),
 }));
 
