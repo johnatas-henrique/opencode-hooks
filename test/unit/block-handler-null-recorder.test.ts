@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { executeBlocking } from '../../.opencode/plugins/features/block-system/block-handler';
 import type { SecurityRecorder } from '../../.opencode/plugins/features/audit/security-recorder';
 import * as securityRecorder from '../../.opencode/plugins/features/audit/security-recorder';
-import * as blockSystemModule from '../../.opencode/plugins/features/block-system/block-system';
 import type {
   BlockEffects,
   BlockSystem,
 } from '../../.opencode/plugins/types/block-system';
+import { createBlockSystem } from '../../.opencode/plugins/types/block-system';
 import type {
   BlockCheck,
   ScriptResult,
@@ -38,16 +38,14 @@ describe('block-handler null recorder coverage', () => {
     recorderSpy.mockReturnValueOnce(mockRecorder).mockReturnValue(null);
 
     let capturedEffects: BlockEffects | undefined;
-    vi.mocked(blockSystemModule.createBlockSystem).mockImplementation(
-      (effects: BlockEffects) => {
-        capturedEffects = effects;
-        const mockSystem: BlockSystem = {
-          evaluate: vi.fn(),
-          evaluateWithEffects: vi.fn(),
-        };
-        return mockSystem;
-      }
-    );
+    vi.mocked(createBlockSystem).mockImplementation((effects: BlockEffects) => {
+      capturedEffects = effects;
+      const mockSystem: BlockSystem = {
+        evaluate: vi.fn(),
+        evaluateWithEffects: vi.fn(),
+      };
+      return mockSystem;
+    });
 
     const blockConfig: BlockCheck[] = [
       {

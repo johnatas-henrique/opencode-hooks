@@ -122,6 +122,25 @@ describe('security-rules', () => {
       const output = mockOutput({ args: { data: 'API_KEY=abc123' } });
       expect(blockSecrets(mockInput, output, mockResults)).toBe(true);
     });
+
+    it('should detect secrets in nested objects', () => {
+      const output = mockOutput({
+        args: { config: { data: 'api_key=secret123' } },
+      });
+      expect(blockSecrets(mockInput, output, mockResults)).toBe(true);
+    });
+
+    it('should handle nested objects without secrets', () => {
+      const output = mockOutput({
+        args: { config: { settings: { enabled: true } } },
+      });
+      expect(blockSecrets(mockInput, output, mockResults)).toBe(false);
+    });
+
+    it('should return false for non-secret values', () => {
+      const output = mockOutput({ args: { data: 'hello world' } });
+      expect(blockSecrets(mockInput, output, mockResults)).toBe(false);
+    });
   });
 
   describe('blockLargeArgs', () => {

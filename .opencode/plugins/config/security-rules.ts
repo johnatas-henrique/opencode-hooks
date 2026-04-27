@@ -32,7 +32,6 @@ export const blockProtectedBranch: BlockPredicate = (_, output) => {
 };
 
 export const blockSecrets: BlockPredicate = (_, output) => {
-  const outputStr = JSON.stringify(output.args);
   const secretPatterns = [
     /api[_-]?key[=:]\s*["']?[\w-]+["']?/i,
     /token[=:]\s*["']?[\w-]+["']?/i,
@@ -41,7 +40,20 @@ export const blockSecrets: BlockPredicate = (_, output) => {
     /gh[pousr]_[a-zA-Z0-9]{36,}/i,
     /bearer\s+[\w-]+/i,
   ];
-  return secretPatterns.some((pattern) => pattern.test(outputStr));
+
+  function checkValue(val: unknown): boolean {
+    if (typeof val === 'string') {
+      return secretPatterns.some((pattern) => pattern.test(val));
+    }
+    if (val && typeof val === 'object') {
+      for (const v of Object.values(val as Record<string, unknown>)) {
+        if (checkValue(v)) return true;
+      }
+    }
+    return false;
+  }
+
+  return checkValue(output.args);
 };
 
 export const blockLargeArgs: BlockPredicate = (_, output) => {
