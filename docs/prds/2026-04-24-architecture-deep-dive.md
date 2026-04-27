@@ -1,7 +1,7 @@
 # Codebase Architecture Deep-Dive Analysis
 
 **Date**: 2025-04-24  
-**Status**: Candidate #2 (Script Execution & Audit Coupling) completed; refactoring in progress  
+**Status**: Candidate #3 (Toast Queue) next; #4 (Security) partial  
 **Goal**: Identify modules with high architectural friction and opportunities for deepening to improve testability, AI-navigability, and maintainability.
 
 ---
@@ -320,4 +320,22 @@ Group constants by **domain** into typed objects: `ToastConfig`, `ScriptConfig`,
 
 ---
 
-_Document saved for multi-session collaboration. Ready to proceed with candidate selection._
+### ✅ Candidate #4 — Security Validation & Block System (Partial 2026-04-26)
+
+**Implementation**:
+
+- Enhanced `blockSecrets` to recursively check nested objects for secrets
+- Added 3 unit tests for nested secret detection
+- Coverage security-rules: 100% Statements, 95% Branches, 100% Functions, 100% Lines
+
+**Results**:
+
+- Build + Lint passing
+- Coverage: Statements 100%, Branches 99.4%, Functions 99.6%, Lines 100%
+- Remaining uncovered: block-handler.ts:72-73 (needs extensive mocks)
+
+**Impact**: blockSecrets now detects secrets in nested objects like `{ config: { data: 'api_key=secret' } }`
+
+---
+
+## Next Candidate: #3 Toast Queue & Concurrency Control
