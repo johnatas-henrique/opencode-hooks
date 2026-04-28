@@ -48,5 +48,3 @@ export function createMockPluginInput(
     ...options,
   };
 }
-
-export type { PluginInput };

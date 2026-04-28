@@ -1,11 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import type { PluginInput } from '@opencode-ai/plugin';
-import { SCRIPTS_DIR } from '../../.opencode/plugins/core/constants';
+import { DEFAULTS } from '../../.opencode/plugins/core/constants';
 
 // Unit test for validateScriptsDirectory logic (extracted from opencode-hooks.ts)
 function validateScriptsDirectory(): void {
-  const scriptsDir = path.join(process.cwd(), SCRIPTS_DIR);
+  const scriptsDir = path.join(process.cwd(), DEFAULTS.scripts.dir);
   if (!fs.existsSync(scriptsDir) || !fs.statSync(scriptsDir).isDirectory()) {
     throw new Error(`Scripts directory not found: ${scriptsDir}`);
   }

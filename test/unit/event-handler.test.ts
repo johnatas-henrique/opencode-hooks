@@ -1,5 +1,5 @@
 import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
-import type { PluginInput } from '../__mocks__/@opencode-ai/plugin';
+import type { PluginInput } from '@opencode-ai/plugin';
 
 const createMockCtx = (
   client: MockClient,

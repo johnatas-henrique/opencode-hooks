@@ -7,10 +7,7 @@ import {
   useGlobalToastQueue,
   initGlobalToastQueue,
 } from '../../.opencode/plugins/core/toast-queue';
-import {
-  STAGGER_MS,
-  TOAST_DURATION,
-} from '../../.opencode/plugins/core/constants';
+import { DEFAULTS } from '../../.opencode/plugins/core/constants';
 vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
   getErrorRecorder: vi.fn(() => ({
     logError: vi.fn(),
@@ -191,7 +188,7 @@ describe('showToastStaggered async edge cases', () => {
       { title: 'test', message: 'msg', variant: 'info' as const },
       { stagger: false }
     );
-    await vi.advanceTimersByTimeAsync(TOAST_DURATION.FIVE_SECONDS);
+    await vi.advanceTimersByTimeAsync(DEFAULTS.toast.durations.FIVE_SECONDS);
     await p;
     expect(showFn).toHaveBeenCalled();
     vi.useRealTimers();
@@ -210,7 +207,9 @@ describe('showToastStaggered async edge cases', () => {
       { delay: 100, stagger: false }
     );
     expect(showFn).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(100 + TOAST_DURATION.FIVE_SECONDS);
+    await vi.advanceTimersByTimeAsync(
+      100 + DEFAULTS.toast.durations.FIVE_SECONDS
+    );
     await promise;
     expect(showFn).toHaveBeenCalled();
     vi.useRealTimers();
@@ -224,7 +223,7 @@ describe('showToastStaggered async edge cases', () => {
       { title: '1', message: 'msg', variant: 'info' as const },
       { stagger: false }
     );
-    await vi.advanceTimersByTimeAsync(TOAST_DURATION.FIVE_SECONDS);
+    await vi.advanceTimersByTimeAsync(DEFAULTS.toast.durations.FIVE_SECONDS);
     await p1;
     const p2 = showToastStaggered(
       showFn,
@@ -232,7 +231,7 @@ describe('showToastStaggered async edge cases', () => {
       { stagger: true }
     );
     await vi.advanceTimersByTimeAsync(
-      STAGGER_MS.DEFAULT + TOAST_DURATION.FIVE_SECONDS
+      DEFAULTS.toast.stagger.DEFAULT + DEFAULTS.toast.durations.FIVE_SECONDS
     );
     await p2;
     expect(showFn).toHaveBeenCalledTimes(2);
@@ -247,7 +246,9 @@ describe('showToastStaggered async edge cases', () => {
       { title: 'test', message: 'msg' },
       { delay: 50, stagger: false }
     );
-    await vi.advanceTimersByTimeAsync(50 + TOAST_DURATION.FIVE_SECONDS);
+    await vi.advanceTimersByTimeAsync(
+      50 + DEFAULTS.toast.durations.FIVE_SECONDS
+    );
     await p;
     expect(showFn).toHaveBeenCalled();
     vi.useRealTimers();
@@ -283,7 +284,7 @@ describe('showToastStaggered stagger branch coverage', () => {
       { title: 'test', message: 'msg', variant: 'info' as const },
       { stagger: false }
     );
-    await vi.advanceTimersByTimeAsync(TOAST_DURATION.FIVE_SECONDS);
+    await vi.advanceTimersByTimeAsync(DEFAULTS.toast.durations.FIVE_SECONDS);
     await p;
     expect(showFn).toHaveBeenCalled();
     vi.useRealTimers();
@@ -310,8 +311,8 @@ describe('showToastStaggered stagger branch coverage', () => {
     );
 
     resolveFirst();
-    await vi.advanceTimersByTimeAsync(STAGGER_MS.DEFAULT);
-    await vi.advanceTimersByTimeAsync(TOAST_DURATION.FIVE_SECONDS);
+    await vi.advanceTimersByTimeAsync(DEFAULTS.toast.stagger.DEFAULT);
+    await vi.advanceTimersByTimeAsync(DEFAULTS.toast.durations.FIVE_SECONDS);
     await p2;
     expect(showFn).toHaveBeenCalled();
     vi.useRealTimers();
@@ -325,7 +326,7 @@ describe('showToastStaggered stagger branch coverage', () => {
       { title: 'test', message: 'msg' },
       { delay: 0, stagger: false }
     );
-    await vi.advanceTimersByTimeAsync(TOAST_DURATION.FIVE_SECONDS);
+    await vi.advanceTimersByTimeAsync(DEFAULTS.toast.durations.FIVE_SECONDS);
     await p;
     expect(showFn).toHaveBeenCalled();
     vi.useRealTimers();
@@ -340,7 +341,7 @@ describe('showToastStaggered stagger branch coverage', () => {
       { delay: 100, stagger: false }
     );
     await vi.advanceTimersByTimeAsync(100);
-    await vi.advanceTimersByTimeAsync(TOAST_DURATION.FIVE_SECONDS);
+    await vi.advanceTimersByTimeAsync(DEFAULTS.toast.durations.FIVE_SECONDS);
     await p;
     expect(showFn).toHaveBeenCalled();
     vi.useRealTimers();
@@ -359,7 +360,7 @@ describe('showToastStaggered stagger branch coverage', () => {
       { title: '2', message: 'msg', variant: 'info' as const },
       { stagger: false }
     );
-    await vi.advanceTimersByTimeAsync(TOAST_DURATION.FIVE_SECONDS);
+    await vi.advanceTimersByTimeAsync(DEFAULTS.toast.durations.FIVE_SECONDS);
     await Promise.all([p1, p2]);
     expect(showFn).toHaveBeenCalledTimes(2);
     vi.useRealTimers();
