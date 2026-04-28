@@ -107,6 +107,7 @@ vi.mock('../../.opencode/plugins/features/events/events', () => ({
     scripts: ['tool-execute-before-read.sh'],
     logToAudit: true,
     debug: false,
+    block: [],
   }),
   handlers: {
     'session.created': {

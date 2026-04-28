@@ -75,11 +75,6 @@ describe('block-handler', () => {
   });
 
   describe('executeBlocking early return', () => {
-    it('returns early when blockConfig is undefined', () => {
-      executeBlocking(undefined, input, output, [], 'tool.execute.before');
-      expect(mockToastAdd).not.toHaveBeenCalled();
-    });
-
     it('returns early when blockConfig is empty array', () => {
       executeBlocking([], input, output, [], 'tool.execute.before');
       expect(mockToastAdd).not.toHaveBeenCalled();

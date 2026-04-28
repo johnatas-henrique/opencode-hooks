@@ -57,6 +57,7 @@ const createResolvedConfig = (
     outputDuration: 5000,
     errorDuration: 15000,
   },
+  block: [],
   ...overrides,
 });
 
