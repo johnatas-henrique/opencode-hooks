@@ -4,7 +4,7 @@ import type { ScriptRunResult } from './scripts';
 export interface ScriptExecutorDeps {
   executeScript: (script: string, arg?: string) => Promise<ScriptRunResult>;
   audit?: ScriptAuditLogger;
-  session?: SessionAppender;
+  session: SessionAppender;
   toast?: ToastNotifier;
   isSubagent: (sessionId: string) => boolean;
 }

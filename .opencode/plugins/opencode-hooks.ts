@@ -87,13 +87,11 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     if (!userConfig.logDisabledEvents) {
       return;
     }
-    const eventRecorder = getEventRecorder();
-    if (eventRecorder) {
-      await eventRecorder.logEvent('EVENT_DISABLED', {
-        sessionID: sessionId,
-        context: eventType,
-      });
-    }
+    const eventRecorder = getEventRecorder()!;
+    await eventRecorder.logEvent('EVENT_DISABLED', {
+      sessionID: sessionId,
+      context: eventType,
+    });
     return;
   }
 
@@ -209,12 +207,10 @@ export const OpencodeHooks: Plugin = async (
 
   await initAuditLogging(userConfig.audit);
 
-  const eventRecorder = getEventRecorder();
-  if (eventRecorder) {
-    await eventRecorder.logEvent('PLUGIN_START', {
-      context: 'OpencodeHooks plugin initialized',
-    });
-  }
+  const eventRecorder = getEventRecorder()!;
+  await eventRecorder.logEvent('PLUGIN_START', {
+    context: 'OpencodeHooks plugin initialized',
+  });
 
   const scriptRecorder = getScriptRecorder();
 
@@ -229,15 +225,11 @@ export const OpencodeHooks: Plugin = async (
         typeof rawId === 'string' ? rawId : DEFAULTS.core.defaultSessionId;
 
       if (!isKnownEvent) {
-        const rec = getEventRecorder();
-        if (rec) {
-          await rec
-            .logEvent('UNKNOWN_EVENT', {
-              sessionID: sessionId,
-              input: { event },
-            })
-            .catch(() => {});
-        }
+        const rec = getEventRecorder()!;
+        await rec.logEvent('UNKNOWN_EVENT', {
+          sessionID: sessionId,
+          input: { event },
+        });
       }
 
       const resolved = resolveEventConfig(
@@ -622,14 +614,12 @@ export const OpencodeHooks: Plugin = async (
 
     config: async (input: Record<string, unknown>) => {
       const { agent, command, sessionID, ...rest } = input;
-      const eventRecorder = getEventRecorder();
+      const eventRecorder = getEventRecorder()!;
 
-      if (eventRecorder) {
-        await eventRecorder.logEvent('config.file.updated', {
-          sessionID: String(sessionID || 'unknown'),
-          input: rest,
-        });
-      }
+      await eventRecorder.logEvent('config.file.updated', {
+        sessionID: String(sessionID || 'unknown'),
+        input: rest,
+      });
     },
 
     auth: {

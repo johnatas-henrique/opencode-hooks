@@ -106,9 +106,7 @@ export class ScriptExecutor {
 
     // Success: session append
     if (!options.skipSession && result.output) {
-      if (this.deps.session) {
-        await this.deps.session.appendToSession(sessionId, result.output);
-      }
+      await this.deps.session.appendToSession(sessionId, result.output);
     }
 
     return { script, output: result.output };
