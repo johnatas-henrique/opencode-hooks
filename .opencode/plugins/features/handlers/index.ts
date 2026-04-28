@@ -32,20 +32,3 @@ export const handlers: Record<string, EventHandler> = {
   ...toolBeforeHandlers,
   ...toolAfterHandlers,
 };
-
-export {
-  sessionHandlers,
-  toolHandlers,
-  messageHandlers,
-  chatHandlers,
-  commandHandlers,
-  serverHandlers,
-  shellHandlers,
-  todoHandlers,
-  tuiHandlers,
-  lspHandlers,
-  experimentalHandlers,
-  otherHandlers,
-  toolBeforeHandlers,
-  toolAfterHandlers,
-};
