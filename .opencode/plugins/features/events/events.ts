@@ -1,4 +1,4 @@
-import { handlers } from '../messages/default-handlers';
+import { handlers } from '../handlers';
 import { userConfig } from '../../config/settings';
 import type { ResolvedEventConfig } from '../../types/config';
 import { createEventResolver, createToolResolver } from './context';

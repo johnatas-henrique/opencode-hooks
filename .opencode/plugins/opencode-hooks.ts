@@ -14,7 +14,7 @@ import type {
   ToolExecuteBeforeOutput,
 } from './types/core';
 import { initGlobalToastQueue, useGlobalToastQueue } from './core/toast-queue';
-import { handlers } from './features/messages/default-handlers';
+import { handlers } from './features/handlers';
 import { showStartupToast } from './features/messages/show-startup-toast';
 import {
   resolveEventConfig,

@@ -8,7 +8,7 @@ import type {
 } from '../../types/events';
 import { EventConfigResolverImpl } from './resolvers/event-config.resolver';
 import { ToolConfigResolverImpl } from './resolvers/tool-config.resolver';
-import { handlers } from '../messages/default-handlers';
+import { handlers } from '../handlers';
 
 export function createContext(
   userConfig: UserEventsConfig,
