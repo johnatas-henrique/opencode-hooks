@@ -3,7 +3,7 @@ import {
   resolveToolConfig,
 } from '../../.opencode/plugins/features/events/events';
 
-vi.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
+vi.mock('../../.opencode/plugins/features/handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',

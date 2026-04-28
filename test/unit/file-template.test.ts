@@ -1,6 +1,6 @@
 import type { FileTemplate } from '../../.opencode/plugins/types/config';
 
-vi.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
+vi.mock('../../.opencode/plugins/features/handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',

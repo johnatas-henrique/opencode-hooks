@@ -34,7 +34,7 @@ vi.mock('../../.opencode/plugins/config', () => ({
   },
 }));
 
-vi.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
+vi.mock('../../.opencode/plugins/features/handlers', () => ({
   handlers: {
     // ... many handlers
   },

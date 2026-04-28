@@ -43,7 +43,7 @@ vi.mock('../../.opencode/plugins/features/messages/append-to-session', () => ({
   appendToSession: mockAppendToSession,
 }));
 
-vi.mock('../../.opencode/plugins/features/messages/default-handlers', () => ({
+vi.mock('../../.opencode/plugins/features/handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
