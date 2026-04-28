@@ -1,5 +1,5 @@
-import { createResolvers } from '../helpers';
-import { createUserConfig } from '../helpers';
+import { createResolvers } from '../helpers/create-resolver';
+import { createUserConfig } from '../helpers/create-config';
 import type { UserEventsConfig } from '../../.opencode/plugins/types/config';
 import { getHandler } from '../../.opencode/plugins/features/events/events';
 
