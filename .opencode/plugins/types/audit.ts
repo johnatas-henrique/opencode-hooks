@@ -128,6 +128,24 @@ export interface DebugRecord {
   [key: string]: unknown;
 }
 
+export interface DebugRecorder {
+  logDebug(input: {
+    message: string;
+    level?: 'info' | 'warn' | 'error';
+    data?: Record<string, unknown>;
+  }): Promise<void>;
+}
+
+export interface SecurityRecorder {
+  logSecurity(input: {
+    sessionID?: string;
+    toolName?: string;
+    rule: string;
+    reason?: string;
+    input?: Record<string, unknown>;
+  }): Promise<void>;
+}
+
 export interface SessionInput {
   sessionID?: string;
   info?: {

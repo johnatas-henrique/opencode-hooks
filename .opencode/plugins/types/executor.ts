@@ -1,5 +1,19 @@
 import type { EventVariant } from './config';
 import type { ScriptRunResult } from './scripts';
+import type { PluginInput } from '@opencode-ai/plugin';
+import type { ResolvedEventConfig, ScriptToastsConfig } from './config';
+import type { ScriptRecorder } from './audit';
+
+export interface ScriptRunnerDeps {
+  ctx: PluginInput;
+  sessionId: string;
+  eventType: string;
+  resolved: ResolvedEventConfig;
+  scriptToasts: ScriptToastsConfig;
+  scriptRecorder?: ScriptRecorder;
+  toolName?: string;
+  timestamp?: string;
+}
 
 export interface ScriptExecutorDeps {
   executeScript: (script: string, arg?: string) => Promise<ScriptRunResult>;

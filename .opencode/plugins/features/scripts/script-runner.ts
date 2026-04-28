@@ -1,44 +1,22 @@
-import type { PluginInput } from '@opencode-ai/plugin';
 import type {
   EventScriptConfig,
   ScriptExecutionResult,
 } from '../../types/scripts';
-import type {
-  ResolvedEventConfig,
-  ScriptToastsConfig,
-} from '../../types/config';
-import type { ScriptRecorder } from '../../types/audit';
 import { runScriptAndHandle } from './run-script-handler';
-
-export interface ScriptRunnerDeps {
-  ctx: PluginInput;
-  sessionId: string;
-  eventType: string;
-  resolved: ResolvedEventConfig;
-  scriptToasts: ScriptToastsConfig;
-  scriptRecorder?: ScriptRecorder;
-  toolName?: string;
-  timestamp?: string;
-}
-
-export interface RunScriptOptions {
-  suppressToast?: boolean;
-  skipAudit?: boolean;
-  skipSession?: boolean;
-  runOnlyOnce?: boolean;
-}
+import type {
+  ScriptRunnerDeps,
+  ScriptExecutorOptions,
+} from '../../types/executor';
 
 export function createScriptRunner(deps: ScriptRunnerDeps) {
   return async function runScript(
     script: string,
     arg?: string,
-    options: RunScriptOptions = {}
+    options: ScriptExecutorOptions = {}
   ): Promise<ScriptExecutionResult> {
-    // Clone deps para aplicar overrides sem mutar origem
     const effectiveResolved = { ...deps.resolved };
     const effectiveScriptToasts = { ...deps.scriptToasts };
 
-    // Aplica opções
     if (options.suppressToast) {
       effectiveScriptToasts.showError = false;
     }
@@ -52,7 +30,6 @@ export function createScriptRunner(deps: ScriptRunnerDeps) {
       effectiveResolved.runOnlyOnce = options.runOnlyOnce;
     }
 
-    // Monta config para handler original
     const config: EventScriptConfig = {
       ctx: deps.ctx,
       script,

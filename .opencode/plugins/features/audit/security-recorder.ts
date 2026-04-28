@@ -2,17 +2,8 @@ import type {
   SecurityRecord,
   AuditLogger,
   AuditFileType,
+  SecurityRecorder,
 } from '../../types/audit';
-
-export interface SecurityRecorder {
-  logSecurity(input: {
-    sessionID?: string;
-    toolName?: string;
-    rule: string;
-    reason?: string;
-    input?: Record<string, unknown>;
-  }): Promise<void>;
-}
 
 export function createSecurityRecorder(logger: AuditLogger): SecurityRecorder {
   return {

@@ -2,15 +2,8 @@ import type {
   DebugRecord,
   AuditLogger,
   AuditFileType,
+  DebugRecorder,
 } from '../../types/audit';
-
-export interface DebugRecorder {
-  logDebug(input: {
-    message: string;
-    level?: 'info' | 'warn' | 'error';
-    data?: Record<string, unknown>;
-  }): Promise<void>;
-}
 
 export function createDebugRecorder(logger: AuditLogger): DebugRecorder {
   return {
