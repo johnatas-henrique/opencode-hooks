@@ -1,7 +1,7 @@
 # Codebase Architecture Deep-Dive Analysis
 
 **Date**: 2025-04-24  
-**Status**: #1 ✅ #5 ✅ #6 ✅ #7 ✅ completed; #3 ⏭ skipped; #4 🔶 partial  
+**Status**: #1 ✅ #4 ✅ #5 ✅ #6 ✅ #7 ✅ completed; #3 ⏭ skipped  
 **Goal**: Identify modules with high architectural friction and opportunities for deepening to improve testability, AI-navigability, and maintainability.
 
 ---
@@ -314,21 +314,24 @@ Group constants by **domain** into typed objects: `ToastConfig`, `ScriptConfig`,
 
 ---
 
-### ✅ Candidate #4 — Security Validation & Block System (Partial 2026-04-26)
+### ✅ Candidate #4 — Security Validation & Block System (Completed 2026-04-28)
 
 **Implementation**:
 
-- Enhanced `blockSecrets` to recursively check nested objects for secrets
-- Added 3 unit tests for nested secret detection
-- Coverage security-rules: 100% Statements, 95% Branches, 100% Functions, 100% Lines
+- Made `block` required in `ResolvedEventConfig` (no longer optional `BlockCheck[] | undefined`)
+- Removed defensive fallbacks: `blockConfig[0].message || 'Blocked'` → `blockConfig[0].message`
+- Simplified types: `block: BlockCheck[]` instead of `block?: BlockCheck[]`
+- Removed optional chaining: `resolved.block?.length` → `resolved.block.length`
+- Updated all resolvers to always return `block: []` (never undefined)
+- Fail-fast: if something is wrong, it breaks fast instead of silent fallback
 
 **Results**:
 
 - Build + Lint passing
-- Coverage: Statements 100%, Branches 99.4%, Functions 99.6%, Lines 100%
-- Remaining uncovered: block-handler.ts:72-73 (needs extensive mocks)
+- Coverage: Statements 100%, Branches 99.64%, Functions 99.62%, Lines 100%
+- All 1003 tests passing
 
-**Impact**: blockSecrets now detects secrets in nested objects like `{ config: { data: 'api_key=secret' } }`
+**Impact**: More direct code. If `block` is empty `[]`, no execution. If types are wrong, breaks fast. No silent fallbacks hiding bugs.
 
 ---
 
@@ -424,8 +427,7 @@ Group constants by **domain** into typed objects: `ToastConfig`, `ScriptConfig`,
 
 ## Next Steps
 
-All major candidates completed or skipped:
+All candidates completed or skipped:
 
-- ✅ #1 (ConfigBuilder), #2 (ScriptExecutor), #5 (Handler modular), #6 (tests), #7 (DEFAULTS) — completed
+- ✅ #1 (ConfigBuilder), #2 (ScriptExecutor), #4 (block required), #5 (Handler modular), #6 (tests), #7 (DEFAULTS) — completed
 - ⏭ #3 (Toast Queue) — skipped (YAGNI/DRY)
-- 🔶 #4 (Security) — partial (needs mocks for block-handler.ts:72-73)
