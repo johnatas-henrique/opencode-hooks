@@ -1,7 +1,7 @@
 # Codebase Architecture Deep-Dive Analysis
 
 **Date**: 2025-04-24  
-**Status**: Candidate #3 (Toast Queue) next; #4 (Security) partial  
+**Status**: #6 ✅ #7 ✅ completed; #3 ⏭ skipped; #5 ⏭ skipped  
 **Goal**: Identify modules with high architectural friction and opportunities for deepening to improve testability, AI-navigability, and maintainability.
 
 ---
@@ -57,7 +57,7 @@ Current coverage: integration tests (`event-flow.test.ts`) mock all dependencies
 
 ### Deepening opportunity
 
-Consolidate resolution into a **ConfigBuilder** class with explicit stages: defaults → user overrides → handler metadata → validation. Hide branching complexity behind a simple `build()` method. Testable via boundary tests verifying final `EventConfig` for various inputs.
+Simplify in-place without new abstractions. Reduce file-hopping, improve readability. Add boundary tests for `resolveEventConfig()` with various inputs. No `ConfigBuilder` class — YAGNI.
 
 ---
 
@@ -98,11 +98,18 @@ Extract **ScriptExecutor** service: `execute(script, args, options) → ScriptRe
 
 ---
 
-## 3. Toast Queue & Concurrency Control
+## 3. Toast Queue & Concurrency Control ⏭ SKIPPED
 
 **Severity**: 🟠 High  
 **Files**: `core/toast-queue.ts`, `features/messages/default-handlers.ts`, `features/messages/show-startup-toast.ts`, `features/messages/append-to-session.ts`, `core/constants.ts`  
 **Dependency category**: Cross-cutting (UI) with global state
+
+**Why skipped (YAGNI + DRY):**
+
+- `ToastDirectorImpl` (§38§) already exists and works
+- Wrappers in `toast-queue.ts` provide clean API
+- All 772 tests pass, build clean
+- Further abstraction = over-engineering with no real ROI
 
 ### Why they're coupled
 
@@ -124,10 +131,6 @@ State variables: `activeToast`, `processingLock`, `activeTimers` (Map), `queue` 
 - `toast-queue-concurrency.test.ts` covers basic queueing
 - `toast-contract.test.ts` tests handler→queue contract
 - Missing: tests for global queue reset, load testing, error-toast priority edge cases
-
-### Deepening opportunity
-
-Make **ToastDirector** class: encapsulate queue state, provide `enqueue(toast)` method. Establish clear contract: "toast → enqueue → staggered display". Replace global with injected instance. Test `ToastDirector` in isolation with deterministic timers, then verify handlers use it correctly.
 
 ---
 
@@ -162,11 +165,18 @@ Extract **SecurityGate** service: `evaluate(event, context) → BlockResult`. Pr
 
 ---
 
-## 5. Event Handler Registry
+## 5. Event Handler Registry ⏭ SKIPPED
 
 **Severity**: 🟡 Medium  
 **Files**: `features/messages/default-handlers.ts` (793 lines!), `features/message-formatter/build-keys-message.ts`, `features/message-formatter/build-keys-message-simple.ts`, `features/message-formatter/format-value.ts`, `features/message-formatter/get-value-by-path.ts`  
 **Dependency category**: Data + Control
+
+**Why skipped (YAGNI):**
+
+- 793-line file works, no real pain yet
+- Splitting prematurely = over-engineering
+- No test failures or maintenance issues reported
+- Wait for real need before abstracting
 
 ### Why they're coupled
 
@@ -187,10 +197,6 @@ Extract **SecurityGate** service: `evaluate(event, context) → BlockResult`. Pr
 - Formatter helpers tested indirectly via integration tests
 - Zero unit tests for individual handler correctness (e.g., `tool.execute.before.git-commit` message with real args)
 - Test coverage does not guarantee handler event logic works
-
-### Deepening opportunity
-
-Split handlers by **domain** into separate modules: `session-handlers.ts`, `tool-handlers.ts`, `file-handlers.ts`, `chat-handlers.ts`. Create a **HandlerRegistry** class that loads and validates all handlers at startup (checking `allowedFields` vs `buildMessage` keys). Simplify to `getHandler(eventType) → Handler`. Test each handler module independently; the registry verifies integrity.
 
 ---
 
@@ -377,4 +383,48 @@ Group constants by **domain** into typed objects: `ToastConfig`, `ScriptConfig`,
 
 ---
 
-## Next Candidate: #3 Toast Queue & Concurrency Control
+### ⏭ Candidate #3 — Toast Queue & Concurrency Control (Skipped 2026-04-28)
+
+**Reason (DRY + YAGNI)**:
+
+- `ToastDirectorImpl` (§38§) already exists and works
+- Wrappers in `toast-queue.ts` provide clean API
+- All 772 tests pass, build clean
+- Further abstraction = over-engineering with no real ROI
+
+---
+
+### ⏭ Candidate #5 — Event Handler Registry (Skipped 2026-04-28)
+
+**Reason (YAGNI)**:
+
+- 793-line file works, no real pain yet
+- Splitting prematurely = over-engineering
+- No test failures or maintenance issues reported
+- Wait for real need before abstracting
+
+---
+
+### ✅ Candidate #1 — Event Configuration Resolution (Completed 2026-04-28)
+
+**Implementation**:
+
+- Created `ConfigBuilder` class in `features/events/resolvers/event-config-builder.ts`
+- Consolidates all resolution logic (defaults → user config → handler metadata → validation) in one place
+- Removed scattered helper functions — logic now in builder methods
+- Fixed `logEvent` call signature for unknown event logging
+- Updated tests to cover `getHandler`, `getDefaultScript`
+
+**Results**:
+
+- Build + Lint passing
+- All 779 tests passing
+- Coverage: Statements 100%, Branches 99.4%, Functions 99.6%, Lines 100%
+
+**Impact**: Single class handles full config resolution. Clear stages: `resolve()` → `buildDefault()` / `buildMerged()`. No more bouncing between 7 files.
+
+---
+
+## Next Steps
+
+Candidates #3 and #5 **skipped** (YAGNI/DRY). Remaining: #1 (simplify in-place), #4 (partial, needs mocks for block-handler.ts:72-73).
