@@ -82,7 +82,7 @@ export interface ResolvedEventConfig {
   runOnlyOnce: boolean;
   scriptToasts: ScriptToastsConfig;
   allowedFields?: string[];
-  block?: BlockCheck[];
+  block: BlockCheck[];
 }
 
 export interface ScriptResult {

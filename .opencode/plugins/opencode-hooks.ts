@@ -166,7 +166,7 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
   }));
 
   // Execute blocking checks only for tool.execute.before events
-  if (eventType === EventType.TOOL_EXECUTE_BEFORE && resolved.block?.length) {
+  if (eventType === EventType.TOOL_EXECUTE_BEFORE && resolved.block.length) {
     executeBlocking(
       resolved.block,
       input as ToolExecuteBeforeInput,

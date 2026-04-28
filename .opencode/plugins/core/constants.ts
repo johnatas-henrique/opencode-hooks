@@ -69,6 +69,7 @@ export const DEFAULTS: DefaultsConfig = {
         outputTitle: 'Script Output',
         errorTitle: 'Script Error',
       },
+      block: [],
     } as ResolvedEventConfig,
   },
 };

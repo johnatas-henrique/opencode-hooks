@@ -50,13 +50,13 @@ export function getBlockSystem(): BlockSystem {
 }
 
 export function executeBlocking(
-  blockConfig: BlockCheck[] | undefined,
+  blockConfig: BlockCheck[],
   input: ToolExecuteBeforeInput,
   output: ToolExecuteBeforeOutput,
   scriptResults: ScriptResult[],
   eventType: string
 ): void {
-  if (!blockConfig || blockConfig.length === 0) {
+  if (blockConfig.length === 0) {
     return;
   }
 
@@ -69,8 +69,8 @@ export function executeBlocking(
   const logData = {
     sessionID: input.sessionID,
     toolName: input.tool,
-    rule: blockConfig[0].message || 'Blocked',
-    reason: blockConfig[0].message || 'Blocked',
+    rule: blockConfig[0].message,
+    reason: blockConfig[0].message,
     input: input,
   };
 
