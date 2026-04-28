@@ -1,6 +1,5 @@
-import { TOAST_DURATION } from '../../../.opencode/plugins/helpers/constants';
-import { EventType } from '../../../.opencode/plugins/helpers/config';
-import type { UserEventsConfig } from '../../../.opencode/plugins/helpers/config';
+import { EventType } from '../../.opencode/plugins/types/events';
+import type { UserEventsConfig } from '../../.opencode/plugins/types/config';
 
 export const userConfig: UserEventsConfig = {
   enabled: true,

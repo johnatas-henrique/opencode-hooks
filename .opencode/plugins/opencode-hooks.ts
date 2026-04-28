@@ -27,7 +27,7 @@ import {
 } from './features/audit/plugin-integration';
 import { addSubagentSession } from './features/scripts/run-script-handler';
 import { createScriptRunner } from './features/scripts/script-runner';
-import { EventType } from './types/config';
+import { EventType } from './types/events';
 import { userConfig } from './config/settings';
 import { DEFAULTS } from './core/constants';
 import type { ResolvedEventConfig, ScriptResult } from './types/config';

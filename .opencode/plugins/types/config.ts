@@ -1,10 +1,6 @@
 import type { ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from './core';
 import type { AuditConfig } from './audit';
 import { EventType } from './events';
-import type { EventHandler } from './events';
-
-export { EventType };
-export type { EventHandler };
 
 export type EventVariant = 'success' | 'warning' | 'error' | 'info';
 

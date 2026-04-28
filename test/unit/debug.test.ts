@@ -2,7 +2,7 @@ import {
   handleDebugLog,
   sanitizeData,
 } from '../../.opencode/plugins/core/debug';
-import type { DebugRecorder } from '../../.opencode/plugins/features/audit/debug-recorder';
+import type { DebugRecorder } from '../../.opencode/plugins/types/audit';
 
 // Use vi.hoisted to isolate mocks properly - factory functions create fresh mocks per test run
 const {

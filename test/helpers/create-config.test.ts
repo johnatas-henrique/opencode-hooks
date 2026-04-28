@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { EventType } from '../../.opencode/plugins/types/config';
+import { EventType } from '../../.opencode/plugins/types/events';
 import { createUserConfig, withEvent, withToolEvent } from './create-config';
 
 describe('createuserConfig', () => {

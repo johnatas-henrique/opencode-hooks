@@ -1,4 +1,4 @@
-import { EventType } from '../../.opencode/plugins/types/config';
+import { EventType } from '../../.opencode/plugins/types/events';
 import type {
   UserEventsConfig,
   EventConfig,

@@ -1,5 +1,5 @@
 import { DEFAULTS } from '../core/constants';
-import { EventType } from '../types/config';
+import { EventType } from '../types/events';
 import type { UserEventsConfig } from '../types/config';
 import {
   blockEnvFiles,

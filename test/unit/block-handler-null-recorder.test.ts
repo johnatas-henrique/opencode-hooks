@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { executeBlocking } from '../../.opencode/plugins/features/block-system/block-handler';
-import type { SecurityRecorder } from '../../.opencode/plugins/features/audit/security-recorder';
+import type { SecurityRecorder } from '../../.opencode/plugins/types/audit';
 import * as securityRecorder from '../../.opencode/plugins/features/audit/security-recorder';
 import type {
   BlockEffects,
