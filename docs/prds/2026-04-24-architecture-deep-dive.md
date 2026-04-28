@@ -338,4 +338,43 @@ Group constants by **domain** into typed objects: `ToastConfig`, `ScriptConfig`,
 
 ---
 
+### ✅ Candidate #6 — Message Formatting Pipeline (Completed 2026-04-28)
+
+**Implementation**:
+
+- Created comprehensive unit tests for pure functions: `format-time.ts`, `mask-sensitive.ts`, `truncate.ts`
+- No mocks used — real unit tests with actual function calls
+- Tests cover: date formatting, email masking, token redaction, Unicode truncation, edge cases
+
+**Results**:
+
+- Coverage: 100% Statements, 100% Lines, 100% Functions, 100% Branches (for these files)
+- Build + Lint passing
+- All 772 tests passing
+
+**Impact**: Critical formatting functions now have proper test coverage. Security-critical `mask-sensitive.ts` validated.
+
+---
+
+### ✅ Candidate #7 — Constants & Global Configuration Scatter (Completed 2026-04-28)
+
+**Implementation**:
+
+- Created typed config objects in `types/constants.ts`: `ToastConfig`, `ScriptConfig`, `AuditConfig`, `DefaultsConfig`
+- Consolidated all constants into `DEFAULTS` object exported from `core/constants.ts`
+- Migrated all files to use `DEFAULTS.toast.durations.X`, `DEFAULTS.scripts.dir`, etc.
+- Deleted old constant exports (`TOAST_DURATION`, `SCRIPTS_DIR`, `MAX_PROMPT_LENGTH`, etc.)
+- Updated all imports across 20+ files to use direct `DEFAULTS` references
+
+**Results**:
+
+- Build + Lint passing
+- All 772 tests passing
+- No `any` types introduced
+- No re-exports — all imports direct from source
+
+**Impact**: Single source of truth for defaults. Typed constants prevent magic number bugs. Follows project rules (types in `types/`, no re-exports).
+
+---
+
 ## Next Candidate: #3 Toast Queue & Concurrency Control
