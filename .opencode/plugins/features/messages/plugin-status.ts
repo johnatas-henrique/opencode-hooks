@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
-import { DEFAULT_SESSION_ID } from '../../core/constants';
+import { DEFAULTS } from '../../core/constants';
 import type { PluginStatusDisplayMode } from '../../types/config';
 import type { PluginStatus, PluginEntry } from '../../types/plugin';
 
@@ -67,7 +67,9 @@ function parseLogLine(line: string): PluginEntry | null {
 }
 
 function extractPluginName(entry: PluginEntry): string {
-  return entry.name || entry.path || entry.pkg || DEFAULT_SESSION_ID;
+  return (
+    entry.name || entry.path || entry.pkg || DEFAULTS.core.defaultSessionId
+  );
 }
 
 function isBuiltInPlugin(entry: PluginEntry): boolean {

@@ -1,5 +1,5 @@
 import type { TuiToast } from '@opencode-ai/plugin/tui';
-import { STAGGER_MS } from './constants';
+import { DEFAULTS } from './constants';
 import type { ToastQueue, ToastQueueOptions } from '../types/toast';
 import { ToastDirectorImpl } from '../features/core/toast-director';
 
@@ -12,7 +12,7 @@ export async function showToastStaggered(
 ): Promise<void> {
   // Delegates to director-based implementation
   const director = new ToastDirectorImpl(showFn, {
-    staggerMs: options.stagger ? STAGGER_MS.DEFAULT : 0,
+    staggerMs: options.stagger ? DEFAULTS.toast.stagger.DEFAULT : 0,
     maxSize: 50,
   });
   director.enqueue(toast);
@@ -46,7 +46,7 @@ export function initGlobalToastQueue(
   showFn: (toast: TuiToast) => void | Promise<void>
 ): ToastQueue {
   const director = new ToastDirectorImpl(showFn, {
-    staggerMs: STAGGER_MS.DEFAULT,
+    staggerMs: DEFAULTS.toast.stagger.DEFAULT,
     maxSize: 50,
   });
 

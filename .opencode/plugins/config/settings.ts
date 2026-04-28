@@ -1,4 +1,4 @@
-import { TOAST_DURATION } from '../core/constants';
+import { DEFAULTS } from '../core/constants';
 import { EventType } from '../types/config';
 import type { UserEventsConfig } from '../types/config';
 import {
@@ -22,8 +22,8 @@ export const userConfig: UserEventsConfig = {
     showError: true,
     outputVariant: 'warning',
     errorVariant: 'error',
-    outputDuration: TOAST_DURATION.FIVE_SECONDS,
-    errorDuration: TOAST_DURATION.FIFTEEN_SECONDS,
+    outputDuration: DEFAULTS.toast.durations.FIVE_SECONDS,
+    errorDuration: DEFAULTS.toast.durations.FIFTEEN_SECONDS,
     outputTitle: '- SCRIPTS OUTPUT',
     errorTitle: '- SCRIPT ERROR',
   },
@@ -74,11 +74,7 @@ export const userConfig: UserEventsConfig = {
     },
     [EventType.SESSION_COMPACTED]: { toast: true },
     [EventType.SESSION_DELETED]: { toast: true },
-    [EventType.SESSION_IDLE]: {
-      toast: true,
-      runScripts: true,
-      scripts: ['server-connected.sh'],
-    },
+    [EventType.SESSION_IDLE]: { toast: true },
     [EventType.SESSION_DIFF]: { enabled: false },
     [EventType.SESSION_ERROR]: { toast: true },
     [EventType.SESSION_STATUS]: { enabled: false },
@@ -126,16 +122,11 @@ export const userConfig: UserEventsConfig = {
 
   tools: {
     [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
-      task: {
-        logToAudit: true,
-      },
-      skill: {
-        logToAudit: true,
-      },
+      task: { logToAudit: true, runScripts: true, scripts: ['log-agent.sh'] },
     },
     [EventType.TOOL_EXECUTE_AFTER]: {
       task: {},
-      skill: { logToAudit: true },
+      skill: { logToAudit: true, runScripts: true, scripts: ['log-skill.sh'] },
       bash: {},
       write: {},
       edit: {},

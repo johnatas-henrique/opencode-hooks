@@ -42,14 +42,17 @@ export interface FileHandle {
   close: () => Promise<void>;
 }
 
+export interface GzipStream {
+  pipe: (dest: NodeJS.WritableStream) => NodeJS.WritableStream;
+}
+
 export interface GzipDependencies {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  createGzip: () => { pipe: (dest: any) => any };
+  createGzip: () => GzipStream;
   open: (path: string, flags: string) => Promise<FileHandle>;
   pipeline: (
-    source: unknown,
-    gzip: unknown,
-    dest: unknown,
+    source: NodeJS.ReadableStream,
+    gzip: GzipStream,
+    dest: NodeJS.WritableStream,
     callback: (err: Error | null) => void
   ) => Promise<void>;
 }

@@ -1,6 +1,6 @@
 import { useGlobalToastQueue } from './toast-queue';
 import { getDebugRecorder } from '../features/audit/debug-recorder';
-import { TOAST_DURATION } from './constants';
+import { DEFAULTS } from './constants';
 
 const SENSITIVE_KEYS = [
   'password',
@@ -61,7 +61,7 @@ export async function handleDebugLog(
     title,
     message: debugMessage,
     variant: 'info',
-    duration: TOAST_DURATION.TEN_SECONDS,
+    duration: DEFAULTS.toast.durations.TEN_SECONDS,
   });
 
   const debugRecorder = getDebugRecorder();

@@ -11,7 +11,7 @@ import type {
 import { getBooleanField } from '../resolution/boolean-field';
 import { resolveScripts } from '../resolution/scripts';
 import { resolveToastOverride } from '../resolution/toast';
-import { TOAST_DURATION } from '../../../core/constants';
+import { DEFAULTS } from '../../../core/constants';
 import { normalizeInputForHandler } from './normalize-input';
 import { buildToastMessage } from './build-message';
 
@@ -85,7 +85,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
           )
         : '',
       toastVariant: handler?.variant ?? 'info',
-      toastDuration: handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
+      toastDuration: handler?.duration ?? DEFAULTS.toast.durations.TWO_SECONDS,
       scripts,
       runScripts,
       logToAudit: getBooleanField(true, defaultCfg, 'logToAudit', true),
@@ -144,8 +144,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
     const toastDuration =
       toolHandler?.duration ??
       eventHandler?.duration ??
-      TOAST_DURATION.TWO_SECONDS;
-
+      DEFAULTS.toast.durations.TWO_SECONDS;
     const toastMessage = toolHandler
       ? this.tryBuildMessage(
           toolHandler,
@@ -291,7 +290,9 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
         : '',
       toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
       toastDuration:
-        toastCfg?.duration ?? handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
+        toastCfg?.duration ??
+        handler?.duration ??
+        DEFAULTS.toast.durations.TWO_SECONDS,
       scripts,
       logToAudit: getBooleanField(
         userEventConfig ?? false,

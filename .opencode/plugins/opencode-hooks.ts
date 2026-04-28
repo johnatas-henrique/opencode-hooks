@@ -29,7 +29,7 @@ import { addSubagentSession } from './features/scripts/run-script-handler';
 import { createScriptRunner } from './features/scripts/script-runner';
 import { EventType } from './types/config';
 import { userConfig } from './config/settings';
-import { DEFAULT_SESSION_ID, SCRIPTS_DIR, TOOL } from './core/constants';
+import { DEFAULTS } from './core/constants';
 import type { ResolvedEventConfig, ScriptResult } from './types/config';
 import { executeBlocking } from './features/block-system/block-handler';
 import {
@@ -42,7 +42,7 @@ import fs from 'fs';
 import path from 'path';
 
 function validateScriptsDirectory(): void {
-  const scriptsDir = path.join(process.cwd(), SCRIPTS_DIR);
+  const scriptsDir = path.join(process.cwd(), DEFAULTS.scripts.dir);
   if (!fs.existsSync(scriptsDir) || !fs.statSync(scriptsDir).isDirectory()) {
     throw new Error(`Scripts directory not found: ${scriptsDir}`);
   }
@@ -225,7 +225,8 @@ export const OpencodeHooks: Plugin = async (
       const props = event.properties as Record<string, unknown>;
       const info = props?.info as Record<string, unknown> | undefined;
       const rawId = info?.id ?? props?.sessionID;
-      const sessionId = typeof rawId === 'string' ? rawId : DEFAULT_SESSION_ID;
+      const sessionId =
+        typeof rawId === 'string' ? rawId : DEFAULTS.core.defaultSessionId;
 
       if (!isKnownEvent) {
         const rec = getEventRecorder();
@@ -293,11 +294,12 @@ export const OpencodeHooks: Plugin = async (
       input: ToolExecuteAfterInput,
       output: ToolExecuteAfterOutput
     ) => {
-      const isTaskTool = input.tool === TOOL.TASK;
+      const isTaskTool = input.tool === DEFAULTS.core.tool.TASK;
       if (isTaskTool) {
         const subagentType =
-          isTaskTool && typeof input.args[TOOL.SUBAGENT_TYPE_ARG] === 'string'
-            ? input.args[TOOL.SUBAGENT_TYPE_ARG]
+          isTaskTool &&
+          typeof input.args[DEFAULTS.core.tool.SUBAGENT_TYPE_ARG] === 'string'
+            ? input.args[DEFAULTS.core.tool.SUBAGENT_TYPE_ARG]
             : '';
 
         const rightTool = subagentType
@@ -524,7 +526,7 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM,
         resolved,
-        sessionId: DEFAULT_SESSION_ID,
+        sessionId: DEFAULTS.core.defaultSessionId,
         input,
         output: output,
 
@@ -546,7 +548,7 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: 'experimental.chat.system.transform',
         resolved,
-        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+        sessionId: input.sessionID ?? DEFAULTS.core.defaultSessionId,
         input: input,
         output: output,
 
@@ -609,7 +611,7 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: 'tool.definition',
         resolved,
-        sessionId: DEFAULT_SESSION_ID,
+        sessionId: DEFAULTS.core.defaultSessionId,
         input: input,
         output: output,
 

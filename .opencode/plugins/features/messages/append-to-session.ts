@@ -1,5 +1,5 @@
 import type { PluginInput } from '@opencode-ai/plugin';
-import { MAX_PROMPT_LENGTH } from '../../core/constants';
+import { DEFAULTS } from '../../core/constants';
 
 export const appendToSession = async (
   ctx: PluginInput,
@@ -7,8 +7,8 @@ export const appendToSession = async (
   text: string
 ): Promise<void> => {
   const truncatedText =
-    text.length > MAX_PROMPT_LENGTH
-      ? text.substring(0, MAX_PROMPT_LENGTH) + '... [truncated]'
+    text.length > DEFAULTS.core.maxPromptLength
+      ? text.substring(0, DEFAULTS.core.maxPromptLength) + '... [truncated]'
       : text;
 
   await ctx.client.session.prompt({

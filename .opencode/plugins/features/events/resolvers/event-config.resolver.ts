@@ -11,7 +11,7 @@ import type {
 import { resolveScripts } from '../resolution/scripts';
 import { resolveToastOverride } from '../resolution/toast';
 import { getBooleanField } from '../resolution/boolean-field';
-import { TOAST_DURATION, DISABLED_CONFIG } from '../../../core/constants';
+import { DEFAULTS } from '../../../core/constants';
 import { normalizeInputForHandler } from './normalize-input';
 import { buildToastMessage } from './build-message';
 import { getEventRecorder } from '../../audit/plugin-integration';
@@ -74,7 +74,7 @@ export class EventConfigResolverImpl implements EventConfigResolver {
     const defaultCfg = this.context.default;
 
     if (!this.context.enabled) {
-      return DISABLED_CONFIG;
+      return DEFAULTS.config.disabled;
     }
 
     if (userEventConfig === undefined) {
@@ -108,7 +108,8 @@ export class EventConfigResolverImpl implements EventConfigResolver {
             )
           : '',
         toastVariant: handler?.variant ?? 'info',
-        toastDuration: handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
+        toastDuration:
+          handler?.duration ?? DEFAULTS.toast.durations.TWO_SECONDS,
         scripts: [],
         logToAudit: true,
         appendToSession: getBooleanField(
@@ -124,7 +125,7 @@ export class EventConfigResolverImpl implements EventConfigResolver {
     }
 
     if (this.isEventDisabled(userEventConfig)) {
-      return DISABLED_CONFIG;
+      return DEFAULTS.config.disabled;
     }
 
     const userOverride = isEventOverride(userEventConfig)
@@ -165,7 +166,9 @@ export class EventConfigResolverImpl implements EventConfigResolver {
       ),
       toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
       toastDuration:
-        toastCfg?.duration ?? handler?.duration ?? TOAST_DURATION.TWO_SECONDS,
+        toastCfg?.duration ??
+        handler?.duration ??
+        DEFAULTS.toast.durations.TWO_SECONDS,
       scripts,
       logToAudit: userOverride?.logToAudit ?? defaultCfg.logToAudit ?? true,
       appendToSession: getBooleanField(

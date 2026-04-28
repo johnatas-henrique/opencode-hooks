@@ -10,7 +10,7 @@ import {
   createSessionAdapter,
   createToastAdapter,
 } from './adapters';
-import { DEFAULT_SESSION_ID } from '../../core/constants';
+import { DEFAULTS } from '../../core/constants';
 
 const subagentSessionIds = new Set<string>();
 
@@ -62,7 +62,7 @@ export async function runScriptAndHandle(
         errorTitle: scriptToasts.errorTitle,
       },
       timestamp: timestamp,
-      sessionId: config.sessionId || DEFAULT_SESSION_ID,
+      sessionId: config.sessionId || DEFAULTS.core.defaultSessionId,
     }
   );
 }

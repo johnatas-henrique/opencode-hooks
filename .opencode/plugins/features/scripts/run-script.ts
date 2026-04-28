@@ -1,5 +1,5 @@
 import { PluginInput } from '@opencode-ai/plugin';
-import { SCRIPTS_DIR } from '../../core/constants';
+import { DEFAULTS } from '../../core/constants';
 import type { ScriptRunResult } from '../../types/scripts';
 
 const shellSpecialChars = /[;&|`$(){}[\]<>\\!#*?"'\n\r]/g;
@@ -44,9 +44,10 @@ export const runScript = async (
   try {
     let result;
     if (sanitizedArgs.length > 0) {
-      result = await $`./${SCRIPTS_DIR}/${scriptPath} ${sanitizedArgs}`.quiet();
+      result =
+        await $`./${DEFAULTS.scripts.dir}/${scriptPath} ${sanitizedArgs}`.quiet();
     } else {
-      result = await $`./${SCRIPTS_DIR}/${scriptPath}`.quiet();
+      result = await $`./${DEFAULTS.scripts.dir}/${scriptPath}`.quiet();
     }
 
     return {

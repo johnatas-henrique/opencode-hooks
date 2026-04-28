@@ -3,7 +3,7 @@ import { showActivePluginsToast } from './show-active-plugins';
 import { waitForToastSilence } from './toast-silence-detector';
 import { useGlobalToastQueue } from '../../core/toast-queue';
 import { getErrorRecorder } from '../audit/plugin-integration';
-import { TIMER, TOAST_DURATION } from '../../core/constants';
+import { DEFAULTS } from '../../core/constants';
 import type { StartupToastOptions } from '../../types/messages';
 
 export async function showStartupToast(
@@ -17,14 +17,14 @@ export async function showStartupToast(
     title: 'Loading plugin status...',
     message: 'Scanning OpenCode plugins',
     variant: 'info',
-    duration: TOAST_DURATION.TWO_SECONDS,
+    duration: DEFAULTS.toast.durations.TWO_SECONDS,
   });
 
   if (logFile) {
     const { promise, cleanup } = waitForToastSilence(logFile);
     let timeoutTimer: ReturnType<typeof setTimeout>;
     const timeout = new Promise<void>((resolve) => {
-      timeoutTimer = setTimeout(resolve, TOAST_DURATION.TEN_SECONDS);
+      timeoutTimer = setTimeout(resolve, DEFAULTS.toast.durations.TEN_SECONDS);
       timeoutTimer.unref();
     });
 
@@ -33,13 +33,16 @@ export async function showStartupToast(
       cleanup();
 
       await new Promise((resolve) => {
-        const delayTimer = setTimeout(resolve, TIMER.OVERWRITE_CHECK_DELAY);
+        const delayTimer = setTimeout(
+          resolve,
+          DEFAULTS.toast.timer.OVERWRITE_CHECK_DELAY
+        );
         delayTimer.unref();
       });
 
       try {
         await showActivePluginsToast(toastQueue, {
-          duration: TOAST_DURATION.FIVE_SECONDS,
+          duration: DEFAULTS.toast.durations.FIVE_SECONDS,
         });
       } catch (err) {
         const errorRecorder = getErrorRecorder();

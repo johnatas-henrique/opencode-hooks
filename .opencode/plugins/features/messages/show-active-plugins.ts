@@ -1,6 +1,6 @@
 import { getPluginStatus, formatPluginStatus } from './plugin-status';
 import { userConfig } from '../../config/settings';
-import { TOAST_DURATION } from '../../core/constants';
+import { DEFAULTS } from '../../core/constants';
 import type { ToastQueue } from '../../types/toast';
 
 export async function showActivePluginsToast(
@@ -24,6 +24,6 @@ export async function showActivePluginsToast(
     title: 'Plugin Status',
     message,
     variant: hasIssues ? 'warning' : 'info',
-    duration: options.duration ?? TOAST_DURATION.EIGHT_SECONDS,
+    duration: options.duration ?? DEFAULTS.toast.durations.EIGHT_SECONDS,
   });
 }

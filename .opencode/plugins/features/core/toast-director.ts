@@ -1,6 +1,6 @@
 import type { ToastDirector } from '../../types/toast';
 import type { TuiToast } from '@opencode-ai/plugin/tui';
-import { TOAST_DURATION } from '../../core/constants';
+import { DEFAULTS } from '../../core/constants';
 import { getErrorRecorder } from '../audit/plugin-integration';
 
 /**
@@ -127,7 +127,8 @@ export class ToastDirectorImpl implements ToastDirector {
         }
 
         // Wait for toast duration (display time)
-        const duration = toast.duration ?? TOAST_DURATION.FIVE_SECONDS;
+        const duration =
+          toast.duration ?? DEFAULTS.toast.durations.FIVE_SECONDS;
         await this.scheduleTimer(duration);
       }
     } finally {

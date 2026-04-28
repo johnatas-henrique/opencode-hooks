@@ -5,7 +5,7 @@ export const SENSITIVE_PATTERNS: Array<[RegExp, string]> = [
   [/(password)[=:]\s*["']?[\w-]+["']?/gi, '$1'],
   [/(credential)[=:]\s*["']?[\w-]+["']?/gi, '$1'],
   [/(bearer)\s+[\w-]+/gi, '$1'],
-  [/(gh[pousr]_[a-zA-Z0-9]{36,})/gi, '$1'],
+  [/(gh[pousr]_)[a-zA-Z0-9]{10,}/gi, '$1'],
 ];
 
 export function maskSensitive(
