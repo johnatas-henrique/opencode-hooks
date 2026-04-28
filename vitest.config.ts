@@ -14,11 +14,10 @@ export default defineConfig({
       reportOnFailure: true,
       include: [
         '.opencode/plugins/**/*.ts',
-        '!/**/*.test.ts',
+        '!test/**/*.ts',
         '!node_modules/**',
-        '!.opencode/plugins/types/**',
-        '!**/index.ts',
       ],
+      exclude: ['**/types/**', '**/index.ts'],
       thresholds: {
         statements: 100,
         branches: 100,
