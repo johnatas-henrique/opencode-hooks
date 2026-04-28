@@ -22,7 +22,7 @@ describe('validateScriptsDirectory', () => {
 
   afterEach(() => {
     // Cleanup temp directories
-    const tempDirs = ['test-temp', 'test-temp-file'];
+    const tempDirs = ['test-temp', 'test-temp-file', 'test-temp-init'];
     tempDirs.forEach((dir) => {
       const fullPath = path.join(originalCwd, dir);
       if (fs.existsSync(fullPath)) {

@@ -1,8 +1,8 @@
+import { handlers } from '../.opencode/plugins/features/handlers';
 import {
-  handlers,
-  buildAllKeysMessage,
-  buildAllKeysMessageSimple,
-} from '../.opencode/plugins/features/messages/default-handlers';
+  buildKeysMessage,
+  buildKeysMessageSimple,
+} from '../.opencode/plugins/features/message-formatter/build-keys-message';
 import { normalizeInputForHandler } from '../.opencode/plugins/features/events/resolvers/normalize-input';
 
 const SENSITIVE_PATTERNS: [RegExp, string][] = [
@@ -59,7 +59,7 @@ const toolEvent = {
   input: { sessionID: 's1', tool: 'bash', args: { command: 'npm run build' } },
   output: { result: 'Build succeeded' },
 };
-const toolMsg = buildAllKeysMessage(toolEvent);
+const toolMsg = buildKeysMessage(toolEvent);
 console.log(toolMsg);
 console.log('');
 
@@ -68,7 +68,7 @@ console.log('5. BUILD MESSAGE (SESSION)');
 const sessionEvent = {
   properties: { info: { id: 'test', title: 'My Session' }, sessionID: 's1' },
 };
-const sessionMsg = buildAllKeysMessageSimple(sessionEvent);
+const sessionMsg = buildKeysMessageSimple(sessionEvent);
 console.log(sessionMsg);
 console.log('');
 
@@ -78,7 +78,7 @@ const shellEvent = {
   properties: { cwd: '/home/user', sessionID: 's1' },
   output: { env: { PATH: '/usr/bin', HOME: '/home/user' } },
 };
-const shellMsg = buildAllKeysMessage(shellEvent);
+const shellMsg = buildKeysMessage(shellEvent);
 console.log(shellMsg);
 console.log('');
 
