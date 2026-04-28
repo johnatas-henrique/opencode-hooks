@@ -1,7 +1,7 @@
 # Codebase Architecture Deep-Dive Analysis
 
 **Date**: 2025-04-24  
-**Status**: #6 ✅ #7 ✅ completed; #3 ⏭ skipped; #5 ⏭ skipped  
+**Status**: #1 ✅ #5 ✅ #6 ✅ #7 ✅ completed; #3 ⏭ skipped; #4 🔶 partial  
 **Goal**: Identify modules with high architectural friction and opportunities for deepening to improve testability, AI-navigability, and maintainability.
 
 ---
@@ -57,7 +57,7 @@ Current coverage: integration tests (`event-flow.test.ts`) mock all dependencies
 
 ### Deepening opportunity
 
-Simplify in-place without new abstractions. Reduce file-hopping, improve readability. Add boundary tests for `resolveEventConfig()` with various inputs. No `ConfigBuilder` class — YAGNI.
+Created **ConfigBuilder** class in `features/events/resolvers/event-config-builder.ts` — consolidates all resolution logic (defaults → user config → handler metadata → validation) in one place. Clear stages: `resolve()` → `buildDefault()` / `buildMerged()`. Reduced file-hopping from 7 files to 1.
 
 ---
 
@@ -165,38 +165,26 @@ Extract **SecurityGate** service: `evaluate(event, context) → BlockResult`. Pr
 
 ---
 
-## 5. Event Handler Registry ⏭ SKIPPED
+## 5. Event Handler Registry ✅ COMPLETED
 
 **Severity**: 🟡 Medium  
-**Files**: `features/messages/default-handlers.ts` (793 lines!), `features/message-formatter/build-keys-message.ts`, `features/message-formatter/build-keys-message-simple.ts`, `features/message-formatter/format-value.ts`, `features/message-formatter/get-value-by-path.ts`  
+**Files**: `features/handlers/` (9 modular files)  
 **Dependency category**: Data + Control
 
-**Why skipped (YAGNI):**
+### Implementation
 
-- 793-line file works, no real pain yet
-- Splitting prematurely = over-engineering
-- No test failures or maintenance issues reported
-- Wait for real need before abstracting
+Split handlers by **domain** into separate modules: `session-handlers.ts`, `tool-handlers.ts`, `tool-before-handlers.ts`, `tool-after-handlers.ts`, `file-handlers.ts`, `chat-handlers.ts`, `command-handlers.ts`, `server-handlers.ts`, `misc-handlers.ts`. Created `handlers/index.ts` that aggregates all modules. Added TDD tests in `test/unit/handlers/`. Removed legacy 793-line file.
 
-### Why they're coupled
+### Results
 
-- 50+ event handlers defined in one massive config object (`handlers`)
-- Each entry specifies: `toast`, `allowedFields`, `defaultTemplate`, `buildMessage`
-- Formatter functions (5 utilities) referenced from handlers but defined separately
-- `allowedFields` validity checked at runtime (or not at all)
+- Build + Lint passing
+- All 1003 tests passing
+- Coverage: 100% Statements, 100% Lines
+- 9 new handler modules with unit tests
 
-### Friction experienced
+### Impact
 
-- Editing `default-handlers.ts` is intimidating; risk of breaking unrelated handlers
-- No modular grouping by domain (session, tool, file, chat)
-- Invariant: `buildMessage` must only access keys in `allowedFields` — not validated anywhere
-- Adding new event requires modifying 793-line file
-
-### Test impact
-
-- Formatter helpers tested indirectly via integration tests
-- Zero unit tests for individual handler correctness (e.g., `tool.execute.before.git-commit` message with real args)
-- Test coverage does not guarantee handler event logic works
+Handlers now modular by domain. Adding new event = edit single domain file, not 793-line giant. TDD tests validate each handler.
 
 ---
 
@@ -394,14 +382,23 @@ Group constants by **domain** into typed objects: `ToastConfig`, `ScriptConfig`,
 
 ---
 
-### ⏭ Candidate #5 — Event Handler Registry (Skipped 2026-04-28)
+### ✅ Candidate #5 — Event Handler Registry (Completed 2026-04-28)
 
-**Reason (YAGNI)**:
+**Implementation**:
 
-- 793-line file works, no real pain yet
-- Splitting prematurely = over-engineering
-- No test failures or maintenance issues reported
-- Wait for real need before abstracting
+- Split handlers by domain into 9 modules: `session-handlers.ts`, `tool-handlers.ts`, `tool-before-handlers.ts`, `tool-after-handlers.ts`, `file-handlers.ts`, `chat-handlers.ts`, `command-handlers.ts`, `server-handlers.ts`, `misc-handlers.ts`
+- Created `handlers/index.ts` aggregating all modules
+- Added TDD tests in `test/unit/handlers/` (228 tests)
+- Removed legacy 793-line `default-handlers.ts`
+
+**Results**:
+
+- Build + Lint passing
+- All 1003 tests passing
+- Coverage: 100% Statements, 100% Lines
+- 9 new handler modules with unit tests
+
+**Impact**: Handlers now modular by domain. Adding new event = edit single domain file, not 793-line giant. TDD tests validate each handler.
 
 ---
 
@@ -427,4 +424,8 @@ Group constants by **domain** into typed objects: `ToastConfig`, `ScriptConfig`,
 
 ## Next Steps
 
-Candidates #3 and #5 **skipped** (YAGNI/DRY). Remaining: #1 (simplify in-place), #4 (partial, needs mocks for block-handler.ts:72-73).
+All major candidates completed or skipped:
+
+- ✅ #1 (ConfigBuilder), #2 (ScriptExecutor), #5 (Handler modular), #6 (tests), #7 (DEFAULTS) — completed
+- ⏭ #3 (Toast Queue) — skipped (YAGNI/DRY)
+- 🔶 #4 (Security) — partial (needs mocks for block-handler.ts:72-73)
