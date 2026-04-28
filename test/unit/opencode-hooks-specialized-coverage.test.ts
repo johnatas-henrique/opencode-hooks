@@ -40,7 +40,9 @@ vi.mock(
 
 vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
   initAuditLogging: vi.fn(),
-  getEventRecorder: vi.fn(),
+  getEventRecorder: vi
+    .fn()
+    .mockReturnValue({ logEvent: vi.fn().mockResolvedValue(undefined) }),
   getScriptRecorder: vi.fn(),
   getErrorRecorder: vi.fn(),
   archiveAllJsonFiles: vi.fn(),

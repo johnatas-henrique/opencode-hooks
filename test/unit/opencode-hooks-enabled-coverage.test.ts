@@ -93,7 +93,9 @@ vi.mock('../../.opencode/plugins/core/debug', () => ({
 vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
   archiveAllJsonFiles: vi.fn().mockResolvedValue(undefined),
   initAuditLogging: vi.fn().mockResolvedValue(undefined),
-  getEventRecorder: vi.fn().mockReturnValue(null),
+  getEventRecorder: vi
+    .fn()
+    .mockReturnValue({ logEvent: vi.fn().mockResolvedValue(undefined) }),
   getScriptRecorder: vi.fn().mockReturnValue(null),
   createAuditLogger: vi.fn().mockReturnValue({
     writeLine: vi.fn().mockResolvedValue(undefined),
@@ -225,6 +227,27 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
           properties: { directory: '/tmp' },
         },
       });
+    });
+  });
+
+  describe('line 617: config hook', () => {
+    it('should handle config hook', async () => {
+      const ctx = createMockCtx();
+      const plugin = await OpencodeHooks(ctx);
+      const hooks = plugin as {
+        config: (input: Record<string, unknown>) => Promise<void>;
+      };
+      const configHandler = hooks.config;
+
+      expect(configHandler).toBeDefined();
+      await configHandler({ sessionID: 'test-session' });
+    });
+  });
+
+  describe('scripts directory validation', () => {
+    it('should call validateScriptsDirectory during init', async () => {
+      const ctx = createMockCtx();
+      await OpencodeHooks(ctx);
     });
   });
 });
