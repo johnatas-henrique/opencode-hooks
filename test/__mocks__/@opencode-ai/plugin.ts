@@ -1,72 +1,50 @@
-export interface ToastInput {
-  body: {
-    title: string;
-    message: string;
-    variant: 'success' | 'error' | 'warning' | 'info';
-    duration: number;
-  };
-}
+import type { PluginInput } from '@opencode-ai/plugin';
+import type { Mock } from 'vitest';
 
-export interface SessionPromptInput {
-  path: { id: string };
-  body: {
-    noReply: boolean;
-    parts: Array<{ type: string; text: string }>;
-  };
-}
-
-export interface PluginClient {
+export type PluginClient = {
   tui: {
-    showToast: (toast: ToastInput) => Promise<void>;
+    showToast: Mock;
   };
   session: {
-    prompt: (args: SessionPromptInput) => Promise<void>;
+    prompt: Mock;
   };
-}
+};
 
-export type PluginDollar = (
-  strings: TemplateStringsArray,
-  ...args: string[]
-) => Promise<{ exitCode: number; stdout: string; stderr: string }>;
+export type PluginDollar = Mock;
 
-export interface PluginInput {
+export type MockPluginInput = Omit<
+  PluginInput,
+  'client' | '$' | 'serverUrl' | 'project' | 'experimental_workspace'
+> & {
   client: PluginClient;
   $: PluginDollar;
-  project: string;
-  directory: string;
-  worktree: string;
   serverUrl: string;
-}
-
-export type Plugin = (ctx: PluginInput) => Promise<Record<string, unknown>>;
-
-// Helper types for mocks
-export interface MockCreateCtxOptions {
-  client?: Partial<PluginClient>;
-  $?: PluginDollar;
-  project?: string;
-  directory?: string;
-  worktree?: string;
-  serverUrl?: string;
-}
+  project: string;
+  experimental_workspace: {
+    register: Mock;
+  };
+};
 
 export function createMockPluginInput(
-  options: MockCreateCtxOptions = {}
-): PluginInput {
+  options: Partial<MockPluginInput> = {}
+): MockPluginInput {
   return {
     client: {
       tui: {
-        showToast: jest.fn().mockResolvedValue(undefined),
+        showToast: vi.fn(),
       },
       session: {
-        prompt: jest.fn().mockResolvedValue(undefined),
+        prompt: vi.fn(),
       },
-      ...options.client,
     },
-    $: options.$ ?? (jest.fn() as PluginDollar),
-    project: options.project ?? 'test-project',
-    directory: options.directory ?? '/test/dir',
-    worktree: options.worktree ?? '/test/dir',
-    serverUrl: options.serverUrl ?? 'http://localhost:3000',
+    $: vi.fn(),
+    project: 'test-project',
+    directory: '/test/dir',
+    worktree: '/test/dir',
+    serverUrl: 'http://localhost:3000',
+    experimental_workspace: {
+      register: vi.fn(),
+    },
+    ...options,
   };
 }

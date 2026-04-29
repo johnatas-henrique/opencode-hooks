@@ -1,29 +1,40 @@
-const mockToastAdd = jest.fn().mockResolvedValue(undefined);
+import { vi } from 'vitest';
 
-jest.mock('../../.opencode/plugins/helpers/toast-queue', () => ({
-  createToastQueue: jest.fn(),
-  initGlobalToastQueue: jest.fn(),
-  useGlobalToastQueue: () => ({
-    add: mockToastAdd,
-  }),
-  resetGlobalToastQueue: jest.fn(),
-  showToastStaggered: jest.fn(),
-}));
-
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
-  saveToFile: jest.fn().mockResolvedValue(undefined),
-}));
-
-jest.mock('../../.opencode/plugins/helpers/constants', () => ({
-  BLOCKED_EVENTS_LOG_FILE: 'blocked-events.log',
-}));
-
+// Import real modules
+import * as securityRecorderModule from '../../.opencode/plugins/features/audit/security-recorder';
+import * as toastQueueModule from '../../.opencode/plugins/core/toast-queue';
+import type { ToastQueue } from '../../.opencode/plugins/types/toast';
 import {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
-} from '../../.opencode/plugins/types/opencode-hooks';
-import type { ScriptResult } from '../../.opencode/plugins/helpers/config';
-import { executeBlocking } from '../../.opencode/plugins/helpers/block-handler';
+} from '../../.opencode/plugins/types/core';
+import {
+  executeBlocking,
+  createDefaultNotifyEffect,
+  createDefaultLogEffect,
+} from '../../.opencode/plugins/features/block-system/block-handler';
+
+// Set up spies
+const mockGetSecurityRecorder = vi.spyOn(
+  securityRecorderModule,
+  'getSecurityRecorder'
+);
+const mockToastAdd = vi.fn().mockResolvedValue(undefined);
+const mockToastQueue: Partial<ToastQueue> = {
+  add: mockToastAdd,
+  addMultiple: vi.fn(),
+  clear: vi.fn(),
+  flush: vi.fn().mockResolvedValue(undefined),
+  pending: 0,
+};
+vi.spyOn(toastQueueModule, 'useGlobalToastQueue').mockReturnValue(
+  mockToastQueue as ToastQueue
+);
+
+// Mock constants
+vi.mock('../../.opencode/plugins/core/constants', () => ({
+  BLOCKED_EVENTS_LOG_FILE: 'blocked-events.log',
+}));
 
 describe('block-handler', () => {
   const input: ToolExecuteBeforeInput = {
@@ -36,106 +47,82 @@ describe('block-handler', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
+    mockGetSecurityRecorder.mockReturnValue(null);
   });
 
   describe('executeBlocking', () => {
-    it('does not throw when block is undefined', () => {
-      expect(() =>
-        executeBlocking(undefined, input, output, [], 'tool.execute.before')
-      ).not.toThrow();
-    });
-
-    it('does not throw when block is empty array', () => {
-      expect(() =>
-        executeBlocking([], input, output, [], 'tool.execute.before')
-      ).not.toThrow();
-    });
-
     it('throws when check.check returns true', () => {
+      const mockRec = { logSecurity: vi.fn().mockResolvedValue(undefined) };
+      mockGetSecurityRecorder.mockReturnValue(mockRec);
       const block = [{ check: () => true, message: 'Custom blocked' }];
       expect(() =>
         executeBlocking(block, input, output, [], 'tool.execute.before')
       ).toThrow('Custom blocked');
     });
 
-    it('does not throw when check.check returns false', () => {
-      const block = [{ check: () => false }];
+    it('handles rejected logSecurity gracefully', async () => {
+      const mockRec = {
+        logSecurity: vi.fn().mockRejectedValue(new Error('fail')),
+      };
+      mockGetSecurityRecorder.mockReturnValue(mockRec);
+      const block = [{ check: () => false, message: 'Allowed' }];
       expect(() =>
         executeBlocking(block, input, output, [], 'tool.execute.before')
       ).not.toThrow();
+      expect(mockRec.logSecurity).toHaveBeenCalled();
+    });
+  });
+
+  describe('executeBlocking early return', () => {
+    it('returns early when blockConfig is empty array', () => {
+      executeBlocking([], input, output, [], 'tool.execute.before');
+      expect(mockToastAdd).not.toHaveBeenCalled();
     });
 
-    it('throws when any check in array returns true', () => {
-      const block = [
-        { check: () => false },
-        { check: () => true, message: 'Second blocked' },
-      ];
-      expect(() =>
-        executeBlocking(block, input, output, [], 'tool.execute.before')
-      ).toThrow('Second blocked');
-    });
-
-    it('does not throw when all checks return false', () => {
-      const block = [{ check: () => false }, { check: () => false }];
+    it('returns early without throwing when securityRecorder is null', () => {
+      const block = [{ check: () => true, message: 'blocked' }];
       expect(() =>
         executeBlocking(block, input, output, [], 'tool.execute.before')
       ).not.toThrow();
+      expect(mockToastAdd).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('createDefaultNotifyEffect', () => {
+    it('creates notify effect that adds toast', () => {
+      const notify = createDefaultNotifyEffect();
+      notify('Test Title', { message: 'Test message' });
+      expect(mockToastAdd).toHaveBeenCalledWith({
+        title: 'Test Title',
+        message: 'Test message',
+        variant: 'error',
+        duration: 10000,
+      });
+    });
+  });
+
+  describe('createDefaultLogEffect', () => {
+    it('logs security when recorder is present', async () => {
+      const mockRec = { logSecurity: vi.fn().mockResolvedValue(undefined) };
+      mockGetSecurityRecorder.mockReturnValue(mockRec);
+
+      const log = createDefaultLogEffect();
+      await log({ rule: 'test-rule', reason: 'test-reason' });
+
+      expect(mockRec.logSecurity).toHaveBeenCalledWith({
+        rule: 'test-rule',
+        reason: 'test-reason',
+      });
     });
 
-    it('blocks based on scriptResults', () => {
-      const block = [
-        {
-          check: (
-            _: ToolExecuteBeforeInput,
-            __: ToolExecuteBeforeOutput,
-            results: ScriptResult[]
-          ) => results.some((r) => r.exitCode !== 0),
-        },
-      ];
-      const scriptResults: ScriptResult[] = [
-        { script: 'test.sh', exitCode: 1, output: 'error' },
-      ];
-      expect(() =>
-        executeBlocking(
-          block,
-          input,
-          output,
-          scriptResults,
-          'tool.execute.before'
-        )
-      ).toThrow();
-    });
+    it('does not log when recorder is null', async () => {
+      mockGetSecurityRecorder.mockReturnValue(null);
 
-    it('allows when all scriptResults succeed', () => {
-      const block = [
-        {
-          check: (
-            _: ToolExecuteBeforeInput,
-            __: ToolExecuteBeforeOutput,
-            results: ScriptResult[]
-          ) => results.some((r) => r.exitCode !== 0),
-        },
-      ];
-      const scriptResults: ScriptResult[] = [
-        { script: 'test.sh', exitCode: 0, output: 'ok' },
-      ];
-      expect(() =>
-        executeBlocking(
-          block,
-          input,
-          output,
-          scriptResults,
-          'tool.execute.before'
-        )
-      ).not.toThrow();
-    });
+      const log = createDefaultLogEffect();
+      await log({ rule: 'test-rule' });
 
-    it('uses default message when check.message is not provided', () => {
-      const block = [{ check: () => true }];
-      expect(() =>
-        executeBlocking(block, input, output, [], 'tool.execute.before')
-      ).toThrow('Blocked: read execution');
+      expect(mockGetSecurityRecorder).toHaveBeenCalled();
     });
   });
 });

@@ -6,7 +6,7 @@
  * Run: npm run smoke:test:tools
  */
 
-import { resolveToolConfig } from '../../.opencode/plugins/helpers/events';
+import { resolveToolConfig } from '../../.opencode/plugins/features/events/events';
 
 // List of tools to test with their expected titles (from default-handlers.ts)
 const testCases = [

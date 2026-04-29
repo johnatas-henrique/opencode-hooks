@@ -15,11 +15,16 @@
     "noUnusedParameters": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["node"],
+    "types": ["node", "vitest/globals"],
     "esModuleInterop": true,
     "isolatedModules": true,
     "skipLibCheck": true
   },
-  "exclude": ["node_modules", "test"],
-  "include": ["./src/**/*.tsx", "./src/**/*.ts", "./.opencode/**/*.ts"]
+  "exclude": ["node_modules", "docs/testing/examples"],
+  "include": [
+    "./src/**/*.tsx",
+    "./src/**/*.ts",
+    "./.opencode/**/*.ts",
+    "**/*.test.ts"
+  ]
 }

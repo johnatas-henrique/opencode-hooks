@@ -4,7 +4,7 @@
 
 - Use ES module syntax with `import type` for type-only imports
 - Group imports: external packages first, then relative imports
-- Barrel exports via `helpers/index.ts` — import from there, not individual files
+- Barrel exports via `features/*/index.ts` for features and `types/index.ts` for types
 - Alias `@opencode-ai/plugin` and `@opencode-ai/sdk` are mocked in tests
 
 ## Formatting (Prettier)
@@ -49,3 +49,21 @@
 
 - No comments in code unless truly necessary and not obvious from reading
 - Code must be self-documenting
+
+## Type Consolidation
+
+**All types and interfaces MUST be defined in `types/` directory.**
+
+- Define types in `types/*.ts` files (e.g., `types/audit.ts`)
+- Export types from `types/index.ts` for barrel access
+- Re-export types from feature `index.ts` when needed by consumers
+- **NEVER** define `export interface` or `export type` outside `types/` directory
+- Exception: type aliases like `type X = Y | Z` that are implementation details may be local
+
+```typescript
+// ✅ CORRECT: types/audit.ts
+export interface AuditConfig { ... }
+
+// ❌ WRONG: features/audit/audit-logger.ts
+export interface AuditConfig { ... }
+```

@@ -170,7 +170,7 @@ export const resolveEventConfig = (eventType: string) => ({
     ? [handlers[eventType].defaultScript]
     : [],
   runScripts: false,
-  saveToFile: false,
+  logToAudit: false,
   appendToSession: false,
   runOnlyOnce: false,
   debug: false,
@@ -207,7 +207,7 @@ export const resolveToolConfig = (
     toastDuration: handler?.duration ?? 2000,
     scripts: handler?.defaultScript ? [handler.defaultScript] : [],
     runScripts: false,
-    saveToFile: false,
+    logToAudit: false,
     appendToSession: false,
     runOnlyOnce: false,
     debug: false,

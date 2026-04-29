@@ -2,19 +2,32 @@
 
 ## Project Structure
 
+Per [ADR-001](../adr/001-folder-structure-refactor.md):
+
 ```
 .opencode/plugins/
-  opencode-hooks.ts            # Main plugin entry point
-  types/                       # OpenCode event type definitions
-  helpers/
-    event-types.ts             # EventType enum and interfaces
-    handlers.ts                # Default handlers + message builders
-    events.ts                  # Config resolution logic
-    user-events.config.ts      # User configuration (ONLY FILE TO EDIT)
-    toast-queue.ts             # Staggered toast notification queue
-    run-script.ts              # Shell script execution
-    save-to-file.ts            # File persistence utility
-    append-to-session.ts       # Session context appending
-    constants.ts               # Shared constants
-test/                          # Jest tests + mocks
+├── opencode-hooks.ts     # Entry point (MUST NOT rename)
+├── config/               # USER-FACING (easy to find)
+│   ├── settings.ts       # Main user configuration
+│   └── security-rules.ts # Security predicates
+├── features/             # INTERNAL (domain-driven)
+│   ├── audit/
+│   ├── block-system/
+│   ├── events/
+│   └── messages/
+└── types/                # INTERNAL (shared type definitions)
 ```
+
+## Important Files
+
+| File                       | Purpose                                    |
+| -------------------------- | ------------------------------------------ |
+| `config/settings.ts`       | **ONLY FILE TO EDIT** - user configuration |
+| `config/security-rules.ts` | Security predicates                        |
+| `opencode-hooks.ts`        | Plugin entry point                         |
+
+## Key Principles
+
+1. **User config** lives in `config/` at plugin root
+2. **Types/interfaces** live in `types/` at plugin root
+3. **Feature implementations** live in `features/[feature-name]/`

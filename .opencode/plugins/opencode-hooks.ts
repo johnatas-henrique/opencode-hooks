@@ -6,40 +6,47 @@ import type {
   ToolDefinition,
   ProviderContext,
 } from '@opencode-ai/plugin';
-import type { Model, UserMessage, Part, Message } from '@opencode-ai/sdk';
+import type { Model, UserMessage, Part } from '@opencode-ai/sdk';
 import type {
   ToolExecuteAfterInput,
   ToolExecuteAfterOutput,
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
-} from './types/opencode-hooks';
+} from './types/core';
+import { initGlobalToastQueue, useGlobalToastQueue } from './core/toast-queue';
+import { handlers } from './features/handlers';
+import { showStartupToast } from './features/messages/show-startup-toast';
 import {
-  initGlobalToastQueue,
-  useGlobalToastQueue,
-  saveToFile,
-  handlers,
   resolveEventConfig,
   resolveToolConfig,
-  showStartupToast,
-  logEventConfig,
-  handleDebugLog,
-  runScriptAndHandle,
-  addSubagentSession,
-  EventType,
-} from './helpers';
-import { normalizeInputForHandler as normalizeInput } from './helpers/events';
-import { userConfig } from './helpers/user-events.config';
+} from './features/events/events';
+import { handleDebugLog } from './core/debug';
 import {
-  UNKNOWN_EVENT_LOG_FILE,
-  DEFAULT_SESSION_ID,
-  BLOCKED_EVENTS_LOG_FILE,
-} from './helpers/constants';
-import type { ResolvedEventConfig } from './helpers/config';
-import { executeBlocking } from './helpers/block-handler';
-import type { ScriptResult } from './helpers/config';
+  getEventRecorder,
+  archiveAllJsonFiles,
+} from './features/audit/plugin-integration';
+import { addSubagentSession } from './features/scripts/run-script-handler';
+import { createScriptRunner } from './features/scripts/script-runner';
+import { EventType } from './types/events';
+import { userConfig } from './config/settings';
+import { DEFAULTS } from './core/constants';
+import type { ResolvedEventConfig, ScriptResult } from './types/config';
+import { executeBlocking } from './features/block-system/block-handler';
+import {
+  initAuditLogging,
+  getScriptRecorder,
+} from './features/audit/plugin-integration';
+import { createEventRecorder } from './features/audit/event-recorder';
+import type { ScriptRecorder } from './types/audit';
+import fs from 'fs';
+import path from 'path';
 
-const TASK_TOOL_NAME = 'task';
-const SUBAGENT_TYPE_ARG = 'subagent_type';
+function validateScriptsDirectory(): void {
+  const scriptsDir = path.join(process.cwd(), DEFAULTS.scripts.dir);
+  if (!fs.existsSync(scriptsDir) || !fs.statSync(scriptsDir).isDirectory()) {
+    throw new Error(`Scripts directory not found: ${scriptsDir}`);
+  }
+}
 
 interface ExecuteHookParams {
   ctx: PluginInput;
@@ -50,6 +57,8 @@ interface ExecuteHookParams {
   output?: Record<string, unknown>;
   toolName?: string;
   scriptArg?: string;
+  eventRecorder?: ReturnType<typeof createEventRecorder>;
+  scriptRecorder?: ScriptRecorder;
   showToast?: boolean;
 }
 
@@ -78,37 +87,26 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     if (!userConfig.logDisabledEvents) {
       return;
     }
-    await saveToFile({
-      content: JSON.stringify({
-        timestamp,
-        type: 'EVENT_DISABLED',
-        data: eventType,
-      }),
-      showToast: useGlobalToastQueue().add,
+    const eventRecorder = getEventRecorder()!;
+    await eventRecorder.logEvent('EVENT_DISABLED', {
+      sessionID: sessionId,
+      context: eventType,
     });
     return;
   }
 
-  await logEventConfig(timestamp, eventType, input, resolved, output);
+  if (params.eventRecorder) {
+    // Log ALL events with sanitized input/output for debug
+    await params.eventRecorder.logEvent(eventType, {
+      sessionID: sessionId,
+      input: input,
+      output: output,
+      tool: toolName,
+    });
+  }
 
   if (resolved.toast) {
-    let handler = handlers[eventType];
-    if (toolName) {
-      const toolHandler = handlers[`tool:${toolName}`];
-      if (toolHandler) {
-        handler = toolHandler;
-      }
-    }
-
-    const normalized = normalizeInput(
-      eventType,
-      (input ?? {}) as Record<string, unknown>,
-      output
-    );
-
-    const message =
-      resolved.toastMessage ||
-      (handler ? handler.buildMessage(normalized) : eventType);
+    const message = resolved.toastMessage!;
 
     useGlobalToastQueue().add({
       title: resolved.toastTitle,
@@ -118,20 +116,19 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     });
   }
 
+  const runner = createScriptRunner({
+    ctx,
+    sessionId,
+    eventType,
+    resolved,
+    scriptToasts: resolved.scriptToasts,
+    scriptRecorder: params.scriptRecorder,
+    toolName,
+    timestamp,
+  });
+
   const results = await Promise.all(
-    resolved.scripts.map((script) =>
-      runScriptAndHandle({
-        ctx,
-        script,
-        timestamp,
-        eventType,
-        resolved,
-        scriptToasts: resolved.scriptToasts,
-        sessionId,
-        toolName,
-        scriptArg,
-      })
-    )
+    resolved.scripts.map((script) => runner(script, scriptArg))
   );
 
   const successfulScripts = results
@@ -155,8 +152,8 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
       message: successfulScripts
         .map((result) => `- ${result.script}:\n${result.output}`)
         .join('\n\n'),
-      variant: resolved.scriptToasts?.outputVariant ?? 'info',
-      duration: resolved.scriptToasts?.outputDuration ?? 5000,
+      variant: resolved.scriptToasts.outputVariant,
+      duration: resolved.scriptToasts.outputDuration,
     });
   }
 
@@ -166,20 +163,16 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     output: r.output,
   }));
 
-  const inputAsBeforeInput = input as ToolExecuteBeforeInput | undefined;
-
-  executeBlocking(
-    resolved.block,
-    {
-      tool: toolName ?? '',
-      sessionID: sessionId,
-      callID: inputAsBeforeInput?.callID ?? '',
-    },
-    output as ToolExecuteBeforeOutput,
-    scriptResults,
-    eventType,
-    BLOCKED_EVENTS_LOG_FILE
-  );
+  // Execute blocking checks only for tool.execute.before events
+  if (eventType === EventType.TOOL_EXECUTE_BEFORE && resolved.block.length) {
+    executeBlocking(
+      resolved.block,
+      input as ToolExecuteBeforeInput,
+      output as ToolExecuteBeforeOutput,
+      scriptResults,
+      eventType
+    );
+  }
 }
 
 let hasShownToast = false;
@@ -194,18 +187,10 @@ export const OpencodeHooks: Plugin = async (
       body: {
         title: toast.title,
         message: toast.message,
-        variant: toast.variant ?? 'info',
+        variant: toast.variant!,
         duration: toast.duration,
       },
     });
-  });
-
-  await saveToFile({
-    content: JSON.stringify({
-      timestamp: new Date().toISOString(),
-      type: 'PLUGIN_START',
-      data: '|==========OpencodeHooks plugin initialized==========|',
-    }),
   });
 
   if (!hasShownToast) {
@@ -217,20 +202,33 @@ export const OpencodeHooks: Plugin = async (
     return {};
   }
 
+  // Validate scripts directory exists at startup
+  validateScriptsDirectory();
+
+  await initAuditLogging(userConfig.audit);
+
+  const eventRecorder = getEventRecorder()!;
+  await eventRecorder.logEvent('PLUGIN_START', {
+    context: 'OpencodeHooks plugin initialized',
+  });
+
+  const scriptRecorder = getScriptRecorder();
+
   const hooks: Hooks = {
     event: async ({ event }) => {
-      const timestamp = new Date().toISOString();
       const isKnownEvent = !!handlers[event.type];
 
+      const props = event.properties as Record<string, unknown>;
+      const info = props?.info as Record<string, unknown> | undefined;
+      const rawId = info?.id ?? props?.sessionID;
+      const sessionId =
+        typeof rawId === 'string' ? rawId : DEFAULTS.core.defaultSessionId;
+
       if (!isKnownEvent) {
-        await saveToFile({
-          content: JSON.stringify({
-            timestamp,
-            type: 'UNKNOWN_EVENT',
-            data: event,
-          }),
-          showToast: useGlobalToastQueue().add,
-          filename: UNKNOWN_EVENT_LOG_FILE,
+        const rec = getEventRecorder()!;
+        await rec.logEvent('UNKNOWN_EVENT', {
+          sessionID: sessionId,
+          input: { event },
         });
       }
 
@@ -238,11 +236,6 @@ export const OpencodeHooks: Plugin = async (
         event.type,
         event.properties as Record<string, unknown>
       );
-
-      const props = event.properties as Record<string, unknown>;
-      const info = props?.info as Record<string, unknown> | undefined;
-      const rawId = info?.id ?? props?.sessionID;
-      const sessionId = typeof rawId === 'string' ? rawId : DEFAULT_SESSION_ID;
 
       if (event.type === EventType.SESSION_CREATED && info?.parentID) {
         addSubagentSession(sessionId);
@@ -254,7 +247,13 @@ export const OpencodeHooks: Plugin = async (
         resolved,
         sessionId,
         input: event,
+        eventRecorder,
+        scriptRecorder,
       });
+
+      if (event.type === 'server.instance.disposed') {
+        await archiveAllJsonFiles(userConfig.audit.basePath);
+      }
     },
 
     'tool.execute.before': async (
@@ -277,6 +276,9 @@ export const OpencodeHooks: Plugin = async (
         output: output,
         toolName: input.tool,
         scriptArg: input.tool,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -284,11 +286,12 @@ export const OpencodeHooks: Plugin = async (
       input: ToolExecuteAfterInput,
       output: ToolExecuteAfterOutput
     ) => {
-      const isTaskTool = input.tool === TASK_TOOL_NAME;
+      const isTaskTool = input.tool === DEFAULTS.core.tool.TASK;
       if (isTaskTool) {
         const subagentType =
-          isTaskTool && typeof input.args[SUBAGENT_TYPE_ARG] === 'string'
-            ? input.args[SUBAGENT_TYPE_ARG]
+          isTaskTool &&
+          typeof input.args[DEFAULTS.core.tool.SUBAGENT_TYPE_ARG] === 'string'
+            ? input.args[DEFAULTS.core.tool.SUBAGENT_TYPE_ARG]
             : '';
 
         const rightTool = subagentType
@@ -319,7 +322,7 @@ export const OpencodeHooks: Plugin = async (
           >,
           output: output,
           toolName: input.tool,
-          scriptArg: subagentType || input.tool,
+          scriptArg: (subagentType || input.tool) as string,
         });
       } else {
         const isSkillTool = input.tool === 'skill';
@@ -365,10 +368,13 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: EventType.SHELL_ENV,
         resolved,
-        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+        sessionId: input.sessionID!,
         input: input,
         output: output,
         toolName: EventType.SHELL_ENV,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -391,6 +397,9 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -418,6 +427,9 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -440,12 +452,15 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
     [EventType.PERMISSION_ASK]: async (
       input: {
-        sessionID?: string;
+        sessionID: string;
         tool?: string;
         id?: string;
         type?: string;
@@ -462,9 +477,12 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: EventType.PERMISSION_ASK,
         resolved,
-        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+        sessionId: input.sessionID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -484,13 +502,13 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
-    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: async (
-      input: Record<string, unknown>,
-      output: { messages: Array<{ info: Message; parts: Part[] }> }
-    ) => {
+    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: async (input, output) => {
       const resolved = resolveEventConfig(
         EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM,
         input
@@ -500,9 +518,12 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM,
         resolved,
-        sessionId: DEFAULT_SESSION_ID,
+        sessionId: DEFAULTS.core.defaultSessionId,
         input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -519,9 +540,12 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: 'experimental.chat.system.transform',
         resolved,
-        sessionId: input.sessionID ?? DEFAULT_SESSION_ID,
+        sessionId: input.sessionID ?? DEFAULTS.core.defaultSessionId,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -541,6 +565,9 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -560,6 +587,9 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
@@ -573,21 +603,22 @@ export const OpencodeHooks: Plugin = async (
         ctx,
         eventType: 'tool.definition',
         resolved,
-        sessionId: DEFAULT_SESSION_ID,
+        sessionId: DEFAULTS.core.defaultSessionId,
         input: input,
         output: output,
+
+        eventRecorder,
+        scriptRecorder,
       });
     },
 
     config: async (input: Record<string, unknown>) => {
-      const { agent, command, ...rest } = input;
+      const { agent, command, sessionID, ...rest } = input;
+      const eventRecorder = getEventRecorder()!;
 
-      await saveToFile({
-        content: JSON.stringify({
-          timestamp: new Date().toISOString(),
-          type: 'CONFIG_FILE',
-          data: rest,
-        }),
+      await eventRecorder.logEvent('config.file.updated', {
+        sessionID: String(sessionID || 'unknown'),
+        input: rest,
       });
     },
 

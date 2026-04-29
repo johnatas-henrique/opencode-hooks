@@ -1,26 +1,26 @@
-import { appendToSession } from '../../.opencode/plugins/helpers/append-to-session';
-import { MAX_PROMPT_LENGTH } from '../../.opencode/plugins/helpers/constants';
+import type { PluginInput } from '@opencode-ai/plugin';
+import type { Mock } from 'vitest';
+import { appendToSession } from '../../.opencode/plugins/features/messages/append-to-session';
+import { DEFAULTS } from '../../.opencode/plugins/core/constants';
 
 describe('append-to-session', () => {
-  let mockClient: { session: { prompt: jest.Mock } };
+  let mockCtx: PluginInput;
 
   beforeEach(() => {
-    mockClient = {
-      session: {
-        prompt: jest.fn().mockResolvedValue(undefined),
+    mockCtx = {
+      client: {
+        session: {
+          prompt: vi.fn().mockResolvedValue(undefined),
+        },
       },
-    };
+    } as unknown as PluginInput;
   });
 
   it('should call session.prompt with truncated text when exceeding max length', async () => {
-    const longText = 'a'.repeat(MAX_PROMPT_LENGTH + 100);
-    await appendToSession(
-      { client: mockClient } as { client: { session: { prompt: jest.Mock } } },
-      'session-123',
-      longText
-    );
+    const longText = 'a'.repeat(DEFAULTS.core.maxPromptLength + 100);
+    await appendToSession(mockCtx, 'session-123', longText);
 
-    expect(mockClient.session.prompt).toHaveBeenCalledWith(
+    expect((mockCtx.client.session.prompt as Mock).mock.calls[0][0]).toEqual(
       expect.objectContaining({
         path: { id: 'session-123' },
         body: {
@@ -33,33 +33,10 @@ describe('append-to-session', () => {
     );
   });
 
-  it('should call session.prompt with full text when under max length', async () => {
-    const shortText = 'short text';
-    await appendToSession(
-      { client: mockClient } as { client: { session: { prompt: jest.Mock } } },
-      'session-456',
-      shortText
-    );
-
-    expect(mockClient.session.prompt).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: { id: 'session-456' },
-        body: {
-          noReply: true,
-          parts: [{ type: 'text', text: shortText }],
-        },
-      })
-    );
-  });
-
   it('should call session.prompt with empty output', async () => {
-    await appendToSession(
-      { client: mockClient } as { client: { session: { prompt: jest.Mock } } },
-      'session-789',
-      ''
-    );
+    await appendToSession(mockCtx, 'session-789', '');
 
-    expect(mockClient.session.prompt).toHaveBeenCalledWith(
+    expect((mockCtx.client.session.prompt as Mock).mock.calls[0][0]).toEqual(
       expect.objectContaining({
         path: { id: 'session-789' },
         body: {

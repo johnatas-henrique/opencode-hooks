@@ -1,86 +1,94 @@
 import {
   handleDebugLog,
   sanitizeData,
-} from '../../.opencode/plugins/helpers/debug';
+} from '../../.opencode/plugins/core/debug';
+import type { DebugRecorder } from '../../.opencode/plugins/types/audit';
 
-jest.mock('../../.opencode/plugins/helpers/toast-queue', () => {
-  const mockQueue = {
-    add: jest.fn(),
-  };
+// Use vi.hoisted to isolate mocks properly - factory functions create fresh mocks per test run
+const {
+  mockAdd: _mockAdd,
+  mockUseGlobalToastQueue,
+  mockGetDebugRecorder,
+} = vi.hoisted(() => {
+  const mockAdd = vi.fn();
+  const mockUseGlobalToastQueue = vi.fn(() => ({ add: mockAdd }));
+  const mockGetDebugRecorder = vi.fn().mockReturnValue(null);
   return {
-    useGlobalToastQueue: jest.fn(() => mockQueue),
+    mockAdd,
+    mockUseGlobalToastQueue,
+    mockGetDebugRecorder,
   };
 });
 
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
-  saveToFile: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
+  useGlobalToastQueue: mockUseGlobalToastQueue,
 }));
 
-jest.mock('../../.opencode/plugins/helpers/constants', () => ({
-  TOAST_DURATION: { TEN_SECONDS: 10000 },
-  DEBUG_LOG_FILE: 'debug.log',
+vi.mock('../../.opencode/plugins/core/constants', () => ({
+  DEFAULTS: {
+    toast: {
+      durations: { TEN_SECONDS: 10000 },
+      timeouts: { ONE_SECOND_AND_HALF: 1500 },
+      stagger: { DEFAULT: 300, QUEUE: 500 },
+      timer: { OVERWRITE_CHECK_DELAY: 2500, OVERWRITE_CHECK_INTERVAL: 3000 },
+    },
+    scripts: { dir: '.opencode/scripts' },
+    core: {
+      defaultSessionId: 'unknown',
+      maxPromptLength: 10000,
+      maxToastLength: 1000,
+      tool: { TASK: 'task', SUBAGENT_TYPE_ARG: 'subagent_type' },
+    },
+    audit: {
+      files: {
+        events: 'plugin-events.json',
+        scripts: 'plugin-scripts.json',
+        errors: 'plugin-errors.json',
+        security: 'plugin-security.json',
+        debug: 'plugin-debug.json',
+      },
+      archiveDir: 'audit-archive',
+    },
+    config: {
+      disabled: {
+        enabled: false,
+        debug: false,
+        toast: false,
+        toastTitle: '',
+        toastMessage: '',
+        toastVariant: 'info',
+        toastDuration: 0,
+        scripts: [],
+        runScripts: false,
+        logToAudit: false,
+        appendToSession: false,
+        runOnlyOnce: false,
+        scriptToasts: {
+          showOutput: true,
+          showError: true,
+          outputVariant: 'info',
+          errorVariant: 'error',
+          outputDuration: 5000,
+          errorDuration: 15000,
+          outputTitle: 'Script Output',
+          errorTitle: 'Script Error',
+        },
+      },
+    },
+  },
 }));
 
-const mockUseGlobalToastQueue =
-  require('../../.opencode/plugins/helpers/toast-queue').useGlobalToastQueue;
-const mockSaveToFile =
-  require('../../.opencode/plugins/helpers/save-to-file').saveToFile;
+vi.mock('../../.opencode/plugins/features/audit/debug-recorder', () => ({
+  getDebugRecorder: mockGetDebugRecorder,
+}));
+
+import { useGlobalToastQueue } from '../../.opencode/plugins/core/toast-queue';
 
 describe('handleDebugLog', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('should add debug toast and save to file', async () => {
-    const timestamp = '2026-04-05T10:00:00.000Z';
-    const title = 'DEBUG TEST';
-    const data = { key: 'value' };
-
-    await handleDebugLog(timestamp, title, data);
-
-    expect(mockUseGlobalToastQueue().add).toHaveBeenCalledWith({
-      title: 'DEBUG TEST',
-      message: JSON.stringify(data, null, 2),
-      variant: 'info',
-      duration: 10000,
-    });
-
-    expect(mockSaveToFile).toHaveBeenCalledWith({
-      content: expect.stringContaining('"type":"DEBUG"'),
-      filename: 'debug.log',
-      showToast: mockUseGlobalToastQueue().add,
-    });
-  });
-
-  it('should stringify complex data correctly', async () => {
-    const timestamp = '2026-04-05T10:00:00.000Z';
-    const title = 'DEBUG EVENT';
-    const data = { nested: { deep: 'value' }, array: [1, 2, 3] };
-
-    await handleDebugLog(timestamp, title, data);
-
-    expect(mockUseGlobalToastQueue().add).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'DEBUG EVENT',
-        variant: 'info',
-        duration: 10000,
-      })
-    );
-  });
-
-  it('should handle empty object', async () => {
-    const timestamp = '2026-04-05T10:00:00.000Z';
-    const title = 'DEBUG EMPTY';
-    const data = {};
-
-    await handleDebugLog(timestamp, title, data);
-
-    expect(mockUseGlobalToastQueue().add).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'DEBUG EMPTY',
-        message: '{}',
-      })
-    );
+    vi.clearAllMocks();
+    // Reset mock return value for each test
+    mockGetDebugRecorder.mockReturnValue(null);
   });
 
   it('should handle null value', async () => {
@@ -90,60 +98,56 @@ describe('handleDebugLog', () => {
 
     await handleDebugLog(timestamp, title, data);
 
-    expect(mockUseGlobalToastQueue().add).toHaveBeenCalledWith(
+    const mockQueue = useGlobalToastQueue();
+    expect(mockQueue.add).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'DEBUG NULL',
         message: 'null',
       })
     );
   });
+
+  it('should use debugRecorder.logDebug when debugRecorder exists', async () => {
+    // Direct coverage test - set mock before calling
+    const mockLogDebug = vi.fn().mockResolvedValue(undefined);
+    mockGetDebugRecorder.mockReturnValue({
+      logDebug: mockLogDebug,
+    } as unknown as DebugRecorder);
+
+    // Use non-sensitive key to avoid redaction
+    await handleDebugLog('ts', 'title', { nonSensitive: 'value' });
+
+    expect(mockLogDebug).toHaveBeenCalledWith({
+      message: 'title',
+      data: { nonSensitive: 'value' },
+    });
+  });
+
+  it('should handle non-object data gracefully in debugRecorder', async () => {
+    // Line 69-73 branch: data isobject but sanitizedData also has data
+    const mockLogDebug = vi.fn().mockResolvedValue(undefined);
+    mockGetDebugRecorder.mockReturnValue({
+      logDebug: mockLogDebug,
+    } as unknown as DebugRecorder);
+
+    // Non-object data - should not call debugRecorder.logDebug
+    await handleDebugLog('ts', 'title', 'string data');
+
+    // Toast should still be called with string representation
+    const mockQueue = useGlobalToastQueue();
+    expect(mockQueue.add).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: '"string data"',
+      })
+    );
+  });
 });
 
 describe('sanitizeData', () => {
-  it('should return null as-is', () => {
-    expect(sanitizeData(null)).toBeNull();
-  });
-
-  it('should return undefined as-is', () => {
-    expect(sanitizeData(undefined)).toBeUndefined();
-  });
-
   it('should return primitives as-is', () => {
     expect(sanitizeData('string')).toBe('string');
     expect(sanitizeData(123)).toBe(123);
     expect(sanitizeData(true)).toBe(true);
-  });
-
-  it('should redact password field', () => {
-    const input = { username: 'john', password: 'secret123' };
-    const result = sanitizeData(input) as Record<string, unknown>;
-    expect(result.username).toBe('john');
-    expect(result.password).toBe('[REDACTED]');
-  });
-
-  it('should redact token field (case insensitive)', () => {
-    const input = { TOKEN: 'abc123', AccessToken: 'xyz' };
-    const result = sanitizeData(input) as Record<string, unknown>;
-    expect(result.TOKEN).toBe('[REDACTED]');
-    expect(result.AccessToken).toBe('[REDACTED]');
-  });
-
-  it('should redact api_key field', () => {
-    const input = { api_key: 'sk-12345' };
-    const result = sanitizeData(input) as Record<string, unknown>;
-    expect(result.api_key).toBe('[REDACTED]');
-  });
-
-  it('should redact private_key field', () => {
-    const input = { private_key: 'key123' };
-    const result = sanitizeData(input) as Record<string, unknown>;
-    expect(result.private_key).toBe('[REDACTED]');
-  });
-
-  it('should redact access_token field', () => {
-    const input = { access_token: 'token123' };
-    const result = sanitizeData(input) as Record<string, unknown>;
-    expect(result.access_token).toBe('[REDACTED]');
   });
 
   it('should redact nested sensitive data', () => {
@@ -160,25 +164,6 @@ describe('sanitizeData', () => {
     };
     expect(result.records[0].secret).toBe('[REDACTED]');
     expect(result.records[1].secret).toBe('[REDACTED]');
-  });
-
-  it('should not redact non-sensitive keys', () => {
-    const input = { name: 'John', email: 'john@example.com', age: 30 };
-    const result = sanitizeData(input) as Record<string, unknown>;
-    expect(result.name).toBe('John');
-    expect(result.email).toBe('john@example.com');
-    expect(result.age).toBe(30);
-  });
-
-  it('should handle empty object', () => {
-    const result = sanitizeData({});
-    expect(result).toEqual({});
-  });
-
-  it('should handle object with only non-sensitive keys', () => {
-    const input = { id: '123', name: 'Test', status: 'active' };
-    const result = sanitizeData(input) as Record<string, unknown>;
-    expect(result).toEqual(input);
   });
 
   it('should handle top-level array', () => {

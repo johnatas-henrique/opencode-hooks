@@ -1,109 +1,138 @@
-jest.mock('../../.opencode/plugins/helpers/save-to-file', () => ({
-  saveToFile: jest.fn().mockResolvedValue(undefined),
-}));
-
-import { runScript } from '../../.opencode/plugins/helpers/run-script';
+import { runScript } from '../../.opencode/plugins/features/scripts/run-script';
 import type { PluginInput } from '@opencode-ai/plugin';
 
 describe('run-script', () => {
   let mockDollar: PluginInput['$'];
 
   beforeEach(() => {
-    mockDollar = jest.fn((_strings: TemplateStringsArray) => {
+    mockDollar = vi.fn((_strings: TemplateStringsArray) => {
       const result = {
-        quiet: jest.fn().mockReturnValue({
-          text: jest.fn().mockReturnValue('script output'),
+        quiet: vi.fn().mockReturnValue({
+          text: vi.fn().mockReturnValue('script output'),
           exitCode: 0,
         }),
       };
       return result;
+    }) as unknown as PluginInput['$'];
+  });
+
+  describe('validateScriptPath', () => {
+    it('should allow simple script name', async () => {
+      const result = await runScript(
+        mockDollar as PluginInput['$'],
+        'test-script.sh'
+      );
+      expect(result.exitCode).not.toBe(-1);
+    });
+
+    it('should allow subdirectories', async () => {
+      const result = await runScript(
+        mockDollar as PluginInput['$'],
+        'subdir/script.sh'
+      );
+      expect(result.error).toBeNull();
+      expect(result.exitCode).toBe(0);
+    });
+
+    it('should block path traversal with /../', async () => {
+      const result = await runScript(
+        mockDollar as PluginInput['$'],
+        '../outside.sh'
+      );
+      expect(result.error).toContain('Invalid script path');
+      expect(result.exitCode).toBe(-1);
+    });
+
+    it('should block path traversal with /.. in middle', async () => {
+      const result = await runScript(
+        mockDollar as PluginInput['$'],
+        'subdir/../../outside.sh'
+      );
+      expect(result.error).toContain('Invalid script path');
+      expect(result.exitCode).toBe(-1);
+    });
+
+    it('should block absolute Unix path', async () => {
+      const result = await runScript(
+        mockDollar as PluginInput['$'],
+        '/absolute/path.sh'
+      );
+      expect(result.error).toContain('Invalid script path');
+      expect(result.exitCode).toBe(-1);
+    });
+
+    it('should block Windows absolute path', async () => {
+      const result = await runScript(
+        mockDollar as PluginInput['$'],
+        'C:\\Windows\\script.bat'
+      );
+      expect(result.error).toContain('Invalid script path');
+      expect(result.exitCode).toBe(-1);
+    });
+
+    it('should block backslash (Windows separator)', async () => {
+      const result = await runScript(
+        mockDollar as PluginInput['$'],
+        'subdir\\script.sh'
+      );
+      expect(result.error).toContain('Invalid script path');
+      expect(result.exitCode).toBe(-1);
+    });
+
+    it('should block empty script path', async () => {
+      const result = await runScript(mockDollar as PluginInput['$'], '');
+      expect(result.error).toContain('Invalid script path');
+      expect(result.exitCode).toBe(-1);
     });
   });
 
-  it('should run script without arguments', async () => {
-    const result = await runScript(
-      mockDollar as PluginInput['$'],
-      'test-script.sh'
-    );
+  describe('script execution', () => {
+    it('should run script with arguments', async () => {
+      const result = await runScript(
+        mockDollar as PluginInput['$'],
+        'test-script.sh',
+        'arg1',
+        'arg2'
+      );
 
-    expect(mockDollar).toHaveBeenCalled();
-    expect(result.output).toBe('script output');
-    expect(result.exitCode).toBe(0);
-  });
-
-  it('should run script with arguments', async () => {
-    const result = await runScript(
-      mockDollar as PluginInput['$'],
-      'test-script.sh',
-      'arg1',
-      'arg2'
-    );
-
-    expect(mockDollar).toHaveBeenCalled();
-    expect(result.output).toBe('script output');
-  });
-
-  it('should return output text from script', async () => {
-    const customResult = 'custom output';
-    mockDollar = jest.fn((_strings: TemplateStringsArray) => {
-      return {
-        quiet: jest.fn().mockReturnValue({
-          text: jest.fn().mockReturnValue(customResult),
-          exitCode: 0,
-        }),
-      };
+      expect(mockDollar).toHaveBeenCalled();
+      expect(result.output).toBe('script output');
     });
 
-    const result = await runScript(
-      mockDollar as PluginInput['$'],
-      'test-script.sh'
-    );
+    it('should return error object when script fails', async () => {
+      mockDollar = vi.fn((_strings: TemplateStringsArray) => {
+        return {
+          quiet: vi.fn().mockImplementation(() => {
+            throw new Error('Script execution failed');
+          }),
+        };
+      }) as unknown as PluginInput['$'];
 
-    expect(result.output).toBe(customResult);
-  });
+      const result = await runScript(
+        mockDollar as PluginInput['$'],
+        'failing.sh'
+      );
 
-  it('should return error for invalid script path with ..', async () => {
-    const result = await runScript(
-      mockDollar as PluginInput['$'],
-      '../malicious.sh'
-    );
-
-    expect(result.error).toContain('Invalid script path');
-    expect(result.exitCode).toBe(-1);
-  });
-
-  it('should return error for invalid script path starting with /', async () => {
-    const result = await runScript(
-      mockDollar as PluginInput['$'],
-      '/etc/passwd'
-    );
-
-    expect(result.error).toContain('Invalid script path');
-    expect(result.exitCode).toBe(-1);
-  });
-
-  it('should return error for empty script path', async () => {
-    const result = await runScript(mockDollar as PluginInput['$'], '');
-
-    expect(result.error).toContain('Invalid script path');
-    expect(result.exitCode).toBe(-1);
-  });
-
-  it('should return error object when script fails', async () => {
-    mockDollar = jest.fn((_strings: TemplateStringsArray) => {
-      return {
-        quiet: jest.fn().mockImplementation(() => {
-          throw new Error('Script execution failed');
-        }),
-      };
+      expect(result.error).toContain('Script execution failed');
+      expect(result.exitCode).toBe(-1);
     });
 
-    const result = await runScript(
-      mockDollar as PluginInput['$'],
-      'failing.sh'
-    );
+    it('should handle non-Error objects in catch block', async () => {
+      mockDollar = vi.fn((_strings: TemplateStringsArray) => {
+        return {
+          quiet: vi.fn().mockImplementation(() => {
+            throw 'string error';
+          }),
+        };
+      }) as unknown as PluginInput['$'];
 
-    expect(result.error).toContain('Script execution failed');
-    expect(result.exitCode).toBe(-1);
+      const result = await runScript(
+        mockDollar as PluginInput['$'],
+        'string-error.sh'
+      );
+
+      expect(result.error).toBe('string error');
+      expect(result.exitCode).toBe(-1);
+    });
   });
 });

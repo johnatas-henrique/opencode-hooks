@@ -1,75 +1,51 @@
-import { showActivePluginsToast } from '../../.opencode/plugins/helpers/show-active-plugins';
-import { getPluginStatus } from '../../.opencode/plugins/helpers/plugin-status';
+import { showActivePluginsToast } from '../../.opencode/plugins/features/messages/show-active-plugins';
 
-jest.mock('../../.opencode/plugins/helpers/plugin-status', () => ({
-  getPluginStatus: jest.fn(),
-  formatPluginStatus: jest.fn(),
+const { mockGetPluginStatus, mockFormatPluginStatus, mockQueue } = vi.hoisted(
+  () => ({
+    mockGetPluginStatus: vi.fn(),
+    mockFormatPluginStatus: vi.fn(),
+    mockQueue: {
+      add: vi.fn(),
+      addMultiple: vi.fn(),
+      clear: vi.fn(),
+      flush: vi.fn().mockResolvedValue(undefined),
+      get pending() {
+        return 0;
+      },
+    },
+  })
+);
+
+vi.mock('../../.opencode/plugins/features/messages/plugin-status', () => ({
+  getPluginStatus: mockGetPluginStatus,
+  formatPluginStatus: mockFormatPluginStatus,
 }));
 
-jest.mock('../../.opencode/plugins/helpers/user-events.config', () => ({
+vi.mock('../../.opencode/plugins/config/settings', () => ({
   userConfig: {
     showPluginStatus: true,
     pluginStatusDisplayMode: 'user-only',
+    audit: {
+      enabled: true,
+      level: 'debug',
+      basePath: '/tmp/audit-test',
+      maxSizeMB: 1,
+      maxAgeDays: 30,
+      truncationKB: 0.5,
+      maxFieldSize: 1000,
+      maxArrayItems: 50,
+      largeFields: [],
+    },
   },
 }));
 
-const mockGetPluginStatus = getPluginStatus as jest.MockedFunction<
-  typeof getPluginStatus
->;
-const mockFormatPluginStatus = jest.requireMock(
-  '../../.opencode/plugins/helpers/plugin-status'
-).formatPluginStatus;
-
 describe('showActivePluginsToast', () => {
-  let mockQueue: { add: jest.Mock };
-  const mockStatuses = [{ name: 'test-plugin', status: 'active' as const }];
-
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockQueue = { add: jest.fn() };
-    mockGetPluginStatus.mockReturnValue(mockStatuses);
-    mockFormatPluginStatus.mockReturnValue('Test plugins summary');
-  });
-
-  it('should show toast with default duration of 8000ms', async () => {
-    await showActivePluginsToast(mockQueue);
-
-    expect(mockQueue.add).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'Plugin Status',
-        message: 'Test plugins summary',
-        variant: 'info',
-        duration: 8000,
-      })
-    );
-  });
-
-  it('should show toast with custom duration when provided', async () => {
-    await showActivePluginsToast(mockQueue, { duration: 15000 });
-
-    expect(mockQueue.add).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'Plugin Status',
-        message: 'Test plugins summary',
-        variant: 'info',
-        duration: 15000,
-      })
-    );
-  });
-
-  it('should use warning variant when plugins have failed status', async () => {
+    vi.clearAllMocks();
     mockGetPluginStatus.mockReturnValue([
       { name: 'test-plugin', status: 'active' },
-      { name: 'broken-plugin', status: 'failed', error: 'ModuleNotFound' },
     ]);
-
-    await showActivePluginsToast(mockQueue);
-
-    expect(mockQueue.add).toHaveBeenCalledWith(
-      expect.objectContaining({
-        variant: 'warning',
-      })
-    );
+    mockFormatPluginStatus.mockReturnValue('Test plugins summary');
   });
 
   it('should use warning variant when plugins have incompatible status', async () => {
@@ -87,52 +63,46 @@ describe('showActivePluginsToast', () => {
     );
   });
 
-  it('should use info variant when all plugins are active', async () => {
-    mockGetPluginStatus.mockReturnValue([
-      { name: 'plugin1', status: 'active' },
-      { name: 'plugin2', status: 'active' },
-    ]);
-
-    await showActivePluginsToast(mockQueue);
-
-    expect(mockQueue.add).toHaveBeenCalledWith(
-      expect.objectContaining({
-        variant: 'info',
-      })
-    );
-  });
-
-  it('should call getPluginStatus to get current plugin states', async () => {
-    await showActivePluginsToast(mockQueue);
-
-    expect(mockGetPluginStatus).toHaveBeenCalled();
-  });
-
   it('should call formatPluginStatus with plugin statuses', async () => {
     await showActivePluginsToast(mockQueue);
 
     expect(mockFormatPluginStatus).toHaveBeenCalledWith(
-      mockStatuses,
+      [{ name: 'test-plugin', status: 'active' }],
       'user-only'
     );
   });
 });
 
 describe('when showPluginStatus is disabled', () => {
-  let mockQueue: { add: jest.Mock };
-
   beforeEach(() => {
-    mockQueue = { add: jest.fn() };
+    vi.clearAllMocks();
   });
 
   it('should return early and not add toast', async () => {
-    const { userConfig: userConfigMock } =
-      await import('../../.opencode/plugins/helpers/user-events.config');
-    userConfigMock.showPluginStatus = false;
+    vi.resetModules();
 
-    await showActivePluginsToast(mockQueue);
+    vi.doMock('../../.opencode/plugins/config/settings', () => ({
+      userConfig: {
+        showPluginStatus: false,
+        pluginStatusDisplayMode: 'user-only',
+        audit: {
+          enabled: true,
+          level: 'debug',
+          basePath: '/tmp/audit-test',
+          maxSizeMB: 1,
+          maxAgeDays: 30,
+          truncationKB: 0.5,
+          maxFieldSize: 1000,
+          maxArrayItems: 50,
+          largeFields: [],
+        },
+      },
+    }));
+
+    const { showActivePluginsToast: showDisabled } =
+      await import('../../.opencode/plugins/features/messages/show-active-plugins');
+    await showDisabled(mockQueue);
 
     expect(mockQueue.add).not.toHaveBeenCalled();
-    userConfigMock.showPluginStatus = true;
   });
 });

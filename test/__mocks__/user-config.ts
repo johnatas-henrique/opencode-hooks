@@ -2,7 +2,7 @@ import type {
   EventOverride,
   ToolOverride,
   ScriptToastsConfig,
-} from '../../../.opencode/plugins/helpers/config';
+} from '../../.opencode/plugins/types/config';
 
 export const defaultScriptToasts: ScriptToastsConfig = {
   showOutput: true,
@@ -11,6 +11,8 @@ export const defaultScriptToasts: ScriptToastsConfig = {
   errorVariant: 'error',
   outputDuration: 5000,
   errorDuration: 15000,
+  outputTitle: 'SCRIPTS OUTPUT',
+  errorTitle: 'SCRIPT ERROR',
 };
 
 export const createUserConfigWithScripts = (
@@ -25,7 +27,7 @@ export const createUserConfigWithScripts = (
   showPluginStatus: boolean;
   pluginStatusDisplayMode: string;
   toast: boolean;
-  saveToFile: boolean;
+  logToAudit: boolean;
   appendToSession: boolean;
   runScripts: boolean;
   scriptToasts: ScriptToastsConfig;
@@ -37,9 +39,11 @@ export const createUserConfigWithScripts = (
   showPluginStatus: true,
   pluginStatusDisplayMode: 'user-only',
   toast: true,
-  saveToFile: true,
+  logToAudit: true,
   appendToSession: true,
   runScripts: true,
   scriptToasts: defaultScriptToasts,
+  events: {},
+  tools: {},
   ...overrides,
 });

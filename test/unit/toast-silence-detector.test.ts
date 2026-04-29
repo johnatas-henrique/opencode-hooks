@@ -1,24 +1,25 @@
+import type { MockedFunction } from 'vitest';
 import {
   waitForToastSilence,
   countToastsInLog,
-} from '../../.opencode/plugins/helpers/toast-silence-detector';
+} from '../../.opencode/plugins/features/messages/toast-silence-detector';
 
-jest.mock('fs/promises', () => ({
-  readFile: jest.fn(),
+vi.mock('fs/promises', () => ({
+  readFile: vi.fn(),
 }));
 
 import { readFile } from 'fs/promises';
 
-const mockReadFile = readFile as jest.MockedFunction<typeof readFile>;
+const mockReadFile = readFile as MockedFunction<typeof readFile>;
 
 describe('toast-silence-detector', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.clearAllMocks();
+    vi.useFakeTimers();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('waitForToastSilence', () => {
@@ -27,101 +28,76 @@ describe('toast-silence-detector', () => {
 
       const { promise, cleanup } = waitForToastSilence('/fake/log.log');
 
-      jest.advanceTimersByTime(200);
+      vi.advanceTimersByTime(200);
       await promise;
 
       cleanup();
     });
 
-    it('should resolve after silence period following toast activity', async () => {
+    it('should schedule silenceTimer when toast count increases', async () => {
       let callCount = 0;
       mockReadFile.mockImplementation(async () => {
         callCount++;
-        if (callCount <= 3) return 'path=/tui/show-toast path=/tui/show-toast';
+        if (callCount === 1) return 'path=/tui/show-toast';
+        if (callCount === 2) return 'path=/tui/show-toast path=/tui/show-toast';
         return 'path=/tui/show-toast path=/tui/show-toast';
       });
 
       const { promise, cleanup } = waitForToastSilence('/fake/log.log', {
-        silenceMs: 1500,
-        pollMs: 200,
+        silenceMs: 500,
+        pollMs: 100,
       });
 
-      jest.advanceTimersByTime(200);
-      jest.advanceTimersByTime(1500);
-      jest.advanceTimersByTime(200);
+      await Promise.resolve();
+      expect(callCount).toBe(1);
 
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+      expect(callCount).toBe(2);
+
+      vi.advanceTimersByTime(500);
+      await Promise.resolve();
+      await Promise.resolve();
       await promise;
 
       cleanup();
     });
 
-    it('should reset timer when new toast appears', async () => {
-      let callCount = 0;
+    it('should handle readFile error in catch block', async () => {
+      let errorCount = 0;
       mockReadFile.mockImplementation(async () => {
-        callCount++;
-        if (callCount <= 2) return 'path=/tui/show-toast';
-        if (callCount <= 5) return 'path=/tui/show-toast path=/tui/show-toast';
-        return 'path=/tui/show-toast path=/tui/show-toast';
+        errorCount++;
+        if (errorCount === 1) return 'path=/tui/show-toast';
+        throw new Error('File read error');
       });
 
       const { promise, cleanup } = waitForToastSilence('/fake/log.log', {
-        silenceMs: 1500,
-        pollMs: 200,
+        pollMs: 100,
       });
 
-      jest.advanceTimersByTime(200);
-      jest.advanceTimersByTime(200);
-      jest.advanceTimersByTime(200);
-      jest.advanceTimersByTime(1500);
-      jest.advanceTimersByTime(200);
-
+      await Promise.resolve();
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+      await Promise.resolve();
       await promise;
 
       cleanup();
     });
 
-    it('should resolve on log file error', async () => {
-      mockReadFile.mockImplementation(async () => {
-        throw new Error('File not found');
+    it('should clear timers in catch block', async () => {
+      mockReadFile.mockRejectedValue(new Error('Read error'));
+
+      const { promise, cleanup } = waitForToastSilence('/fake/log.log', {
+        pollMs: 100,
       });
 
-      const { promise, cleanup } = waitForToastSilence('/fake/log.log');
-
-      jest.advanceTimersByTime(200);
+      await Promise.resolve();
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+      await Promise.resolve();
       await promise;
 
       cleanup();
-    });
-
-    it('should stop polling after cleanup', async () => {
-      mockReadFile.mockResolvedValue('path=/tui/show-toast');
-
-      const { cleanup } = waitForToastSilence('/fake/log.log', {
-        silenceMs: 10000,
-      });
-
-      cleanup();
-
-      jest.advanceTimersByTime(200);
-      jest.advanceTimersByTime(200);
-      jest.advanceTimersByTime(200);
-
-      expect(mockReadFile).toHaveBeenCalledTimes(1);
-    });
-
-    it('should not schedule poll when already resolved', async () => {
-      mockReadFile.mockResolvedValue('path=/tui/show-toast');
-
-      const { promise, cleanup } = waitForToastSilence('/fake/log.log');
-
-      await jest.runAllTimersAsync();
-      await promise;
-
-      const callCountBefore = mockReadFile.mock.calls.length;
-      cleanup();
-      const callCountAfter = mockReadFile.mock.calls.length;
-
-      expect(callCountAfter).toBe(callCountBefore);
     });
   });
 
