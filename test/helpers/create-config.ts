@@ -39,6 +39,7 @@ const baseConfig: UserEventsConfig = {
     logToAudit: true,
     appendToSession: true,
   },
+  loadClaudeHookSettings: { enabled: false },
   events: {},
   tools: {
     [EventType.TOOL_EXECUTE_AFTER]: {},
