@@ -31,3 +31,11 @@ export interface ScriptExecutionResult {
   script: string;
   output: string | undefined;
 }
+
+export interface HookResult {
+  action: 'allow' | 'block' | 'error';
+  reason?: string;
+  updatedInput?: Record<string, unknown>;
+  additionalContext?: string;
+  systemMessage?: string;
+}
