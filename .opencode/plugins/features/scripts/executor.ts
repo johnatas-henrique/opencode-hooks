@@ -2,14 +2,22 @@ import { spawn } from 'child_process';
 import path from 'path';
 import type { ScriptEntry } from '../../types/config';
 import { DEFAULTS } from '../../core/constants';
+import type { HookResult } from '../../types/scripts';
 
-export interface HookResult {
-  action: 'allow' | 'block' | 'error';
-  reason?: string;
-  updatedInput?: Record<string, unknown>;
-  additionalContext?: string;
-  systemMessage?: string;
-}
+const shellSpecialChars = /[;&|`$(){}[\]<>\\!#*?"'\n\r]/g;
+
+const sanitizeArg = (arg: string): string => {
+  return arg.replace(shellSpecialChars, '\\$&');
+};
+
+const validateScriptPath = (scriptPath: string): boolean => {
+  if (!scriptPath || typeof scriptPath !== 'string') return false;
+  if (scriptPath.includes('..')) return false;
+  if (scriptPath.startsWith('/') || scriptPath.startsWith('~')) return false;
+  if (/^[a-zA-Z]:\\/.test(scriptPath)) return false;
+  if (scriptPath.includes('\\')) return false;
+  return true;
+};
 
 const EVENT_NAME_MAP: Record<string, string> = {
   'tool.execute.before': 'PreToolUse',
@@ -139,7 +147,15 @@ export async function executeScript(
   toolName: string,
   input: Record<string, unknown>,
   output?: Record<string, unknown>
-): Promise<HookResult> {
+): Promise<{ script: string; output: string; exitCode: number }> {
+  if (!validateScriptPath(scriptEntry.path)) {
+    return {
+      script: scriptEntry.path,
+      output: `Invalid script path: ${scriptEntry.path}`,
+      exitCode: 1,
+    };
+  }
+
   const scriptPath = resolveScriptPath(scriptEntry.path);
 
   if (scriptEntry.async) {
@@ -147,45 +163,123 @@ export async function executeScript(
       stdio: 'ignore',
       env: { ...process.env, CLAUDE_PLUGIN_ROOT: process.cwd() },
     }).unref();
-    return { action: 'allow' };
+    return { script: scriptEntry.path, output: '', exitCode: 0 };
   }
 
   let stdin: string | undefined;
   if (scriptEntry.source === 'claude') {
     const stdinData = buildClaudeStdin(eventType, toolName, input);
     stdin = JSON.stringify(stdinData);
-  } else if (scriptEntry.source === 'native' && scriptEntry.passStdin) {
-    const stdinData = buildOpencodeStdin(eventType, toolName, input, output);
-    stdin = JSON.stringify(stdinData);
+  } else if (scriptEntry.source === 'native') {
+    const passStdin = scriptEntry.passStdin !== false;
+    if (passStdin) {
+      const stdinData = buildOpencodeStdin(eventType, toolName, input, output);
+      stdin = JSON.stringify(stdinData);
+    }
   }
 
-  const args = scriptEntry.source === 'native' ? [toolName || eventType] : [];
+  const args =
+    scriptEntry.source === 'native'
+      ? (toolName ? [toolName] : [eventType]).map(sanitizeArg)
+      : [];
 
-  return new Promise<HookResult>((resolve) => {
-    const proc = spawn(scriptPath, args, {
-      stdio: stdin ? ['pipe', 'pipe', 'pipe'] : ['inherit', 'pipe', 'pipe'],
-      env: { ...process.env, CLAUDE_PLUGIN_ROOT: process.cwd() },
-    });
+  return new Promise<{ script: string; output: string; exitCode: number }>(
+    (resolve) => {
+      const proc = spawn(scriptPath, args, {
+        stdio: stdin ? ['pipe', 'pipe', 'pipe'] : ['inherit', 'pipe', 'pipe'],
+        env: { ...process.env, CLAUDE_PLUGIN_ROOT: process.cwd() },
+      });
 
-    if (stdin) {
-      proc.stdin!.write(stdin);
-      proc.stdin!.end();
+      if (stdin) {
+        proc.stdin!.write(stdin);
+        proc.stdin!.end();
+      }
+
+      const outChunks: Buffer[] = [];
+      const errChunks: Buffer[] = [];
+
+      proc.stdout!.on('data', (d: Buffer) => outChunks.push(d));
+      proc.stderr!.on('data', (d: Buffer) => errChunks.push(d));
+
+      proc.on('close', (code) => {
+        const stdout = Buffer.concat(outChunks).toString();
+        const stderr = Buffer.concat(errChunks).toString();
+
+        if (code === 2) {
+          resolve({
+            script: scriptEntry.path,
+            output: stderr || 'Blocked by exit code 2',
+            exitCode: 2,
+          });
+          return;
+        }
+
+        if (code !== 0 && code !== null) {
+          resolve({
+            script: scriptEntry.path,
+            output: `Exit code ${code}: ${stderr}`,
+            exitCode: code,
+          });
+          return;
+        }
+
+        if (code === null) {
+          resolve({
+            script: scriptEntry.path,
+            output: 'Process terminated unexpectedly',
+            exitCode: 1,
+          });
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(stdout.trim());
+          if (parsed.hookSpecificOutput?.permissionDecision === 'deny') {
+            resolve({
+              script: scriptEntry.path,
+              output:
+                parsed.hookSpecificOutput.permissionDecisionReason || 'Denied',
+              exitCode: 2,
+            });
+            return;
+          }
+          if (parsed.decision === 'block') {
+            resolve({
+              script: scriptEntry.path,
+              output: parsed.reason || 'Blocked',
+              exitCode: 2,
+            });
+            return;
+          }
+          if (parsed.continue === false) {
+            resolve({
+              script: scriptEntry.path,
+              output: parsed.stopReason || 'Stopped',
+              exitCode: 2,
+            });
+            return;
+          }
+          if (parsed.ok === false) {
+            resolve({
+              script: scriptEntry.path,
+              output: parsed.reason || 'Failed',
+              exitCode: 1,
+            });
+            return;
+          }
+          resolve({ script: scriptEntry.path, output: stdout, exitCode: 0 });
+        } catch {
+          resolve({ script: scriptEntry.path, output: stdout, exitCode: 0 });
+        }
+      });
+
+      proc.on('error', (err) => {
+        resolve({
+          script: scriptEntry.path,
+          output: `Spawn failed: ${err.message}`,
+          exitCode: 1,
+        });
+      });
     }
-
-    const outChunks: Buffer[] = [];
-    const errChunks: Buffer[] = [];
-
-    proc.stdout!.on('data', (d: Buffer) => outChunks.push(d));
-    proc.stderr!.on('data', (d: Buffer) => errChunks.push(d));
-
-    proc.on('close', (code) => {
-      const stdout = Buffer.concat(outChunks).toString();
-      const stderr = Buffer.concat(errChunks).toString();
-      resolve(parseHookOutput(stdout, stderr, code ?? -1));
-    });
-
-    proc.on('error', (err) => {
-      resolve({ action: 'error', reason: `Spawn failed: ${err.message}` });
-    });
-  });
+  );
 }
