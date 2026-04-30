@@ -3,6 +3,7 @@ import type { ScriptRunResult } from './scripts';
 import type { PluginInput } from '@opencode-ai/plugin';
 import type { ResolvedEventConfig, ScriptToastsConfig } from './config';
 import type { ScriptRecorder } from './audit';
+import type { EventRecorder } from './audit';
 
 export interface ScriptRunnerDeps {
   ctx: PluginInput;
@@ -60,4 +61,18 @@ export interface ScriptResultForAudit {
   output: string;
   error: string | null;
   exitCode: number;
+}
+
+export interface ExecuteHookParams {
+  ctx: PluginInput;
+  eventType: string;
+  resolved: ResolvedEventConfig;
+  sessionId: string;
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  toolName?: string;
+  scriptArg?: string;
+  eventRecorder?: EventRecorder | undefined;
+  scriptRecorder?: ScriptRecorder;
+  showToast?: boolean;
 }
