@@ -1,23 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import type { ScriptEntry } from '../types/config';
-
-export interface ClaudeHookGroup {
-  hooks: ClaudeHook[];
-  matcher?: string;
-}
-
-export interface ClaudeHook {
-  command: string;
-  async?: boolean;
-  timeout?: number;
-}
-
-interface ClaudeSettings {
-  hooks?: Record<string, ClaudeHookGroup[]>;
-  disableAllHooks?: boolean;
-}
+import type {
+  ScriptEntry,
+  ClaudeHookGroup,
+  ClaudeSettings,
+} from '../types/config';
 
 const CLAUDE_EVENT_MAP: Record<string, string> = {
   PreToolUse: 'tool.execute.before',
