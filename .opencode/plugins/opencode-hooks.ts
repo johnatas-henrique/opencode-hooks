@@ -30,6 +30,7 @@ import { createScriptRunner } from './features/scripts/script-runner';
 import { EventType } from './types/events';
 import { userConfig } from './config/settings';
 import { DEFAULTS } from './core/constants';
+import { executeScript } from './features/scripts/executor';
 import type { ResolvedEventConfig, ScriptResult } from './types/config';
 import { executeBlocking } from './features/block-system/block-handler';
 import {
@@ -128,7 +129,25 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
   });
 
   const results = await Promise.all(
-    resolved.scripts.map((script) => runner(script, scriptArg))
+    resolved.scripts.map(async (script) => {
+      if (script.source === 'claude') {
+        const hookResult = await executeScript(
+          script,
+          eventType,
+          toolName ?? '',
+          input ?? {},
+          output
+        );
+        return {
+          script: script.path,
+          output:
+            hookResult.action === 'allow'
+              ? JSON.stringify(hookResult)
+              : (hookResult.reason ?? ''),
+        };
+      }
+      return runner(script.path, scriptArg);
+    })
   );
 
   const successfulScripts = results
@@ -397,7 +416,7 @@ export const OpencodeHooks: Plugin = async (
         sessionId: input.sessionID,
         input: input,
         output: output,
-
+        scriptArg: input.sessionID,
         eventRecorder,
         scriptRecorder,
       });
