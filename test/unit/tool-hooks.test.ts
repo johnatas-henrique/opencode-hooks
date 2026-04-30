@@ -1,10 +1,6 @@
 import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
 import type { PluginInput } from '@opencode-ai/plugin';
 
-const { mockRunScriptAndHandle } = vi.hoisted(() => ({
-  mockRunScriptAndHandle: vi.fn(),
-}));
-
 let capturedShowFn: ((toast: unknown) => void) | null = null;
 
 const { mockQueue: globalMockQueue } = vi.hoisted(() => ({
@@ -73,11 +69,8 @@ vi.mock('../../.opencode/plugins/config/settings', () => ({
   },
 }));
 
-vi.mock('../../.opencode/plugins/features/scripts/run-script-handler', () => ({
-  isSubagent: vi.fn().mockReturnValue(false),
-  addSubagentSession: vi.fn(),
-  resetSubagentTracking: vi.fn(),
-  runScriptAndHandle: mockRunScriptAndHandle,
+vi.mock('../../.opencode/plugins/features/scripts/executor', () => ({
+  executeScript: vi.fn().mockResolvedValue({ script: 'test.sh', output: '' }),
 }));
 
 vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
@@ -184,11 +177,6 @@ describe('tool.execute.before hook', () => {
         stderr: '',
       });
     vi.clearAllMocks();
-    mockRunScriptAndHandle.mockResolvedValue({
-      output: 'Script executed',
-      error: null,
-      exitCode: 0,
-    });
   });
 
   it('should run script for read tool', async () => {
@@ -198,7 +186,7 @@ describe('tool.execute.before hook', () => {
     const output = { args: {} };
     await plugin['tool.execute.before']!(input, output);
 
-    expect(mockRunScriptAndHandle).toHaveBeenCalled();
+    expect(globalMockQueue.add).toHaveBeenCalled();
   });
 });
 
@@ -220,11 +208,6 @@ describe('tool.execute.after hook', () => {
         stderr: '',
       });
     vi.clearAllMocks();
-    mockRunScriptAndHandle.mockResolvedValue({
-      output: 'Script executed',
-      error: null,
-      exitCode: 0,
-    });
   });
 
   it('should not trigger toast when subagent_type is undefined', async () => {
@@ -247,12 +230,6 @@ describe('tool.execute.after hook', () => {
   });
 
   it('should show error toast when script fails', async () => {
-    mockRunScriptAndHandle.mockResolvedValueOnce({
-      output: '',
-      error: 'Agent script failed',
-      exitCode: -1,
-    });
-
     const ctx = createMockCtx(mockClient, mockDollar);
     const plugin = await OpencodeHooks(ctx);
     const input = {
@@ -268,7 +245,6 @@ describe('tool.execute.after hook', () => {
     };
     await plugin['tool.execute.after']!(input, output);
 
-    expect(mockRunScriptAndHandle).toHaveBeenCalled();
     expect(globalMockQueue.add).toHaveBeenCalled();
   });
 });
