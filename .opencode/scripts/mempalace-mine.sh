@@ -1,37 +1,58 @@
 #!/bin/bash
-# Mineração automática a cada X mensagens
-# Evento: chat.message (disparado a cada mensagem)
-#
-# Uso: ./mempalace-mine.sh <session_id>
-# O session_id é passado pelo opencode-hooks via scriptArg
 
-MINE_EVERY=5              # mining a cada 5 mensagens
-SESSION_DIR="$HOME/.local/share/opencode/sessions"
+MINE_EVERY=5
 
-# Obtém diretório atual do OpenCode (onde o projeto está aberto)
-PROJECT_DIR="$(pwd)"
-PROJECT_NAME="$(basename "$PROJECT_DIR")"
+PROJECT_NAME="$(basename "$(pwd)")"
 
-# Session ID vem do argumento ($1) ou usa PROJECT_NAME como fallback
-SESSION_ID="${1:-$PROJECT_NAME}"
+if [ -t 0 ]; then
+  SESSION_ID="${1:-$PROJECT_NAME}"
+  EVENT_TYPE="legacy"
+else
+  INPUT_JSON=$(cat)
+  
+  SESSION_ID=$(echo "$INPUT_JSON" | jq -r '.session_id // empty')
+  EVENT_TYPE=$(echo "$INPUT_JSON" | jq -r '.event_type // empty')
+  
+  if [ -z "$SESSION_ID" ] || [ "$SESSION_ID" = "null" ]; then
+    SESSION_ID="$PROJECT_NAME"
+  fi
+fi
+
 COUNTER_FILE="/tmp/mempalace_count_$SESSION_ID"
+LAST_MSG_FILE="/tmp/mempalace_last_msg_$SESSION_ID"
 
-# Incrementa contador
 COUNT=$(cat "$COUNTER_FILE" 2>/dev/null || echo 0)
 COUNT=$((COUNT + 1))
 echo "$COUNT" > "$COUNTER_FILE"
 
-echo "[MemPalace] Message $COUNT of session $SESSION_ID (project: $PROJECT_NAME)"
+echo "[MemPalace] | Message $COUNT | Session: $SESSION_ID (project: $PROJECT_NAME)"
 
-# Verifica threshold (múltiplo de MINE_EVERY)
 if [ $((COUNT % MINE_EVERY)) -eq 0 ]; then
   echo "=== MINING (every $MINE_EVERY messages) ==="
 
-  # Mine conversas da sessão usando o diretório do projeto como wing
-  if [ -d "$SESSION_DIR" ]; then
-    mempalace mine "$SESSION_DIR" --mode convos --wing "$PROJECT_NAME" 2>/dev/null
+  SESSION_FILE="/tmp/session_$SESSION_ID.json"
+  TRANSCRIPT_DIR="/tmp/mempalace_$SESSION_ID"
+  TRANSCRIPT_FILE="$TRANSCRIPT_DIR/transcript_${COUNT}.jsonl"
+
+  mkdir -p "$TRANSCRIPT_DIR"
+
+  opencode export "$SESSION_ID" > "$SESSION_FILE"
+
+  LAST_MSG=$(cat "$LAST_MSG_FILE" 2>/dev/null || echo 0)
+
+  jq -c --argjson last "$LAST_MSG" \
+    '.messages[$last:] | .[] | {message: {role: .info.role, content: [.parts[] | select(.type=="text") | {type: .type, text: .text}]}}' \
+    "$SESSION_FILE" > "$TRANSCRIPT_FILE"
+
+  if [ -s "$TRANSCRIPT_FILE" ]; then
+    sleep 2
+    
+    mempalace mine "$TRANSCRIPT_DIR" --mode convos --wing "$PROJECT_NAME"
+    
+    NEW_LAST=$(jq '.messages | length' "$SESSION_FILE")
+    echo "$NEW_LAST" > "$LAST_MSG_FILE"
   else
-    echo "Sessions directory not found: $SESSION_DIR"
+    echo "No new messages to mine (last_msg: $LAST_MSG)"
   fi
 
   echo "============================================="

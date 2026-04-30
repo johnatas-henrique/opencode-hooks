@@ -66,7 +66,12 @@ export const userConfig: UserEventsConfig = {
 
   events: {
     [EventType.SERVER_CONNECTED]: { enabled: false },
-    [EventType.SERVER_INSTANCE_DISPOSED]: { enabled: true },
+    [EventType.SERVER_INSTANCE_DISPOSED]: {
+      enabled: true,
+      runScripts: true,
+      toast: false,
+      scripts: [{ source: 'native', path: 'mempalace-exit.sh' }],
+    },
 
     [EventType.SESSION_CREATED]: {
       toast: true,
@@ -79,7 +84,11 @@ export const userConfig: UserEventsConfig = {
       ],
     },
     [EventType.SESSION_COMPACTED]: { toast: true },
-    [EventType.SESSION_DELETED]: { toast: true },
+    [EventType.SESSION_DELETED]: {
+      toast: true,
+      runScripts: true,
+      scripts: [{ source: 'native', path: 'mempalace-exit.sh' }],
+    },
     [EventType.SESSION_IDLE]: { toast: true },
     [EventType.SESSION_DIFF]: { enabled: false },
     [EventType.SESSION_ERROR]: { toast: true },
