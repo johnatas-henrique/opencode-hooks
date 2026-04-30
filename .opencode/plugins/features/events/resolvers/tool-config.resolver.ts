@@ -7,9 +7,14 @@ import type {
   ResolvedEventConfig,
   ToolConfig,
   ToolOverride,
+  ScriptEntry,
 } from '../../../types/config';
 import { getBooleanField } from '../resolution/boolean-field';
-import { resolveScripts } from '../resolution/scripts';
+import {
+  resolveScripts,
+  asScriptEntry,
+  mergeClaudeScripts,
+} from '../resolution/scripts';
 import { resolveToastOverride } from '../resolution/toast';
 import { DEFAULTS } from '../../../core/constants';
 import { normalizeInputForHandler } from './normalize-input';
@@ -67,8 +72,10 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
     const handler = this.getHandler(toolEventType);
     const defaultCfg = this.context.default;
     const runScripts = getBooleanField(true, defaultCfg, 'runScripts', false);
-    const scripts =
-      runScripts && handler?.defaultScript ? [handler.defaultScript] : [];
+    const scripts: ScriptEntry[] =
+      runScripts && handler?.defaultScript
+        ? [asScriptEntry(handler.defaultScript)]
+        : [];
 
     return {
       enabled: true,
@@ -173,23 +180,34 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       toastDuration,
       scripts:
         eventBase.runScripts && toolHandler?.defaultScript
-          ? [toolHandler.defaultScript]
+          ? [asScriptEntry(toolHandler.defaultScript)]
           : eventBase.scripts,
     };
 
     if (!toolConfig || this.isEmptyObject(toolConfig)) {
-      return baseWithToolHandler;
+      return this.applyClaudeScripts(
+        baseWithToolHandler,
+        toolEventType,
+        toolName
+      );
     }
 
     const { scripts } = resolveScripts(
       toolConfig,
-      baseWithToolHandler.scripts[0] ??
+      baseWithToolHandler.scripts[0]?.path ??
         toolHandler?.defaultScript ??
         this.getDefaultScript(toolEventType),
       baseWithToolHandler.scripts
     );
     const toastCfg = resolveToastOverride(toolConfig);
     const toolOverride = toolConfig as ToolOverride;
+
+    const mergedScripts = mergeClaudeScripts(
+      scripts,
+      toolEventType,
+      toolName,
+      this.context.claudeScripts
+    );
 
     return {
       ...baseWithToolHandler,
@@ -226,7 +244,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       ),
       toastVariant: toastCfg?.variant ?? baseWithToolHandler.toastVariant,
       toastDuration: toastCfg?.duration ?? baseWithToolHandler.toastDuration,
-      scripts,
+      scripts: mergedScripts,
       logToAudit: getBooleanField(toolConfig, defaultCfg, 'logToAudit', true),
       appendToSession: getBooleanField(
         toolConfig,
@@ -243,6 +261,22 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       scriptToasts: this.context.scriptToasts,
       block: toolOverride?.block ?? [],
     };
+  }
+
+  private applyClaudeScripts(
+    config: ResolvedEventConfig,
+    toolEventType: string,
+    toolName: string
+  ): ResolvedEventConfig {
+    if (!config.runScripts) return config;
+    const merged = mergeClaudeScripts(
+      config.scripts,
+      toolEventType,
+      toolName,
+      this.context.claudeScripts
+    );
+    if (merged === config.scripts) return config;
+    return { ...config, scripts: merged };
   }
 
   private resolveBase(

@@ -8,7 +8,7 @@ import type {
   EventOverride,
 } from '../../../types/config';
 import { DEFAULTS } from '../../../core/constants';
-import { resolveScripts } from '../resolution/scripts';
+import { resolveScripts, mergeClaudeScripts } from '../resolution/scripts';
 import { resolveToastOverride } from '../resolution/toast';
 import { getBooleanField } from '../resolution/boolean-field';
 import { normalizeInputForHandler } from './normalize-input';
@@ -37,14 +37,26 @@ export class ConfigBuilder {
     const defaultCfg = this.context.default;
 
     if (this.userEventConfig === undefined) {
-      return this.buildDefault(defaultCfg);
+      return this.applyClaudeScripts(this.buildDefault(defaultCfg));
     }
 
     if (this.isEventDisabled()) {
       return DEFAULTS.config.disabled;
     }
 
-    return this.buildMerged(defaultCfg);
+    return this.applyClaudeScripts(this.buildMerged(defaultCfg));
+  }
+
+  private applyClaudeScripts(config: ResolvedEventConfig): ResolvedEventConfig {
+    if (!config.runScripts) return config;
+    const merged = mergeClaudeScripts(
+      config.scripts,
+      this.eventType,
+      undefined,
+      this.context.claudeScripts
+    );
+    if (merged === config.scripts) return config;
+    return { ...config, scripts: merged };
   }
 
   private buildDefault(defaultCfg: EventOverride): ResolvedEventConfig {
