@@ -6,6 +6,7 @@ import type {
   EventConfig,
   ToolConfig,
   ResolvedEventConfig,
+  ScriptEntry,
 } from './config';
 
 export interface EventHandler {
@@ -87,6 +88,8 @@ export interface ConfigResolverContext {
   readonly getToolConfigs: (
     toolEventType: string
   ) => Record<string, ToolConfig> | undefined;
+  readonly claudeScripts: Record<string, ScriptEntry[]>;
+  readonly claudeUnsupported: string[];
 }
 
 export interface ResolverFactory {
@@ -125,7 +128,7 @@ export interface ResolvedToast {
 }
 
 export interface ResolvedScripts {
-  readonly scripts: string[];
+  readonly scripts: ScriptEntry[];
   readonly runScripts: boolean;
 }
 

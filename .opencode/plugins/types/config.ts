@@ -16,11 +16,24 @@ export interface ToastOverride {
   duration?: number;
 }
 
+export interface ScriptEntry {
+  source: 'native' | 'claude';
+  path: string;
+  matcher?: string;
+  async?: boolean;
+  timeout?: number;
+  passStdin?: boolean;
+}
+
+export interface ClaudeHookSettings {
+  enabled: boolean;
+}
+
 export interface EventOverride {
   enabled?: boolean;
   debug?: boolean;
   toast?: boolean | ToastOverride;
-  scripts?: string[];
+  scripts?: ScriptEntry[];
   runScripts?: boolean;
   runOnlyOnce?: boolean;
   logToAudit?: boolean;
@@ -55,6 +68,7 @@ export interface UserEventsConfig {
   pluginStatusDisplayMode: PluginStatusDisplayMode;
   scriptToasts: ScriptToastsConfig;
   default: EventOverride;
+  loadClaudeHookSettings: ClaudeHookSettings;
   events: Partial<Record<EventType, EventConfig>>;
   tools: {
     [EventType.TOOL_EXECUTE_AFTER]: Record<string, ToolConfig>;
@@ -71,7 +85,7 @@ export interface ResolvedEventConfig {
   toastMessage: string;
   toastVariant: EventVariant;
   toastDuration: number;
-  scripts: string[];
+  scripts: ScriptEntry[];
   runScripts: boolean;
   logToAudit: boolean;
   appendToSession: boolean;
@@ -108,7 +122,7 @@ export interface ToolOverride {
   enabled?: boolean;
   debug?: boolean;
   toast?: boolean | ToolOverride;
-  scripts?: string[];
+  scripts?: ScriptEntry[];
   runScripts?: boolean;
   runOnlyOnce?: boolean;
   logToAudit?: boolean;
