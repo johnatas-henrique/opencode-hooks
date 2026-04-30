@@ -17,6 +17,8 @@ export const userConfig: UserEventsConfig = {
   showPluginStatus: true,
   pluginStatusDisplayMode: 'user-only',
 
+  loadClaudeHookSettings: { enabled: false },
+
   scriptToasts: {
     showOutput: true,
     showError: true,
@@ -71,6 +73,10 @@ export const userConfig: UserEventsConfig = {
       runScripts: true,
       runOnlyOnce: true,
       appendToSession: true,
+      scripts: [
+        { source: 'native', path: 'mempalace-wake.sh' },
+        { source: 'native', path: 'session-created.sh' },
+      ],
     },
     [EventType.SESSION_COMPACTED]: { toast: true },
     [EventType.SESSION_DELETED]: { toast: true },
@@ -106,7 +112,11 @@ export const userConfig: UserEventsConfig = {
 
     [EventType.EXPERIMENTAL_SESSION_COMPACTING]: { toast: true },
 
-    [EventType.CHAT_MESSAGE]: { enabled: false },
+    [EventType.CHAT_MESSAGE]: {
+      runScripts: true,
+      toast: true,
+      scripts: [{ source: 'native', path: 'mempalace-mine.sh' }],
+    },
     [EventType.CHAT_PARAMS]: { enabled: false },
     [EventType.CHAT_HEADERS]: { enabled: false },
     [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: { enabled: false },
@@ -122,11 +132,19 @@ export const userConfig: UserEventsConfig = {
 
   tools: {
     [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
-      task: { logToAudit: true, runScripts: true, scripts: ['log-agent.sh'] },
+      task: {
+        logToAudit: true,
+        runScripts: true,
+        scripts: [{ source: 'native', path: 'log-agent.sh' }],
+      },
     },
     [EventType.TOOL_EXECUTE_AFTER]: {
       task: {},
-      skill: { logToAudit: true, runScripts: true, scripts: ['log-skill.sh'] },
+      skill: {
+        logToAudit: true,
+        runScripts: true,
+        scripts: [{ source: 'native', path: 'log-skill.sh' }],
+      },
       bash: {},
       write: {},
       edit: {},
