@@ -41,7 +41,7 @@ describe('createScriptRunner', () => {
     toastMessage: '',
     toastVariant: 'info',
     toastDuration: 3000,
-    scripts: ['test.sh'],
+    scripts: [{ source: 'native', path: 'test.sh' }],
     runScripts: true,
     logToAudit: true,
     appendToSession: true,

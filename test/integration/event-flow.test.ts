@@ -32,6 +32,19 @@ vi.mock('../../.opencode/plugins/features/handlers', () => ({
 vi.mock('../../.opencode/plugins/config/settings', () => ({
   userConfig: {
     enabled: true,
+    loadClaudeHookSettings: { enabled: false },
+    scriptToasts: {
+      showOutput: true,
+      showError: true,
+      outputVariant: 'info',
+      errorVariant: 'error',
+      outputDuration: 5000,
+      errorDuration: 15000,
+      outputTitle: 'Output',
+      errorTitle: 'Error',
+    },
+    showPluginStatus: false,
+    pluginStatusDisplayMode: 'user-only',
     default: {
       debug: false,
       toast: false,

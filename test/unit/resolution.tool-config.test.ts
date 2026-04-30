@@ -43,6 +43,8 @@ describe('ToolConfigResolverImpl', () => {
     },
     getEventConfig: vi.fn(),
     getToolConfigs: vi.fn(),
+    claudeScripts: {},
+    claudeUnsupported: [],
     ...overrides,
   });
 
@@ -86,7 +88,10 @@ describe('ToolConfigResolverImpl', () => {
       const result = resolver.resolve('tool.execute.after', 'bash');
 
       expect(result.runScripts).toBe(true);
-      expect(result.scripts).toContain('bash-after.sh');
+      expect(result.scripts).toContainEqual({
+        source: 'native',
+        path: 'bash-after.sh',
+      });
     });
 
     it('should use tool.execute.before handler when eventType contains .before (line 26)', () => {
@@ -99,6 +104,8 @@ describe('ToolConfigResolverImpl', () => {
           logToAudit: true,
           appendToSession: false,
         },
+        claudeScripts: {},
+        claudeUnsupported: [],
         handlers: {
           ...createMockContext().handlers,
           'tool.execute.before.bash': {
@@ -118,7 +125,10 @@ describe('ToolConfigResolverImpl', () => {
       const result = resolver.resolve('tool.execute.before', 'bash');
 
       expect(result.toastTitle).toBe('Bash Before');
-      expect(result.scripts).toContain('bash-before.sh');
+      expect(result.scripts).toContainEqual({
+        source: 'native',
+        path: 'bash-before.sh',
+      });
     });
 
     it('should use logToAudit from toolConfig when provided', () => {

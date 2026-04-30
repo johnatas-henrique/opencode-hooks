@@ -29,6 +29,7 @@ function createMockCtx(overrides: Partial<MockPluginInput> = {}): PluginInput {
 vi.mock('../../.opencode/plugins/config/settings', () => ({
   userConfig: {
     enabled: false,
+    loadClaudeHookSettings: { enabled: false },
     audit: {
       enabled: true,
       level: 'debug',

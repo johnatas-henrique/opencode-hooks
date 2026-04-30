@@ -1,9 +1,15 @@
 import { resolveScripts } from '../../.opencode/plugins/features/events/resolution/scripts';
-import type { EventConfig } from '../../.opencode/plugins/types/config';
+import type {
+  EventConfig,
+  ScriptEntry,
+} from '../../.opencode/plugins/types/config';
 
 describe('resolveScripts', () => {
   const handlerDefault = 'default.sh';
-  const baseScripts = ['base1.sh', 'base2.sh'];
+  const baseScripts: ScriptEntry[] = [
+    { source: 'native', path: 'base1.sh' },
+    { source: 'native', path: 'base2.sh' },
+  ];
 
   it('should return empty scripts when cfg.runScripts === false', () => {
     expect(

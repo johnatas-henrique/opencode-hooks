@@ -33,6 +33,8 @@ describe('EventConfigResolverImpl', () => {
     handlers,
     getEventConfig: vi.fn(),
     getToolConfigs: vi.fn(),
+    claudeScripts: {},
+    claudeUnsupported: [],
   });
 
   const createMockRecorder = () => ({
