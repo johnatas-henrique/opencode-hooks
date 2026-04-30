@@ -1,9 +1,5 @@
 #!/bin/bash
 set -e
-# Opencode SessionStart hook: Load project context at session start
-# Outputs context information that Opencode sees when a session begins
-#
-# Input schema (SessionStart): No stdin input
 
 echo "=== Session Context ==="
 
@@ -23,20 +19,17 @@ else
     echo "Branch: (no commits yet)"
 fi
 
-# Current sprint (find most recent sprint file)
 LATEST_SPRINT=$(ls -t production/sprints/sprint-*.md 2>/dev/null | head -1)
 if [ -n "$LATEST_SPRINT" ]; then
     echo ""
     echo "Active sprint: $(basename "$LATEST_SPRINT" .md)"
 fi
 
-# Current milestone
 LATEST_MILESTONE=$(ls -t production/milestones/*.md 2>/dev/null | head -1)
 if [ -n "$LATEST_MILESTONE" ]; then
     echo "Active milestone: $(basename "$LATEST_MILESTONE" .md)"
 fi
 
-# Open bug count
 BUG_COUNT=0
 for dir in tests/playtest production; do
     if [ -d "$dir" ]; then
@@ -48,7 +41,6 @@ if [ "$BUG_COUNT" -gt 0 ]; then
     echo "Open bugs: $BUG_COUNT"
 fi
 
-# Code health quick check
 if [ -d "src" ]; then
     TODO_COUNT=$(grep -r "TODO" src/ 2>/dev/null | wc -l)
     FIXME_COUNT=$(grep -r "FIXME" src/ 2>/dev/null | wc -l)
@@ -58,7 +50,6 @@ if [ -d "src" ]; then
     fi
 fi
 
-# --- Active session state recovery ---
 STATE_FILE="production/session-state/active.md"
 if [ -f "$STATE_FILE" ]; then
     echo ""
