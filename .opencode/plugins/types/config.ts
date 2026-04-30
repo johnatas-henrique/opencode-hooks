@@ -130,3 +130,20 @@ export interface ToolOverride {
   block?: BlockCheck[];
   messageFn?: (input: unknown, output?: unknown) => string | undefined;
 }
+
+// Claude hooks interfaces
+export interface ClaudeHookGroup {
+  hooks: ClaudeHook[];
+  matcher?: string;
+}
+
+export interface ClaudeHook {
+  command: string;
+  async?: boolean;
+  timeout?: number;
+}
+
+export interface ClaudeSettings {
+  hooks?: Record<string, ClaudeHookGroup[]>;
+  disableAllHooks?: boolean;
+}
