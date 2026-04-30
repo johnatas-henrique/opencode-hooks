@@ -25,20 +25,21 @@ import {
   getEventRecorder,
   archiveAllJsonFiles,
 } from './features/audit/plugin-integration';
-import { addSubagentSession } from './features/scripts/run-script-handler';
-import { createScriptRunner } from './features/scripts/script-runner';
+import {
+  addSubagentSession,
+  isSubagent,
+} from './features/scripts/run-script-handler';
+import { appendToSession } from './features/messages/append-to-session';
 import { EventType } from './types/events';
 import { userConfig } from './config/settings';
 import { DEFAULTS } from './core/constants';
 import { executeScript } from './features/scripts/executor';
-import type { ResolvedEventConfig, ScriptResult } from './types/config';
+import type { ScriptResult } from './types/config';
 import { executeBlocking } from './features/block-system/block-handler';
 import {
   initAuditLogging,
   getScriptRecorder,
 } from './features/audit/plugin-integration';
-import { createEventRecorder } from './features/audit/event-recorder';
-import type { ScriptRecorder } from './types/audit';
 import fs from 'fs';
 import path from 'path';
 
@@ -49,32 +50,26 @@ function validateScriptsDirectory(): void {
   }
 }
 
-interface ExecuteHookParams {
-  ctx: PluginInput;
-  eventType: string;
-  resolved: ResolvedEventConfig;
-  sessionId: string;
-  input?: Record<string, unknown>;
-  output?: Record<string, unknown>;
-  toolName?: string;
-  scriptArg?: string;
-  eventRecorder?: ReturnType<typeof createEventRecorder>;
-  scriptRecorder?: ScriptRecorder;
-  showToast?: boolean;
-}
+import type { ExecuteHookParams } from './types/executor';
 
 async function executeHook(params: ExecuteHookParams): Promise<void> {
   const {
-    ctx,
     eventType,
     resolved,
     sessionId,
     input,
     output,
     toolName,
-    scriptArg,
+    scriptRecorder,
   } = params;
   const timestamp = new Date().toISOString();
+  void params.eventRecorder;
+  void params.ctx;
+
+  // Run-only-once check: skip if subagent and runOnlyOnce is true
+  if (resolved.runOnlyOnce && isSubagent(sessionId)) {
+    return;
+  }
 
   if (resolved.debug) {
     await handleDebugLog(timestamp, `DEBUG ${eventType.toUpperCase()}`, {
@@ -117,42 +112,23 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     });
   }
 
-  const runner = createScriptRunner({
-    ctx,
-    sessionId,
-    eventType,
-    resolved,
-    scriptToasts: resolved.scriptToasts,
-    scriptRecorder: params.scriptRecorder,
-    toolName,
-    timestamp,
-  });
-
   const results = await Promise.all(
     resolved.scripts.map(async (script) => {
-      if (script.source === 'claude') {
-        const hookResult = await executeScript(
-          script,
-          eventType,
-          toolName ?? '',
-          input ?? {},
-          output
-        );
-        return {
-          script: script.path,
-          output:
-            hookResult.action === 'allow'
-              ? JSON.stringify(hookResult)
-              : (hookResult.reason ?? ''),
-        };
-      }
-      return runner(script.path, scriptArg);
+      return executeScript(
+        script,
+        eventType,
+        toolName ?? '',
+        input ?? {},
+        output
+      );
     })
   );
 
   const successfulScripts = results
     .filter(
-      (result): result is { script: string; output: string } =>
+      (
+        result
+      ): result is { script: string; output: string; exitCode: number } =>
         result.output !== undefined
     )
     .filter((result) => result.output.trim() !== '');
@@ -178,9 +154,62 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
 
   const scriptResults: ScriptResult[] = results.map((r) => ({
     script: r.script,
-    exitCode: r.output ? 0 : 1,
+    exitCode: r.exitCode,
     output: r.output,
   }));
+
+  // Log to plugin-scripts.json
+  if (scriptRecorder) {
+    for (const r of results) {
+      await scriptRecorder.logScript(
+        {
+          script: r.script,
+          args: toolName ? [toolName] : [eventType],
+          startTime: Date.now(),
+        },
+        {
+          output: r.output,
+          error: r.exitCode === 0 ? null : r.output,
+          exitCode: r.exitCode,
+        }
+      );
+    }
+  }
+
+  // Error toast for failed scripts
+  if (resolved.scriptToasts?.showError) {
+    const failedScripts = results.filter((r) => r.exitCode !== 0 && r.output);
+    if (failedScripts.length > 0) {
+      const errorTitle = resolved.toastTitle.replace(
+        /=+$/,
+        ` ${resolved.scriptToasts?.errorTitle}====`
+      );
+      const eventInfo =
+        eventType.startsWith('tool.execute.') && toolName
+          ? toolName
+          : eventType;
+      useGlobalToastQueue().add({
+        title: errorTitle,
+        message: failedScripts
+          .map(
+            (r) =>
+              `Event: ${eventInfo}\nScript: ${r.script}\nError: ${r.output}\nExit Code: ${r.exitCode}\nCheck settings.ts`
+          )
+          .join('\n\n'),
+        variant: resolved.scriptToasts.errorVariant,
+        duration: resolved.scriptToasts.errorDuration,
+      });
+    }
+  }
+
+  // Append to session for successful scripts
+  if (resolved.appendToSession) {
+    for (const r of successfulScripts) {
+      if (r.output) {
+        await appendToSession(params.ctx, sessionId, r.output);
+      }
+    }
+  }
 
   // Execute blocking checks only for tool.execute.before events
   if (eventType === EventType.TOOL_EXECUTE_BEFORE && resolved.block.length) {
