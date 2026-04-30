@@ -1,4 +1,4 @@
-import type { UserEventsConfig } from '../../types/config';
+import type { UserEventsConfig, ScriptEntry } from '../../types/config';
 import type {
   EventHandler,
   ConfigResolverContext,
@@ -9,11 +9,20 @@ import type {
 import { EventConfigResolverImpl } from './resolvers/event-config.resolver';
 import { ToolConfigResolverImpl } from './resolvers/tool-config.resolver';
 import { handlers } from '../handlers';
+import { loadClaudeSettings } from '../../config/claude-settings';
 
 export function createContext(
   userConfig: UserEventsConfig,
   eventHandlers?: Record<string, EventHandler>
 ): ConfigResolverContext {
+  let claudeScripts: Record<string, ScriptEntry[]> = {};
+  let claudeUnsupported: string[] = [];
+  if (userConfig.loadClaudeHookSettings.enabled) {
+    const result = loadClaudeSettings(process.cwd());
+    claudeScripts = result.hooks;
+    claudeUnsupported = result.unsupported;
+  }
+
   return {
     get enabled() {
       return userConfig.enabled;
@@ -26,6 +35,12 @@ export function createContext(
     },
     get handlers() {
       return eventHandlers ?? handlers;
+    },
+    get claudeScripts() {
+      return claudeScripts;
+    },
+    get claudeUnsupported() {
+      return claudeUnsupported;
     },
     getEventConfig: (eventType) =>
       userConfig.events[eventType as keyof typeof userConfig.events],
