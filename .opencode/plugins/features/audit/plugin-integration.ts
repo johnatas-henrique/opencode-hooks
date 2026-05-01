@@ -1,10 +1,33 @@
-import { createAuditLogger, archiveFileIfNeeded } from './audit-logger';
+import { createAuditLogger } from './audit-logger';
 import { createEventRecorder } from './event-recorder';
 import { createScriptRecorder } from './script-recorder';
 import { createErrorRecorder } from './error-recorder';
 import type { AuditConfig } from '../../types/audit';
 import type { ScriptRecorder } from '../../types/audit';
-import { readdir, rename, mkdir, stat } from 'fs/promises';
+import fs from 'fs';
+import path from 'path';
+
+function getDebugLogPath(): string {
+  return path.join(
+    process.cwd(),
+    'production',
+    'session-logs',
+    'audit-debug.log'
+  );
+}
+
+function debugLog(...args: unknown[]): void {
+  try {
+    const logPath = getDebugLogPath();
+    const timestamp = new Date().toISOString();
+    const message = args
+      .map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a)))
+      .join(' ');
+    fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
+  } catch {
+    // Silently ignore if we can't write to debug log
+  }
+}
 
 let initPromise: Promise<void> | null = null;
 let auditLogger: ReturnType<typeof createAuditLogger>;
@@ -49,30 +72,45 @@ export function getErrorRecorder() {
   return initPromise ? errorRecorder : undefined;
 }
 
-export function resetAuditLogging() {
-  initPromise = null;
+export function getAuditLogger() {
+  return initPromise ? auditLogger : undefined;
 }
 
-export async function archiveAllJsonFiles(basePath: string): Promise<void> {
-  try {
-    const files = await readdir(basePath);
+export function getLastKnownSessionId(): string | undefined {
+  if (!auditLogger) return undefined;
+  return auditLogger.getLastKnownSessionId();
+}
 
-    const jsonFiles = files.filter(
-      (f) => f.endsWith('.json') && !f.includes('-archive')
-    );
-
-    const archiveDir = `${basePath}/plugin-archive`;
-    await mkdir(archiveDir, { recursive: true });
-
-    for (const file of jsonFiles) {
-      const filePath = `${basePath}/${file}`;
-      await archiveFileIfNeeded(filePath, archiveDir, 0, {
-        mkdir,
-        rename,
-        stat,
-      });
-    }
-  } catch {
-    // Silently ignore - app is shutting down, no one to see errors
+export function setAuditSessionId(sessionId: string): void {
+  if (auditLogger) {
+    auditLogger.setSessionId(sessionId);
   }
+}
+
+export function archiveAuditSession(): Promise<void> {
+  if (!auditLogger) {
+    debugLog('archiveAuditSession: auditLogger is null');
+    return Promise.resolve();
+  }
+
+  const targetSessionId = auditLogger.getLastKnownSessionId();
+  debugLog(
+    'archiveAuditSession: getLastKnownSessionId() returned:',
+    targetSessionId
+  );
+
+  if (!targetSessionId) {
+    debugLog('archiveAuditSession: no targetSessionId, skipping archive');
+    return Promise.resolve();
+  }
+
+  debugLog(
+    'archiveAuditSession: calling archiveSession with:',
+    targetSessionId
+  );
+  return auditLogger.archiveSession(targetSessionId);
+}
+
+export function resetAuditLogging() {
+  initPromise = null;
 }

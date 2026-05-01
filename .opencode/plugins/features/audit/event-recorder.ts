@@ -290,7 +290,7 @@ export function createEventRecorder(
   ): Promise<void> {
     const record = createToolExecuteBeforeRecord(input, canLog);
     if (record !== null) {
-      await deps.writeLine('events', record);
+      await deps.writeLine('events', record, input.sessionID);
     }
   }
 
@@ -300,7 +300,7 @@ export function createEventRecorder(
   ): Promise<void> {
     const record = createToolExecuteAfterRecord(input, output, canLog);
     if (record !== null) {
-      await deps.writeLine('events', record);
+      await deps.writeLine('events', record, input.sessionID);
     }
   }
 
@@ -310,7 +310,7 @@ export function createEventRecorder(
   ): Promise<void> {
     const record = createSessionEventRecord(eventType, input, canLog);
     if (record !== null) {
-      await deps.writeLine('events', record);
+      await deps.writeLine('events', record, input.sessionID);
     }
   }
 
@@ -344,7 +344,7 @@ export function createEventRecorder(
         const recordWithContext: AuditRecord & { context?: string } = record;
         recordWithContext.context = data.context;
       }
-      await deps.writeLine('events', record);
+      await deps.writeLine('events', record, data.sessionID);
     }
   }
 

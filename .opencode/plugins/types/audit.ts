@@ -17,6 +17,15 @@ export interface AuditConfig {
   maxFieldSize: number;
   maxArrayItems: number;
   largeFields: string[];
+  sessionId?: string;
+  files?: {
+    events: string;
+    scripts: string;
+    errors: string;
+    security: string;
+    debug: string;
+  };
+  archiveDir?: string;
 }
 
 export interface AuditFileStat {
@@ -74,14 +83,16 @@ export interface AuditRecord {
 export interface EventRecorderDependencies {
   writeLine: (
     fileType: 'events',
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
+    sessionId?: string
   ) => Promise<void>;
 }
 
 export interface ScriptRecorderDependencies {
   writeLine: (
     fileType: 'scripts',
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
+    sessionId?: string
   ) => Promise<void>;
 }
 
@@ -159,9 +170,13 @@ export interface SessionInput {
 export interface AuditLogger {
   writeLine(
     fileType: AuditFileType,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
+    sessionId?: string
   ): Promise<void>;
   cleanup(): Promise<void>;
+  archiveSession(sessionId?: string): Promise<void>;
+  setSessionId(sessionId: string): void;
+  getLastKnownSessionId(): string | undefined;
 }
 
 export interface AuditLoggerOptions {
@@ -199,17 +214,11 @@ export interface EventRecorder {
   ): Promise<void>;
 }
 
-export interface ScriptRecorderDependencies {
-  writeLine: (
-    fileType: 'scripts',
-    data: Record<string, unknown>
-  ) => Promise<void>;
-}
-
 export interface ScriptInput {
   script: string;
   args?: string[];
   startTime?: number;
+  sessionId?: string;
 }
 
 export interface ScriptRecorderResult {

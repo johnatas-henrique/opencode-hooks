@@ -62,7 +62,7 @@ export function createScriptRecorder(
   ): Promise<void> {
     const record = createScriptRecord(input, result, canLog, logTruncationKB);
     if (record !== null) {
-      await deps.writeLine('scripts', record);
+      await deps.writeLine('scripts', record, input.sessionId);
     }
   }
 
