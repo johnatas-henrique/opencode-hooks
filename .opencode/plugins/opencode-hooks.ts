@@ -21,10 +21,7 @@ import {
   resolveToolConfig,
 } from './features/events/events';
 import { handleDebugLog } from './core/debug';
-import {
-  getEventRecorder,
-  archiveAllJsonFiles,
-} from './features/audit/plugin-integration';
+import { getEventRecorder } from './features/audit/plugin-integration';
 import {
   addSubagentSession,
   isSubagent,
@@ -36,38 +33,84 @@ import { DEFAULTS } from './core/constants';
 import { executeScript } from './features/scripts/executor';
 import type { ScriptResult } from './types/config';
 import { executeBlocking } from './features/block-system/block-handler';
+import type { ExecuteHookParams } from './types/executor';
 import {
   initAuditLogging,
   getScriptRecorder,
+  setAuditSessionId,
+  getLastKnownSessionId,
+  archiveAuditSession,
 } from './features/audit/plugin-integration';
 import fs from 'fs';
 import path from 'path';
 
+function getDebugLogPath(): string {
+  return path.join(
+    process.cwd(),
+    'production',
+    'session-logs',
+    'audit-debug.log'
+  );
+}
+
+function debugLog(...args: unknown[]): void {
+  try {
+    const logPath = getDebugLogPath();
+    const timestamp = new Date().toISOString();
+    const message = args
+      .map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a)))
+      .join(' ');
+    fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
+  } catch {
+    // Silently ignore if we can't write to debug log
+  }
+}
+
 function validateScriptsDirectory(): void {
-  const scriptsDir = path.join(process.cwd(), DEFAULTS.scripts.dir);
+  let cwd: string;
+  try {
+    cwd = process.cwd();
+  } catch {
+    cwd = '/';
+  }
+  const scriptsDir = path.join(cwd, DEFAULTS.scripts.dir);
   if (!fs.existsSync(scriptsDir) || !fs.statSync(scriptsDir).isDirectory()) {
     throw new Error(`Scripts directory not found: ${scriptsDir}`);
   }
 }
 
-import type { ExecuteHookParams } from './types/executor';
+function getNormalizedSessionId(
+  sessionId: string,
+  getLastKnown: () => string | undefined
+): string {
+  if (sessionId && sessionId.startsWith('ses_')) {
+    return sessionId;
+  }
+
+  const lastKnown = getLastKnown();
+  if (lastKnown) {
+    return lastKnown;
+  }
+  return DEFAULTS.core.defaultSessionId;
+}
 
 async function executeHook(params: ExecuteHookParams): Promise<void> {
   const {
     eventType,
     resolved,
-    sessionId,
+    sessionId: rawSessionId,
     input,
     output,
     toolName,
     scriptRecorder,
   } = params;
+  const sessionId = getNormalizedSessionId(rawSessionId, getLastKnownSessionId);
   const timestamp = new Date().toISOString();
   void params.eventRecorder;
   void params.ctx;
 
   // Run-only-once check: skip if subagent and runOnlyOnce is true
-  if (resolved.runOnlyOnce && isSubagent(sessionId)) {
+  if (resolved.runOnlyOnce && isSubagent(rawSessionId)) {
     return;
   }
 
@@ -166,6 +209,7 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
           script: r.script,
           args: toolName ? [toolName] : [eventType],
           startTime: Date.now(),
+          sessionId,
         },
         {
           output: r.output,
@@ -255,11 +299,7 @@ export const OpencodeHooks: Plugin = async (
 
   await initAuditLogging(userConfig.audit);
 
-  const eventRecorder = getEventRecorder()!;
-  await eventRecorder.logEvent('PLUGIN_START', {
-    context: 'OpencodeHooks plugin initialized',
-  });
-
+  const eventRecorder = getEventRecorder();
   const scriptRecorder = getScriptRecorder();
 
   const hooks: Hooks = {
@@ -289,6 +329,56 @@ export const OpencodeHooks: Plugin = async (
         addSubagentSession(sessionId);
       }
 
+      // Update audit session ID based on event type:
+      // - session.created WITHOUT parentID (main session) → update
+      // - session.created WITH parentID (subagent) → DON'T update
+      // - chat.message → ALWAYS update (user only on main session)
+      // - others → NEVER update
+      const eventTypeStr = String(event.type);
+      const isSubagentSession =
+        eventTypeStr === 'session.created' && info?.parentID;
+      const isValidSessionId = sessionId?.startsWith('ses_');
+
+      if (
+        eventTypeStr === 'session.created' &&
+        !isSubagentSession &&
+        isValidSessionId
+      ) {
+        debugLog(
+          eventTypeStr,
+          '- Setting sessionId (main session):',
+          sessionId
+        );
+        setAuditSessionId(sessionId);
+      } else if (eventTypeStr === 'chat.message' && isValidSessionId) {
+        debugLog(
+          eventTypeStr,
+          '- Setting sessionId (chat.message):',
+          sessionId
+        );
+        setAuditSessionId(sessionId);
+      } else {
+        debugLog(eventTypeStr, '- NOT updating sessionId, keeping last known');
+      }
+
+      // Debug: log current sessionId in audit logger
+      debugLog(
+        event.type,
+        '- After setAuditSessionId check, currentSessionId in audit-logger'
+      );
+
+      // Archive audit files when session is deleted
+      if (event.type === EventType.SESSION_DELETED) {
+        await archiveAuditSession();
+      }
+
+      if (event.type === EventType.SERVER_INSTANCE_DISPOSED) {
+        debugLog(
+          'server.instance.disposed detected, calling archiveAuditSession()'
+        );
+        await archiveAuditSession();
+      }
+
       await executeHook({
         ctx,
         eventType: event.type,
@@ -299,9 +389,12 @@ export const OpencodeHooks: Plugin = async (
         scriptRecorder,
       });
 
-      if (event.type === 'server.instance.disposed') {
-        await archiveAllJsonFiles(userConfig.audit.basePath);
-      }
+      debugLog(
+        'Event handler: event.type =',
+        event.type,
+        ', sessionId =',
+        sessionId
+      );
     },
 
     'tool.execute.before': async (
@@ -660,15 +753,7 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    config: async (input: Record<string, unknown>) => {
-      const { agent, command, sessionID, ...rest } = input;
-      const eventRecorder = getEventRecorder()!;
-
-      await eventRecorder.logEvent('config.file.updated', {
-        sessionID: String(sessionID || 'unknown'),
-        input: rest,
-      });
-    },
+    config: async (_input) => {},
 
     auth: {
       provider: '',
