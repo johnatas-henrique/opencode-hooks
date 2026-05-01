@@ -15,7 +15,7 @@
 **Total Tests:** 849  
 **Total Files:** 55
 
-**Note:** Baseline updated after commenting out 3 slow tests in `additional-hooks.test.ts` (lines 134, 265, 343). These tests are temporarily disabled to speed up coverage runs; they require manual verification after optimization completes.
+**Note:** Baseline ORIGINAL (98.2%, 96.32%, 98.33%, 98.4%) — valores FIXOS, NÃO recalculados. File 47 (additional-hooks.test.ts) será **PULADO COMPLETAMENTE** — não processado, não verificado.
 
 ## Rules
 
@@ -29,7 +29,9 @@
 8. Do NOT use `describe.skip` — only individual `it.skip`
 9. "No test found" errors are expected when all tests in file are skipped — ignore
 10. Checkpoints: `aft_safety checkpoint "after-file-N"` every 5 files
-11. Manage context automatically with `ctx_reduce` as needed
+11. Processamento: apenas `.skip` em `it`, NUNCA em `describe`
+12. Ferramentas permitidas: READ, EDIT, ctx_reduce, aft_safety, npm run coverage:report (NENHUMA outra ferramenta)
+13. File 47 (additional-hooks.test.ts): PULO COMPLETO (não processado, não verificado)
 
 ## File Processing Order (sorted by test count, ascending)
 
@@ -48,15 +50,15 @@
 | 11  | test/unit/features/events/resolution/resolution.boolean-field.test.ts             | ~7    | **DONE** (5/6 skipped, 1 necessary)                  |
 | 12  | test/unit/features/audit/debug-recorder.test.ts                                   | ~7    | **DONE** (4/6 skipped, 2 necessary)                  |
 | 13  | test/unit/features/audit/security-recorder.test.ts                                | ~5    | **DONE** (2/4 skipped, 2 necessary)                  |
-| 14  | test/unit/features/block-system/block-handler.test.ts                             | ~7    | pending                                              |
-| 15  | test/unit/features/events/events.test.ts                                          | ~7    | pending                                              |
-| 16  | test/unit/features/messages/plugin-status.test.ts                                 | ~25   | pending                                              |
-| 17  | test/unit/features/events/resolvers/normalize-input.test.ts                       | ~23   | pending                                              |
-| 18  | test/unit/config/security-rules.test.ts                                           | ~10   | pending                                              |
+| 14  | test/unit/features/block-system/block-handler.test.ts                             | ~7    | **DONE** (0/6 skipped, 6 necessary)                  |
+| 15  | test/unit/features/events/events.test.ts                                          | ~7    | **DONE** (2/6 skipped, 4 necessary)                  |
+| 16  | test/unit/features/messages/plugin-status.test.ts                                 | ~25   | **DONE** (2/24 skipped, 22 necessary)                |
+| 17  | test/unit/features/events/resolvers/normalize-input.test.ts                       | ~23   | **DONE** (17/22 skipped, 5 necessary)                |
+| 18  | test/unit/config/security-rules.test.ts                                           | ~19   | **DONE** (7/19 skipped, 12 necessary)                |
 | 19  | test/unit/features/audit/audit-plugin-integration.test.ts                         | ~10   | pending                                              |
-| 20  | test/integration/toast-contract.test.ts                                           | ~10   | pending                                              |
-| 21  | test/integration/toast-queue-concurrency.test.ts                                  | ~6    | pending                                              |
-| 22  | test/unit/features/audit/event-recorder.test.ts                                   | ~15   | pending                                              |
+| 20  | test/integration/toast-contract.test.ts                                           | ~10   | **DONE** (6/7 skipped, 1 necessary)                  |
+| 21  | test/integration/toast-queue-concurrency.test.ts                                  | ~6    | **DONE** (4/5 skipped, 1 necessary)                  |
+| 22  | test/unit/features/audit/event-recorder.test.ts                                   | ~35   | **DONE** (17 skipped, 18 necessary)                  |
 | 23  | test/unit/features/audit/error-recorder.test.ts                                   | ~10   | pending                                              |
 | 24  | test/unit/features/audit/script-recorder.test.ts                                  | ~10   | pending                                              |
 | 25  | test/unit/features/block-system/block-system.test.ts                              | ~15   | pending                                              |
@@ -222,19 +224,164 @@ File 14 not redundant (0/6 skipped, 6 necessary)
 
 File 15 partially redundant (2/6 skipped, 4 necessary)
 
+### File 16: plugin-status.test.ts
+
+- Test 1 ("should return null when no .log files after filter"): REVERTED ✗ (coverage changed — necessary)
+- Test 2 ("should override active status with failed when both exist"): SKIPPED ✓ (coverage unchanged)
+- Test 3 ("should skip non-plugin log entries"): REVERTED ✗ (coverage changed — necessary)
+- Test 4 ("should handle malformed log lines gracefully"): REVERTED ✗ (coverage changed — necessary)
+- Test 5 ("should return empty array when file read fails"): REVERTED ✗ (coverage changed — necessary)
+- Test 6 ("should use DEFAULT_SESSION_ID when no name path or pkg"): REVERTED ✗ (coverage changed — necessary)
+- Test 7 ("should use entry.message when error tag is not present"): REVERTED ✗ (coverage changed — necessary)
+- Test 8 ("should not overwrite existing plugin status with same name"): REVERTED ✗ (coverage changed — necessary)
+- Test 9 ("should handle warn level without incompatible message"): REVERTED ✗ (coverage changed — necessary)
+- Test 10 ("should sort files with dev.log and timestamped files"): REVERTED ✗ (coverage changed — necessary)
+- Test 11 ("should return message when no plugins detected"): REVERTED ✗ (coverage changed — necessary)
+- Test 12 ("should format mixed statuses"): REVERTED ✗ (coverage changed — necessary)
+- Test 13 ("should show failed plugin without error message"): REVERTED ✗ (coverage changed — necessary)
+- Test 14 ("should show total count including built-in"): REVERTED ✗ (coverage changed — necessary)
+- Test 15 ("should show failed section when failed plugins exist"): REVERTED ✗ (coverage changed — necessary)
+- Test 16 ("should show incompatible section when incompatible plugins exist"): REVERTED ✗ (coverage changed — necessary)
+- Test 17 ("should show failed plugin without error"): REVERTED ✗ (coverage changed — necessary)
+- Test 18 ("should show total count including all plugins"): REVERTED ✗ (coverage changed — necessary)
+- Test 19 ("should show failed section with labels when failed plugins exist"): SKIPPED ✓ (coverage unchanged)
+- Test 20 ("should show incompatible section with labels when incompatible plugins exist"): REVERTED ✗ (coverage changed — necessary)
+- Test 21 ("should show failed plugin without error in all-labeled mode"): REVERTED ✗ (coverage changed — necessary)
+- Test 22 ("should use built-in label for failed in all-labeled mode"): REVERTED ✗ (coverage changed — necessary)
+- Test 23 ("should use user label when source is undefined in all-labeled mode"): REVERTED ✗ (coverage changed — necessary)
+- Test 24 ("should default to user-only when no mode specified"): REVERTED ✗ (coverage changed — necessary)
+
+File 16 partially redundant (2/24 skipped, 22 necessary)
+
+### File 17: normalize-input.test.ts
+
+- Test 1 ("should wrap shell.env input in properties"): SKIPPED ✓ (coverage unchanged)
+- Test 2 ("should cover line 10 when eventType exactly equals shell.env"): REVERTED ✗ (coverage changed — necessary)
+- Test 3 ("should cover line 22 when eventType exactly equals command.execute.before"): SKIPPED ✓ (coverage unchanged)
+- Test 4 ("should wrap permission input in properties"): SKIPPED ✓ (coverage unchanged)
+- Test 5 ("should wrap command input in properties"): REVERTED ✗ (coverage changed — necessary)
+- Test 6 ("should wrap tool.definition input in properties"): SKIPPED ✓ (coverage unchanged)
+- Test 7 ("should wrap experimental input in properties"): SKIPPED ✓ (coverage unchanged)
+- Test 8 ("should handle chat.message event"): SKIPPED ✓ (coverage unchanged)
+- Test 9 ("should handle chat.conversation event"): SKIPPED ✓ (coverage unchanged)
+- Test 10 ("should handle chat.update event"): SKIPPED ✓ (coverage unchanged)
+- Test 11 ("should handle experimental.text.complete"): SKIPPED ✓ (coverage unchanged)
+- Test 12 ("should handle experimental.audio.start"): REVERTED ✗ (coverage changed — necessary)
+- Test 13 ("should handle permission.check"): REVERTED ✗ (coverage changed — necessary)
+- Test 14 ("should handle permission-response"): SKIPPED ✓ (coverage unchanged)
+- Test 15 ("should return input/output for tool.execute.before"): SKIPPED ✓ (coverage unchanged)
+- Test 16 ("should return input/output for tool.execute.after"): SKIPPED ✓ (coverage unchanged)
+- Test 17 ("should preserve input for tool events"): SKIPPED ✓ (coverage unchanged)
+- Test 18 ("should return properties when eventType is custom with properties object"): SKIPPED ✓ (coverage unchanged)
+- Test 19 ("should cover typeof branch when properties is truthy non-object (line 27)"): SKIPPED ✓ (coverage unchanged)
+- Test 20 ("should extract nested properties object for unknown events"): SKIPPED ✓ (coverage unchanged)
+- Test 21 ("should handle input without properties (fallback to line 30)"): SKIPPED ✓ (coverage unchanged)
+- Test 22 ("should handle input with empty properties object"): REVERTED ✗ (coverage changed — necessary)
+
+File 17 partially redundant (17/22 skipped, 5 necessary)
+
+### File 18: security-rules.test.ts
+
+- Test 1 ("should handle null filePath"): REVERTED ✗ (coverage changed — necessary)
+- Test 2 ("should not block normal git commands"): REVERTED ✗ (coverage changed — necessary)
+- Test 3 ("should not block when command is undefined"): REVERTED ✗ (coverage changed — necessary)
+- Test 4 ("should not block when all scripts succeed"): REVERTED ✗ (coverage changed — necessary)
+- Test 5 ("should not block when filePath is undefined"): REVERTED ✗ (coverage changed — necessary)
+- Test 6 ("should not block when command is undefined"): REVERTED ✗ (coverage changed — necessary)
+- Test 7 ("should not block push to feature branch"): SKIPPED ✓ (coverage unchanged)
+- Test 8 ("should not block when command is undefined"): SKIPPED ✓ (coverage unchanged)
+- Test 9 ("should block push to main"): SKIPPED ✓ (coverage unchanged)
+- Test 10 ("should block push to master"): SKIPPED ✓ (coverage unchanged)
+- Test 11 ("should block push to develop"): SKIPPED ✓ (coverage unchanged)
+- Test 12 ("should not block non-git commands"): SKIPPED ✓ (coverage unchanged)
+- Test 13 ("should not block git commands that are not push"): REVERTED ✗ (coverage changed — necessary)
+- Test 14 ("should block main in any position"): REVERTED ✗ (coverage changed — necessary)
+- Test 15 ("should be case insensitive"): SKIPPED ✓ (coverage unchanged)
+- Test 16 ("should detect secrets in nested objects"): REVERTED ✗ (coverage changed — necessary)
+- Test 17 ("should handle nested objects without secrets"): REVERTED ✗ (coverage changed — necessary)
+- Test 18 ("should return false for non-secret values"): SKIPPED ✓ (coverage unchanged)
+- Test 19 ("should handle exactly 100KB"): REVERTED ✗ (coverage changed — necessary)
+
+File 18 partially redundant (7/19 skipped, 12 necessary)
+
+### File 20: toast-contract.test.ts
+
+- Test 1 ("should find handler for session.error"): SKIPPED ✓ (coverage unchanged)
+- Test 2 ("should return undefined for nonexistent event"): SKIPPED ✓ (coverage unchanged)
+- Test 3 ("should return shouldShow: true when enabled and toast true"): SKIPPED ✓ (coverage unchanged)
+- Test 4 ("should return shouldShow: false when event is disabled"): SKIPPED ✓ (coverage unchanged)
+- Test 5 ("should return shouldShow: false when handler not found"): SKIPPED ✓ (coverage unchanged)
+- Test 6 ("should use handler variant when config variant not set"): SKIPPED ✓ (coverage unchanged)
+- Test 7 ("should use handler duration when config duration not set"): REVERTED ✗ (coverage changed — necessary)
+
+File 20 partially redundant (6/7 skipped, 1 necessary)
+
+### File 21: toast-queue-concurrency.test.ts
+
+- Test 1 ("should return early if queue becomes empty during lock wait"): SKIPPED ✓ (coverage unchanged)
+- Test 2 ("should log dropped toast when queue exceeds maxSize"): SKIPPED ✓ (coverage unchanged)
+- Test 3 ("should use default session ID for dropped toast with no title"): REVERTED ✗ (coverage changed — necessary)
+- Test 4 ("should clean up active timers during toast processing"): SKIPPED ✓ (coverage unchanged)
+- Test 5 ("should handle adding multiple toasts at once"): SKIPPED ✓ (coverage unchanged)
+
+File 21 partially redundant (4/5 skipped, 1 necessary)
+
+### File 22: event-recorder.test.ts
+
+- `extractTool "should return unknown when tool is undefined"`: active (NECESSARY — never tested as baseline default)
+- `extractSession "should return unknown when no session identifier"`: active (NECESSARY)
+- `createToolExecuteAfterRecord "should create record with error status for non-zero exit"`: active (NECESSARY)
+- `createSessionEventRecord "should create record with correct fields"`: REVERTED ✗ (necessary)
+- `createSessionEventRecord "should use sessionID directly when provided"`: REVERTED ✗ (necessary)
+- `createSessionEventRecord "should return null when shouldLogResult is false"`: SKIPPED ✓ (redundant)
+- `extractDirectory "should return unknown when directory is not available"`: SKIPPED ✓ (redundant)
+- `createToolExecuteBeforeRecord "should return null when shouldLogResult is false"`: SKIPPED ✓ (redundant)
+- `createToolExecuteBeforeRecord "should return record when shouldLogResult is true"`: SKIPPED ✓ (redundant)
+- `logEvent "should log generic event with input and output"`: SKIPPED ✓ (redundant)
+- `logEvent "should not log when level is audit"`: SKIPPED ✓ (redundant)
+- `logEvent "should include tool name when provided"`: SKIPPED ✓ (redundant)
+- `logEvent "should add context field when provided"`: SKIPPED ✓ (redundant)
+- `logEvent "should handle null record gracefully"`: REVERTED ✗ (necessary)
+- `logEvent "should handle undefined input and pass sessionID"`: SKIPPED ✓ (redundant)
+- `logToolExecuteBefore "should not log when level is audit"`: REVERTED ✗ (necessary)
+- `logToolExecuteBefore "should log when record is not null"`: REVERTED ✗ (necessary)
+- `logToolExecuteAfter "should log tool.execute.after with correct fields"`: REVERTED ✗ (necessary)
+- `logToolExecuteAfter "should not log when level is audit"` (top-level): REVERTED ✗ (necessary)
+- `logSessionEvent "should not log when disabled"`: REVERTED ✗ (necessary)
+- `logSessionEvent "should log when record is not null"`: REVERTED ✗ (necessary)
+- `createGenericEventRecord "should create record with sanitized input and output"`: SKIPPED ✓ (redundant)
+- `createGenericEventRecord "should extract session from info.id when sessionID not present"`: REVERTED ✗ (necessary)
+- `createGenericEventRecord "should return null when shouldLogResult is false"`: SKIPPED ✓ (redundant)
+- `createGenericEventRecord "should truncate large string fields"`: SKIPPED ✓ (redundant)
+- `createGenericEventRecord "should redact sensitive fields"`: SKIPPED ✓ (redundant)
+- `createGenericEventRecord "should limit array items"`: REVERTED ✗ (necessary)
+- `createGenericEventRecord "should sanitize nested objects"`: REVERTED ✗ (necessary)
+- `createGenericEventRecord "should handle arrays with primitive values"`: REVERTED ✗ (necessary)
+- `createGenericEventRecord "should handle empty input and output"`: REVERTED ✗ (necessary)
+- `setGlobalTruncationKB "should set global truncation KB value"`: SKIPPED ✓ (redundant)
+- `LARGE_FIELDS "should truncate patch field when larger than truncationKB"`: SKIPPED ✓ (redundant)
+- `LARGE_FIELDS "should truncate diff field"`: SKIPPED ✓ (redundant)
+- `LARGE_FIELDS "should truncate diff field inside properties"`: SKIPPED ✓ (redundant)
+- `LARGE_FIELDS "should truncate content field when it is LARGE_FIELD"`: REVERTED ✗ (necessary)
+
+File 22 partially redundant (17 skipped, 18 necessary)
+
 ## Summary
 
 | Category                       | Count |
 | ------------------------------ | ----- |
-| Tests Skipped (redundant)      | 41    |
-| Tests Reverted (necessary)     | 17    |
+| Tests Skipped (redundant)      | 94    |
+| Tests Reverted (necessary)     | 76    |
 | Files with all tests redundant | 1     |
-| Files partially redundant      | 6     |
+| Files partially redundant      | 14    |
 
 ## Notes
 
-- Coverage threshold errors (100%) are expected and should be ignored
-- Only compare against the 4 baseline metrics above
-- Context management via `ctx_reduce` is permitted
-- Safety checkpoints via `aft_safety` are permitted before edits
-- **Manual Verification Required:** `additional-hooks.test.ts` (File 47) has 3 slow tests commented out (lines 134, 265, 343). After all other skips are complete, restore these tests one at a time to determine if they are redundant, using the same baseline (with all other optimizations applied).
+- **Coverage 100% errors:** ignorar (esperados)
+- **Comparação:** TODAS as 4 métricas (Statements 98.2%, Branches 96.32%, Functions 98.33%, Lines 98.4%) — sempre verificar as 4
+- **Skips permanentes:** `.skip` aplicado e mantido no arquivo (não temporário)
+- **Ferramentas permitidas:** apenas READ, EDIT, ctx_reduce, aft_safety, npm run coverage:report
+- **Apenas `it.skip`:** NUNCA usar `describe.skip`
+- **File 47:** PULO COMPLETO (não processado, não verificado)
+- **Checkpoints:** `aft_safety checkpoint "after-file-N"` a cada 5 arquivos completos
+- **Contexto:** `ctx_reduce` permitido para gerenciar contexto
