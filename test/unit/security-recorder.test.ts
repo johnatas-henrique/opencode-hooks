@@ -3,8 +3,8 @@ import {
   createSecurityRecorder,
   getSecurityRecorder,
   setSecurityRecorder,
-} from '../../.opencode/plugins/features/audit/security-recorder';
-import type { AuditLogger } from '../../.opencode/plugins/types/audit';
+} from '.opencode/plugins/features/audit/security-recorder';
+import type { AuditLogger } from '.opencode/plugins/types/audit';
 
 describe('security-recorder', () => {
   let mockWriteLine: AuditLogger['writeLine'];

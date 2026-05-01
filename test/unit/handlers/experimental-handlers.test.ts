@@ -1,4 +1,4 @@
-import { handlers } from '../../../.opencode/plugins/features/handlers';
+import { handlers } from '.opencode/plugins/features/handlers';
 
 describe('Experimental Handlers', () => {
   const experimentalHandlers = [

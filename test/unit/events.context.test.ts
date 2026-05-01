@@ -1,11 +1,11 @@
-import type { ConfigResolverContext } from '../../.opencode/plugins/types/events';
+import type { ConfigResolverContext } from '.opencode/plugins/types/events';
 import {
   createContext,
   createFactory,
-} from '../../.opencode/plugins/features/events/context';
-import type { UserEventsConfig } from '../../.opencode/plugins/types/config';
+} from '.opencode/plugins/features/events/context';
+import type { UserEventsConfig } from '.opencode/plugins/types/config';
 
-vi.mock('../../.opencode/plugins/config/claude-settings', () => ({
+vi.mock('.opencode/plugins/config/claude-settings', () => ({
   loadClaudeSettings: vi.fn().mockReturnValue({
     hooks: {
       'tool.execute.before': [{ source: 'claude', path: 'claude-hook.sh' }],

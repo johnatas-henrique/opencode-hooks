@@ -3,8 +3,8 @@ import {
   createDebugRecorder,
   getDebugRecorder,
   setDebugRecorder,
-} from '../../.opencode/plugins/features/audit/debug-recorder';
-import type { AuditLogger } from '../../.opencode/plugins/types/audit';
+} from '.opencode/plugins/features/audit/debug-recorder';
+import type { AuditLogger } from '.opencode/plugins/types/audit';
 
 describe('debug-recorder', () => {
   let mockWriteLine: AuditLogger['writeLine'];

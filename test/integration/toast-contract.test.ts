@@ -1,9 +1,9 @@
 import {
   resolveEventConfig,
   getHandler,
-} from '../../.opencode/plugins/features/events/events';
+} from '.opencode/plugins/features/events/events';
 
-vi.mock('../../.opencode/plugins/config/settings', () => ({
+vi.mock('.opencode/plugins/config/settings', () => ({
   userConfig: {
     enabled: true,
     toast: true,

@@ -1,5 +1,5 @@
-import { EventType } from '../../.opencode/plugins/types/events';
-import type { UserEventsConfig } from '../../.opencode/plugins/types/config';
+import { EventType } from 'docs/.opencode/plugins/types/events';
+import type { UserEventsConfig } from 'docs/.opencode/plugins/types/config';
 
 export const userConfig: UserEventsConfig = {
   enabled: true,

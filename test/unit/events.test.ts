@@ -1,7 +1,7 @@
-import { createResolvers } from '../helpers/create-resolver';
-import { createUserConfig } from '../helpers/create-config';
-import type { UserEventsConfig } from '../../.opencode/plugins/types/config';
-import { getHandler } from '../../.opencode/plugins/features/events/events';
+import { createResolvers } from 'test/helpers/create-resolver';
+import { createUserConfig } from 'test/helpers/create-config';
+import type { UserEventsConfig } from '.opencode/plugins/types/config';
+import { getHandler } from '.opencode/plugins/features/events/events';
 
 describe('events - resolveEventConfig', () => {
   it('should return defaults for event not listed', () => {

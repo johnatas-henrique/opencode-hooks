@@ -3,8 +3,8 @@ import type {
   ToolExecuteAfterInput,
   ToolExecuteBeforeInput,
   ToolExecuteAfterOutput,
-} from '../../.opencode/plugins/types/core';
-import type { AuditConfig } from '../../.opencode/plugins/types/audit';
+} from '.opencode/plugins/types/core';
+import type { AuditConfig } from '.opencode/plugins/types/audit';
 import {
   createEventRecorder,
   createToolExecuteAfterRecord,
@@ -15,7 +15,7 @@ import {
   extractDirectory,
   createGenericEventRecord,
   setGlobalTruncationKB,
-} from '../../.opencode/plugins/features/audit/event-recorder';
+} from '.opencode/plugins/features/audit/event-recorder';
 
 describe('event-recorder', () => {
   describe('extractTool', () => {
@@ -131,7 +131,7 @@ describe('createEventRecorder', () => {
   describe('logEvent', () => {
     it('should log generic event with input and output', async () => {
       const { createEventRecorder } =
-        await import('../../.opencode/plugins/features/audit/event-recorder');
+        await import('.opencode/plugins/features/audit/event-recorder');
       const config = {
         enabled: true,
         level: 'debug',
@@ -167,7 +167,7 @@ describe('createEventRecorder', () => {
 
     it('should not log when level is audit', async () => {
       const { createEventRecorder } =
-        await import('../../.opencode/plugins/features/audit/event-recorder');
+        await import('.opencode/plugins/features/audit/event-recorder');
       const config = {
         enabled: true,
         level: 'audit',
@@ -192,7 +192,7 @@ describe('createEventRecorder', () => {
 
     it('should include tool name when provided', async () => {
       const { createEventRecorder } =
-        await import('../../.opencode/plugins/features/audit/event-recorder');
+        await import('.opencode/plugins/features/audit/event-recorder');
       const config = {
         enabled: true,
         level: 'debug',
@@ -277,7 +277,7 @@ describe('createEventRecorder', () => {
 
     it('should handle undefined input and pass sessionID', async () => {
       const { createEventRecorder } =
-        await import('../../.opencode/plugins/features/audit/event-recorder');
+        await import('.opencode/plugins/features/audit/event-recorder');
       const mockWriteLine = vi.fn().mockResolvedValue(undefined);
       const config = {
         enabled: true,
@@ -309,7 +309,7 @@ describe('createEventRecorder', () => {
   describe('logToolExecuteBefore', () => {
     it('should not log when level is audit', async () => {
       const { createEventRecorder } =
-        await import('../../.opencode/plugins/features/audit/event-recorder');
+        await import('.opencode/plugins/features/audit/event-recorder');
       const config = {
         enabled: true,
         level: 'audit',
@@ -360,7 +360,7 @@ describe('createEventRecorder', () => {
   describe('logToolExecuteAfter', () => {
     it('should log tool.execute.after with correct fields', async () => {
       const { createEventRecorder } =
-        await import('../../.opencode/plugins/features/audit/event-recorder');
+        await import('.opencode/plugins/features/audit/event-recorder');
       const defaultConfig = {
         enabled: true,
         level: 'debug',
@@ -395,7 +395,7 @@ describe('createEventRecorder', () => {
 
   it('should not log when level is audit', async () => {
     const { createEventRecorder } =
-      await import('../../.opencode/plugins/features/audit/event-recorder');
+      await import('.opencode/plugins/features/audit/event-recorder');
     const config = {
       enabled: true,
       level: 'audit',
@@ -421,7 +421,7 @@ describe('createEventRecorder', () => {
   describe('logSessionEvent', () => {
     it('should not log when disabled', async () => {
       const { createEventRecorder } =
-        await import('../../.opencode/plugins/features/audit/event-recorder');
+        await import('.opencode/plugins/features/audit/event-recorder');
       const config = {
         enabled: true,
         level: 'audit',

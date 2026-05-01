@@ -1,8 +1,5 @@
-import { resolveScripts } from '../../.opencode/plugins/features/events/resolution/scripts';
-import type {
-  EventConfig,
-  ScriptEntry,
-} from '../../.opencode/plugins/types/config';
+import { resolveScripts } from '.opencode/plugins/features/events/resolution/scripts';
+import type { EventConfig, ScriptEntry } from '.opencode/plugins/types/config';
 
 describe('resolveScripts', () => {
   const handlerDefault = 'default.sh';

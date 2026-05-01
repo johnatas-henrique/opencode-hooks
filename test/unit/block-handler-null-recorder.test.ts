@@ -1,26 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { executeBlocking } from '../../.opencode/plugins/features/block-system/block-handler';
-import type { SecurityRecorder } from '../../.opencode/plugins/types/audit';
-import * as securityRecorder from '../../.opencode/plugins/features/audit/security-recorder';
+import { executeBlocking } from '.opencode/plugins/features/block-system/block-handler';
+import type { SecurityRecorder } from '.opencode/plugins/types/audit';
+import * as securityRecorder from '.opencode/plugins/features/audit/security-recorder';
 import type {
   BlockEffects,
   BlockSystem,
-} from '../../.opencode/plugins/types/block-system';
-import { createBlockSystem } from '../../.opencode/plugins/types/block-system';
-import type {
-  BlockCheck,
-  ScriptResult,
-} from '../../.opencode/plugins/types/config';
+} from '.opencode/plugins/types/block-system';
+import { createBlockSystem } from '.opencode/plugins/types/block-system';
+import type { BlockCheck, ScriptResult } from '.opencode/plugins/types/config';
 import type {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
-} from '../../.opencode/plugins/types/core';
+} from '.opencode/plugins/types/core';
 
-vi.mock('../../.opencode/plugins/features/audit/security-recorder', () => ({
+vi.mock('.opencode/plugins/features/audit/security-recorder', () => ({
   getSecurityRecorder: vi.fn(),
 }));
 
-vi.mock('../../.opencode/plugins/types/block-system', () => ({
+vi.mock('.opencode/plugins/types/block-system', () => ({
   createBlockSystem: vi.fn(),
 }));
 

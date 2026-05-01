@@ -1,11 +1,11 @@
-import { EventConfigResolverImpl } from '../../.opencode/plugins/features/events/resolvers/event-config.resolver';
+import { EventConfigResolverImpl } from '.opencode/plugins/features/events/resolvers/event-config.resolver';
 import type {
   ConfigResolverContext,
   EventHandler,
-} from '../../.opencode/plugins/types/events';
-import type { EventOverride } from '../../.opencode/plugins/types/config';
+} from '.opencode/plugins/types/events';
+import type { EventOverride } from '.opencode/plugins/types/config';
 import type { Mock } from 'vitest';
-import * as pluginIntegration from '../../.opencode/plugins/features/audit/plugin-integration';
+import * as pluginIntegration from '.opencode/plugins/features/audit/plugin-integration';
 
 describe('EventConfigResolverImpl', () => {
   const createMockContext = (

@@ -1,4 +1,4 @@
-import { normalizeInputForHandler } from '../../.opencode/plugins/features/events/resolvers/normalize-input';
+import { normalizeInputForHandler } from '.opencode/plugins/features/events/resolvers/normalize-input';
 
 describe('normalizeInputForHandler (events.ts version)', () => {
   describe('shell.env coverage (line 11)', () => {

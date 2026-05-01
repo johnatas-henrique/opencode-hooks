@@ -1,19 +1,19 @@
-import { createScriptRunner } from '../../.opencode/plugins/features/scripts/script-runner';
+import { createScriptRunner } from '.opencode/plugins/features/scripts/script-runner';
 import type { PluginInput } from '@opencode-ai/plugin';
 import type {
   ResolvedEventConfig,
   ScriptToastsConfig,
-} from '../../.opencode/plugins/types/config';
-import type { ScriptRecorder } from '../../.opencode/plugins/types/audit';
-import type { EventScriptConfig } from '../../.opencode/plugins/types/scripts';
+} from '.opencode/plugins/types/config';
+import type { ScriptRecorder } from '.opencode/plugins/types/audit';
+import type { EventScriptConfig } from '.opencode/plugins/types/scripts';
 import { vi } from 'vitest';
 
 type HandlerConfig = EventScriptConfig & { scriptRecorder?: ScriptRecorder };
 
-vi.mock('../../.opencode/plugins/features/scripts/run-script-handler', () => ({
+vi.mock('.opencode/plugins/features/scripts/run-script-handler', () => ({
   runScriptAndHandle: vi.fn(),
 }));
-import { runScriptAndHandle } from '../../.opencode/plugins/features/scripts/run-script-handler';
+import { runScriptAndHandle } from '.opencode/plugins/features/scripts/run-script-handler';
 
 const mockedRunScriptAndHandle = vi.mocked(runScriptAndHandle, true);
 

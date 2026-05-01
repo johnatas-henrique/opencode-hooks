@@ -1,4 +1,4 @@
-import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
+import { OpencodeHooks } from '.opencode/plugins/opencode-hooks';
 import type { PluginInput } from '@opencode-ai/plugin';
 
 let capturedShowFn: ((toast: unknown) => void) | null = null;
@@ -17,7 +17,7 @@ const { mockQueue: globalMockQueue } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../.opencode/plugins/config/settings', () => ({
+vi.mock('.opencode/plugins/config/settings', () => ({
   userConfig: {
     enabled: true,
     toast: true,
@@ -69,11 +69,11 @@ vi.mock('../../.opencode/plugins/config/settings', () => ({
   },
 }));
 
-vi.mock('../../.opencode/plugins/features/scripts/executor', () => ({
+vi.mock('.opencode/plugins/features/scripts/executor', () => ({
   executeScript: vi.fn().mockResolvedValue({ script: 'test.sh', output: '' }),
 }));
 
-vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
+vi.mock('.opencode/plugins/core/toast-queue', () => ({
   initGlobalToastQueue: (showFn: (toast: unknown) => void) => {
     capturedShowFn = showFn;
     return globalMockQueue;
@@ -83,11 +83,11 @@ vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
   resetGlobalToastQueue: vi.fn(),
 }));
 
-vi.mock('../../.opencode/plugins/features/messages/show-startup-toast', () => ({
+vi.mock('.opencode/plugins/features/messages/show-startup-toast', () => ({
   showStartupToast: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../.opencode/plugins/features/events/events', () => ({
+vi.mock('.opencode/plugins/features/events/events', () => ({
   resolveEventConfig: vi.fn(),
   resolveToolConfig: vi.fn().mockReturnValue({
     enabled: true,
@@ -114,7 +114,7 @@ vi.mock('../../.opencode/plugins/features/events/events', () => ({
   getToolHandler: vi.fn(),
 }));
 
-vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
+vi.mock('.opencode/plugins/features/audit/plugin-integration', () => ({
   initAuditLogging: vi.fn().mockResolvedValue(undefined),
   getEventRecorder: () => ({
     logEvent: vi.fn(),

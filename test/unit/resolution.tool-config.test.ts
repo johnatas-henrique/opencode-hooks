@@ -1,6 +1,6 @@
-import type { ConfigResolverContext } from '../../.opencode/plugins/types/events';
+import type { ConfigResolverContext } from '.opencode/plugins/types/events';
 import type { Mock } from 'vitest';
-import { ToolConfigResolverImpl } from '../../.opencode/plugins/features/events/resolvers/tool-config.resolver';
+import { ToolConfigResolverImpl } from '.opencode/plugins/features/events/resolvers/tool-config.resolver';
 
 describe('ToolConfigResolverImpl', () => {
   const createMockContext = (

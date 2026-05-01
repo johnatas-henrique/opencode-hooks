@@ -2,9 +2,9 @@ import { vi } from 'vitest';
 import {
   createToastQueue,
   resetGlobalToastQueue,
-} from '../../.opencode/plugins/core/toast-queue';
+} from '.opencode/plugins/core/toast-queue';
 
-vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
+vi.mock('.opencode/plugins/features/audit/plugin-integration', () => ({
   getErrorRecorder: vi.fn(() => null),
   initAuditLogging: vi.fn(),
   getScriptRecorder: vi.fn(),

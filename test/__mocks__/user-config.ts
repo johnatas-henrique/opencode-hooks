@@ -2,7 +2,7 @@ import type {
   EventOverride,
   ToolOverride,
   ScriptToastsConfig,
-} from '../../.opencode/plugins/types/config';
+} from '.opencode/plugins/types/config';
 
 export const defaultScriptToasts: ScriptToastsConfig = {
   showOutput: true,

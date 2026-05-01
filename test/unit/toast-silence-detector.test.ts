@@ -2,7 +2,7 @@ import type { MockedFunction } from 'vitest';
 import {
   waitForToastSilence,
   countToastsInLog,
-} from '../../.opencode/plugins/features/messages/toast-silence-detector';
+} from '.opencode/plugins/features/messages/toast-silence-detector';
 
 vi.mock('fs/promises', () => ({
   readFile: vi.fn(),

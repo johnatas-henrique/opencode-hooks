@@ -1,4 +1,4 @@
-import { handlers } from '../../../.opencode/plugins/features/handlers';
+import { handlers } from '.opencode/plugins/features/handlers';
 
 describe('Server Handlers', () => {
   const serverHandlers = ['server.connected', 'server.instance.disposed'];

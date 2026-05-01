@@ -1,4 +1,4 @@
-import { getLatestLogFile } from '../../.opencode/plugins/features/messages/plugin-status';
+import { getLatestLogFile } from '.opencode/plugins/features/messages/plugin-status';
 import * as fs from 'fs';
 import type { Mock } from 'vitest';
 

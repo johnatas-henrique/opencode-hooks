@@ -1,9 +1,9 @@
 import {
   resolveEventConfig,
   resolveToolConfig,
-} from '../../.opencode/plugins/features/events/events';
+} from '.opencode/plugins/features/events/events';
 
-vi.mock('../../.opencode/plugins/features/handlers', () => ({
+vi.mock('.opencode/plugins/features/handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -29,7 +29,7 @@ vi.mock('../../.opencode/plugins/features/handlers', () => ({
   },
 }));
 
-vi.mock('../../.opencode/plugins/config/settings', () => ({
+vi.mock('.opencode/plugins/config/settings', () => ({
   userConfig: {
     enabled: true,
     loadClaudeHookSettings: { enabled: false },

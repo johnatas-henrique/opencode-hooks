@@ -3,13 +3,13 @@ import {
   createSessionAdapter,
   createToastAdapter,
   createSubagentTracker,
-} from '../../.opencode/plugins/features/scripts/adapters';
-import type { ScriptRecorder } from '../../.opencode/plugins/types/audit';
+} from '.opencode/plugins/features/scripts/adapters';
+import type { ScriptRecorder } from '.opencode/plugins/types/audit';
 import type {
   ScriptInput,
   ScriptResultForAudit,
-} from '../../.opencode/plugins/types/executor';
-import type { EventScriptConfig } from '../../.opencode/plugins/types/scripts';
+} from '.opencode/plugins/types/executor';
+import type { EventScriptConfig } from '.opencode/plugins/types/scripts';
 import { vi, describe, it, expect } from 'vitest';
 
 describe('Adapters', () => {

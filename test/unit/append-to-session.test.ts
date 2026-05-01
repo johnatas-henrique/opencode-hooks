@@ -1,7 +1,7 @@
 import type { PluginInput } from '@opencode-ai/plugin';
 import type { Mock } from 'vitest';
-import { appendToSession } from '../../.opencode/plugins/features/messages/append-to-session';
-import { DEFAULTS } from '../../.opencode/plugins/core/constants';
+import { appendToSession } from '.opencode/plugins/features/messages/append-to-session';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
 
 describe('append-to-session', () => {
   let mockCtx: PluginInput;

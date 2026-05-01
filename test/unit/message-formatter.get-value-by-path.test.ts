@@ -1,4 +1,4 @@
-import { setValueByPath } from '../../.opencode/plugins/features/message-formatter/get-value-by-path';
+import { setValueByPath } from '.opencode/plugins/features/message-formatter/get-value-by-path';
 
 describe('getValueByPath', () => {
   it('should create intermediate objects', () => {

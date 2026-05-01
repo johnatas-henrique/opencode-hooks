@@ -1,4 +1,4 @@
-import { handlers } from '../../../.opencode/plugins/features/handlers';
+import { handlers } from '.opencode/plugins/features/handlers';
 
 describe('Chat Handlers', () => {
   const chatHandlers = ['chat.headers', 'chat.message', 'chat.params'];

@@ -7,9 +7,9 @@ import {
   blockProtectedBranch,
   blockSecrets,
   blockLargeArgs,
-} from '../../.opencode/plugins/config/security-rules';
-import type { ToolExecuteBeforeOutput } from '../../.opencode/plugins/types/core';
-import type { ScriptResult } from '../../.opencode/plugins/types/config';
+} from '.opencode/plugins/config/security-rules';
+import type { ToolExecuteBeforeOutput } from '.opencode/plugins/types/core';
+import type { ScriptResult } from '.opencode/plugins/types/config';
 
 describe('security-rules', () => {
   const mockInput = {

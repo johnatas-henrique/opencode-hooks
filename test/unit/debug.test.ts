@@ -1,8 +1,5 @@
-import {
-  handleDebugLog,
-  sanitizeData,
-} from '../../.opencode/plugins/core/debug';
-import type { DebugRecorder } from '../../.opencode/plugins/types/audit';
+import { handleDebugLog, sanitizeData } from '.opencode/plugins/core/debug';
+import type { DebugRecorder } from '.opencode/plugins/types/audit';
 
 // Use vi.hoisted to isolate mocks properly - factory functions create fresh mocks per test run
 const {
@@ -20,11 +17,11 @@ const {
   };
 });
 
-vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
+vi.mock('.opencode/plugins/core/toast-queue', () => ({
   useGlobalToastQueue: mockUseGlobalToastQueue,
 }));
 
-vi.mock('../../.opencode/plugins/core/constants', () => ({
+vi.mock('.opencode/plugins/core/constants', () => ({
   DEFAULTS: {
     toast: {
       durations: { TEN_SECONDS: 10000 },
@@ -78,11 +75,11 @@ vi.mock('../../.opencode/plugins/core/constants', () => ({
   },
 }));
 
-vi.mock('../../.opencode/plugins/features/audit/debug-recorder', () => ({
+vi.mock('.opencode/plugins/features/audit/debug-recorder', () => ({
   getDebugRecorder: mockGetDebugRecorder,
 }));
 
-import { useGlobalToastQueue } from '../../.opencode/plugins/core/toast-queue';
+import { useGlobalToastQueue } from '.opencode/plugins/core/toast-queue';
 
 describe('handleDebugLog', () => {
   beforeEach(() => {

@@ -1,6 +1,6 @@
 const mockToastAdd = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
+vi.mock('.opencode/plugins/core/toast-queue', () => ({
   createToastQueue: vi.fn(),
   initGlobalToastQueue: vi.fn(),
   useGlobalToastQueue: () => ({
@@ -15,19 +15,19 @@ import {
   runScriptAndHandle,
   addSubagentSession,
   resetSubagentTracking,
-} from '../../.opencode/plugins/features/scripts/run-script-handler';
+} from '.opencode/plugins/features/scripts/run-script-handler';
 
-vi.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
+vi.mock('.opencode/plugins/features/scripts/run-script', () => ({
   runScript: vi.fn(),
 }));
 
-vi.mock('../../.opencode/plugins/features/messages/append-to-session', () => ({
+vi.mock('.opencode/plugins/features/messages/append-to-session', () => ({
   appendToSession: vi.fn(),
 }));
 
-import { runScript } from '../../.opencode/plugins/features/scripts/run-script';
-import { appendToSession } from '../../.opencode/plugins/features/messages/append-to-session';
-import type { ResolvedEventConfig } from '../../.opencode/plugins/types/config';
+import { runScript } from '.opencode/plugins/features/scripts/run-script';
+import { appendToSession } from '.opencode/plugins/features/messages/append-to-session';
+import type { ResolvedEventConfig } from '.opencode/plugins/types/config';
 
 const mockRunScript = runScript as Mock;
 const mockAppendToSession = appendToSession as Mock;

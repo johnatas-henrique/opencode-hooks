@@ -1,4 +1,4 @@
-import { handlers } from '../../.opencode/plugins/features/handlers';
+import { handlers } from '.opencode/plugins/features/handlers';
 
 describe('handlers - truncate and formatValue', () => {
   it('buildMessage should truncate long strings', () => {

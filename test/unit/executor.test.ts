@@ -3,7 +3,7 @@ import {
   parseHookOutput,
   buildClaudeStdin,
   buildOpencodeStdin,
-} from '../../.opencode/plugins/features/scripts/executor';
+} from '.opencode/plugins/features/scripts/executor';
 
 vi.mock('child_process', () => ({
   spawn: vi.fn(),
@@ -179,7 +179,7 @@ describe('executeScript', () => {
   it('handles spawn error', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockProc = {
@@ -210,7 +210,7 @@ describe('executeScript', () => {
   it('runs async script without waiting', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockProc = {
@@ -232,7 +232,7 @@ describe('executeScript', () => {
   it('handles process close with stdout/stderr', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockStdout = {
@@ -273,7 +273,7 @@ describe('executeScript', () => {
   it('passes event type as arg when toolName is empty', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockProc = {
@@ -301,7 +301,7 @@ describe('executeScript', () => {
   it('uses empty args for non-native scripts', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockProc = {
@@ -329,7 +329,7 @@ describe('executeScript', () => {
   it('handles null exit code as error', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockProc = {
@@ -360,7 +360,7 @@ describe('executeScript', () => {
   it('passes stdin for native scripts with passStdin enabled', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockProc = {
@@ -394,7 +394,7 @@ describe('executeScript', () => {
   it('does not pass stdin for native scripts without passStdin', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockProc = {
@@ -419,7 +419,7 @@ describe('executeScript', () => {
 
   it('returns invalid path error for path with ..', async () => {
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
 
     const result = await executeScript(
       { source: 'native', path: '../evil.sh' },
@@ -433,7 +433,7 @@ describe('executeScript', () => {
 
   it('returns invalid path error for absolute path', async () => {
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
 
     const result = await executeScript(
       { source: 'native', path: '/etc/passwd' },
@@ -447,7 +447,7 @@ describe('executeScript', () => {
 
   it('returns invalid path error for home path', async () => {
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
 
     const result = await executeScript(
       { source: 'native', path: '~/script.sh' },
@@ -461,7 +461,7 @@ describe('executeScript', () => {
 
   it('returns invalid path error for windows absolute', async () => {
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
 
     const result = await executeScript(
       { source: 'native', path: 'C:\\windows\\system32' },
@@ -476,7 +476,7 @@ describe('executeScript', () => {
   it('handles exit code 2 with stderr', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockStdout = {
@@ -511,7 +511,7 @@ describe('executeScript', () => {
   it('handles exit code 2 without stderr', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockProc = {
@@ -537,7 +537,7 @@ describe('executeScript', () => {
   it('parses JSON with decision block', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockStdout = {
@@ -571,7 +571,7 @@ describe('executeScript', () => {
   it('parses JSON with continue false', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockStdout = {
@@ -605,7 +605,7 @@ describe('executeScript', () => {
   it('parses JSON with ok false', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockStdout = {
@@ -638,7 +638,7 @@ describe('executeScript', () => {
   it('passes tool name as arg for native scripts', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockProc = {
@@ -666,7 +666,7 @@ describe('executeScript', () => {
   it('default passStdin is true for native scripts', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockProc = {
@@ -692,7 +692,7 @@ describe('executeScript', () => {
   it('parses JSON with permission deny', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockStdout = {
@@ -730,7 +730,7 @@ describe('executeScript', () => {
   it('parses JSON with permission deny without reason', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockStdout = {
@@ -766,7 +766,7 @@ describe('executeScript', () => {
   it('resolves with stdout when JSON has no block conditions', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockStdout = {
@@ -799,7 +799,7 @@ describe('executeScript', () => {
   it('parses JSON with decision block but empty reason', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockStdout = {
@@ -832,7 +832,7 @@ describe('executeScript', () => {
   it('parses JSON with continue false but empty stopReason', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockStdout = {
@@ -865,7 +865,7 @@ describe('executeScript', () => {
   it('parses JSON with ok false but empty reason', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
-      await import('../../.opencode/plugins/features/scripts/executor');
+      await import('.opencode/plugins/features/scripts/executor');
     const mockSpawn = vi.mocked(spawn);
 
     const mockStdout = {

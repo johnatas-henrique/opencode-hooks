@@ -1,11 +1,11 @@
-import { createToastQueue } from '../../.opencode/plugins/core/toast-queue';
+import { createToastQueue } from '.opencode/plugins/core/toast-queue';
 import { vi, beforeEach, afterEach, expect, describe, it } from 'vitest';
 import {
   getErrorRecorder,
   initAuditLogging,
   resetAuditLogging,
-} from '../../.opencode/plugins/features/audit/plugin-integration';
-import type { AuditConfig } from '../../.opencode/plugins/types/audit';
+} from '.opencode/plugins/features/audit/plugin-integration';
+import type { AuditConfig } from '.opencode/plugins/types/audit';
 
 const TEST_CONFIG: AuditConfig = {
   enabled: true,
@@ -19,13 +19,13 @@ const TEST_CONFIG: AuditConfig = {
   largeFields: [],
 };
 
-vi.mock('../../.opencode/plugins/features/audit/audit-logger', async () => ({
+vi.mock('.opencode/plugins/features/audit/audit-logger', async () => ({
   createAuditLogger: vi.fn(),
   checkRotation: vi.fn().mockResolvedValue(false),
 }));
 
 const { createAuditLogger } =
-  await import('../../.opencode/plugins/features/audit/audit-logger');
+  await import('.opencode/plugins/features/audit/audit-logger');
 
 const mockCreateAuditLogger = vi.mocked(createAuditLogger);
 

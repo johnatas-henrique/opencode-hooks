@@ -1,5 +1,5 @@
-import { createErrorRecorder } from '../../.opencode/plugins/features/audit/error-recorder';
-import type { AuditConfig } from '../../.opencode/plugins/types/audit';
+import { createErrorRecorder } from '.opencode/plugins/features/audit/error-recorder';
+import type { AuditConfig } from '.opencode/plugins/types/audit';
 
 describe('error-recorder', () => {
   const defaultConfig: AuditConfig = {

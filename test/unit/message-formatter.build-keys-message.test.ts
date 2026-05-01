@@ -1,7 +1,7 @@
 import {
   buildKeysMessage,
   buildKeysMessageSimple,
-} from '../../.opencode/plugins/features/message-formatter/build-keys-message';
+} from '.opencode/plugins/features/message-formatter/build-keys-message';
 
 describe('buildKeysMessage with allowedFields', () => {
   it('should use properties. prefix to get value from properties', () => {

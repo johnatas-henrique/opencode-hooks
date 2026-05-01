@@ -164,7 +164,7 @@ describe('OpencodeHooks - logDisabledEvents', () => {
     }));
 
     const { OpencodeHooks: FreshPlugin } =
-      await import('../../.opencode/plugins/opencode-hooks');
+      await import('.opencode/plugins/opencode-hooks');
     const plugin = await FreshPlugin(createMockCtx(mockClient, mockDollar));
     mockLogEvent.mockClear();
 
@@ -283,7 +283,7 @@ describe('OpencodeHooks - logDisabledEvents', () => {
     }));
 
     const { OpencodeHooks: FreshPlugin } =
-      await import('../../.opencode/plugins/opencode-hooks');
+      await import('.opencode/plugins/opencode-hooks');
     const plugin = await FreshPlugin(createMockCtx(mockClient, mockDollar));
     mockLogEvent.mockClear();
 
@@ -396,7 +396,7 @@ describe('OpencodeHooks - logDisabledEvents', () => {
     }));
 
     const { OpencodeHooks: FreshPlugin } =
-      await import('../../.opencode/plugins/opencode-hooks');
+      await import('.opencode/plugins/opencode-hooks');
     const plugin = await FreshPlugin(createMockCtx(mockClient, mockDollar));
 
     const event = {

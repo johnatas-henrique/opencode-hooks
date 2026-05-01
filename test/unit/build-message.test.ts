@@ -1,5 +1,5 @@
-import { buildToastMessage } from '../../.opencode/plugins/features/events/resolvers/build-message';
-import type { ToastOverride } from '../../.opencode/plugins/types/config';
+import { buildToastMessage } from '.opencode/plugins/features/events/resolvers/build-message';
+import type { ToastOverride } from '.opencode/plugins/types/config';
 
 describe('buildToastMessage', () => {
   const fallback = 'Fallback Message';

@@ -1,4 +1,4 @@
-import { showStartupToast } from '../../.opencode/plugins/features/messages/show-startup-toast';
+import { showStartupToast } from '.opencode/plugins/features/messages/show-startup-toast';
 
 // Use vi.hoisted for isolated mocks that persist correctly
 const {
@@ -23,25 +23,19 @@ const {
   mockGetErrorRecorder: vi.fn().mockReturnValue(null),
 }));
 
-vi.mock('../../.opencode/plugins/features/messages/plugin-status', () => ({
+vi.mock('.opencode/plugins/features/messages/plugin-status', () => ({
   getLatestLogFile: mockGetLatestLogFile,
 }));
 
-vi.mock(
-  '../../.opencode/plugins/features/messages/show-active-plugins',
-  () => ({
-    showActivePluginsToast: mockShowActivePluginsToast,
-  })
-);
+vi.mock('.opencode/plugins/features/messages/show-active-plugins', () => ({
+  showActivePluginsToast: mockShowActivePluginsToast,
+}));
 
-vi.mock(
-  '../../.opencode/plugins/features/messages/toast-silence-detector',
-  () => ({
-    waitForToastSilence: mockWaitForToastSilence,
-  })
-);
+vi.mock('.opencode/plugins/features/messages/toast-silence-detector', () => ({
+  waitForToastSilence: mockWaitForToastSilence,
+}));
 
-vi.mock('../../.opencode/plugins/core/constants', () => ({
+vi.mock('.opencode/plugins/core/constants', () => ({
   DEFAULTS: {
     toast: {
       durations: { TWO_SECONDS: 2000, TEN_SECONDS: 10000, FIVE_SECONDS: 5000 },
@@ -95,7 +89,7 @@ vi.mock('../../.opencode/plugins/core/constants', () => ({
   },
 }));
 
-vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
+vi.mock('.opencode/plugins/core/toast-queue', () => ({
   useGlobalToastQueue: vi.fn(() => ({
     add: mockAdd,
     addMultiple: mockAddMultiple,
@@ -105,7 +99,7 @@ vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
   })),
 }));
 
-vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
+vi.mock('.opencode/plugins/features/audit/plugin-integration', () => ({
   getErrorRecorder: mockGetErrorRecorder,
   getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
 }));

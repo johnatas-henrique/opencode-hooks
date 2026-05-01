@@ -1,4 +1,4 @@
-import { runScript } from '../../.opencode/plugins/features/scripts/run-script';
+import { runScript } from '.opencode/plugins/features/scripts/run-script';
 import type { PluginInput } from '@opencode-ai/plugin';
 
 describe('run-script', () => {

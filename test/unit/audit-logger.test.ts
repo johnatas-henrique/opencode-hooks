@@ -1,5 +1,5 @@
-import { createAuditLogger } from '../../.opencode/plugins/features/audit/audit-logger';
-import type { AuditConfig } from '../../.opencode/plugins/types/audit';
+import { createAuditLogger } from '.opencode/plugins/features/audit/audit-logger';
+import type { AuditConfig } from '.opencode/plugins/types/audit';
 import { vi } from 'vitest';
 
 const {
@@ -520,7 +520,7 @@ describe('archiveFileIfNeeded', () => {
   it('should return false if file does not exist', async () => {
     mockStat.mockRejectedValue(new Error('ENOENT'));
     const { archiveFileIfNeeded } =
-      await import('../../.opencode/plugins/features/audit/audit-logger');
+      await import('.opencode/plugins/features/audit/audit-logger');
     const result = await archiveFileIfNeeded(
       '/base/test.json',
       '/archive',
@@ -541,7 +541,7 @@ describe('archiveFileIfNeeded', () => {
       typeof vi.fn
     >);
     const { archiveFileIfNeeded } =
-      await import('../../.opencode/plugins/features/audit/audit-logger');
+      await import('.opencode/plugins/features/audit/audit-logger');
     const result = await archiveFileIfNeeded(
       '/base/test.json',
       '/archive',
@@ -562,7 +562,7 @@ describe('archiveFileIfNeeded', () => {
       size: 2 * 1024 * 1024,
     } as unknown as ReturnType<typeof vi.fn>);
     const { archiveFileIfNeeded } =
-      await import('../../.opencode/plugins/features/audit/audit-logger');
+      await import('.opencode/plugins/features/audit/audit-logger');
     const result = await archiveFileIfNeeded(
       '/base/plugin-events.json',
       '/base/audit-archive',
@@ -587,7 +587,7 @@ describe('archiveFileIfNeeded', () => {
 
   it('should use default fs dependencies when deps is not provided', async () => {
     const { archiveFileIfNeeded } =
-      await import('../../.opencode/plugins/features/audit/audit-logger');
+      await import('.opencode/plugins/features/audit/audit-logger');
     const result = await archiveFileIfNeeded(
       '/nonexistent/file.json',
       '/archive',

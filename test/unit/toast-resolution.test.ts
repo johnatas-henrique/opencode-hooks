@@ -2,11 +2,11 @@ import {
   resolveToastOverride,
   resolveToastEnabled,
   resolveDefaultToast,
-} from '../../.opencode/plugins/features/events/resolution/toast';
+} from '.opencode/plugins/features/events/resolution/toast';
 import type {
   EventConfig,
   EventOverride,
-} from '../../.opencode/plugins/types/config';
+} from '.opencode/plugins/types/config';
 
 describe('toast resolution', () => {
   describe('resolveToastOverride', () => {

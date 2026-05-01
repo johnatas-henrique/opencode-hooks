@@ -1,8 +1,8 @@
 import type { PluginInput } from '@opencode-ai/plugin';
-import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
+import { OpencodeHooks } from '.opencode/plugins/opencode-hooks';
 
-import type { MockPluginInput } from '../__mocks__/@opencode-ai/plugin';
-import { createMockPluginInput } from '../__mocks__/@opencode-ai/plugin';
+import type { MockPluginInput } from 'test/__mocks__/@opencode-ai/plugin';
+import { createMockPluginInput } from 'test/__mocks__/@opencode-ai/plugin';
 import { vi, beforeEach, describe, it, expect } from 'vitest';
 
 const mockClient = {
@@ -26,7 +26,7 @@ function createMockCtx(overrides: Partial<MockPluginInput> = {}): PluginInput {
 }
 
 // Mock with enabled: false
-vi.mock('../../.opencode/plugins/config/settings', () => ({
+vi.mock('.opencode/plugins/config/settings', () => ({
   userConfig: {
     enabled: false,
     loadClaudeHookSettings: { enabled: false },
@@ -44,11 +44,11 @@ vi.mock('../../.opencode/plugins/config/settings', () => ({
   },
 }));
 
-vi.mock('../../.opencode/plugins/features/handlers', () => ({
+vi.mock('.opencode/plugins/features/handlers', () => ({
   handlers: {},
 }));
 
-vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
+vi.mock('.opencode/plugins/features/audit/plugin-integration', () => ({
   archiveAllJsonFiles: vi.fn().mockResolvedValue(undefined),
   initAuditLogging: vi.fn().mockResolvedValue(undefined),
   getEventRecorder: vi

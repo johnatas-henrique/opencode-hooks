@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
-import * as settings from '../../.opencode/plugins/config/settings';
-import * as events from '../../.opencode/plugins/features/events/events';
+import { OpencodeHooks } from '.opencode/plugins/opencode-hooks';
+import * as settings from '.opencode/plugins/config/settings';
+import * as events from '.opencode/plugins/features/events/events';
 import type { Hooks } from '@opencode-ai/plugin';
 import type {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
-} from '../../.opencode/plugins/types/core';
-import type { ResolvedEventConfig } from '../../.opencode/plugins/types/config';
-import type { MockPluginInput } from '../__mocks__/@opencode-ai/plugin';
-import { createMockPluginInput } from '../__mocks__/@opencode-ai/plugin';
+} from '.opencode/plugins/types/core';
+import type { ResolvedEventConfig } from '.opencode/plugins/types/config';
+import type { MockPluginInput } from 'test/__mocks__/@opencode-ai/plugin';
+import { createMockPluginInput } from 'test/__mocks__/@opencode-ai/plugin';
 
-vi.mock('../../.opencode/plugins/config/settings', () => ({
+vi.mock('.opencode/plugins/config/settings', () => ({
   userConfig: {
     enabled: true,
     audit: {},
@@ -19,17 +19,17 @@ vi.mock('../../.opencode/plugins/config/settings', () => ({
   },
 }));
 
-vi.mock('../../.opencode/plugins/features/events/events', () => ({
+vi.mock('.opencode/plugins/features/events/events', () => ({
   resolveToolConfig: vi.fn(),
   resolveEventConfig: vi.fn(),
 }));
 
 vi.mock(
-  '../../.opencode/plugins/features/block-system/block-handler',
+  '.opencode/plugins/features/block-system/block-handler',
   async (importOriginal) => {
     const actual =
       await importOriginal<
-        typeof import('../../.opencode/plugins/features/block-system/block-handler')
+        typeof import('.opencode/plugins/features/block-system/block-handler')
       >();
     return {
       ...actual,
@@ -38,7 +38,7 @@ vi.mock(
   }
 );
 
-vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
+vi.mock('.opencode/plugins/features/audit/plugin-integration', () => ({
   initAuditLogging: vi.fn(),
   getEventRecorder: vi
     .fn()
@@ -49,7 +49,7 @@ vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
   archiveAllJsonFiles: vi.fn(),
 }));
 
-vi.mock('../../.opencode/plugins/features/messages/show-startup-toast', () => ({
+vi.mock('.opencode/plugins/features/messages/show-startup-toast', () => ({
   showStartupToast: vi.fn(),
 }));
 

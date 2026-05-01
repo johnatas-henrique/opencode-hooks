@@ -1,7 +1,7 @@
 import {
   getPluginStatus,
   formatPluginStatus,
-} from '../../.opencode/plugins/features/messages/plugin-status';
+} from '.opencode/plugins/features/messages/plugin-status';
 
 vi.mock('fs', () => ({
   readFileSync: vi.fn(),

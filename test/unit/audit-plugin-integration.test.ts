@@ -5,8 +5,8 @@ import {
   getScriptRecorder,
   getErrorRecorder,
   getAuditLogger,
-} from '../../.opencode/plugins/features/audit/plugin-integration';
-import type { AuditConfig } from '../../.opencode/plugins/types/audit';
+} from '.opencode/plugins/features/audit/plugin-integration';
+import type { AuditConfig } from '.opencode/plugins/types/audit';
 
 const defaultConfig: AuditConfig = {
   enabled: true,
@@ -32,7 +32,7 @@ const mockReaddir = vi
     'other-file.json',
   ]);
 
-vi.mock('../../.opencode/plugins/features/audit/audit-logger', () => ({
+vi.mock('.opencode/plugins/features/audit/audit-logger', () => ({
   createAuditLogger: vi.fn(() => ({
     writeLine: vi.fn(),
     rotate: vi.fn(),
@@ -46,7 +46,7 @@ vi.mock('../../.opencode/plugins/features/audit/audit-logger', () => ({
   archiveFileIfNeeded: vi.fn().mockResolvedValue(true),
 }));
 
-vi.mock('../../.opencode/plugins/features/audit/event-recorder', () => ({
+vi.mock('.opencode/plugins/features/audit/event-recorder', () => ({
   createEventRecorder: vi.fn(() => ({
     logToolExecuteBefore: vi.fn(),
     logToolExecuteAfter: vi.fn(),
@@ -54,13 +54,13 @@ vi.mock('../../.opencode/plugins/features/audit/event-recorder', () => ({
   })),
 }));
 
-vi.mock('../../.opencode/plugins/features/audit/script-recorder', () => ({
+vi.mock('.opencode/plugins/features/audit/script-recorder', () => ({
   createScriptRecorder: vi.fn(() => ({
     logScript: vi.fn(),
   })),
 }));
 
-vi.mock('../../.opencode/plugins/features/audit/error-recorder', () => ({
+vi.mock('.opencode/plugins/features/audit/error-recorder', () => ({
   createErrorRecorder: vi.fn(() => ({
     logError: vi.fn(),
   })),
@@ -77,7 +77,7 @@ describe('archiveAuditSession', () => {
   it('should archive session files with sessionId in name', async () => {
     vi.resetModules();
     const { initAuditLogging, setAuditSessionId, archiveAuditSession } =
-      await import('../../.opencode/plugins/features/audit/plugin-integration');
+      await import('.opencode/plugins/features/audit/plugin-integration');
 
     const testConfig: AuditConfig = {
       enabled: true,
@@ -104,7 +104,7 @@ describe('archiveAuditSession', () => {
     setAuditSessionId('ses_123');
 
     const { getAuditLogger } =
-      await import('../../.opencode/plugins/features/audit/plugin-integration');
+      await import('.opencode/plugins/features/audit/plugin-integration');
     const logger = getAuditLogger()!;
     const archiveMock = vi.spyOn(logger, 'archiveSession');
 
@@ -116,7 +116,7 @@ describe('archiveAuditSession', () => {
     vi.resetModules();
     resetAuditLogging();
     const { archiveAuditSession } =
-      await import('../../.opencode/plugins/features/audit/plugin-integration');
+      await import('.opencode/plugins/features/audit/plugin-integration');
 
     await expect(archiveAuditSession()).resolves.toBeUndefined();
   });
@@ -126,12 +126,12 @@ describe('setAuditSessionId', () => {
   it('should call setSessionId on auditLogger when initialized', async () => {
     vi.resetModules();
     const { initAuditLogging, setAuditSessionId } =
-      await import('../../.opencode/plugins/features/audit/plugin-integration');
+      await import('.opencode/plugins/features/audit/plugin-integration');
 
     await initAuditLogging(defaultConfig);
 
     const { getAuditLogger } =
-      await import('../../.opencode/plugins/features/audit/plugin-integration');
+      await import('.opencode/plugins/features/audit/plugin-integration');
     const logger = getAuditLogger()!;
     const setSessionIdMock = vi.spyOn(logger, 'setSessionId');
 
@@ -143,7 +143,7 @@ describe('setAuditSessionId', () => {
     vi.resetModules();
     resetAuditLogging();
     const { setAuditSessionId } =
-      await import('../../.opencode/plugins/features/audit/plugin-integration');
+      await import('.opencode/plugins/features/audit/plugin-integration');
 
     expect(() => setAuditSessionId('any-id')).not.toThrow();
   });

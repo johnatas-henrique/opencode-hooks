@@ -1,6 +1,6 @@
-import { ScriptExecutor } from '../../.opencode/plugins/features/scripts/script-executor';
-import type { ScriptExecutorDeps } from '../../.opencode/plugins/types/executor';
-import type { EventVariant } from '../../.opencode/plugins/types/config';
+import { ScriptExecutor } from '.opencode/plugins/features/scripts/script-executor';
+import type { ScriptExecutorDeps } from '.opencode/plugins/types/executor';
+import type { EventVariant } from '.opencode/plugins/types/config';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 describe('ScriptExecutor', () => {

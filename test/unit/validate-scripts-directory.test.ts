@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import type { PluginInput } from '@opencode-ai/plugin';
-import { DEFAULTS } from '../../.opencode/plugins/core/constants';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
 
 // Unit test for validateScriptsDirectory logic (extracted from opencode-hooks.ts)
 function validateScriptsDirectory(): void {
@@ -94,8 +94,7 @@ describe('OpencodeHooks plugin startup validation', () => {
     process.chdir(tempDir);
 
     // Dynamically import the plugin after changing cwd
-    const { OpencodeHooks } =
-      await import('../../.opencode/plugins/opencode-hooks');
+    const { OpencodeHooks } = await import('.opencode/plugins/opencode-hooks');
 
     // Mock minimal PluginInput using Partial to avoid needing full structure
     const mockPluginInput = {
@@ -117,8 +116,7 @@ describe('OpencodeHooks plugin startup validation', () => {
     // Change to project root where .opencode/scripts exists
     process.chdir(originalCwd);
 
-    const { OpencodeHooks } =
-      await import('../../.opencode/plugins/opencode-hooks');
+    const { OpencodeHooks } = await import('.opencode/plugins/opencode-hooks');
 
     const mockPluginInput = {
       client: {

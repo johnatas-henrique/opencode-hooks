@@ -1,4 +1,4 @@
-import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
+import { OpencodeHooks } from '.opencode/plugins/opencode-hooks';
 import type { PluginInput } from '@opencode-ai/plugin';
 
 const createMockCtx = (
@@ -28,22 +28,22 @@ const { mockRunScript, mockHandleDebugLog, mockAppendToSession } = vi.hoisted(
   })
 );
 
-vi.mock('../../.opencode/plugins/features/scripts/run-script-handler', () => ({
+vi.mock('.opencode/plugins/features/scripts/run-script-handler', () => ({
   isSubagent: vi.fn(),
   addSubagentSession: vi.fn(),
   resetSubagentTracking: vi.fn(),
   runScriptAndHandle: mockRunScript,
 }));
 
-vi.mock('../../.opencode/plugins/core/debug', () => ({
+vi.mock('.opencode/plugins/core/debug', () => ({
   handleDebugLog: mockHandleDebugLog,
 }));
 
-vi.mock('../../.opencode/plugins/features/messages/append-to-session', () => ({
+vi.mock('.opencode/plugins/features/messages/append-to-session', () => ({
   appendToSession: mockAppendToSession,
 }));
 
-vi.mock('../../.opencode/plugins/features/handlers', () => ({
+vi.mock('.opencode/plugins/features/handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -103,7 +103,7 @@ vi.mock('../../.opencode/plugins/features/handlers', () => ({
   },
 }));
 
-vi.mock('../../.opencode/plugins/config', () => ({
+vi.mock('.opencode/plugins/config', () => ({
   userConfig: {
     enabled: true,
     audit: {
@@ -157,7 +157,7 @@ const { mockQueue: globalMockQueue, setCapturedShowFn } = vi.hoisted(() => {
   return { mockQueue, setCapturedShowFn, getQueue };
 });
 
-vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
+vi.mock('.opencode/plugins/core/toast-queue', () => ({
   ...vi.importActual('../../.opencode/plugins/core/toast-queue'),
   initGlobalToastQueue: (showFn: (toast: unknown) => void) => {
     setCapturedShowFn(showFn);
@@ -168,7 +168,7 @@ vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
   resetGlobalToastQueue: vi.fn(),
 }));
 
-vi.mock('../../.opencode/plugins/features/messages/show-startup-toast', () => ({
+vi.mock('.opencode/plugins/features/messages/show-startup-toast', () => ({
   showStartupToast: vi.fn().mockResolvedValue(undefined),
 }));
 

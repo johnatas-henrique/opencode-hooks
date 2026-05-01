@@ -1,4 +1,4 @@
-import { showActivePluginsToast } from '../../.opencode/plugins/features/messages/show-active-plugins';
+import { showActivePluginsToast } from '.opencode/plugins/features/messages/show-active-plugins';
 
 const { mockGetPluginStatus, mockFormatPluginStatus, mockQueue } = vi.hoisted(
   () => ({
@@ -16,12 +16,12 @@ const { mockGetPluginStatus, mockFormatPluginStatus, mockQueue } = vi.hoisted(
   })
 );
 
-vi.mock('../../.opencode/plugins/features/messages/plugin-status', () => ({
+vi.mock('.opencode/plugins/features/messages/plugin-status', () => ({
   getPluginStatus: mockGetPluginStatus,
   formatPluginStatus: mockFormatPluginStatus,
 }));
 
-vi.mock('../../.opencode/plugins/config/settings', () => ({
+vi.mock('.opencode/plugins/config/settings', () => ({
   userConfig: {
     showPluginStatus: true,
     pluginStatusDisplayMode: 'user-only',
@@ -100,7 +100,7 @@ describe('when showPluginStatus is disabled', () => {
     }));
 
     const { showActivePluginsToast: showDisabled } =
-      await import('../../.opencode/plugins/features/messages/show-active-plugins');
+      await import('.opencode/plugins/features/messages/show-active-plugins');
     await showDisabled(mockQueue);
 
     expect(mockQueue.add).not.toHaveBeenCalled();

@@ -1,8 +1,8 @@
-import { getBooleanField } from '../../.opencode/plugins/features/events/resolution/boolean-field';
+import { getBooleanField } from '.opencode/plugins/features/events/resolution/boolean-field';
 import type {
   EventConfig,
   EventOverride,
-} from '../../.opencode/plugins/types/config';
+} from '.opencode/plugins/types/config';
 
 describe('getBooleanField', () => {
   it('should return eventCfg value when defined', () => {

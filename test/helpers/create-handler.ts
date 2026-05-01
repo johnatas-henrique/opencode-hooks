@@ -1,4 +1,4 @@
-import type { EventHandler } from '../../.opencode/plugins/types/events';
+import type { EventHandler } from '.opencode/plugins/types/events';
 
 type BuildMessageFn = (
   event: Record<string, unknown>,

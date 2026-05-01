@@ -3,8 +3,8 @@ import {
   getEventRecorder,
   getScriptRecorder,
   getErrorRecorder,
-} from '../../.opencode/plugins/features/audit/plugin-integration';
-import type { AuditConfig } from '../../.opencode/plugins/types/audit';
+} from '.opencode/plugins/features/audit/plugin-integration';
+import type { AuditConfig } from '.opencode/plugins/types/audit';
 
 const TEST_CONFIG: AuditConfig = {
   enabled: true,
@@ -18,14 +18,14 @@ const TEST_CONFIG: AuditConfig = {
   largeFields: [],
 };
 
-vi.mock('../../.opencode/plugins/features/audit/audit-logger', () => ({
+vi.mock('.opencode/plugins/features/audit/audit-logger', () => ({
   createAuditLogger: vi.fn(() => ({
     writeLine: vi.fn(),
     cleanup: vi.fn(),
   })),
 }));
 
-vi.mock('../../.opencode/plugins/features/audit/event-recorder', () => ({
+vi.mock('.opencode/plugins/features/audit/event-recorder', () => ({
   createEventRecorder: vi.fn(() => ({
     logToolExecuteBefore: vi.fn(),
     logToolExecuteAfter: vi.fn(),
@@ -33,13 +33,13 @@ vi.mock('../../.opencode/plugins/features/audit/event-recorder', () => ({
   })),
 }));
 
-vi.mock('../../.opencode/plugins/features/audit/script-recorder', () => ({
+vi.mock('.opencode/plugins/features/audit/script-recorder', () => ({
   createScriptRecorder: vi.fn(() => ({
     logScript: vi.fn(),
   })),
 }));
 
-vi.mock('../../.opencode/plugins/features/audit/error-recorder', () => ({
+vi.mock('.opencode/plugins/features/audit/error-recorder', () => ({
   createErrorRecorder: vi.fn(() => ({
     logError: vi.fn(),
   })),

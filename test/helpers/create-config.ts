@@ -1,10 +1,10 @@
-import { EventType } from '../../.opencode/plugins/types/events';
+import { EventType } from '.opencode/plugins/types/events';
 import type {
   UserEventsConfig,
   EventConfig,
   ToolOverride,
-} from '../../.opencode/plugins/types/config';
-import type { AuditConfig } from '../../.opencode/plugins/types/audit';
+} from '.opencode/plugins/types/config';
+import type { AuditConfig } from '.opencode/plugins/types/audit';
 
 export function createAuditConfig(
   overrides: Partial<AuditConfig> = {}

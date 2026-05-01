@@ -6,9 +6,9 @@ import {
   showToastStaggered,
   useGlobalToastQueue,
   initGlobalToastQueue,
-} from '../../.opencode/plugins/core/toast-queue';
-import { DEFAULTS } from '../../.opencode/plugins/core/constants';
-vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
+} from '.opencode/plugins/core/toast-queue';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+vi.mock('.opencode/plugins/features/audit/plugin-integration', () => ({
   getErrorRecorder: vi.fn(() => ({
     logError: vi.fn(),
   })),

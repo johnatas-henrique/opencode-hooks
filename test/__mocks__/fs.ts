@@ -5,7 +5,7 @@ const originalModule = await vi.importActual(
 );
 
 vi.spyOn(
-  originalModule as typeof import('../../.opencode/plugins/features/persistence/save-to-file'),
+  originalModule as typeof import('.opencode/plugins/features/persistence/save-to-file'),
   'saveToFile'
 ).mockResolvedValue(undefined);
 

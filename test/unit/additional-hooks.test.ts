@@ -1,7 +1,7 @@
 import type { PluginInput } from '@opencode-ai/plugin';
-import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
+import { OpencodeHooks } from '.opencode/plugins/opencode-hooks';
 
-vi.mock('../../.opencode/plugins/config', () => ({
+vi.mock('.opencode/plugins/config', () => ({
   userConfig: {
     enabled: true,
     audit: {
@@ -34,32 +34,32 @@ vi.mock('../../.opencode/plugins/config', () => ({
   },
 }));
 
-vi.mock('../../.opencode/plugins/features/handlers', () => ({
+vi.mock('.opencode/plugins/features/handlers', () => ({
   handlers: {
     // ... many handlers
   },
 }));
 
-vi.mock('../../.opencode/plugins/features/messages/append-to-session', () => ({
+vi.mock('.opencode/plugins/features/messages/append-to-session', () => ({
   appendToSession: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../.opencode/plugins/features/scripts/run-script', () => ({
+vi.mock('.opencode/plugins/features/scripts/run-script', () => ({
   runScript: vi
     .fn()
     .mockResolvedValue({ output: 'Script output', error: null, exitCode: 0 }),
 }));
 
-vi.mock('../../.opencode/plugins/features/scripts/show-startup-toast', () => ({
+vi.mock('.opencode/plugins/features/scripts/show-startup-toast', () => ({
   showStartupToast: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../.opencode/plugins/core/debug', () => ({
+vi.mock('.opencode/plugins/core/debug', () => ({
   handleDebugLog: vi.fn().mockResolvedValue(undefined),
 }));
 
-import type { MockPluginInput } from '../__mocks__/@opencode-ai/plugin';
-import { createMockPluginInput } from '../__mocks__/@opencode-ai/plugin';
+import type { MockPluginInput } from 'test/__mocks__/@opencode-ai/plugin';
+import { createMockPluginInput } from 'test/__mocks__/@opencode-ai/plugin';
 import { vi, beforeEach, describe, it } from 'vitest';
 
 const mockClient = {

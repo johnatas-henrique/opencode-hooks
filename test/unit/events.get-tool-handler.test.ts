@@ -1,4 +1,4 @@
-vi.mock('../../.opencode/plugins/features/handlers', () => ({
+vi.mock('.opencode/plugins/features/handlers', () => ({
   handlers: {
     'tool.execute.before.git': { title: 'Before Git' },
     'tool.execute.after.git': { title: 'After Git' },
@@ -6,7 +6,7 @@ vi.mock('../../.opencode/plugins/features/handlers', () => ({
   },
 }));
 
-import { getToolHandler } from '../../.opencode/plugins/features/events/events';
+import { getToolHandler } from '.opencode/plugins/features/events/events';
 
 describe('getToolHandler', () => {
   it('should return handler for .after tool event', () => {

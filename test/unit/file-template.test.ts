@@ -1,6 +1,6 @@
-import type { FileTemplate } from '../../.opencode/plugins/types/config';
+import type { FileTemplate } from '.opencode/plugins/types/config';
 
-vi.mock('../../.opencode/plugins/features/handlers', () => ({
+vi.mock('.opencode/plugins/features/handlers', () => ({
   handlers: {
     'session.created': {
       title: '====SESSION CREATED====',
@@ -26,7 +26,7 @@ vi.mock('../../.opencode/plugins/features/handlers', () => ({
   },
 }));
 
-vi.mock('../../.opencode/plugins/config', () => ({
+vi.mock('.opencode/plugins/config', () => ({
   userConfig: {
     enabled: true,
     default: {
@@ -124,7 +124,7 @@ describe('resolveLogToAudit - resolveToolConfig', () => {
     }));
 
     const { resolveToolConfig: rtc } =
-      await import('../../.opencode/plugins/features/events/events');
+      await import('.opencode/plugins/features/events/events');
     const config = rtc('tool.execute.after', 'task');
     expect(config.logToAudit).toBe(true);
   });

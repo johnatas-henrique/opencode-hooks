@@ -4,7 +4,7 @@ import {
   createUserConfig,
   withEvent,
   withToolEvent,
-} from '../helpers/create-config';
+} from 'test/helpers/create-config';
 
 describe('createuserConfig', () => {
   it('should create base config when no overrides provided', () => {

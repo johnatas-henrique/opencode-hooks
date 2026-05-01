@@ -1,12 +1,12 @@
 import type { PluginInput, Hooks } from '@opencode-ai/plugin';
-import { OpencodeHooks } from '../../.opencode/plugins/opencode-hooks';
-import type { MockPluginInput } from '../__mocks__/@opencode-ai/plugin';
-import { createMockPluginInput } from '../__mocks__/@opencode-ai/plugin';
+import { OpencodeHooks } from '.opencode/plugins/opencode-hooks';
+import type { MockPluginInput } from 'test/__mocks__/@opencode-ai/plugin';
+import { createMockPluginInput } from 'test/__mocks__/@opencode-ai/plugin';
 import { vi, beforeEach, describe, it } from 'vitest';
 import type {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
-} from '../../.opencode/plugins/types/core';
+} from '.opencode/plugins/types/core';
 
 const mockClient = {
   tui: {
@@ -29,7 +29,7 @@ function createMockCtx(overrides: Partial<MockPluginInput> = {}): PluginInput {
 }
 
 // Mock with enabled: true
-vi.mock('../../.opencode/plugins/config/settings', () => ({
+vi.mock('.opencode/plugins/config/settings', () => ({
   userConfig: {
     enabled: true,
     toast: true,
@@ -67,47 +67,47 @@ vi.mock('../../.opencode/plugins/config/settings', () => ({
   },
 }));
 
-vi.mock('../../.opencode/plugins/features/handlers', () => ({
+vi.mock('.opencode/plugins/features/handlers', () => ({
   handlers: {},
 }));
 
-vi.mock('../../.opencode/plugins/features/messages/append-to-session', () => ({
+vi.mock('.opencode/plugins/features/messages/append-to-session', () => ({
   appendToSession: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../.opencode/plugins/features/scripts/run-script-handler', () => ({
+vi.mock('.opencode/plugins/features/scripts/run-script-handler', () => ({
   isSubagent: vi.fn().mockReturnValue(false),
   addSubagentSession: vi.fn(),
   resetSubagentTracking: vi.fn(),
   runScriptAndHandle: vi.fn(),
 }));
 
-vi.mock('../../.opencode/plugins/features/scripts/show-startup-toast', () => ({
+vi.mock('.opencode/plugins/features/scripts/show-startup-toast', () => ({
   showStartupToast: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../.opencode/plugins/core/debug', () => ({
+vi.mock('.opencode/plugins/core/debug', () => ({
   handleDebugLog: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
+vi.mock('.opencode/plugins/core/toast-queue', () => ({
   initGlobalToastQueue: vi.fn(),
   useGlobalToastQueue: vi.fn().mockReturnValue({
     add: vi.fn(),
   }),
 }));
 
-vi.mock('../../.opencode/plugins/features/scripts/executor', () => ({
+vi.mock('.opencode/plugins/features/scripts/executor', () => ({
   executeScript: vi
     .fn()
     .mockResolvedValue({ script: '', exitCode: 0, output: '' }),
 }));
 
-vi.mock('../../.opencode/plugins/features/block-system/block-handler', () => ({
+vi.mock('.opencode/plugins/features/block-system/block-handler', () => ({
   executeBlocking: vi.fn(),
 }));
 
-vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
+vi.mock('.opencode/plugins/features/audit/plugin-integration', () => ({
   archiveAllJsonFiles: vi.fn().mockResolvedValue(undefined),
   initAuditLogging: vi.fn().mockResolvedValue(undefined),
   getEventRecorder: vi
@@ -126,7 +126,7 @@ vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
   }),
 }));
 
-vi.mock('../../.opencode/plugins/features/events/events', () => ({
+vi.mock('.opencode/plugins/features/events/events', () => ({
   resolveEventConfig: vi.fn().mockReturnValue({
     debug: true,
     toast: true,
@@ -177,11 +177,11 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
   describe('line 85: runOnlyOnce with subagent', () => {
     it('should skip execution when runOnlyOnce is true and session is subagent', async () => {
       const { isSubagent } =
-        await import('../../.opencode/plugins/features/scripts/run-script-handler');
+        await import('.opencode/plugins/features/scripts/run-script-handler');
       (isSubagent as ReturnType<typeof vi.fn>).mockReturnValue(true);
 
       const { resolveEventConfig } =
-        await import('../../.opencode/plugins/features/events/events');
+        await import('.opencode/plugins/features/events/events');
       (resolveEventConfig as ReturnType<typeof vi.fn>).mockReturnValue({
         runOnlyOnce: true,
         enabled: true,
@@ -219,11 +219,11 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
   describe('lines 197-210: error toast for failed scripts', () => {
     it('should show error toast when script fails with showError true', async () => {
       const { isSubagent } =
-        await import('../../.opencode/plugins/features/scripts/run-script-handler');
+        await import('.opencode/plugins/features/scripts/run-script-handler');
       (isSubagent as ReturnType<typeof vi.fn>).mockReturnValue(false);
 
       const { executeScript } =
-        await import('../../.opencode/plugins/features/scripts/executor');
+        await import('.opencode/plugins/features/scripts/executor');
       (executeScript as ReturnType<typeof vi.fn>).mockResolvedValue({
         script: 'failing-script.sh',
         exitCode: 1,
@@ -231,7 +231,7 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
       });
 
       const { resolveEventConfig } =
-        await import('../../.opencode/plugins/features/events/events');
+        await import('.opencode/plugins/features/events/events');
       (resolveEventConfig as ReturnType<typeof vi.fn>).mockReturnValue({
         runOnlyOnce: false,
         enabled: true,
@@ -259,7 +259,7 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
       });
 
       const { useGlobalToastQueue } =
-        await import('../../.opencode/plugins/core/toast-queue');
+        await import('.opencode/plugins/core/toast-queue');
       const mockQueue = {
         add: vi.fn(),
       };
@@ -286,12 +286,11 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
 
   describe('line 70: resolved.debug = true', () => {
     it('should call handleDebugLog when debug is true', async () => {
-      const { handleDebugLog } =
-        await import('../../.opencode/plugins/core/debug');
+      const { handleDebugLog } = await import('.opencode/plugins/core/debug');
       (handleDebugLog as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
       const { resolveEventConfig } =
-        await import('../../.opencode/plugins/features/events/events');
+        await import('.opencode/plugins/features/events/events');
       (resolveEventConfig as ReturnType<typeof vi.fn>).mockReturnValue({
         debug: true,
         enabled: true,
@@ -468,7 +467,7 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
   describe('line 94: getNormalizedSessionId fallback to defaultSessionId', () => {
     it('should return defaultSessionId when getLastKnown returns undefined', async () => {
       const { getLastKnownSessionId } =
-        await import('../../.opencode/plugins/features/audit/plugin-integration');
+        await import('.opencode/plugins/features/audit/plugin-integration');
       (getLastKnownSessionId as ReturnType<typeof vi.fn>).mockReturnValue(
         undefined
       );

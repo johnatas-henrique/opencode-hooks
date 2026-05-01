@@ -1,4 +1,4 @@
-import { ToastDirectorImpl } from '../../.opencode/plugins/features/core/toast-director';
+import { ToastDirectorImpl } from '.opencode/plugins/features/core/toast-director';
 import type { TuiToast } from '@opencode-ai/plugin/tui';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 

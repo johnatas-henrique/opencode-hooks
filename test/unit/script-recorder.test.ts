@@ -2,8 +2,8 @@ import {
   createScriptRecord,
   truncateOutput,
   createScriptRecorder,
-} from '../../.opencode/plugins/features/audit/script-recorder';
-import type { AuditConfig } from '../../.opencode/plugins/types/audit';
+} from '.opencode/plugins/features/audit/script-recorder';
+import type { AuditConfig } from '.opencode/plugins/types/audit';
 
 describe('script-recorder', () => {
   const defaultConfig: AuditConfig = {

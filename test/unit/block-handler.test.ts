@@ -1,18 +1,18 @@
 import { vi } from 'vitest';
 
 // Import real modules
-import * as securityRecorderModule from '../../.opencode/plugins/features/audit/security-recorder';
-import * as toastQueueModule from '../../.opencode/plugins/core/toast-queue';
-import type { ToastQueue } from '../../.opencode/plugins/types/toast';
+import * as securityRecorderModule from '.opencode/plugins/features/audit/security-recorder';
+import * as toastQueueModule from '.opencode/plugins/core/toast-queue';
+import type { ToastQueue } from '.opencode/plugins/types/toast';
 import {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
-} from '../../.opencode/plugins/types/core';
+} from '.opencode/plugins/types/core';
 import {
   executeBlocking,
   createDefaultNotifyEffect,
   createDefaultLogEffect,
-} from '../../.opencode/plugins/features/block-system/block-handler';
+} from '.opencode/plugins/features/block-system/block-handler';
 
 // Set up spies
 const mockGetSecurityRecorder = vi.spyOn(
@@ -32,7 +32,7 @@ vi.spyOn(toastQueueModule, 'useGlobalToastQueue').mockReturnValue(
 );
 
 // Mock constants
-vi.mock('../../.opencode/plugins/core/constants', () => ({
+vi.mock('.opencode/plugins/core/constants', () => ({
   BLOCKED_EVENTS_LOG_FILE: 'blocked-events.log',
 }));
 

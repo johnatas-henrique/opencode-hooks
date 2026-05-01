@@ -1,4 +1,4 @@
-import { handlers } from '../../../.opencode/plugins/features/handlers';
+import { handlers } from '.opencode/plugins/features/handlers';
 
 describe('LSP Handlers', () => {
   const lspHandlers = ['lsp.client.diagnostics', 'lsp.updated'];
