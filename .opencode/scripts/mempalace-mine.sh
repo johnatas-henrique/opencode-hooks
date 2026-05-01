@@ -9,30 +9,26 @@ if [ -t 0 ]; then
   EVENT_TYPE="legacy"
 else
   INPUT_JSON=$(cat)
-  
   SESSION_ID=$(echo "$INPUT_JSON" | jq -r '.session_id // empty')
   EVENT_TYPE=$(echo "$INPUT_JSON" | jq -r '.event_type // empty')
-  
   if [ -z "$SESSION_ID" ] || [ "$SESSION_ID" = "null" ]; then
     SESSION_ID="$PROJECT_NAME"
   fi
 fi
 
 COUNTER_FILE="/tmp/mempalace_count_$SESSION_ID"
-LAST_MSG_FILE="/tmp/mempalace_last_msg_$SESSION_ID"
 
 COUNT=$(cat "$COUNTER_FILE" 2>/dev/null || echo 0)
 COUNT=$((COUNT + 1))
 echo "$COUNT" > "$COUNTER_FILE"
 
-echo "[MemPalace] | Message $COUNT | Session: $SESSION_ID (project: $PROJECT_NAME)"
+echo "[MemPalace] | Message: $COUNT | Mining: $MINE_EVERY messages | Session: $SESSION_ID | Project: $PROJECT_NAME"
 
 if [ $((COUNT % MINE_EVERY)) -eq 0 ]; then
-  echo "=== MINING (every $MINE_EVERY messages) ==="
-
   SESSION_FILE="/tmp/session_$SESSION_ID.json"
   TRANSCRIPT_DIR="/tmp/mempalace_$SESSION_ID"
   TRANSCRIPT_FILE="$TRANSCRIPT_DIR/transcript_${COUNT}.jsonl"
+  LAST_MSG_FILE="/tmp/mempalace_last_msg_$SESSION_ID"
 
   mkdir -p "$TRANSCRIPT_DIR"
 
@@ -44,9 +40,7 @@ if [ $((COUNT % MINE_EVERY)) -eq 0 ]; then
     '.messages[$last:] | .[] | {message: {role: .info.role, content: [.parts[] | select(.type=="text") | {type: .type, text: .text}]}}' \
     "$SESSION_FILE" > "$TRANSCRIPT_FILE"
 
-  if [ -s "$TRANSCRIPT_FILE" ]; then
-    sleep 2
-    
+  if [ -s "$TRANSCRIPT_FILE" ]; then    
     mempalace mine "$TRANSCRIPT_DIR" --mode convos --wing "$PROJECT_NAME"
     
     NEW_LAST=$(jq '.messages | length' "$SESSION_FILE")
@@ -54,6 +48,4 @@ if [ $((COUNT % MINE_EVERY)) -eq 0 ]; then
   else
     echo "No new messages to mine (last_msg: $LAST_MSG)"
   fi
-
-  echo "============================================="
 fi

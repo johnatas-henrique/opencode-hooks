@@ -4,15 +4,17 @@ PROJECT_NAME="$(basename "$(pwd)")"
 
 if [ -t 0 ]; then
   SESSION_ID="${1:-$PROJECT_NAME}"
+  EVENT_TYPE="legacy"
 else
   INPUT_JSON=$(cat)
   SESSION_ID=$(echo "$INPUT_JSON" | jq -r '.sessionID // .session_id // empty')
+  EVENT_TYPE=$(echo "$INPUT_JSON" | jq -r '.event_type // empty')
   if [ -z "$SESSION_ID" ] || [ "$SESSION_ID" = "null" ]; then
     SESSION_ID="$PROJECT_NAME"
   fi
 fi
 
-echo "[MemPalace-Exit] Final mining for session: $SESSION_ID"
+echo "[MemPalace] Final mining for session: $SESSION_ID"
 
 SESSION_FILE="/tmp/session_${SESSION_ID}_exit.json"
 TRANSCRIPT_DIR="/tmp/mempalace_exit_$SESSION_ID"
@@ -30,7 +32,6 @@ jq -c --argjson last "$LAST_MSG" \
   "$SESSION_FILE" > "$TRANSCRIPT_FILE"
 
 if [ -s "$TRANSCRIPT_FILE" ]; then
-  sleep 2
   mempalace mine "$TRANSCRIPT_DIR" --mode convos --wing "$PROJECT_NAME"
   
   NEW_LAST=$(jq '.messages | length' "$SESSION_FILE")
@@ -40,8 +41,3 @@ if [ -s "$TRANSCRIPT_FILE" ]; then
 else
   echo "[MemPalace-Exit] No new messages to mine"
 fi
-
-rm -f "$SESSION_FILE" "$TRANSCRIPT_FILE"
-rmdir "$TRANSCRIPT_DIR" 2>/dev/null
-
-echo "[MemPalace-Exit] Done"
