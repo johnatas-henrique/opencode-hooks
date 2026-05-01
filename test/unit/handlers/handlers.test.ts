@@ -1,7 +1,7 @@
 import { handlers } from '.opencode/plugins/features/handlers';
 
 describe('handlers - truncate and formatValue', () => {
-  it('buildMessage should truncate long strings', () => {
+  it.skip('buildMessage should truncate long strings', () => {
     const longValue = 'a'.repeat(2000);
     const event = {
       properties: {

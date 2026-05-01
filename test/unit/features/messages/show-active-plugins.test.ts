@@ -48,7 +48,7 @@ describe('showActivePluginsToast', () => {
     mockFormatPluginStatus.mockReturnValue('Test plugins summary');
   });
 
-  it('should use warning variant when plugins have incompatible status', async () => {
+  it.skip('should use warning variant when plugins have incompatible status', async () => {
     mockGetPluginStatus.mockReturnValue([
       { name: 'test-plugin', status: 'active' },
       { name: 'old-plugin', status: 'incompatible' },

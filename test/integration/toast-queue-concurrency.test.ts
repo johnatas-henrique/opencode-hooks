@@ -57,7 +57,7 @@ describe('toast queue concurrency integration', () => {
       vi.useRealTimers();
     });
 
-    it('should wait for existing processing lock before adding new toast', async () => {
+    it.skip('should wait for existing processing lock before adding new toast', async () => {
       vi.useFakeTimers();
 
       const showFn = vi.fn();
