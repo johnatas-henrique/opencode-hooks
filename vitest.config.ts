@@ -1,6 +1,13 @@
 import { defineConfig } from 'vitest/config';
+import path from 'path';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '.opencode': path.resolve(__dirname, '.opencode'),
+      test: path.resolve(__dirname, 'test'),
+    },
+  },
   test: {
     environment: 'node',
     globals: true,
