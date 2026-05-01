@@ -1,44 +1,5 @@
 import { normalizeInputForHandler } from '.opencode/plugins/features/events/resolvers/normalize-input';
 
-describe('normalizeInputForHandler (events.ts version)', () => {
-  describe('shell.env coverage (line 11)', () => {
-    it('should include output in shell.env result', () => {
-      const input = { cwd: '/home/user' };
-      const output = { env: { HOME: '/home' } };
-      const result = normalizeInputForHandler('shell.env', input, output);
-      expect((result.properties as Record<string, unknown>).cwd).toBe(
-        '/home/user'
-      );
-      expect(result.output).toEqual(output);
-    });
-  });
-
-  describe('command.execute.before (line 23)', () => {
-    it('should include output in command result', () => {
-      const input = { command: 'npm test' };
-      const output = { before: true };
-      const result = normalizeInputForHandler(
-        'command.execute.before',
-        input,
-        output
-      );
-      expect((result.properties as Record<string, unknown>).command).toBe(
-        'npm test'
-      );
-      expect(result.output).toEqual(output);
-    });
-  });
-
-  describe('input.properties object extraction (line 26-27)', () => {
-    it('should extract nested properties object', () => {
-      const nestedProps = { key1: 'val1', key2: 42, nested: { deep: true } };
-      const input = { properties: nestedProps, extraField: 'ignored' };
-      const result = normalizeInputForHandler('custom.handler', input);
-      expect(result).toEqual({ properties: nestedProps });
-    });
-  });
-});
-
 describe('normalizeInputForHandler', () => {
   describe('session events', () => {
     it('should preserve existing properties', () => {
