@@ -1,9 +1,12 @@
-import type { EventVariant } from './config';
-import type { ScriptRunResult } from './scripts';
+import type { EventVariant } from '.opencode/plugins/types/config';
+import type { ScriptRunResult } from '.opencode/plugins/types/scripts';
 import type { PluginInput } from '@opencode-ai/plugin';
-import type { ResolvedEventConfig, ScriptToastsConfig } from './config';
-import type { ScriptRecorder } from './audit';
-import type { EventRecorder } from './audit';
+import type {
+  ResolvedEventConfig,
+  ScriptToastsConfig,
+} from '.opencode/plugins/types/config';
+import type { ScriptRecorder } from '.opencode/plugins/types/audit';
+import type { EventRecorder } from '.opencode/plugins/types/audit';
 
 export interface ScriptRunnerDeps {
   ctx: PluginInput;

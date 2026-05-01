@@ -3,7 +3,7 @@ import type {
   AuditLogger,
   AuditFileType,
   DebugRecorder,
-} from '../../types/audit';
+} from '.opencode/plugins/types/audit';
 
 export function createDebugRecorder(logger: AuditLogger): DebugRecorder {
   return {

@@ -1,5 +1,8 @@
 import type { PluginInput } from '@opencode-ai/plugin';
-import type { ResolvedEventConfig, ScriptToastsConfig } from './config';
+import type {
+  ResolvedEventConfig,
+  ScriptToastsConfig,
+} from '.opencode/plugins/types/config';
 
 export interface RunScriptConfigOptions {
   command: string;

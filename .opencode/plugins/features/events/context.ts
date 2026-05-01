@@ -1,15 +1,18 @@
-import type { UserEventsConfig, ScriptEntry } from '../../types/config';
+import type {
+  UserEventsConfig,
+  ScriptEntry,
+} from '.opencode/plugins/types/config';
 import type {
   EventHandler,
   ConfigResolverContext,
   ResolverFactory,
   EventConfigResolver,
   ToolConfigResolver,
-} from '../../types/events';
-import { EventConfigResolverImpl } from './resolvers/event-config.resolver';
-import { ToolConfigResolverImpl } from './resolvers/tool-config.resolver';
-import { handlers } from '../handlers';
-import { loadClaudeSettings } from '../../config/claude-settings';
+} from '.opencode/plugins/types/events';
+import { EventConfigResolverImpl } from '.opencode/plugins/features/events/resolvers/event-config.resolver';
+import { ToolConfigResolverImpl } from '.opencode/plugins/features/events/resolvers/tool-config.resolver';
+import { handlers } from '.opencode/plugins/features/handlers';
+import { loadClaudeSettings } from '.opencode/plugins/config/claude-settings';
 
 export function createContext(
   userConfig: UserEventsConfig,

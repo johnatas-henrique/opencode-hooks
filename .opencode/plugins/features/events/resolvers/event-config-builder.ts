@@ -1,19 +1,22 @@
 import type {
   EventHandler,
   ConfigResolverContext,
-} from '../../../types/events';
+} from '.opencode/plugins/types/events';
 import type {
   ResolvedEventConfig,
   EventConfig,
   EventOverride,
-} from '../../../types/config';
-import { DEFAULTS } from '../../../core/constants';
-import { resolveScripts, mergeClaudeScripts } from '../resolution/scripts';
-import { resolveToastOverride } from '../resolution/toast';
-import { getBooleanField } from '../resolution/boolean-field';
-import { normalizeInputForHandler } from './normalize-input';
-import { buildToastMessage } from './build-message';
-import { getEventRecorder } from '../../audit/plugin-integration';
+} from '.opencode/plugins/types/config';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import {
+  resolveScripts,
+  mergeClaudeScripts,
+} from '.opencode/plugins/features/events/resolution/scripts';
+import { resolveToastOverride } from '.opencode/plugins/features/events/resolution/toast';
+import { getBooleanField } from '.opencode/plugins/features/events/resolution/boolean-field';
+import { normalizeInputForHandler } from '.opencode/plugins/features/events/resolvers/normalize-input';
+import { buildToastMessage } from '.opencode/plugins/features/events/resolvers/build-message';
+import { getEventRecorder } from '.opencode/plugins/features/audit/plugin-integration';
 
 export class ConfigBuilder {
   private handler?: EventHandler;

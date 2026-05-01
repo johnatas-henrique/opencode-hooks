@@ -1,9 +1,9 @@
-import { createAuditLogger } from './audit-logger';
-import { createEventRecorder } from './event-recorder';
-import { createScriptRecorder } from './script-recorder';
-import { createErrorRecorder } from './error-recorder';
-import type { AuditConfig } from '../../types/audit';
-import type { ScriptRecorder } from '../../types/audit';
+import { createAuditLogger } from '.opencode/plugins/features/audit/audit-logger';
+import { createEventRecorder } from '.opencode/plugins/features/audit/event-recorder';
+import { createScriptRecorder } from '.opencode/plugins/features/audit/script-recorder';
+import { createErrorRecorder } from '.opencode/plugins/features/audit/error-recorder';
+import type { AuditConfig } from '.opencode/plugins/types/audit';
+import type { ScriptRecorder } from '.opencode/plugins/types/audit';
 import fs from 'fs';
 import path from 'path';
 

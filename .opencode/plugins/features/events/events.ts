@@ -1,7 +1,10 @@
-import { handlers } from '../handlers';
-import { userConfig } from '../../config/settings';
-import type { ResolvedEventConfig } from '../../types/config';
-import { createEventResolver, createToolResolver } from './context';
+import { handlers } from '.opencode/plugins/features/handlers';
+import { userConfig } from '.opencode/plugins/config/settings';
+import type { ResolvedEventConfig } from '.opencode/plugins/types/config';
+import {
+  createEventResolver,
+  createToolResolver,
+} from '.opencode/plugins/features/events/context';
 
 const eventResolver = createEventResolver(userConfig);
 const toolResolver = createToolResolver(userConfig);

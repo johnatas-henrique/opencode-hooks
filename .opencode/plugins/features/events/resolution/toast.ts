@@ -2,7 +2,7 @@ import type {
   EventConfig,
   ToastOverride,
   EventOverride,
-} from '../../../types/config';
+} from '.opencode/plugins/types/config';
 
 export function resolveToastOverride(cfg: EventConfig): ToastOverride | null {
   if (

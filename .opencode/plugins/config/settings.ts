@@ -1,6 +1,6 @@
-import { DEFAULTS } from '../core/constants';
-import { EventType } from '../types/events';
-import type { UserEventsConfig } from '../types/config';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import { EventType } from '.opencode/plugins/types/events';
+import type { UserEventsConfig } from '.opencode/plugins/types/config';
 import {
   blockEnvFiles,
   blockGitForce,
@@ -8,7 +8,7 @@ import {
   blockByPath,
   blockNoVerify,
   blockProtectedBranch,
-} from './security-rules';
+} from '.opencode/plugins/config/security-rules';
 
 export const userConfig: UserEventsConfig = {
   enabled: true,

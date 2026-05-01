@@ -1,7 +1,7 @@
-import type { ToastDirector } from '../../types/toast';
+import type { ToastDirector } from '.opencode/plugins/types/toast';
 import type { TuiToast } from '@opencode-ai/plugin/tui';
-import { DEFAULTS } from '../../core/constants';
-import { getErrorRecorder } from '../audit/plugin-integration';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import { getErrorRecorder } from '.opencode/plugins/features/audit/plugin-integration';
 
 /**
  * ToastDirectorImpl manages a single-producer toast queue with staggered display.

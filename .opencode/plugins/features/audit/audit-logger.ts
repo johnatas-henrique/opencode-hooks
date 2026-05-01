@@ -4,8 +4,8 @@ import type {
   AuditLoggerOptions,
   AuditFileType,
   AuditLoggerDependencies,
-} from '../../types/audit';
-import type { ArchiveDependencies } from '../../types/audit';
+} from '.opencode/plugins/types/audit';
+import type { ArchiveDependencies } from '.opencode/plugins/types/audit';
 import fs from 'fs';
 import path from 'path';
 

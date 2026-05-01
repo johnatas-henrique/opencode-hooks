@@ -1,8 +1,8 @@
 import { spawn } from 'child_process';
 import path from 'path';
-import type { ScriptEntry } from '../../types/config';
-import { DEFAULTS } from '../../core/constants';
-import type { HookResult } from '../../types/scripts';
+import type { ScriptEntry } from '.opencode/plugins/types/config';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import type { HookResult } from '.opencode/plugins/types/scripts';
 
 const shellSpecialChars = /[;&|`$(){}[\]<>\\!#*?"'\n\r]/g;
 

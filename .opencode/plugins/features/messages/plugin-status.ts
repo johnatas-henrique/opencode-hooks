@@ -1,9 +1,9 @@
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
-import { DEFAULTS } from '../../core/constants';
-import type { PluginStatusDisplayMode } from '../../types/config';
-import type { PluginStatus, PluginEntry } from '../../types/plugin';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import type { PluginStatusDisplayMode } from '.opencode/plugins/types/config';
+import type { PluginStatus, PluginEntry } from '.opencode/plugins/types/plugin';
 
 const LINE_REGEX = /^(INFO|WARN|ERROR|DEBUG)\s+\S+\s+\+\d+ms\s+(.+)$/;
 const TAG_REGEX = /^(\w+)=(.+)$/;

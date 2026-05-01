@@ -1,6 +1,6 @@
-import { useGlobalToastQueue } from './toast-queue';
-import { getDebugRecorder } from '../features/audit/debug-recorder';
-import { DEFAULTS } from './constants';
+import { useGlobalToastQueue } from '.opencode/plugins/core/toast-queue';
+import { getDebugRecorder } from '.opencode/plugins/features/audit/debug-recorder';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
 
 const SENSITIVE_KEYS = [
   'password',

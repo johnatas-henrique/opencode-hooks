@@ -1,6 +1,6 @@
 import { PluginInput } from '@opencode-ai/plugin';
-import { DEFAULTS } from '../../core/constants';
-import type { ScriptRunResult } from '../../types/scripts';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import type { ScriptRunResult } from '.opencode/plugins/types/scripts';
 
 const shellSpecialChars = /[;&|`$(){}[\]<>\\!#*?"'\n\r]/g;
 

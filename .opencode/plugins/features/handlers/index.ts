@@ -1,6 +1,6 @@
-import { sessionHandlers } from './session-handlers';
-import { toolHandlers } from './tool-handlers';
-import { messageHandlers } from './message-handlers';
+import { sessionHandlers } from '.opencode/plugins/features/handlers/session-handlers';
+import { toolHandlers } from '.opencode/plugins/features/handlers/tool-handlers';
+import { messageHandlers } from '.opencode/plugins/features/handlers/message-handlers';
 import {
   chatHandlers,
   commandHandlers,
@@ -11,10 +11,10 @@ import {
   lspHandlers,
   experimentalHandlers,
   otherHandlers,
-} from './misc-handlers';
-import { toolBeforeHandlers } from './tool-before-handlers';
-import { toolAfterHandlers } from './tool-after-handlers';
-import type { EventHandler } from '../../types/events';
+} from '.opencode/plugins/features/handlers/misc-handlers';
+import { toolBeforeHandlers } from '.opencode/plugins/features/handlers/tool-before-handlers';
+import { toolAfterHandlers } from '.opencode/plugins/features/handlers/tool-after-handlers';
+import type { EventHandler } from '.opencode/plugins/types/events';
 
 export const handlers: Record<string, EventHandler> = {
   ...sessionHandlers,

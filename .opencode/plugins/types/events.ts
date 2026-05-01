@@ -1,4 +1,4 @@
-import type { BuildMessageFn } from './messages';
+import type { BuildMessageFn } from '.opencode/plugins/types/messages';
 
 import type {
   EventOverride,
@@ -7,7 +7,7 @@ import type {
   ToolConfig,
   ResolvedEventConfig,
   ScriptEntry,
-} from './config';
+} from '.opencode/plugins/types/config';
 
 export interface EventHandler {
   title: string;

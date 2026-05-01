@@ -1,4 +1,4 @@
-import { DEFAULTS } from '../../core/constants';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
 
 export function truncate(
   str: string,

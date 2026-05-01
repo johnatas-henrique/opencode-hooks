@@ -3,12 +3,12 @@ import type {
   EventRecorderDependencies,
   SessionInput,
   AuditRecord,
-} from '../../types/audit';
+} from '.opencode/plugins/types/audit';
 import type {
   ToolExecuteBeforeInput,
   ToolExecuteAfterInput,
   ToolExecuteAfterOutput,
-} from '../../types/core';
+} from '.opencode/plugins/types/core';
 
 export function shouldLogEvents(config: AuditConfig): boolean {
   return config.enabled && config.level === 'debug';

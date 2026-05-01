@@ -1,5 +1,5 @@
-import type { ResolvedScripts } from '../../../types/events';
-import type { EventConfig, ScriptEntry } from '../../../types/config';
+import type { ResolvedScripts } from '.opencode/plugins/types/events';
+import type { EventConfig, ScriptEntry } from '.opencode/plugins/types/config';
 
 export function asScriptEntry(path: string): ScriptEntry {
   return { source: 'native', path };

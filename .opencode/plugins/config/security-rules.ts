@@ -1,4 +1,4 @@
-import type { BlockPredicate } from '../types/config';
+import type { BlockPredicate } from '.opencode/plugins/types/config';
 
 export const blockEnvFiles: BlockPredicate = (_, output) =>
   (output.args.filePath as string)?.includes('.env');

@@ -3,7 +3,7 @@ import type {
   ScriptRecord,
   ScriptRecorderDependencies,
   ScriptInput,
-} from '../../types/audit';
+} from '.opencode/plugins/types/audit';
 
 export function shouldLogScripts(config: AuditConfig): boolean {
   return config.enabled;

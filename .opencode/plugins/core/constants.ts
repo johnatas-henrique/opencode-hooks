@@ -1,5 +1,5 @@
-import type { ResolvedEventConfig } from '../types/config';
-import type { DefaultsConfig } from '../types/constants';
+import type { ResolvedEventConfig } from '.opencode/plugins/types/config';
+import type { DefaultsConfig } from '.opencode/plugins/types/constants';
 
 export const DEFAULTS: DefaultsConfig = {
   toast: {

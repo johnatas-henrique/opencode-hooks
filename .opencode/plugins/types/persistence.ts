@@ -1,4 +1,4 @@
-import type { ToastCallback } from './messages';
+import type { ToastCallback } from '.opencode/plugins/types/messages';
 
 export type { ToastCallback };
 

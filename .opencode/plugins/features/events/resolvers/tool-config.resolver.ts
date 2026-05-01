@@ -2,23 +2,23 @@ import type {
   EventHandler,
   ConfigResolverContext,
   ToolConfigResolver,
-} from '../../../types/events';
+} from '.opencode/plugins/types/events';
 import type {
   ResolvedEventConfig,
   ToolConfig,
   ToolOverride,
   ScriptEntry,
-} from '../../../types/config';
-import { getBooleanField } from '../resolution/boolean-field';
+} from '.opencode/plugins/types/config';
+import { getBooleanField } from '.opencode/plugins/features/events/resolution/boolean-field';
 import {
   resolveScripts,
   asScriptEntry,
   mergeClaudeScripts,
-} from '../resolution/scripts';
-import { resolveToastOverride } from '../resolution/toast';
-import { DEFAULTS } from '../../../core/constants';
-import { normalizeInputForHandler } from './normalize-input';
-import { buildToastMessage } from './build-message';
+} from '.opencode/plugins/features/events/resolution/scripts';
+import { resolveToastOverride } from '.opencode/plugins/features/events/resolution/toast';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import { normalizeInputForHandler } from '.opencode/plugins/features/events/resolvers/normalize-input';
+import { buildToastMessage } from '.opencode/plugins/features/events/resolvers/build-message';
 
 export class ToolConfigResolverImpl implements ToolConfigResolver {
   constructor(private context: ConfigResolverContext) {}

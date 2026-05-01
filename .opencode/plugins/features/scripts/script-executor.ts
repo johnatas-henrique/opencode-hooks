@@ -3,12 +3,12 @@ import type {
   ScriptExecutorOptions,
   ScriptInput,
   ScriptResultForAudit,
-} from '../../types/executor';
+} from '.opencode/plugins/types/executor';
 import type {
   ScriptRunResult,
   ScriptExecutionResult,
-} from '../../types/scripts';
-import type { EventVariant } from '../../types/config';
+} from '.opencode/plugins/types/scripts';
+import type { EventVariant } from '.opencode/plugins/types/config';
 
 export class ScriptExecutor {
   constructor(private deps: ScriptExecutorDeps) {}

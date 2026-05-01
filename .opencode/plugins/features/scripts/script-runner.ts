@@ -1,12 +1,12 @@
 import type {
   EventScriptConfig,
   ScriptExecutionResult,
-} from '../../types/scripts';
-import { runScriptAndHandle } from './run-script-handler';
+} from '.opencode/plugins/types/scripts';
+import { runScriptAndHandle } from '.opencode/plugins/features/scripts/run-script-handler';
 import type {
   ScriptRunnerDeps,
   ScriptExecutorOptions,
-} from '../../types/executor';
+} from '.opencode/plugins/types/executor';
 
 export function createScriptRunner(deps: ScriptRunnerDeps) {
   return async function runScript(

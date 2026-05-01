@@ -1,5 +1,5 @@
-import type { ResolvedEventConfig } from './config';
-import type { ToastConfig } from './toast';
+import type { ResolvedEventConfig } from '.opencode/plugins/types/config';
+import type { ToastConfig } from '.opencode/plugins/types/toast';
 
 export interface ScriptConstantsConfig {
   dir: string;

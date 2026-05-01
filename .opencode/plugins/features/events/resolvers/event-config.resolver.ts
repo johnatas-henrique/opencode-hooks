@@ -2,9 +2,9 @@ import type {
   EventHandler,
   ConfigResolverContext,
   EventConfigResolver,
-} from '../../../types/events';
-import type { ResolvedEventConfig } from '../../../types/config';
-import { ConfigBuilder } from './event-config-builder';
+} from '.opencode/plugins/types/events';
+import type { ResolvedEventConfig } from '.opencode/plugins/types/config';
+import { ConfigBuilder } from '.opencode/plugins/features/events/resolvers/event-config-builder';
 
 export class EventConfigResolverImpl implements EventConfigResolver {
   constructor(private context: ConfigResolverContext) {}

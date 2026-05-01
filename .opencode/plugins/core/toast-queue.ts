@@ -1,7 +1,10 @@
 import type { TuiToast } from '@opencode-ai/plugin/tui';
-import { DEFAULTS } from './constants';
-import type { ToastQueue, ToastQueueOptions } from '../types/toast';
-import { ToastDirectorImpl } from '../features/core/toast-director';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import type {
+  ToastQueue,
+  ToastQueueOptions,
+} from '.opencode/plugins/types/toast';
+import { ToastDirectorImpl } from '.opencode/plugins/features/core/toast-director';
 
 let globalToastQueue: ToastQueue | null = null;
 

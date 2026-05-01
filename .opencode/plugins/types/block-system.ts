@@ -1,5 +1,8 @@
-import type { ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from './core';
-import type { BlockCheck, ScriptResult } from './config';
+import type {
+  ToolExecuteBeforeInput,
+  ToolExecuteBeforeOutput,
+} from '.opencode/plugins/types/core';
+import type { BlockCheck, ScriptResult } from '.opencode/plugins/types/config';
 
 export interface BlockLogData {
   sessionID?: string;

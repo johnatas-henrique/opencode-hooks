@@ -1,16 +1,16 @@
-import { runScript } from './run-script';
+import { runScript } from '.opencode/plugins/features/scripts/run-script';
 import type {
   ScriptExecutionResult,
   EventScriptConfig,
-} from '../../types/scripts';
-import type { ScriptRecorder } from '../../types/audit';
-import { ScriptExecutor } from './script-executor';
+} from '.opencode/plugins/types/scripts';
+import type { ScriptRecorder } from '.opencode/plugins/types/audit';
+import { ScriptExecutor } from '.opencode/plugins/features/scripts/script-executor';
 import {
   createAuditAdapter,
   createSessionAdapter,
   createToastAdapter,
-} from './adapters';
-import { DEFAULTS } from '../../core/constants';
+} from '.opencode/plugins/features/scripts/adapters';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
 
 const subagentSessionIds = new Set<string>();
 

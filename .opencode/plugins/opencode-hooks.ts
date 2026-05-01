@@ -12,35 +12,38 @@ import type {
   ToolExecuteAfterOutput,
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
-} from './types/core';
-import { initGlobalToastQueue, useGlobalToastQueue } from './core/toast-queue';
-import { handlers } from './features/handlers';
-import { showStartupToast } from './features/messages/show-startup-toast';
+} from '.opencode/plugins/types/core';
+import {
+  initGlobalToastQueue,
+  useGlobalToastQueue,
+} from '.opencode/plugins/core/toast-queue';
+import { handlers } from '.opencode/plugins/features/handlers';
+import { showStartupToast } from '.opencode/plugins/features/messages/show-startup-toast';
 import {
   resolveEventConfig,
   resolveToolConfig,
-} from './features/events/events';
-import { handleDebugLog } from './core/debug';
-import { getEventRecorder } from './features/audit/plugin-integration';
+} from '.opencode/plugins/features/events/events';
+import { handleDebugLog } from '.opencode/plugins/core/debug';
+import { getEventRecorder } from '.opencode/plugins/features/audit/plugin-integration';
 import {
   addSubagentSession,
   isSubagent,
-} from './features/scripts/run-script-handler';
-import { appendToSession } from './features/messages/append-to-session';
-import { EventType } from './types/events';
-import { userConfig } from './config/settings';
-import { DEFAULTS } from './core/constants';
-import { executeScript } from './features/scripts/executor';
-import type { ScriptResult } from './types/config';
-import { executeBlocking } from './features/block-system/block-handler';
-import type { ExecuteHookParams } from './types/executor';
+} from '.opencode/plugins/features/scripts/run-script-handler';
+import { appendToSession } from '.opencode/plugins/features/messages/append-to-session';
+import { EventType } from '.opencode/plugins/types/events';
+import { userConfig } from '.opencode/plugins/config/settings';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import { executeScript } from '.opencode/plugins/features/scripts/executor';
+import type { ScriptResult } from '.opencode/plugins/types/config';
+import { executeBlocking } from '.opencode/plugins/features/block-system/block-handler';
+import type { ExecuteHookParams } from '.opencode/plugins/types/executor';
 import {
   initAuditLogging,
   getScriptRecorder,
   setAuditSessionId,
   getLastKnownSessionId,
   archiveAuditSession,
-} from './features/audit/plugin-integration';
+} from '.opencode/plugins/features/audit/plugin-integration';
 import fs from 'fs';
 import path from 'path';
 

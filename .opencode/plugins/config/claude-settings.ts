@@ -5,7 +5,7 @@ import type {
   ScriptEntry,
   ClaudeHookGroup,
   ClaudeSettings,
-} from '../types/config';
+} from '.opencode/plugins/types/config';
 
 const CLAUDE_EVENT_MAP: Record<string, string> = {
   PreToolUse: 'tool.execute.before',

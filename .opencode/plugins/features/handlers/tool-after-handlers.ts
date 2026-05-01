@@ -1,10 +1,10 @@
-import { DEFAULTS } from '../../core/constants';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
 import {
   buildKeysMessage,
   buildKeysMessageSimple,
-} from '../message-formatter/build-keys-message';
-import type { EventHandler } from '../../types/events';
-import type { HandlerConfig } from '../../types/messages';
+} from '.opencode/plugins/features/message-formatter/build-keys-message';
+import type { EventHandler } from '.opencode/plugins/types/events';
+import type { HandlerConfig } from '.opencode/plugins/types/messages';
 
 const createHandler = (config: HandlerConfig): EventHandler => ({
   title: config.title,

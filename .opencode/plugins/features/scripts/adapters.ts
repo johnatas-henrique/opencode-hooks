@@ -1,13 +1,16 @@
-import type { EventScriptConfig } from '../../types/scripts';
-import type { ScriptRecorder } from '../../types/audit';
-import { useGlobalToastQueue } from '../../core/toast-queue';
-import { appendToSession } from '../messages/append-to-session';
-import { isSubagent, addSubagentSession } from './run-script-handler';
+import type { EventScriptConfig } from '.opencode/plugins/types/scripts';
+import type { ScriptRecorder } from '.opencode/plugins/types/audit';
+import { useGlobalToastQueue } from '.opencode/plugins/core/toast-queue';
+import { appendToSession } from '.opencode/plugins/features/messages/append-to-session';
+import {
+  isSubagent,
+  addSubagentSession,
+} from '.opencode/plugins/features/scripts/run-script-handler';
 import type {
   ScriptAuditLogger,
   SessionAppender,
   ToastNotifier,
-} from '../../types/executor';
+} from '.opencode/plugins/types/executor';
 
 export function createToastAdapter(): ToastNotifier {
   return {

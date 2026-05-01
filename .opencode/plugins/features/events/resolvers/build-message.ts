@@ -1,4 +1,4 @@
-import type { ToastOverride } from '../../../types/config';
+import type { ToastOverride } from '.opencode/plugins/types/config';
 
 export function buildToastMessage(
   toastCfg: ToastOverride | null,

@@ -1,6 +1,9 @@
-import type { ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from './core';
-import type { AuditConfig } from './audit';
-import { EventType } from './events';
+import type {
+  ToolExecuteBeforeInput,
+  ToolExecuteBeforeOutput,
+} from '.opencode/plugins/types/core';
+import type { AuditConfig } from '.opencode/plugins/types/audit';
+import { EventType } from '.opencode/plugins/types/events';
 
 export type EventVariant = 'success' | 'warning' | 'error' | 'info';
 

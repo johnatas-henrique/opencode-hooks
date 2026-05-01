@@ -1,5 +1,5 @@
 import { readFile } from 'fs/promises';
-import { DEFAULTS } from '../../core/constants';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
 
 const TOAST_PATTERN = /path=\/tui\/show-toast/g;
 

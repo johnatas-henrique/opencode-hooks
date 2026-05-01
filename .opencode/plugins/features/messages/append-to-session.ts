@@ -1,5 +1,5 @@
 import type { PluginInput } from '@opencode-ai/plugin';
-import { DEFAULTS } from '../../core/constants';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
 
 export const appendToSession = async (
   ctx: PluginInput,

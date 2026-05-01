@@ -6,7 +6,7 @@ import type {
   ConfigErrorContext,
   CodeErrorContext,
   ErrorContext,
-} from '../../types/audit';
+} from '.opencode/plugins/types/audit';
 
 export function getErrorType(context: ErrorContext): ErrorType {
   if ('error' in context) {

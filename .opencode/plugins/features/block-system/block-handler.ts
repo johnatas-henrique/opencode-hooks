@@ -1,12 +1,15 @@
 import type {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
-} from '../../types/core';
-import type { BlockCheck, ScriptResult } from '../../types/config';
-import type { BlockSystem, BlockLogData } from '../../types/block-system';
-import { useGlobalToastQueue } from '../../core/toast-queue';
-import { createBlockSystem } from '../../types/block-system';
-import { getSecurityRecorder } from '../audit/security-recorder';
+} from '.opencode/plugins/types/core';
+import type { BlockCheck, ScriptResult } from '.opencode/plugins/types/config';
+import type {
+  BlockSystem,
+  BlockLogData,
+} from '.opencode/plugins/types/block-system';
+import { useGlobalToastQueue } from '.opencode/plugins/core/toast-queue';
+import { createBlockSystem } from '.opencode/plugins/types/block-system';
+import { getSecurityRecorder } from '.opencode/plugins/features/audit/security-recorder';
 
 export function createDefaultNotifyEffect() {
   return (title: string, details: { message: string }) => {
