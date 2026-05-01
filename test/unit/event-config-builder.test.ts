@@ -3,14 +3,14 @@ import {
   createEventResolver,
   createToolResolver,
   createContext,
-} from '../context';
-import { userConfig } from '../../../config/settings';
-import { handlers } from '../../handlers';
-import type { UserEventsConfig } from '../../../types/config';
+} from '.opencode/plugins/features/events/context';
+import { userConfig } from '.opencode/plugins/config/settings';
+import { handlers } from '.opencode/plugins/features/handlers';
+import type { UserEventsConfig } from '.opencode/plugins/types/config';
 import type {
   EventConfigResolver,
   ToolConfigResolver,
-} from '../../../types/events';
+} from '.opencode/plugins/types/events';
 
 describe('EventConfigResolver integration', () => {
   let resolver: EventConfigResolver;

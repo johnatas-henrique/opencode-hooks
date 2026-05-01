@@ -1,4 +1,4 @@
-import { formatTime } from './format-time';
+import { formatTime } from '.opencode/plugins/features/message-formatter/format-time';
 
 describe('formatTime', () => {
   it('returns a string', () => {

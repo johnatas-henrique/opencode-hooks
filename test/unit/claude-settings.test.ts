@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { mapClaudeHookToOpenCode, loadClaudeSettings } from './claude-settings';
+import {
+  mapClaudeHookToOpenCode,
+  loadClaudeSettings,
+} from '../../.opencode/plugins/config/claude-settings';
 import fs from 'fs';
 
 vi.mock('fs', () => {

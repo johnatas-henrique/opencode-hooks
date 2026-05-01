@@ -1,4 +1,7 @@
-import { maskSensitive, SENSITIVE_PATTERNS } from './mask-sensitive';
+import {
+  maskSensitive,
+  SENSITIVE_PATTERNS,
+} from '.opencode/plugins/features/message-formatter/mask-sensitive';
 
 describe('maskSensitive', () => {
   it('masks api key', () => {

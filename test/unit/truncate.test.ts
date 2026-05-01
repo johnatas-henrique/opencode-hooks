@@ -1,4 +1,4 @@
-import { truncate } from './truncate';
+import { truncate } from '.opencode/plugins/features/message-formatter/truncate';
 
 describe('truncate', () => {
   it('returns string unchanged when under max length', () => {

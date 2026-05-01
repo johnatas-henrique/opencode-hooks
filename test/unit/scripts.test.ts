@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { mergeClaudeScripts, resolveScripts, asScriptEntry } from './scripts';
-import type { ScriptEntry } from '../../../types/config';
+import {
+  mergeClaudeScripts,
+  resolveScripts,
+  asScriptEntry,
+} from '.opencode/plugins/features/events/resolution/scripts';
+import type { ScriptEntry } from '.opencode/plugins/types/config';
 
 describe('mergeClaudeScripts', () => {
   const baseScripts: ScriptEntry[] = [{ source: 'native', path: 'script.sh' }];

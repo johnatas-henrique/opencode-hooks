@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { EventType } from '../../.opencode/plugins/types/events';
-import { createUserConfig, withEvent, withToolEvent } from './create-config';
+import { EventType } from '.opencode/plugins/types/events';
+import {
+  createUserConfig,
+  withEvent,
+  withToolEvent,
+} from '../helpers/create-config';
 
 describe('createuserConfig', () => {
   it('should create base config when no overrides provided', () => {

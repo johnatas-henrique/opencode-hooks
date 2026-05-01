@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createHandler, createHandlers } from './create-handler';
+import { createHandler, createHandlers } from '../helpers/create-handler';
 
 describe('createHandler', () => {
   it('should create handler with default values when no overrides provided', () => {
