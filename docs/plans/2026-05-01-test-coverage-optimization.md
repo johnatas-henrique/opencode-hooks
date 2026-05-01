@@ -211,6 +211,17 @@ File 13 partially redundant (2/4 skipped, 2 necessary)
 
 File 14 not redundant (0/6 skipped, 6 necessary)
 
+### File 15: events.test.ts
+
+- Test 1 ("should return toast: false when default toast is object with enabled: false"): necessary (coverage changed)
+- Test 2 ("should return enabled: false when global enabled is false"): necessary (coverage changed)
+- Test 3 ("should return enabled: false for event config boolean false"): SKIPPED ✓ (coverage unchanged)
+- Test 4 ("should return empty string when buildMessage throws"): necessary (coverage changed)
+- Test 5 ("getToolHandler should return undefined for invalid toolEventType"): necessary (coverage changed)
+- Test 6 ("getHandler should return handler for valid event type"): SKIPPED ✓ (coverage unchanged)
+
+File 15 partially redundant (2/6 skipped, 4 necessary)
+
 ## Summary
 
 | Category                       | Count |
