@@ -119,12 +119,6 @@ describe('showToastStaggered', () => {
   });
 });
 
-describe('showToastStaggered', () => {
-  it('should exist', () => {
-    expect(showToastStaggered).toBeDefined();
-  });
-});
-
 describe('queue backpressure', () => {
   it('should drop oldest toast when queue is full', () => {
     const showFn = vi.fn();
