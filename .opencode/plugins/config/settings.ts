@@ -50,7 +50,7 @@ export const userConfig: UserEventsConfig = {
     basePath: './production/session-logs',
     maxSizeMB: 3,
     maxAgeDays: 30,
-    logTruncationKB: 0.5,
+    logTruncationKB: 2,
     maxFieldSize: 1000,
     maxArrayItems: 50,
     largeFields: [
@@ -62,19 +62,22 @@ export const userConfig: UserEventsConfig = {
       'result',
       'text',
     ],
+    sessionId: 'init',
+    files: DEFAULTS.audit.files,
+    archiveDir: DEFAULTS.audit.archiveDir,
   },
 
   events: {
     [EventType.SERVER_CONNECTED]: { enabled: false },
     [EventType.SERVER_INSTANCE_DISPOSED]: {
-      enabled: true,
       runScripts: true,
-      toast: false,
-      scripts: [{ source: 'native', path: 'mempalace-exit.sh' }],
+      scripts: [
+        { source: 'native', path: 'mempalace-exit.sh' },
+        { source: 'native', path: 'session-stop.sh' },
+      ],
     },
 
     [EventType.SESSION_CREATED]: {
-      toast: true,
       runScripts: true,
       runOnlyOnce: true,
       appendToSession: true,
@@ -123,7 +126,6 @@ export const userConfig: UserEventsConfig = {
 
     [EventType.CHAT_MESSAGE]: {
       runScripts: true,
-      toast: true,
       scripts: [{ source: 'native', path: 'mempalace-mine.sh' }],
     },
     [EventType.CHAT_PARAMS]: { enabled: false },

@@ -37,11 +37,11 @@ export const DEFAULTS: DefaultsConfig = {
   },
   audit: {
     files: {
-      events: 'plugin-events.json',
-      scripts: 'plugin-scripts.json',
-      errors: 'plugin-errors.json',
-      security: 'plugin-security.json',
-      debug: 'plugin-debug.json',
+      events: 'plugin-events_{session}.json',
+      scripts: 'plugin-scripts_{session}.json',
+      errors: 'plugin-errors_{session}.json',
+      security: 'plugin-security_{session}.json',
+      debug: 'plugin-debug_{session}.json',
     },
     archiveDir: 'audit-archive',
   },
