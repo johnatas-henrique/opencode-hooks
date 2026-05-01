@@ -4,6 +4,7 @@ import {
   getEventRecorder,
   getScriptRecorder,
   getErrorRecorder,
+  getAuditLogger,
 } from '../../.opencode/plugins/features/audit/plugin-integration';
 import type { AuditConfig } from '../../.opencode/plugins/types/audit';
 
@@ -36,6 +37,9 @@ vi.mock('../../.opencode/plugins/features/audit/audit-logger', () => ({
     writeLine: vi.fn(),
     rotate: vi.fn(),
     cleanup: vi.fn(),
+    archiveSession: vi.fn().mockResolvedValue(undefined),
+    setSessionId: vi.fn(),
+    getLastKnownSessionId: vi.fn().mockReturnValue('ses_123'),
   })),
   archiveLogFiles: vi.fn().mockResolvedValue(undefined),
   archiveLogFilesWithLock: vi.fn().mockResolvedValue(undefined),
@@ -69,44 +73,92 @@ vi.mock('fs/promises', () => ({
   stat: () => mockStat(),
 }));
 
-describe('archiveAllJsonFiles', () => {
-  it('should archive all json files in directory', async () => {
+describe('archiveAuditSession', () => {
+  it('should archive session files with sessionId in name', async () => {
     vi.resetModules();
-    vi.resetModules();
-    const { archiveAllJsonFiles } =
+    const { initAuditLogging, setAuditSessionId, archiveAuditSession } =
       await import('../../.opencode/plugins/features/audit/plugin-integration');
-    mockMkdir.mockResolvedValue(undefined);
-    mockRename.mockResolvedValue(undefined);
-    await archiveAllJsonFiles('/tmp/audit-test');
-    expect(mockMkdir).toHaveBeenCalled();
+
+    const testConfig: AuditConfig = {
+      enabled: true,
+      basePath: '/tmp/audit-test',
+      level: 'debug',
+      maxSizeMB: 10,
+      maxAgeDays: 30,
+      sessionId: 'test-session',
+      logTruncationKB: 2,
+      maxFieldSize: 1000,
+      maxArrayItems: 50,
+      largeFields: [],
+      files: {
+        events: 'plugin-events_{session}.json',
+        scripts: 'plugin-scripts_{session}.json',
+        errors: 'plugin-errors_{session}.json',
+        security: 'plugin-security_{session}.json',
+        debug: 'plugin-debug_{session}.json',
+      },
+      archiveDir: 'audit-archive',
+    };
+
+    await initAuditLogging(testConfig);
+    setAuditSessionId('ses_123');
+
+    const { getAuditLogger } =
+      await import('../../.opencode/plugins/features/audit/plugin-integration');
+    const logger = getAuditLogger()!;
+    const archiveMock = vi.spyOn(logger, 'archiveSession');
+
+    await archiveAuditSession();
+    expect(archiveMock).toHaveBeenCalledWith('ses_123');
   });
 
-  it('should skip archive files already containing -archive', async () => {
+  it('should resolve when auditLogger is not initialized', async () => {
     vi.resetModules();
-    mockReaddir.mockResolvedValue([
-      'plugin-events.json',
-      'plugin-archive-2024-01-01.json',
-    ]);
-    const { archiveAllJsonFiles } =
+    resetAuditLogging();
+    const { archiveAuditSession } =
       await import('../../.opencode/plugins/features/audit/plugin-integration');
-    await archiveAllJsonFiles('/tmp/audit-test');
+
+    await expect(archiveAuditSession()).resolves.toBeUndefined();
+  });
+});
+
+describe('setAuditSessionId', () => {
+  it('should call setSessionId on auditLogger when initialized', async () => {
+    vi.resetModules();
+    const { initAuditLogging, setAuditSessionId } =
+      await import('../../.opencode/plugins/features/audit/plugin-integration');
+
+    await initAuditLogging(defaultConfig);
+
+    const { getAuditLogger } =
+      await import('../../.opencode/plugins/features/audit/plugin-integration');
+    const logger = getAuditLogger()!;
+    const setSessionIdMock = vi.spyOn(logger, 'setSessionId');
+
+    setAuditSessionId('new-session-id');
+    expect(setSessionIdMock).toHaveBeenCalledWith('new-session-id');
   });
 
-  it('should handle errors when archiving individual files', async () => {
+  it('should not throw when auditLogger is not initialized', async () => {
     vi.resetModules();
-    mockReaddir.mockResolvedValue(['plugin-events.json']);
-    mockRename.mockRejectedValue(new Error('Access denied'));
-    const { archiveAllJsonFiles } =
+    resetAuditLogging();
+    const { setAuditSessionId } =
       await import('../../.opencode/plugins/features/audit/plugin-integration');
-    await archiveAllJsonFiles('/tmp/audit-test');
+
+    expect(() => setAuditSessionId('any-id')).not.toThrow();
+  });
+});
+
+describe('getAuditLogger', () => {
+  it('should return undefined before initialization', () => {
+    const recorder = getAuditLogger();
+    expect(recorder).toBeUndefined();
   });
 
-  it('should handle readdir errors gracefully', async () => {
-    vi.resetModules();
-    mockReaddir.mockRejectedValue(new Error('Directory not found'));
-    const { archiveAllJsonFiles } =
-      await import('../../.opencode/plugins/features/audit/plugin-integration');
-    await archiveAllJsonFiles('/tmp/audit-test-nonexistent');
+  it('should return auditLogger after initialization', async () => {
+    await initAuditLogging(defaultConfig);
+    const logger = getAuditLogger();
+    expect(logger).toBeDefined();
   });
 });
 

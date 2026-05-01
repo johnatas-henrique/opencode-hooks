@@ -138,6 +138,9 @@ describe('OpencodeHooks - logDisabledEvents', () => {
         getEventRecorder: () => mockEventRecorder,
         getScriptRecorder: vi.fn(),
         getErrorRecorder: vi.fn(),
+        getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
+        setAuditSessionId: vi.fn(),
+        archiveAuditSession: vi.fn().mockResolvedValue(undefined),
       })
     );
 
@@ -167,13 +170,16 @@ describe('OpencodeHooks - logDisabledEvents', () => {
 
     const event = {
       type: 'session.created',
-      properties: { info: { id: 's1', title: 'Test' } },
+      properties: { info: { id: 'ses_s1', title: 'Test' } },
     };
     await plugin.event!({ event: event as never });
 
     expect(mockLogEvent).toHaveBeenCalledWith(
       'EVENT_DISABLED',
-      expect.objectContaining({ sessionID: 's1', context: 'session.created' })
+      expect.objectContaining({
+        sessionID: 'ses_s1',
+        context: 'session.created',
+      })
     );
   });
 
@@ -251,6 +257,9 @@ describe('OpencodeHooks - logDisabledEvents', () => {
         getEventRecorder: () => mockEventRecorder,
         getScriptRecorder: vi.fn(),
         getErrorRecorder: vi.fn(),
+        getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
+        setAuditSessionId: vi.fn(),
+        archiveAuditSession: vi.fn().mockResolvedValue(undefined),
       })
     );
 
@@ -361,6 +370,9 @@ describe('OpencodeHooks - logDisabledEvents', () => {
         getEventRecorder: () => mockEventRecorder,
         getScriptRecorder: vi.fn(),
         getErrorRecorder: vi.fn(),
+        getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
+        setAuditSessionId: vi.fn(),
+        archiveAuditSession: vi.fn().mockResolvedValue(undefined),
       })
     );
 

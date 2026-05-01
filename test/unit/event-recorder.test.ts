@@ -274,6 +274,36 @@ describe('createEventRecorder', () => {
 
       expect(mockWriteLine).not.toHaveBeenCalled();
     });
+
+    it('should handle undefined input and pass sessionID', async () => {
+      const { createEventRecorder } =
+        await import('../../.opencode/plugins/features/audit/event-recorder');
+      const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+      const config = {
+        enabled: true,
+        level: 'debug',
+        maxSizeMB: 10,
+        maxAgeDays: 30,
+        logTruncationKB: 10,
+        maxFieldSize: 1000,
+        maxArrayItems: 50,
+        basePath: '/tmp/audit-test/test',
+        largeFields: [],
+      };
+
+      const recorder = createEventRecorder(config as AuditConfig, {
+        writeLine: mockWriteLine,
+      });
+
+      await recorder.logEvent('session.idle', {
+        sessionID: 'session-123',
+        input: undefined,
+      });
+
+      expect(mockWriteLine).toHaveBeenCalledOnce();
+      const loggedData = mockWriteLine.mock.calls[0][1];
+      expect(loggedData.session).toBe('session-123');
+    });
   });
 
   describe('logToolExecuteBefore', () => {
@@ -357,7 +387,8 @@ describe('createEventRecorder', () => {
           tool: 'bash',
           session: 'session-123',
           status: 'success',
-        })
+        }),
+        'session-123'
       );
     });
   });
