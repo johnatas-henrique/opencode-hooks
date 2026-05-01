@@ -4,6 +4,33 @@ import type {
   EventConfig,
   ToolOverride,
 } from '../../.opencode/plugins/types/config';
+import type { AuditConfig } from '../../.opencode/plugins/types/audit';
+
+export function createAuditConfig(
+  overrides: Partial<AuditConfig> = {}
+): AuditConfig {
+  return {
+    enabled: true,
+    level: 'debug',
+    basePath: '/tmp/audit-test',
+    maxSizeMB: 10,
+    maxAgeDays: 30,
+    logTruncationKB: 0.5,
+    maxFieldSize: 1000,
+    maxArrayItems: 50,
+    largeFields: [],
+    sessionId: 'test-session',
+    files: {
+      events: 'plugin-events_{session}.json',
+      scripts: 'plugin-scripts_{session}.json',
+      errors: 'plugin-errors_{session}.json',
+      security: 'plugin-security_{session}.json',
+      debug: 'plugin-debug_{session}.json',
+    },
+    archiveDir: 'audit-archive',
+    ...overrides,
+  };
+}
 
 const baseConfig: UserEventsConfig = {
   enabled: true,
@@ -18,6 +45,15 @@ const baseConfig: UserEventsConfig = {
     maxFieldSize: 1000,
     maxArrayItems: 50,
     largeFields: [],
+    sessionId: 'test-session',
+    files: {
+      events: 'plugin-events_{session}.json',
+      scripts: 'plugin-scripts_{session}.json',
+      errors: 'plugin-errors_{session}.json',
+      security: 'plugin-security_{session}.json',
+      debug: 'plugin-debug_{session}.json',
+    },
+    archiveDir: 'audit-archive',
   },
   showPluginStatus: true,
   pluginStatusDisplayMode: 'user-only',
