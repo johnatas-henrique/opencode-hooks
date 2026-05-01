@@ -45,6 +45,7 @@ vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
     .mockReturnValue({ logEvent: vi.fn().mockResolvedValue(undefined) }),
   getScriptRecorder: vi.fn(),
   getErrorRecorder: vi.fn(),
+  getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
   archiveAllJsonFiles: vi.fn(),
 }));
 

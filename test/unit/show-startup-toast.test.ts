@@ -107,6 +107,7 @@ vi.mock('../../.opencode/plugins/core/toast-queue', () => ({
 
 vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
   getErrorRecorder: mockGetErrorRecorder,
+  getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
 }));
 
 describe('showStartupToast', () => {

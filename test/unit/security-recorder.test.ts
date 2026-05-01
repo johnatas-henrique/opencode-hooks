@@ -15,6 +15,9 @@ describe('security-recorder', () => {
     securityRecorder = createSecurityRecorder({
       writeLine: mockWriteLine,
       cleanup: vi.fn().mockResolvedValue(undefined),
+      archiveSession: vi.fn().mockResolvedValue(undefined),
+      setSessionId: vi.fn(),
+      getLastKnownSessionId: vi.fn().mockReturnValue(undefined),
     });
   });
 

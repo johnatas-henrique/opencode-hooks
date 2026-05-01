@@ -124,6 +124,7 @@ vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
   }),
   getScriptRecorder: vi.fn(),
   getErrorRecorder: vi.fn(),
+  getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
 }));
 
 const createMockCtx = (

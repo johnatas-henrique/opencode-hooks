@@ -9,6 +9,7 @@ vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
   initAuditLogging: vi.fn(),
   getScriptRecorder: vi.fn(),
   resetAuditLogging: vi.fn(),
+  getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
 }));
 
 describe('toast-queue with null errorRecorder', () => {

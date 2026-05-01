@@ -59,6 +59,7 @@ vi.mock('../../.opencode/plugins/features/audit/plugin-integration', () => ({
     writeLine: vi.fn().mockResolvedValue(undefined),
     cleanup: vi.fn().mockResolvedValue(undefined),
   }),
+  getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
 }));
 
 describe('opencode-hooks-disabled - line 197 coverage', () => {

@@ -69,8 +69,20 @@ describe('OpencodeHooks plugin startup validation', () => {
   const originalCwd = process.cwd();
 
   beforeEach(() => {
-    process.chdir(originalCwd);
+    try {
+      process.chdir(originalCwd);
+    } catch {
+      process.chdir('/');
+    }
     vi.resetModules();
+  });
+
+  afterEach(() => {
+    try {
+      process.chdir(originalCwd);
+    } catch {
+      process.chdir('/');
+    }
   });
 
   it('should throw during plugin initialization when scripts directory missing', async () => {
