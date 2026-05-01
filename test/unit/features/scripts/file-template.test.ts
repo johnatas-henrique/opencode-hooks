@@ -82,21 +82,18 @@ vi.mock('.opencode/plugins/config', () => ({
 describe('resolveLogToAudit - resolveToolConfig', () => {
   it('should return false when tool does not define logToAudit and event base also does not have it', async () => {
     vi.resetModules();
-    vi.doMock(
-      '../../.opencode/plugins/features/messages/default-handlers',
-      () => ({
-        handlers: {
-          'tool.execute.after': {
-            title: '====TOOL AFTER====',
-            variant: 'info',
-            duration: 2000,
-            defaultScript: 'tool-execute-after.sh',
-            buildMessage: () => 'tool',
-          },
+    vi.doMock('.opencode/plugins/features/messages/default-handlers', () => ({
+      handlers: {
+        'tool.execute.after': {
+          title: '====TOOL AFTER====',
+          variant: 'info',
+          duration: 2000,
+          defaultScript: 'tool-execute-after.sh',
+          buildMessage: () => 'tool',
         },
-      })
-    );
-    vi.doMock('../../.opencode/plugins/config', () => ({
+      },
+    }));
+    vi.doMock('.opencode/plugins/config', () => ({
       userConfig: {
         enabled: true,
         default: {},

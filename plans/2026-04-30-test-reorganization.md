@@ -13,89 +13,96 @@ Reorganize all test/unit/\*.test.ts files into subdirectories mirroring .opencod
 | Stmts     | 98.92% |
 | Branches  | 97.48% |
 
+## Status
+
+- ✅ **DONE** - Convert all imports to absolute paths (.opencode/plugins/...)
+- ✅ **DONE** - Add vitest path aliases for absolute imports
+- ✅ **DONE** - Reorganize folder structure
+- ✅ **DONE** - Verify tests still pass after reorganization (1120 tests, 99.08% coverage)
+
 ## Target Structure
 
 ```
 test/unit/
 ├── config/
-│   ├── claude-settings.XXX.test.ts  (.opencode/plugins/config/)
-│   ├── security-rules.XXX.test.ts
-│   └── settings.XXX.test.ts
+│   ├── claude-settings.test.ts  (.opencode/plugins/config/)
+│   ├── security-rules.test.ts
+│   └── settings.test.ts
 ├── core/
-│   ├── constants.XXX.test.ts
-│   ├── debug.XXX.test.ts
-│   └── toast-queue.XXX.test.ts
+│   ├── constants.test.ts
+│   ├── debug.test.ts
+│   └── toast-queue.test.ts
 ├── features/
 │   ├── audit/
-│   │   ├── audit-logger.XXX.test.ts
-│   │   ├── audit-plugin-integration.XXX.test.ts
-│   │   ├── debug-recorder.XXX.test.ts
-│   │   ├── error-recorder.XXX.test.ts
-│   │   ├── event-recorder.XXX.test.ts
-│   │   ├── plugin-integration.XXX.test.ts
-│   │   ├── script-recorder.XXX.test.ts
-│   │   └── security-recorder.XXX.test.ts
+│   │   ├── audit-logger.test.ts
+│   │   ├── audit-plugin-integration.test.ts
+│   │   ├── debug-recorder.test.ts
+│   │   ├── error-recorder.test.ts
+│   │   ├── event-recorder.test.ts
+│   │   ├── plugin-integration.test.ts
+│   │   ├── script-recorder.test.ts
+│   │   └── security-recorder.test.ts
 │   ├── block-system/
-│   │   ├── block-handler.XXX.test.ts
-│   │   ├── block-handler-null-recorder.XXX.test.ts
-│   │   └── block-system.XXX.test.ts
+│   │   ├── block-handler.test.ts
+│   │   ├── block-handler-null-recorder.test.ts
+│   │   └── block-system.test.ts
 │   ├── events/
-│   │   ├── context.XXX.test.ts
-│   │   ├── events.XXX.test.ts
-│   │   ├── get-tool-handler.XXX.test.ts
+│   │   ├── context.test.ts
+│   │   ├── events.test.ts
+│   │   ├── get-tool-handler.test.ts
 │   │   ├── resolution/
-│   │   │   ├── boolean-field.XXX.test.ts
-│   │   │   ├── scripts.XXX.test.ts
-│   │   │   ├── toast-resolution.XXX.test.ts
-│   │   │   └���─ tool-config.XXX.test.ts
+│   │   │   ├── boolean-field.test.ts
+│   │   │   ├── scripts.test.ts
+│   │   │   ├── toast-resolution.test.ts
+│   │   │   └���─ tool-config.test.ts
 │   │   └── resolvers/
-│   │       ├── build-message.XXX.test.ts
-│   │       ├── event-config-builder.XXX.test.ts
-│   │       ├── event-config.XXX.test.ts
-│   │       ├── normalize-input.XXX.test.ts
-│   │       └── tool-config-resolver.XXX.test.ts
+│   │       ├── build-message.test.ts
+│   │       ├── event-config-builder.test.ts
+│   │       ├── event-config.test.ts
+│   │       ├── normalize-input.test.ts
+│   │       └── tool-config-resolver.test.ts
 │   ├── handlers/
-│   │   ├── chat-handlers.XXX.test.ts
-│   │   ├── command-handlers.XXX.test.ts
-│   │   ├── experimental-handlers.XXX.test.ts
-│   │   ├── handlers.XXX.test.ts
-│   │   ├── lsp-handlers.XXX.test.ts
-│   │   ├── message-handlers.XXX.test.ts
-│   │   ├── other-handlers.XXX.test.ts
-│   │   ├── server-handlers.XXX.test.ts
-│   │   ├── shell-handlers.XXX.test.ts
-│   │   ├── todo-handlers.XXX.test.ts
-│   │   ├── tool-specific-handlers.XXX.test.ts
-│   │   └── tui-handlers.XXX.test.ts
+│   │   ├── chat-handlers.test.ts
+│   │   ├── command-handlers.test.ts
+│   │   ├── experimental-handlers.test.ts
+│   │   ├── handlers.test.ts
+│   │   ├── lsp-handlers.test.ts
+│   │   ├── message-handlers.test.ts
+│   │   ├── other-handlers.test.ts
+│   │   ├── server-handlers.test.ts
+│   │   ├── shell-handlers.test.ts
+│   │   ├── todo-handlers.test.ts
+│   │   ├── tool-specific-handlers.test.ts
+│   │   └── tui-handlers.test.ts
 │   ├── message-formatter/
-│   │   ├── build-keys-message.XXX.test.ts
-│   │   ├── format-time.XXX.test.ts
-│   │   ├── get-value-by-path.XXX.test.ts
-│   │   ├── mask-sensitive.XXX.test.ts
-│   │   └── truncate.XXX.test.ts
+│   │   ├── build-keys-message.test.ts
+│   │   ├── format-time.test.ts
+│   │   ├── get-value-by-path.test.ts
+│   │   ├── mask-sensitive.test.ts
+│   │   └── truncate.test.ts
 │   ├── messages/
-│   │   ├── append-to-session.XXX.test.ts
-│   │   ├── plugin-status.XXX.test.ts
-│   │   ├── show-active-plugins.XXX.test.ts
-│   │   ├── show-startup-toast.XXX.test.ts
-│   │   └── toast-silence-detector.XXX.test.ts
+│   │   ├── append-to-session.test.ts
+│   │   ├── plugin-status.test.ts
+│   │   ├── show-active-plugins.test.ts
+│   │   ├── show-startup-toast.test.ts
+│   │   └── toast-silence-detector.test.ts
 │   └── scripts/
-│       ├── adapters.XXX.test.ts
-│       ├── executor.XXX.test.ts
-│       ├── file-template.XXX.test.ts
-│       ├── run-script-handler.XXX.test.ts
-│       ├── run-script.XXX.test.ts
-│       ├── script-executor.XXX.test.ts
-│       ├── script-recorder.XXX.test.ts
-│       └── script-runner.XXX.test.ts
+│       ├── adapters.test.ts
+│       ├── executor.test.ts
+│       ├── file-template.test.ts
+│       ├── run-script-handler.test.ts
+│       ├── run-script.test.ts
+│       ├── script-executor.test.ts
+│       ├── script-recorder.test.ts
+│       └── script-runner.test.ts
 ├── opencode-hooks/
-│   ├── additional-hooks.XXX.test.ts
-│   ├── event-handler.XXX.test.ts
-│   ├── opencode-hooks-disabled.XXX.test.ts
-│   ├── opencode-hooks-enabled-coverage.XXX.test.ts
-│   ├── opencode-hooks-specialized-coverage.XXX.test.ts
-│   ├── tool-hooks.XXX.test.ts
-│   └── validate-scripts-directory.XXX.test.ts
+│   ├── additional-hooks.test.ts
+│   ├── event-handler.test.ts
+│   ├── opencode-hooks-disabled.test.ts
+│   ├── opencode-hooks-enabled-coverage.test.ts
+│   ├── opencode-hooks-specialized-coverage.test.ts
+│   ├── tool-hooks.test.ts
+│   └── validate-scripts-directory.test.ts
 └── integration/  (existing)
 ```
 
@@ -109,8 +116,15 @@ import { formatTime } from '.opencode/plugins/features/message-formatter/format-
 
 ## Process
 
-1. Create all folder structure first
-2. Move files one by one with git mv
-3. Update imports to absolute paths
-4. Run `npm run test:cov` after each file
-5. Verify coverage unchanged
+### Already Completed
+
+- [x] Convert all test files to use absolute imports (.opencode/plugins/...)
+- [x] Add vitest.config.ts path aliases for test resolution
+
+### Completed Tasks
+
+- [x] Create folder structure (config/, core/, features/...)
+- [x] Move files with git mv to new locations
+- [x] Fix relative imports in mocks that broke after move
+- [x] Run tests - all 1120 passing
+- [x] Coverage: 99.08% (Lines), 99% (Functions), 98.92% (Stmts), 97.48% (Branches)

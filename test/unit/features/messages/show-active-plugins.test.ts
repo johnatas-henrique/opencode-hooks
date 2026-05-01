@@ -81,7 +81,7 @@ describe('when showPluginStatus is disabled', () => {
   it('should return early and not add toast', async () => {
     vi.resetModules();
 
-    vi.doMock('../../.opencode/plugins/config/settings', () => ({
+    vi.doMock('.opencode/plugins/config/settings', () => ({
       userConfig: {
         showPluginStatus: false,
         pluginStatusDisplayMode: 'user-only',

@@ -158,7 +158,7 @@ const { mockQueue: globalMockQueue, setCapturedShowFn } = vi.hoisted(() => {
 });
 
 vi.mock('.opencode/plugins/core/toast-queue', () => ({
-  ...vi.importActual('../../.opencode/plugins/core/toast-queue'),
+  ...vi.importActual('.opencode/plugins/core/toast-queue'),
   initGlobalToastQueue: (showFn: (toast: unknown) => void) => {
     setCapturedShowFn(showFn);
     return globalMockQueue;

@@ -65,31 +65,27 @@ describe('OpencodeHooks - logDisabledEvents', () => {
   });
 
   it('should call eventRecorder.logEvent when event is disabled and logDisabledEvents is true', async () => {
-    vi.doMock('../../.opencode/plugins/core/toast-queue', () => ({
+    vi.doMock('.opencode/plugins/core/toast-queue', () => ({
       initGlobalToastQueue: vi.fn(),
       useGlobalToastQueue: () => globalMockQueue,
     }));
 
-    vi.doMock(
-      '../../.opencode/plugins/features/scripts/run-script-handler',
-      () => ({
-        isSubagent: vi.fn(),
-        addSubagentSession: vi.fn(),
-        resetSubagentTracking: vi.fn(),
-        runScriptAndHandle: vi.fn().mockResolvedValue({
-          output: 'test output',
-          error: null,
-          exitCode: 0,
-        }),
-      })
-    );
+    vi.doMock('.opencode/plugins/features/scripts/run-script-handler', () => ({
+      isSubagent: vi.fn(),
+      addSubagentSession: vi.fn(),
+      resetSubagentTracking: vi.fn(),
+      runScriptAndHandle: vi.fn().mockResolvedValue({
+        output: 'test output',
+        error: null,
+        exitCode: 0,
+      }),
+    }));
 
-    vi.doMock(
-      '../../.opencode/plugins/features/messages/show-startup-toast',
-      () => ({ showStartupToast: vi.fn().mockResolvedValue(undefined) })
-    );
+    vi.doMock('.opencode/plugins/features/messages/show-startup-toast', () => ({
+      showStartupToast: vi.fn().mockResolvedValue(undefined),
+    }));
 
-    vi.doMock('../../.opencode/plugins/config/settings', () => ({
+    vi.doMock('.opencode/plugins/config/settings', () => ({
       userConfig: {
         enabled: true,
         toast: false,
@@ -131,20 +127,17 @@ describe('OpencodeHooks - logDisabledEvents', () => {
       },
     }));
 
-    vi.doMock(
-      '../../.opencode/plugins/features/audit/plugin-integration',
-      () => ({
-        initAuditLogging: vi.fn().mockResolvedValue(undefined),
-        getEventRecorder: () => mockEventRecorder,
-        getScriptRecorder: vi.fn(),
-        getErrorRecorder: vi.fn(),
-        getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
-        setAuditSessionId: vi.fn(),
-        archiveAuditSession: vi.fn().mockResolvedValue(undefined),
-      })
-    );
+    vi.doMock('.opencode/plugins/features/audit/plugin-integration', () => ({
+      initAuditLogging: vi.fn().mockResolvedValue(undefined),
+      getEventRecorder: () => mockEventRecorder,
+      getScriptRecorder: vi.fn(),
+      getErrorRecorder: vi.fn(),
+      getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
+      setAuditSessionId: vi.fn(),
+      archiveAuditSession: vi.fn().mockResolvedValue(undefined),
+    }));
 
-    vi.doMock('../../.opencode/plugins/features/events/events', () => ({
+    vi.doMock('.opencode/plugins/features/events/events', () => ({
       resolveEventConfig: vi.fn().mockReturnValue({
         enabled: false,
         toast: false,
@@ -184,31 +177,27 @@ describe('OpencodeHooks - logDisabledEvents', () => {
   });
 
   it('should not call eventRecorder.logEvent when event is disabled and logDisabledEvents is false', async () => {
-    vi.doMock('../../.opencode/plugins/core/toast-queue', () => ({
+    vi.doMock('.opencode/plugins/core/toast-queue', () => ({
       initGlobalToastQueue: vi.fn(),
       useGlobalToastQueue: () => globalMockQueue,
     }));
 
-    vi.doMock(
-      '../../.opencode/plugins/features/scripts/run-script-handler',
-      () => ({
-        isSubagent: vi.fn(),
-        addSubagentSession: vi.fn(),
-        resetSubagentTracking: vi.fn(),
-        runScriptAndHandle: vi.fn().mockResolvedValue({
-          output: 'test output',
-          error: null,
-          exitCode: 0,
-        }),
-      })
-    );
+    vi.doMock('.opencode/plugins/features/scripts/run-script-handler', () => ({
+      isSubagent: vi.fn(),
+      addSubagentSession: vi.fn(),
+      resetSubagentTracking: vi.fn(),
+      runScriptAndHandle: vi.fn().mockResolvedValue({
+        output: 'test output',
+        error: null,
+        exitCode: 0,
+      }),
+    }));
 
-    vi.doMock(
-      '../../.opencode/plugins/features/messages/show-startup-toast',
-      () => ({ showStartupToast: vi.fn().mockResolvedValue(undefined) })
-    );
+    vi.doMock('.opencode/plugins/features/messages/show-startup-toast', () => ({
+      showStartupToast: vi.fn().mockResolvedValue(undefined),
+    }));
 
-    vi.doMock('../../.opencode/plugins/config/settings', () => ({
+    vi.doMock('.opencode/plugins/config/settings', () => ({
       userConfig: {
         enabled: true,
         toast: false,
@@ -250,20 +239,17 @@ describe('OpencodeHooks - logDisabledEvents', () => {
       },
     }));
 
-    vi.doMock(
-      '../../.opencode/plugins/features/audit/plugin-integration',
-      () => ({
-        initAuditLogging: vi.fn().mockResolvedValue(undefined),
-        getEventRecorder: () => mockEventRecorder,
-        getScriptRecorder: vi.fn(),
-        getErrorRecorder: vi.fn(),
-        getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
-        setAuditSessionId: vi.fn(),
-        archiveAuditSession: vi.fn().mockResolvedValue(undefined),
-      })
-    );
+    vi.doMock('.opencode/plugins/features/audit/plugin-integration', () => ({
+      initAuditLogging: vi.fn().mockResolvedValue(undefined),
+      getEventRecorder: () => mockEventRecorder,
+      getScriptRecorder: vi.fn(),
+      getErrorRecorder: vi.fn(),
+      getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
+      setAuditSessionId: vi.fn(),
+      archiveAuditSession: vi.fn().mockResolvedValue(undefined),
+    }));
 
-    vi.doMock('../../.opencode/plugins/features/events/events', () => ({
+    vi.doMock('.opencode/plugins/features/events/events', () => ({
       resolveEventConfig: vi.fn().mockReturnValue({
         enabled: false,
         toast: false,
@@ -297,31 +283,27 @@ describe('OpencodeHooks - logDisabledEvents', () => {
   });
 
   it('should not show toast when event is disabled', async () => {
-    vi.doMock('../../.opencode/plugins/core/toast-queue', () => ({
+    vi.doMock('.opencode/plugins/core/toast-queue', () => ({
       initGlobalToastQueue: vi.fn(),
       useGlobalToastQueue: () => globalMockQueue,
     }));
 
-    vi.doMock(
-      '../../.opencode/plugins/features/scripts/run-script-handler',
-      () => ({
-        isSubagent: vi.fn(),
-        addSubagentSession: vi.fn(),
-        resetSubagentTracking: vi.fn(),
-        runScriptAndHandle: vi.fn().mockResolvedValue({
-          output: 'test output',
-          error: null,
-          exitCode: 0,
-        }),
-      })
-    );
+    vi.doMock('.opencode/plugins/features/scripts/run-script-handler', () => ({
+      isSubagent: vi.fn(),
+      addSubagentSession: vi.fn(),
+      resetSubagentTracking: vi.fn(),
+      runScriptAndHandle: vi.fn().mockResolvedValue({
+        output: 'test output',
+        error: null,
+        exitCode: 0,
+      }),
+    }));
 
-    vi.doMock(
-      '../../.opencode/plugins/features/messages/show-startup-toast',
-      () => ({ showStartupToast: vi.fn().mockResolvedValue(undefined) })
-    );
+    vi.doMock('.opencode/plugins/features/messages/show-startup-toast', () => ({
+      showStartupToast: vi.fn().mockResolvedValue(undefined),
+    }));
 
-    vi.doMock('../../.opencode/plugins/config/settings', () => ({
+    vi.doMock('.opencode/plugins/config/settings', () => ({
       userConfig: {
         enabled: true,
         toast: false,
@@ -363,20 +345,17 @@ describe('OpencodeHooks - logDisabledEvents', () => {
       },
     }));
 
-    vi.doMock(
-      '../../.opencode/plugins/features/audit/plugin-integration',
-      () => ({
-        initAuditLogging: vi.fn().mockResolvedValue(undefined),
-        getEventRecorder: () => mockEventRecorder,
-        getScriptRecorder: vi.fn(),
-        getErrorRecorder: vi.fn(),
-        getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
-        setAuditSessionId: vi.fn(),
-        archiveAuditSession: vi.fn().mockResolvedValue(undefined),
-      })
-    );
+    vi.doMock('.opencode/plugins/features/audit/plugin-integration', () => ({
+      initAuditLogging: vi.fn().mockResolvedValue(undefined),
+      getEventRecorder: () => mockEventRecorder,
+      getScriptRecorder: vi.fn(),
+      getErrorRecorder: vi.fn(),
+      getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
+      setAuditSessionId: vi.fn(),
+      archiveAuditSession: vi.fn().mockResolvedValue(undefined),
+    }));
 
-    vi.doMock('../../.opencode/plugins/features/events/events', () => ({
+    vi.doMock('.opencode/plugins/features/events/events', () => ({
       resolveEventConfig: vi.fn().mockReturnValue({
         enabled: false,
         toast: false,
