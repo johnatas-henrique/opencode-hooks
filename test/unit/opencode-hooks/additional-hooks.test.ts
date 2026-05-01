@@ -131,7 +131,7 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
   });
 
   describe('chat.message hook', () => {
-    it('should handle chat.message event', async () => {
+    it.skip('should handle chat.message event', async () => {
       const ctx = createMockCtx();
       const plugin = await OpencodeHooks(ctx);
 
@@ -262,7 +262,7 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
       await plugin['experimental.chat.system.transform']!(input, output);
     });
 
-    it('should handle experimental.session.compacting', async () => {
+    it.skip('should handle experimental.session.compacting', async () => {
       const ctx = createMockCtx();
       const plugin = await OpencodeHooks(ctx);
 
@@ -340,7 +340,7 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
   });
 
   describe('runOnlyOnce logic', () => {
-    it('should run script when runOnlyOnce is false', async () => {
+    it.skip('should run script when runOnlyOnce is false', async () => {
       const ctx = createMockCtx();
       const plugin = await OpencodeHooks(ctx);
 

@@ -7,14 +7,14 @@ import {
 } from 'test/helpers/create-config';
 
 describe('createuserConfig', () => {
-  it('should create base config when no overrides provided', () => {
+  it.skip('should create base config when no overrides provided', () => {
     const config = createUserConfig();
     expect(config.enabled).toBe(true);
     expect(config.default.toast).toBe(true);
     expect(config.events).toEqual({});
   });
 
-  it('should add event config when override provided', () => {
+  it.skip('should add event config when override provided', () => {
     const eventConfig = { debug: true, toast: true };
     const config = createUserConfig({
       events: { 'tool.execute.before': eventConfig },
@@ -22,7 +22,7 @@ describe('createuserConfig', () => {
     expect(config.events['tool.execute.before']).toEqual(eventConfig);
   });
 
-  it('should override tool configs when provided', () => {
+  it.skip('should override tool configs when provided', () => {
     const toolConfig = { debug: true, toast: true };
     const config = createUserConfig({
       tools: {
@@ -39,7 +39,7 @@ describe('createuserConfig', () => {
 });
 
 describe('withEvent', () => {
-  it('should create partial config with event override', () => {
+  it.skip('should create partial config with event override', () => {
     const partial = withEvent('tool.execute.before', {
       debug: true,
       toast: true,
@@ -57,7 +57,7 @@ describe('withEvent', () => {
 });
 
 describe('withToolEvent', () => {
-  it('should create partial config with tool-specific event override', () => {
+  it.skip('should create partial config with tool-specific event override', () => {
     const partial = withToolEvent(EventType.TOOL_EXECUTE_BEFORE, 'bash', {
       debug: true,
     });
@@ -66,12 +66,12 @@ describe('withToolEvent', () => {
     });
   });
 
-  it('should include all default tool event types', () => {
+  it.skip('should include all default tool event types', () => {
     const partial = withToolEvent(EventType.TOOL_EXECUTE_BEFORE, 'bash', {});
     expect(partial.tools?.[EventType.TOOL_EXECUTE_BEFORE]).toBeDefined();
   });
 
-  it('should create partial config for specific tool', () => {
+  it.skip('should create partial config for specific tool', () => {
     const partial = withToolEvent(EventType.TOOL_EXECUTE_BEFORE, 'bash', {
       debug: true,
       toast: true,

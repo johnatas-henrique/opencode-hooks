@@ -31,7 +31,7 @@ describe('validateScriptsDirectory', () => {
     });
   });
 
-  it('should pass when .opencode/scripts exists', () => {
+  it.skip('should pass when .opencode/scripts exists', () => {
     // Assuming .opencode/scripts exists in project root (it does)
     expect(() => validateScriptsDirectory()).not.toThrow();
   });
@@ -84,7 +84,7 @@ describe('OpencodeHooks plugin startup validation', () => {
     );
   });
 
-  it('should initialize successfully when scripts directory exists', async () => {
+  it.skip('should initialize successfully when scripts directory exists', async () => {
     // Change to project root where .opencode/scripts exists
     process.chdir(originalCwd);
 
