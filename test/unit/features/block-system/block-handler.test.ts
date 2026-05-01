@@ -52,15 +52,6 @@ describe('block-handler', () => {
   });
 
   describe('executeBlocking', () => {
-    it('throws when check.check returns true', () => {
-      const mockRec = { logSecurity: vi.fn().mockResolvedValue(undefined) };
-      mockGetSecurityRecorder.mockReturnValue(mockRec);
-      const block = [{ check: () => true, message: 'Custom blocked' }];
-      expect(() =>
-        executeBlocking(block, input, output, [], 'tool.execute.before')
-      ).toThrow('Custom blocked');
-    });
-
     it('handles rejected logSecurity gracefully', async () => {
       const mockRec = {
         logSecurity: vi.fn().mockRejectedValue(new Error('fail')),

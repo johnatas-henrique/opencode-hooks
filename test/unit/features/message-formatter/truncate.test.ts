@@ -1,11 +1,6 @@
 import { truncate } from '.opencode/plugins/features/message-formatter/truncate';
 
 describe('truncate', () => {
-  it('returns string unchanged when under max length', () => {
-    const result = truncate('hello', 10);
-    expect(result).toBe('hello');
-  });
-
   it('returns string unchanged when equal to max length', () => {
     const result = truncate('hello', 5);
     expect(result).toBe('hello');

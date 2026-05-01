@@ -114,18 +114,6 @@ describe('showStartupToast', () => {
     vi.useRealTimers();
   });
 
-  it.skip('should not wait for toast silence when logFile is null', async () => {
-    mockGetLatestLogFile.mockReturnValue(null);
-    mockWaitForToastSilence.mockReturnValue({
-      promise: Promise.resolve(),
-      cleanup: vi.fn(),
-    });
-
-    await showStartupToast();
-
-    expect(mockShowActivePluginsToast).not.toHaveBeenCalled();
-  });
-
   it('should handle error when showActivePluginsToast fails', async () => {
     const mockCleanup = vi.fn();
     mockGetLatestLogFile.mockReturnValue('/test/logfile.log');

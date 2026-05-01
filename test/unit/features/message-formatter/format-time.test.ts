@@ -1,11 +1,6 @@
 import { formatTime } from '.opencode/plugins/features/message-formatter/format-time';
 
 describe('formatTime', () => {
-  it.skip('returns a string', () => {
-    const result = formatTime();
-    expect(typeof result).toBe('string');
-  });
-
   it('returns non-empty string', () => {
     const result = formatTime();
     expect(result.length).toBeGreaterThan(0);

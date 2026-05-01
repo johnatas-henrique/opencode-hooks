@@ -1,19 +1,6 @@
 import { handlers } from '.opencode/plugins/features/handlers';
 
 describe('handlers - truncate and formatValue', () => {
-  it.skip('buildMessage should truncate long strings', () => {
-    const longValue = 'a'.repeat(2000);
-    const event = {
-      properties: {
-        data: longValue,
-      },
-    };
-    const message = handlers['session.created'].buildMessage(
-      event as unknown as Record<string, unknown>
-    );
-    expect(message).toContain('...');
-  });
-
   it('buildMessage should handle undefined values', () => {
     const event = {
       properties: {

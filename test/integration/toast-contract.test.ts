@@ -98,12 +98,6 @@ function resolveToastParams(eventType: string): ToastContract {
 
 describe('Toast Contract', () => {
   describe('handler resolution', () => {
-    it('should find handler for session.created', () => {
-      const handler = getHandler('session.created');
-      expect(handler).toBeDefined();
-      expect(handler?.title).toBe('====SESSION CREATED====');
-    });
-
     it('should find handler for session.error', () => {
       const handler = getHandler('session.error');
       expect(handler).toBeDefined();

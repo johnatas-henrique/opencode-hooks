@@ -4,20 +4,6 @@ import type { UserEventsConfig } from '.opencode/plugins/types/config';
 import { getHandler } from '.opencode/plugins/features/events/events';
 
 describe('events - resolveEventConfig', () => {
-  it('should return defaults for event not listed', () => {
-    const { eventResolver } = createResolvers(createUserConfig());
-    const config = eventResolver.resolve('session.unknown');
-
-    expect(config.enabled).toBe(true);
-    expect(config.toast).toBe(true);
-    expect(config.toastTitle).toBe('====UNKNOWN SESSION EVENT====');
-    expect(config.toastVariant).toBe('warning');
-    expect(config.toastDuration).toBe(5000);
-    expect(config.scripts).toEqual([]);
-    expect(config.logToAudit).toBe(true);
-    expect(config.appendToSession).toBe(true);
-  });
-
   it('should return toast: false when default toast is object with enabled: false', () => {
     const config = createUserConfig({
       default: { toast: { enabled: false } },

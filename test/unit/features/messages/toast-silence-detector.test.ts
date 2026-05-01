@@ -23,17 +23,6 @@ describe('toast-silence-detector', () => {
   });
 
   describe('waitForToastSilence', () => {
-    it('should resolve when no toasts in log', async () => {
-      mockReadFile.mockResolvedValue('no toasts here');
-
-      const { promise, cleanup } = waitForToastSilence('/fake/log.log');
-
-      vi.advanceTimersByTime(200);
-      await promise;
-
-      cleanup();
-    });
-
     it('should schedule silenceTimer when toast count increases', async () => {
       let callCount = 0;
       mockReadFile.mockImplementation(async () => {

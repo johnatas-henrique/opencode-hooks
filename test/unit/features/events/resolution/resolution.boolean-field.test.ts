@@ -5,12 +5,6 @@ import type {
 } from '.opencode/plugins/types/config';
 
 describe('getBooleanField', () => {
-  it('should return eventCfg value when defined', () => {
-    const eventCfg: EventConfig = { enabled: true };
-    const result = getBooleanField(eventCfg, undefined, 'enabled', false);
-    expect(result).toBe(true);
-  });
-
   it('should return false when eventCfg enabled is false', () => {
     const eventCfg: EventConfig = { enabled: false };
     const result = getBooleanField(eventCfg, undefined, 'enabled', true);

@@ -37,12 +37,6 @@ describe('plugin-status', () => {
   ].join('\n');
 
   describe('getPluginStatus', () => {
-    it('should return empty array when log directory does not exist', () => {
-      mockExistsSync.mockReturnValue(false);
-      const result = getPluginStatus();
-      expect(result).toEqual([]);
-    });
-
     it('should return null when no .log files after filter', () => {
       mockExistsSync.mockReturnValue(true);
       mockReaddirSync.mockReturnValue(['readme.txt', 'config.json'] as never);

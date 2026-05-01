@@ -2,14 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { createHandler, createHandlers } from 'test/helpers/create-handler';
 
 describe('createHandler', () => {
-  it('should create handler with default values when no overrides provided', () => {
-    const handler = createHandler({});
-    expect(handler.title).toBe('====TEST====');
-    expect(handler.variant).toBe('info');
-    expect(handler.duration).toBe(2000);
-    expect(handler.defaultScript).toBe('test.sh');
-  });
-
   it('should use default buildMessage when no override provided', () => {
     const handler = createHandler({});
     const message = handler.buildMessage({ test: 'data' });

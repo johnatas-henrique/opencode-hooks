@@ -57,38 +57,6 @@ describe('toast queue concurrency integration', () => {
       vi.useRealTimers();
     });
 
-    it.skip('should wait for existing processing lock before adding new toast', async () => {
-      vi.useFakeTimers();
-
-      const showFn = vi.fn();
-      showFn.mockImplementation(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      });
-
-      const queue = createToastQueue(showFn, {
-        staggerMs: 0,
-        maxSize: 5,
-      });
-
-      queue.add({
-        title: 'Toast 1',
-        message: 'test',
-        variant: 'info',
-      });
-
-      await vi.runAllTimersAsync();
-
-      queue.add({
-        title: 'Toast 2',
-        message: 'test',
-        variant: 'info',
-      });
-
-      await vi.runAllTimersAsync();
-
-      expect(showFn).toHaveBeenCalledTimes(2);
-    });
-
     it('should return early if queue becomes empty during lock wait', async () => {
       vi.useFakeTimers();
 

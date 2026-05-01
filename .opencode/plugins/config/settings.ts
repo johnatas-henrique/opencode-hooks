@@ -122,7 +122,10 @@ export const userConfig: UserEventsConfig = {
 
     [EventType.SHELL_ENV]: { enabled: false },
 
-    [EventType.EXPERIMENTAL_SESSION_COMPACTING]: { toast: true },
+    [EventType.EXPERIMENTAL_SESSION_COMPACTING]: {
+      toast: true,
+      scripts: [{ source: 'native', path: 'mempalace-wake.sh' }],
+    },
 
     [EventType.CHAT_MESSAGE]: {
       runScripts: true,

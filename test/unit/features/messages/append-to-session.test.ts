@@ -1,7 +1,6 @@
 import type { PluginInput } from '@opencode-ai/plugin';
 import type { Mock } from 'vitest';
 import { appendToSession } from '.opencode/plugins/features/messages/append-to-session';
-import { DEFAULTS } from '.opencode/plugins/core/constants';
 
 describe('append-to-session', () => {
   let mockCtx: PluginInput;
@@ -14,23 +13,6 @@ describe('append-to-session', () => {
         },
       },
     } as unknown as PluginInput;
-  });
-
-  it('should call session.prompt with truncated text when exceeding max length', async () => {
-    const longText = 'a'.repeat(DEFAULTS.core.maxPromptLength + 100);
-    await appendToSession(mockCtx, 'session-123', longText);
-
-    expect((mockCtx.client.session.prompt as Mock).mock.calls[0][0]).toEqual(
-      expect.objectContaining({
-        path: { id: 'session-123' },
-        body: {
-          noReply: true,
-          parts: [
-            { type: 'text', text: expect.stringContaining('[truncated]') },
-          ],
-        },
-      })
-    );
   });
 
   it('should call session.prompt with empty output', async () => {

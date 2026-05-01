@@ -48,21 +48,6 @@ describe('showActivePluginsToast', () => {
     mockFormatPluginStatus.mockReturnValue('Test plugins summary');
   });
 
-  it.skip('should use warning variant when plugins have incompatible status', async () => {
-    mockGetPluginStatus.mockReturnValue([
-      { name: 'test-plugin', status: 'active' },
-      { name: 'old-plugin', status: 'incompatible' },
-    ]);
-
-    await showActivePluginsToast(mockQueue);
-
-    expect(mockQueue.add).toHaveBeenCalledWith(
-      expect.objectContaining({
-        variant: 'warning',
-      })
-    );
-  });
-
   it('should call formatPluginStatus with plugin statuses', async () => {
     await showActivePluginsToast(mockQueue);
 

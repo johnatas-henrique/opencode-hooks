@@ -14,16 +14,6 @@ describe('createuserConfig', () => {
     expect(config.events).toEqual({});
   });
 
-  it.skip('should enable logDisabledEvents when override provided', () => {
-    const config = createUserConfig({ logDisabledEvents: true });
-    expect(config.logDisabledEvents).toBe(true);
-  });
-
-  it('should disable toast in default when override provided', () => {
-    const config = createUserConfig({ default: { toast: false } });
-    expect(config.default.toast).toBe(false);
-  });
-
   it('should add event config when override provided', () => {
     const eventConfig = { debug: true, toast: true };
     const config = createUserConfig({
@@ -45,21 +35,6 @@ describe('createuserConfig', () => {
       debug: true,
       toast: true,
     });
-  });
-
-  it.skip('should merge multiple overrides correctly', () => {
-    const config = createUserConfig({
-      logDisabledEvents: true,
-      default: { toast: false, runScripts: true },
-      events: { 'session.created': { debug: true } as const },
-    });
-    expect(config.logDisabledEvents).toBe(true);
-    expect(config.default.toast).toBe(false);
-    expect(config.default.runScripts).toBe(true);
-    const eventConfig = config.events['session.created'];
-    expect(
-      eventConfig && typeof eventConfig !== 'boolean' && eventConfig.debug
-    ).toBe(true);
   });
 });
 

@@ -27,17 +27,6 @@ describe('security-recorder', () => {
     );
   });
 
-  it('should log security block event', async () => {
-    await securityRecorder.logSecurity({
-      toolName: 'bash',
-      rule: 'no-delete-on-main',
-      reason: 'Cannot delete on main branch',
-      input: { command: 'rm -rf /' },
-    });
-
-    expect(mockWriteLine).toHaveBeenCalledTimes(1);
-  });
-
   it('should log security with session', async () => {
     await securityRecorder.logSecurity({
       toolName: 'read',

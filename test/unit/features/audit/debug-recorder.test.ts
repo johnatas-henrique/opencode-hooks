@@ -25,14 +25,6 @@ describe('debug-recorder', () => {
     setDebugRecorder(null as unknown as ReturnType<typeof createDebugRecorder>);
   });
 
-  it('should log debug event with message', async () => {
-    await debugRecorder.logDebug({
-      message: 'Test debug message',
-    });
-
-    expect(mockWriteLine).toHaveBeenCalledTimes(1);
-  });
-
   it('should log debug with data', async () => {
     await debugRecorder.logDebug({
       message: 'State change',

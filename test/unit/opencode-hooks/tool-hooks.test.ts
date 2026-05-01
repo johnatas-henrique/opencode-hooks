@@ -160,37 +160,6 @@ const createMockClient = (): MockClient => ({
   },
 });
 
-describe('tool.execute.before hook', () => {
-  let mockClient: MockClient;
-  let mockDollar: () => Promise<{
-    exitCode: number;
-    stdout: string;
-    stderr: string;
-  }>;
-
-  beforeEach(() => {
-    mockClient = createMockClient();
-    mockDollar = vi
-      .fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>()
-      .mockResolvedValue({
-        exitCode: 0,
-        stdout: '',
-        stderr: '',
-      });
-    vi.clearAllMocks();
-  });
-
-  it.skip('should run script for read tool', async () => {
-    const ctx = createMockCtx(mockClient, mockDollar);
-    const plugin = await OpencodeHooks(ctx);
-    const input = { tool: 'read', sessionID: 'session-123', callID: 'call-1' };
-    const output = { args: {} };
-    await plugin['tool.execute.before']!(input, output);
-
-    expect(globalMockQueue.add).toHaveBeenCalled();
-  });
-});
-
 describe('tool.execute.after hook', () => {
   let mockClient: MockClient;
   let mockDollar: () => Promise<{

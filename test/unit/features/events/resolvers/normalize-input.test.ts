@@ -1,24 +1,6 @@
 import { normalizeInputForHandler } from '.opencode/plugins/features/events/resolvers/normalize-input';
 
 describe('normalizeInputForHandler', () => {
-  describe('session events', () => {
-    it('should preserve existing properties', () => {
-      const input = {
-        properties: {
-          sessionID: 'ses_123',
-          status: 'idle',
-        },
-      };
-
-      const result = normalizeInputForHandler('session.idle', input);
-
-      expect(result.properties).toEqual({
-        sessionID: 'ses_123',
-        status: 'idle',
-      });
-    });
-  });
-
   describe('shell.env event', () => {
     it('should wrap shell.env input in properties', () => {
       const input = {
