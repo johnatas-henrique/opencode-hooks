@@ -2,6 +2,8 @@ import {
   buildKeysMessage,
   buildKeysMessageSimple,
 } from '.opencode/plugins/features/message-formatter/build-keys-message';
+import { SENSITIVE_PATTERNS } from '.opencode/plugins/features/message-formatter/mask-sensitive';
+import { truncate } from '.opencode/plugins/features/message-formatter/truncate';
 
 describe('buildKeysMessage with allowedFields', () => {
   it('should use properties. prefix to get value from properties', () => {
@@ -51,5 +53,21 @@ describe('buildKeysMessage with allowedFields', () => {
     const event = { input: { name: 'test' }, output: { result: 'ok' } };
     const message = buildKeysMessage(event);
     expect(message).toContain('output.result:');
+  });
+});
+
+describe('SENSITIVE_PATTERNS', () => {
+  it('each pattern is a tuple of RegExp and string', () => {
+    for (const [pattern, replacement] of SENSITIVE_PATTERNS) {
+      expect(pattern instanceof RegExp).toBe(true);
+      expect(typeof replacement).toBe('string');
+    }
+  });
+});
+
+describe('truncate', () => {
+  it('handles unicode characters', () => {
+    const result = truncate('🎉🎉🎉🎉🎉', 4);
+    expect(result).toBe('🎉🎉...');
   });
 });
