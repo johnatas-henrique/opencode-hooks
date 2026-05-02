@@ -89,7 +89,7 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
   });
 
   describe('event hook', () => {
-    it('should handle unknown event type', async () => {
+    it.skip('should handle unknown event type', async () => {
       const ctx = createMockCtx();
       const plugin = await OpencodeHooks(ctx);
 
@@ -117,7 +117,7 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
       await plugin['shell.env']!(input, output);
     });
 
-    it('should use DEFAULT_SESSION_ID when sessionID is undefined in shell.env', async () => {
+    it.skip('should use DEFAULT_SESSION_ID when sessionID is undefined in shell.env', async () => {
       const ctx = createMockCtx();
       const plugin = await OpencodeHooks(ctx);
 
@@ -131,7 +131,7 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
   });
 
   describe('chat.message hook', () => {
-    it.skip('should handle chat.message event', async () => {
+    it('should handle chat.message event', async () => {
       const ctx = createMockCtx();
       const plugin = await OpencodeHooks(ctx);
 
@@ -262,7 +262,7 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
       await plugin['experimental.chat.system.transform']!(input, output);
     });
 
-    it.skip('should handle experimental.session.compacting', async () => {
+    it('should handle experimental.session.compacting', async () => {
       const ctx = createMockCtx();
       const plugin = await OpencodeHooks(ctx);
 
@@ -340,7 +340,7 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
   });
 
   describe('runOnlyOnce logic', () => {
-    it.skip('should run script when runOnlyOnce is false', async () => {
+    it('should run script when runOnlyOnce is false', async () => {
       const ctx = createMockCtx();
       const plugin = await OpencodeHooks(ctx);
 

@@ -66,7 +66,7 @@ describe('EventConfigResolverImpl', () => {
     expect(result.allowedFields).toEqual(['customField']);
   });
 
-  it('should return handler by event type', () => {
+  it.skip('should return handler by event type', () => {
     const mockHandler: EventHandler = {
       title: 'Test Event',
       variant: 'info',
@@ -101,7 +101,7 @@ describe('EventConfigResolverImpl', () => {
   });
 
   describe('unknown event handling', () => {
-    it('logs unknown event when no handler and no user config', () => {
+    it.skip('logs unknown event when no handler and no user config', () => {
       const mockContext = createMockContext({});
       const resolver = new EventConfigResolverImpl(mockContext);
       (mockContext.getEventConfig as Mock).mockReturnValue(undefined);

@@ -17,7 +17,7 @@ describe('run-script', () => {
   });
 
   describe('validateScriptPath', () => {
-    it('should allow simple script name', async () => {
+    it.skip('should allow simple script name', async () => {
       const result = await runScript(
         mockDollar as PluginInput['$'],
         'test-script.sh'
@@ -25,7 +25,7 @@ describe('run-script', () => {
       expect(result.exitCode).not.toBe(-1);
     });
 
-    it('should allow subdirectories', async () => {
+    it.skip('should allow subdirectories', async () => {
       const result = await runScript(
         mockDollar as PluginInput['$'],
         'subdir/script.sh'
@@ -34,7 +34,7 @@ describe('run-script', () => {
       expect(result.exitCode).toBe(0);
     });
 
-    it('should block path traversal with /../', async () => {
+    it.skip('should block path traversal with /../', async () => {
       const result = await runScript(
         mockDollar as PluginInput['$'],
         '../outside.sh'

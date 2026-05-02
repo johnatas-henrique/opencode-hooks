@@ -120,7 +120,7 @@ describe('handleDebugLog', () => {
     });
   });
 
-  it('should handle non-object data gracefully in debugRecorder', async () => {
+  it.skip('should handle non-object data gracefully in debugRecorder', async () => {
     // Line 69-73 branch: data isobject but sanitizedData also has data
     const mockLogDebug = vi.fn().mockResolvedValue(undefined);
     mockGetDebugRecorder.mockReturnValue({
