@@ -24,6 +24,7 @@ TypeScript plugin system for OpenCode AI with event-driven hooks.
 - [Code Style](docs/agent-instructions/code-style.md)
 - [Architecture](docs/agent-instructions/architecture.md)
 - [Git Workflow](docs/agent-instructions/git-workflow.md)
+- [Testing Guide](docs/agent-instructions/testing-guide.md)
 
 ## Regras do Projeto
 
