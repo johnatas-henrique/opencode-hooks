@@ -1,0 +1,57 @@
+import { createResolvers } from 'test/helpers/create-resolver';
+import { createUserConfig } from 'test/helpers/create-config';
+import type { UserEventsConfig } from '.opencode/plugins/types/config';
+
+describe('events - resolveEventConfig', () => {
+  it('should return toast: false when default toast is object with enabled: false', () => {
+    const config = createUserConfig({
+      default: { toast: { enabled: false } },
+      events: { 'session.test': true } as UserEventsConfig['events'],
+    });
+    const { eventResolver } = createResolvers(config);
+    const result = eventResolver.resolve('session.test');
+
+    expect(result.toast).toBe(false);
+  });
+});
+
+describe('events - resolveToolConfig', () => {
+  it('should return enabled: false when global enabled is false', () => {
+    const config = createUserConfig({
+      enabled: false,
+      events: { 'session.created': true },
+    });
+    const { eventResolver } = createResolvers(config);
+    const result = eventResolver.resolve('session.created');
+
+    expect(result.enabled).toBe(false);
+  });
+
+  it('should return empty string when buildMessage throws', () => {
+    const config = createUserConfig({
+      events: { 'session.test': {} } as UserEventsConfig['events'],
+    });
+    const { eventResolver } = createResolvers(config, {
+      'session.test': {
+        title: '====TEST====',
+        variant: 'info',
+        duration: 2000,
+        defaultScript: 'session-test.sh',
+        buildMessage: () => {
+          throw new Error('Build error');
+        },
+      },
+    });
+    const result = eventResolver.resolve('session.test', { test: 'data' });
+
+    expect(result.toastMessage).toBe('');
+  });
+
+  it('getToolHandler should return undefined for invalid toolEventType', () => {
+    const config = createUserConfig();
+    const { toolResolver } = createResolvers(config);
+    const result = toolResolver.resolve('invalid', 'task');
+
+    expect(result.enabled).toBe(true);
+  });
+});
