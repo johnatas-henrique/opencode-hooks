@@ -36,7 +36,7 @@
   "license": "MIT",
   "devDependencies": {
     "@commitlint/cli": "^20.5.2",
-    "@commitlint/config-conventional": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.3",
     "@eslint/js": "^10.0.1",
     "@opencode-ai/plugin": "^1.14.29",
     "@opencode-ai/sdk": "^1.14.29",
