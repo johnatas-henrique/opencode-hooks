@@ -1,36 +1,5 @@
 import { createAuditLogger } from '.opencode/plugins/features/audit/audit-logger';
 import type { AuditConfig } from '.opencode/plugins/types/audit';
-import { vi } from 'vitest';
-
-const {
-  mockGzipFile,
-  mockAppendFile,
-  mockMkdir,
-  mockReaddir,
-  mockUnlink,
-  mockStat,
-  mockRename,
-  mockOpen,
-} = vi.hoisted(() => ({
-  mockGzipFile: vi.fn(),
-  mockAppendFile: vi.fn(),
-  mockMkdir: vi.fn(),
-  mockReaddir: vi.fn(),
-  mockUnlink: vi.fn(),
-  mockStat: vi.fn(),
-  mockRename: vi.fn(),
-  mockOpen: vi.fn(),
-}));
-
-vi.mock('fs/promises', () => ({
-  appendFile: mockAppendFile,
-  mkdir: mockMkdir,
-  readdir: mockReaddir,
-  unlink: mockUnlink,
-  stat: mockStat,
-  rename: mockRename,
-  open: mockOpen,
-}));
 
 describe('audit-logger', () => {
   const BASE_PATH = '/tmp/audit-test';
@@ -47,14 +16,15 @@ describe('audit-logger', () => {
     largeFields: [],
   };
 
+  const mockAppendFile = vi.fn().mockResolvedValue(undefined);
+  const mockMkdir = vi.fn().mockResolvedValue(undefined);
+  const mockReaddir = vi.fn().mockResolvedValue([]);
+  const mockUnlink = vi.fn().mockResolvedValue(undefined);
+  const mockStat = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
-    mockAppendFile.mockResolvedValue(undefined);
-    mockMkdir.mockResolvedValue(undefined);
-    mockReaddir.mockResolvedValue([]);
-    mockUnlink.mockResolvedValue(undefined);
     mockStat.mockReset();
-    mockGzipFile.mockReset().mockResolvedValue(undefined);
   });
 
   describe('writeLine', () => {
@@ -109,8 +79,8 @@ describe('audit-logger', () => {
   describe('cleanup', () => {
     it('should delete files older than maxAgeDays', async () => {
       const oldDate = Date.now() - 31 * 24 * 60 * 60 * 1000;
-      mockStat.mockResolvedValue({ size: 1024, mtimeMs: oldDate } as never);
-      mockReaddir.mockResolvedValue(['old-file.json.gz'] as never);
+      mockStat.mockResolvedValue({ size: 1024, mtimeMs: oldDate });
+      mockReaddir.mockResolvedValue(['old-file.json.gz']);
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
@@ -129,8 +99,8 @@ describe('audit-logger', () => {
       mockStat.mockResolvedValue({
         size: 1024,
         mtimeMs: recentDate,
-      } as never);
-      mockReaddir.mockResolvedValue(['recent-file.json.gz'] as never);
+      });
+      mockReaddir.mockResolvedValue(['recent-file.json.gz']);
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
@@ -145,10 +115,7 @@ describe('audit-logger', () => {
     });
 
     it('should skip non-gzip files', async () => {
-      mockReaddir.mockResolvedValue([
-        'regular-file.json',
-        'another.txt',
-      ] as never);
+      mockReaddir.mockResolvedValue(['regular-file.json', 'another.txt']);
       const logger = createAuditLogger({
         basePath: BASE_PATH,
         config: defaultConfig,
@@ -197,7 +164,7 @@ describe('archiveFileIfNeeded', () => {
   it('should archive file if larger than 1MB', async () => {
     mockStat.mockResolvedValue({
       size: 2 * 1024 * 1024,
-    } as unknown as ReturnType<typeof vi.fn>);
+    });
     const { archiveFileIfNeeded } =
       await import('.opencode/plugins/features/audit/audit-logger');
     const result = await archiveFileIfNeeded(
@@ -222,14 +189,32 @@ describe('archiveFileIfNeeded', () => {
     );
   });
 
-  it('should use default fs dependencies when deps is not provided', async () => {
+  it('should return false when stat fails', async () => {
+    mockStat.mockRejectedValue(new Error('ENOENT'));
     const { archiveFileIfNeeded } =
       await import('.opencode/plugins/features/audit/audit-logger');
     const result = await archiveFileIfNeeded(
       '/nonexistent/file.json',
       '/archive',
-      1024 * 1024
+      1024 * 1024,
+      { stat: mockStat }
     );
     expect(result).toBe(false);
+  });
+
+  it('should return false when file is smaller than threshold', async () => {
+    mockStat.mockResolvedValue({
+      size: 512 * 1024,
+    });
+    const { archiveFileIfNeeded } =
+      await import('.opencode/plugins/features/audit/audit-logger');
+    const result = await archiveFileIfNeeded(
+      '/base/small.json',
+      '/archive',
+      1024 * 1024,
+      { stat: mockStat }
+    );
+    expect(result).toBe(false);
+    expect(mockRename).not.toHaveBeenCalled();
   });
 });

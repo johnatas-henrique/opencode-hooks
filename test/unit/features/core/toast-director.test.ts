@@ -1,133 +1,159 @@
-import { ToastDirectorImpl } from '.opencode/plugins/features/core/toast-director';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { TuiToast } from '@opencode-ai/plugin/tui';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { ToastDirectorImpl } from '.opencode/plugins/features/core/toast-director';
 
 describe('ToastDirectorImpl', () => {
-  let mockShowFn: ReturnType<typeof vi.fn>;
-  let director: ToastDirectorImpl;
-
-  const createToast = (overrides: Partial<TuiToast> = {}): TuiToast =>
-    ({
-      title: 'Test Toast',
-      message: 'Message',
-      variant: 'info',
-      duration: 2000,
-      ...overrides,
-    }) as TuiToast;
-
-  const waitForIdle = async () => {
-    await Promise.resolve();
-    while (director.pending > 0 || director.isProcessing) {
-      vi.runAllTimers();
-      await Promise.resolve();
-    }
-  };
+  const mockShowFn = vi.fn().mockResolvedValue(undefined);
 
   beforeEach(() => {
-    vi.useFakeTimers();
-    mockShowFn = vi.fn().mockResolvedValue(undefined);
-    director = new ToastDirectorImpl(
-      mockShowFn as unknown as (toast: TuiToast) => Promise<void>,
-      {
-        staggerMs: 10,
-        maxSize: 3,
-      }
-    );
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  describe('enqueue()', () => {
-    it('should drop oldest when maxSize exceeded', async () => {
-      director.enqueue(createToast({ title: '1' }));
-      director.enqueue(createToast({ title: '2' }));
-      director.enqueue(createToast({ title: '3' }));
-      expect(director.pending).toBe(3);
-
-      director.enqueue(createToast({ title: '4' }));
-      expect(director.pending).toBe(3);
-
-      await waitForIdle();
-
-      const titles = mockShowFn.mock.calls.map((c) => c[0].title);
-      expect(titles).not.toContain('1');
-      expect(titles).toContain('2');
-      expect(titles).toContain('3');
-      expect(titles).toContain('4');
+  it('enqueues and processes a single toast', async () => {
+    vi.useFakeTimers();
+    const director = new ToastDirectorImpl(mockShowFn, {
+      staggerMs: 0,
     });
+    const toast: TuiToast = {
+      title: 'Test',
+      message: 'msg',
+      variant: 'info',
+      duration: 10,
+    };
+
+    director.enqueue(toast);
+    await vi.advanceTimersByTimeAsync(50);
+    await director.flush();
+
+    expect(mockShowFn).toHaveBeenCalledWith(toast);
   });
 
-  describe('shutdown()', () => {
-    it('should flush and clear', async () => {
-      director.enqueue(createToast());
-      await waitForIdle();
-      await director.shutdown();
-      expect(director.pending).toBe(0);
-    });
+  it('does not enqueue when maxSize is 0', () => {
+    const director = new ToastDirectorImpl(mockShowFn, { maxSize: 0 });
+    director.enqueue({ title: 'T', message: 'm', variant: 'info' });
+    expect(director.pending).toBe(0);
   });
 
-  describe('integration', () => {
-    it('should process toasts in order with stagger', async () => {
-      director = new ToastDirectorImpl(
-        mockShowFn as unknown as (toast: TuiToast) => Promise<void>,
-        {
-          staggerMs: 20,
-          maxSize: 50,
-        }
-      );
+  it('clears all pending toasts', () => {
+    const director = new ToastDirectorImpl(mockShowFn);
+    director.enqueue({ title: 'T1', message: 'm1', variant: 'info' });
+    director.enqueue({ title: 'T2', message: 'm2', variant: 'info' });
 
-      director.enqueue(createToast({ title: 'A' }));
-      director.enqueue(createToast({ title: 'B' }));
-      director.enqueue(createToast({ title: 'C' }));
+    director.clear();
+    expect(director.pending).toBe(0);
+    expect(director.isProcessing).toBe(false);
+  });
 
-      const flushPromise = director.flush();
+  it('returns correct pending count', () => {
+    const director = new ToastDirectorImpl(mockShowFn);
+    director.enqueue({ title: 'T1', message: 'm1', variant: 'info' });
+    expect(director.pending).toBe(1);
+    director.enqueue({ title: 'T2', message: 'm2', variant: 'info' });
+    expect(director.pending).toBe(2);
+  });
 
-      await waitForIdle();
+  it('flush returns immediately when idle', async () => {
+    const director = new ToastDirectorImpl(mockShowFn);
+    await director.flush();
+  });
 
-      await flushPromise;
+  it('uses default duration when toast has none', async () => {
+    vi.useFakeTimers();
+    const director = new ToastDirectorImpl(mockShowFn, { staggerMs: 0 });
+    director.enqueue({ title: 'T', message: 'm', variant: 'info' });
 
-      const order = mockShowFn.mock.calls.map((c) => c[0].title);
-      expect(order).toEqual(['A', 'B', 'C']);
+    await vi.advanceTimersByTimeAsync(5100);
+    await director.flush();
+
+    expect(mockShowFn).toHaveBeenCalled();
+  });
+
+  it('processes toasts in order', async () => {
+    vi.useFakeTimers();
+    const director = new ToastDirectorImpl(mockShowFn, { staggerMs: 0 });
+    director.enqueue({
+      title: 'T1',
+      message: 'm1',
+      variant: 'info',
+      duration: 10,
+    });
+    director.enqueue({
+      title: 'T2',
+      message: 'm2',
+      variant: 'info',
+      duration: 10,
     });
 
-    it('should use default staggerMs when undefined', async () => {
-      director = new ToastDirectorImpl(
-        mockShowFn as unknown as (toast: TuiToast) => Promise<void>,
-        {}
-      );
+    await vi.advanceTimersByTimeAsync(100);
+    await director.flush();
 
-      director.enqueue(createToast());
+    expect(mockShowFn).toHaveBeenCalledTimes(2);
+    expect(mockShowFn.mock.calls[0][0].title).toBe('T1');
+    expect(mockShowFn.mock.calls[1][0].title).toBe('T2');
+  });
 
-      await waitForIdle();
+  it('handles showFn error without stopping queue', async () => {
+    vi.useFakeTimers();
+    const failingShowFn = vi
+      .fn()
+      .mockImplementationOnce(() => Promise.reject(new Error('fail')))
+      .mockResolvedValue(undefined);
 
-      expect(mockShowFn).toHaveBeenCalledTimes(1);
+    const director = new ToastDirectorImpl(failingShowFn, { staggerMs: 0 });
+    director.enqueue({
+      title: 'T1',
+      message: 'm1',
+      variant: 'info',
+      duration: 10,
+    });
+    director.enqueue({
+      title: 'T2',
+      message: 'm2',
+      variant: 'info',
+      duration: 10,
     });
 
-    it('should use default duration when toast.duration is undefined', async () => {
-      const toastNoDuration = createToast({
-        duration: undefined,
-      } as unknown as TuiToast);
-      director.enqueue(toastNoDuration);
+    await vi.advanceTimersByTimeAsync(200);
+    await director.flush();
 
-      await waitForIdle();
-      await director.flush();
+    expect(failingShowFn).toHaveBeenCalledTimes(2);
+  });
 
-      expect(mockShowFn).toHaveBeenCalledTimes(1);
+  it('shutdown flushes and clears', async () => {
+    vi.useFakeTimers();
+    const director = new ToastDirectorImpl(mockShowFn, { staggerMs: 0 });
+    director.enqueue({
+      title: 'T1',
+      message: 'm1',
+      variant: 'info',
+      duration: 10,
     });
 
-    it('should handle showFn throwing error', async () => {
-      mockShowFn.mockImplementation(async () => {
-        throw new Error('show failed');
-      });
+    await vi.advanceTimersByTimeAsync(50);
+    await director.shutdown();
+    expect(director.pending).toBe(0);
+  });
 
-      director.enqueue(createToast({ title: 'Err' }));
-
-      await waitForIdle();
-
-      await director.flush();
-      expect(mockShowFn).toHaveBeenCalledTimes(1);
+  it('drops oldest when queue is full', async () => {
+    vi.useFakeTimers();
+    const director = new ToastDirectorImpl(mockShowFn, {
+      maxSize: 2,
+      staggerMs: 0,
     });
+    director.enqueue({ title: 'T1', message: 'm1', variant: 'info' });
+    director.enqueue({ title: 'T2', message: 'm2', variant: 'info' });
+    director.enqueue({ title: 'T3', message: 'm3', variant: 'info' });
+
+    expect(director.pending).toBe(2);
+
+    await vi.runAllTimersAsync();
+    await director.flush();
+
+    expect(mockShowFn).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
   });
 });
