@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import fs from 'fs';
 import path from 'path';
 import type { ScriptEntry } from '.opencode/plugins/types/config';
 import { DEFAULTS } from '.opencode/plugins/core/constants';
@@ -35,6 +36,44 @@ const EVENT_NAME_MAP: Record<string, string> = {
 function resolveScriptPath(scriptPath: string): string {
   const scriptsDir = path.join(process.cwd(), DEFAULTS.scripts.dir);
   return path.join(scriptsDir, scriptPath);
+}
+
+const STOP_HOOK_STATE_DIR = path.join(
+  process.cwd(),
+  'production',
+  'hook-state'
+);
+
+function getStopHookStateFile(sessionId: string): string {
+  return path.join(STOP_HOOK_STATE_DIR, `${sessionId}_stop_flag`);
+}
+
+export function getStopHookActive(sessionId: string): boolean {
+  const filePath = getStopHookStateFile(sessionId);
+  try {
+    return fs.existsSync(filePath);
+  } catch {
+    return false;
+  }
+}
+
+export function setStopHookState(sessionId: string): void {
+  const filePath = getStopHookStateFile(sessionId);
+  try {
+    fs.mkdirSync(STOP_HOOK_STATE_DIR, { recursive: true });
+    fs.writeFileSync(filePath, 'true');
+  } catch {
+    // silently ignore
+  }
+}
+
+export function clearStopHookState(sessionId: string): void {
+  const filePath = getStopHookStateFile(sessionId);
+  try {
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  } catch {
+    // silently ignore
+  }
 }
 
 export function parseHookOutput(
@@ -102,9 +141,12 @@ export function buildClaudeStdin(
   toolName: string,
   input: Record<string, unknown>
 ): Record<string, unknown> {
+  const claudeEventName = EVENT_NAME_MAP[eventType] || eventType;
+
   const base: Record<string, unknown> = {
-    hook_event_name: EVENT_NAME_MAP[eventType] || eventType,
+    hook_event_name: claudeEventName,
     session_id: input.sessionID,
+    transcript_path: '',
     cwd: process.cwd(),
     permission_mode: 'default',
   };
@@ -112,6 +154,19 @@ export function buildClaudeStdin(
   if (toolName) {
     base.tool_name = toolName;
     base.tool_input = input.args || {};
+    base.tool_use_id = input.callID;
+  }
+
+  if (claudeEventName === 'Stop' || claudeEventName === 'SubagentStop') {
+    base.stop_hook_active = input.stopHookActive === true;
+  }
+
+  if (claudeEventName === 'SubagentStop') {
+    base.agent_type = input.subagentType;
+  }
+
+  if (claudeEventName === 'FileChanged') {
+    base.file_path = input.file || '';
   }
 
   return base;
@@ -132,10 +187,26 @@ export function buildOpencodeStdin(
   if (toolName) {
     base.tool_name = toolName;
     base.tool_input = input.args || {};
+    base.tool_use_id = input.callID;
   }
 
   if (output) {
     base.tool_result = output;
+  }
+
+  if (
+    eventType === 'session.idle' ||
+    eventType === 'tool.execute.after.subagent'
+  ) {
+    base.stop_hook_active = input.stopHookActive === true;
+  }
+
+  if (eventType === 'tool.execute.after.subagent') {
+    base.agent_type = input.subagentType;
+  }
+
+  if (eventType === 'file.watcher.updated') {
+    base.file_path = input.file || '';
   }
 
   return base;

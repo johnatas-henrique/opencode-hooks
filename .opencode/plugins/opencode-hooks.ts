@@ -33,7 +33,12 @@ import { appendToSession } from '.opencode/plugins/features/messages/append-to-s
 import { EventType } from '.opencode/plugins/types/events';
 import { userConfig } from '.opencode/plugins/config/settings';
 import { DEFAULTS } from '.opencode/plugins/core/constants';
-import { executeScript } from '.opencode/plugins/features/scripts/executor';
+import {
+  executeScript,
+  getStopHookActive,
+  setStopHookState,
+  clearStopHookState,
+} from '.opencode/plugins/features/scripts/executor';
 import type { ScriptResult } from '.opencode/plugins/types/config';
 import { executeBlocking } from '.opencode/plugins/features/block-system/block-handler';
 import type { ExecuteHookParams } from '.opencode/plugins/types/executor';
@@ -158,17 +163,34 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     });
   }
 
+  // Stop hook state for session.idle events
+  const stopHookActive =
+    eventType === 'session.idle' && getStopHookActive(sessionId);
+  const hookInput = { ...(input ?? {}), stopHookActive };
+
   const results = await Promise.all(
     resolved.scripts.map(async (script) => {
       return executeScript(
         script,
         eventType,
         toolName ?? '',
-        input ?? {},
+        hookInput,
         output
       );
     })
   );
+
+  // Manage stop hook state after session.idle scripts
+  if (eventType === 'session.idle') {
+    const anyBlocked = results.some(
+      (r) => r.exitCode === 2 || r.output?.includes('block')
+    );
+    if (anyBlocked) {
+      setStopHookState(sessionId);
+    } else if (stopHookActive) {
+      clearStopHookState(sessionId);
+    }
+  }
 
   const successfulScripts = results
     .filter(
@@ -382,12 +404,17 @@ export const OpencodeHooks: Plugin = async (
         await archiveAuditSession();
       }
 
+      const eventInput = { ...event, ...event.properties } as Record<
+        string,
+        unknown
+      >;
+
       await executeHook({
         ctx,
         eventType: event.type,
         resolved,
         sessionId,
-        input: event,
+        input: eventInput,
         eventRecorder,
         scriptRecorder,
       });
