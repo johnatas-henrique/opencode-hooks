@@ -34,40 +34,11 @@ describe('debug-recorder', () => {
     expect(mockWriteLine).toHaveBeenCalledTimes(1);
   });
 
-  it.skip('should log debug with warn level', async () => {
-    await debugRecorder.logDebug({
-      message: 'Warning',
-      level: 'warn',
-    });
-
-    expect(mockWriteLine).toHaveBeenCalledTimes(1);
-  });
-
-  it.skip('should log debug with error level', async () => {
-    await debugRecorder.logDebug({
-      message: 'Error occurred',
-      level: 'error',
-    });
-
-    expect(mockWriteLine).toHaveBeenCalledTimes(1);
-  });
-
-  describe('getDebugRecorder', () => {
-    it.skip('should return null when not set', () => {
-      expect(getDebugRecorder()).toBeNull();
-    });
-
-    it.skip('should return set recorder', () => {
-      setDebugRecorder(debugRecorder);
-      expect(getDebugRecorder()).toBe(debugRecorder);
-    });
-
-    it('should handle multiple set/get cycles', () => {
-      setDebugRecorder(debugRecorder);
-      const r1 = getDebugRecorder();
-      setDebugRecorder(debugRecorder);
-      const r2 = getDebugRecorder();
-      expect(r1).toBe(r2);
-    });
+  it('should handle multiple set/get cycles', () => {
+    setDebugRecorder(debugRecorder);
+    const r1 = getDebugRecorder();
+    setDebugRecorder(debugRecorder);
+    const r2 = getDebugRecorder();
+    expect(r1).toBe(r2);
   });
 });

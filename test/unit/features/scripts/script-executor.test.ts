@@ -54,73 +54,6 @@ describe('ScriptExecutor', () => {
     ...overrides,
   });
 
-  it.skip('should execute script successfully and append to session', async () => {
-    mockExecuteScript.mockResolvedValueOnce({
-      output: 'ok output',
-      error: null,
-      exitCode: 0,
-    });
-
-    const result = await executor.execute(
-      'script.sh',
-      undefined,
-      {},
-      EventContext()
-    );
-
-    expect(result).toEqual({ script: 'script.sh', output: 'ok output' });
-    expect(mockExecuteScript).toHaveBeenCalledWith('script.sh');
-    expect(mockAudit.logScript).toHaveBeenCalledTimes(1);
-    expect(mockSession.appendToSession).toHaveBeenCalledWith(
-      'test-session',
-      'ok output'
-    );
-    expect(mockToast.showToast).not.toHaveBeenCalled();
-  });
-
-  it.skip('should handle script error and show toast and audit', async () => {
-    mockExecuteScript.mockResolvedValueOnce({
-      output: '',
-      error: 'some error',
-      exitCode: 1,
-    });
-
-    const result = await executor.execute(
-      'error.sh',
-      undefined,
-      {},
-      EventContext()
-    );
-
-    expect(result).toEqual({ script: 'error.sh', output: undefined });
-    expect(mockExecuteScript).toHaveBeenCalledWith('error.sh');
-    expect(mockAudit.logScript).toHaveBeenCalledTimes(1);
-    expect(mockToast.showToast).toHaveBeenCalledWith(
-      '====TEST ERROR====',
-      expect.stringContaining('Event: test.event'),
-      'error',
-      5000
-    );
-    expect(mockSession.appendToSession).not.toHaveBeenCalled();
-  });
-
-  it.skip('should not append to session if skipSession option is true', async () => {
-    mockExecuteScript.mockResolvedValueOnce({
-      output: 'output',
-      error: null,
-      exitCode: 0,
-    });
-
-    await executor.execute(
-      'script.sh',
-      undefined,
-      { skipSession: true },
-      EventContext()
-    );
-
-    expect(mockSession.appendToSession).not.toHaveBeenCalled();
-  });
-
   it('should not toast on error if suppressToast option is true', async () => {
     mockExecuteScript.mockResolvedValueOnce({
       output: '',
@@ -136,57 +69,7 @@ describe('ScriptExecutor', () => {
     );
 
     expect(mockToast.showToast).not.toHaveBeenCalled();
-    expect(mockAudit.logScript).toHaveBeenCalledTimes(1); // audit still called
-  });
-
-  it.skip('should not audit if skipAudit option is true (success)', async () => {
-    mockExecuteScript.mockResolvedValueOnce({
-      output: 'output',
-      error: null,
-      exitCode: 0,
-    });
-
-    await executor.execute(
-      'script.sh',
-      undefined,
-      { skipAudit: true },
-      EventContext()
-    );
-
-    expect(mockAudit.logScript).not.toHaveBeenCalled();
-    expect(mockSession.appendToSession).toHaveBeenCalled();
-  });
-
-  it.skip('should not audit on success if no output', async () => {
-    mockExecuteScript.mockResolvedValueOnce({
-      output: '',
-      error: null,
-      exitCode: 0,
-    });
-
-    await executor.execute('script.sh', undefined, {}, EventContext());
-
-    expect(mockAudit.logScript).not.toHaveBeenCalled();
-    expect(mockSession.appendToSession).not.toHaveBeenCalled();
-  });
-
-  it.skip('should respect runOnlyOnce for non-subagent sessions', async () => {
-    mockIsSubagent.mockReturnValueOnce(false);
-    mockExecuteScript.mockResolvedValueOnce({
-      output: 'ok',
-      error: null,
-      exitCode: 0,
-    });
-
-    const result = await executor.execute(
-      'script.sh',
-      undefined,
-      { runOnlyOnce: true },
-      EventContext({ sessionId: 'regular-session' })
-    );
-
-    expect(result).toEqual({ script: 'script.sh', output: 'ok' });
-    expect(mockIsSubagent).toHaveBeenCalledWith('regular-session');
+    expect(mockAudit.logScript).toHaveBeenCalledTimes(1);
   });
 
   it('should block execution for subagent sessions when runOnlyOnce is true', async () => {

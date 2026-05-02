@@ -35,9 +35,7 @@ vi.mock('.opencode/plugins/config', () => ({
 }));
 
 vi.mock('.opencode/plugins/features/handlers', () => ({
-  handlers: {
-    // ... many handlers
-  },
+  handlers: {},
 }));
 
 vi.mock('.opencode/plugins/features/messages/append-to-session', () => ({
@@ -88,20 +86,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
     vi.clearAllMocks();
   });
 
-  describe('event hook', () => {
-    it.skip('should handle unknown event type', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
-      const eventInput = {
-        type: 'unknown.event.type',
-        properties: { data: 'test' },
-      };
-
-      await plugin.event!({ event: eventInput as never });
-    });
-  });
-
   describe('shell.env hook', () => {
     it('should handle shell.env event', async () => {
       const ctx = createMockCtx();
@@ -111,18 +95,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
         cwd: '/home',
         sessionID: 'test-session',
         callID: 'call-1',
-      };
-      const output = { env: { PATH: '/usr/bin' } };
-
-      await plugin['shell.env']!(input, output);
-    });
-
-    it.skip('should use DEFAULT_SESSION_ID when sessionID is undefined in shell.env', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
-      const input = {
-        cwd: '/home',
       };
       const output = { env: { PATH: '/usr/bin' } };
 

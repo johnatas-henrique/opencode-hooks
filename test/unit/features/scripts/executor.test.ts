@@ -11,12 +11,6 @@ vi.mock('child_process', () => ({
 }));
 
 describe('parseHookOutput', () => {
-  it.skip('returns block when exit code is 2', () => {
-    const result = parseHookOutput('', 'Blocked content', 2);
-    expect(result.action).toBe('block');
-    expect(result.reason).toBe('Blocked content');
-  });
-
   it('uses stderr as reason for exit code 2', () => {
     const result = parseHookOutput('', '', 2);
     expect(result.action).toBe('block');
@@ -29,26 +23,9 @@ describe('parseHookOutput', () => {
     expect(result.reason).toBe('Exit code 1: Error message');
   });
 
-  it.skip('returns allow when stdout is not valid JSON', () => {
-    const result = parseHookOutput('not json', '', 0);
-    expect(result.action).toBe('allow');
-  });
-
   it('returns allow when stdout is empty', () => {
     const result = parseHookOutput('', '', 0);
     expect(result.action).toBe('allow');
-  });
-
-  it.skip('returns block when permissionDecision is deny', () => {
-    const stdout = JSON.stringify({
-      hookSpecificOutput: {
-        permissionDecision: 'deny',
-        permissionDecisionReason: 'Not allowed',
-      },
-    });
-    const result = parseHookOutput(stdout, '', 0);
-    expect(result.action).toBe('block');
-    expect(result.reason).toBe('Not allowed');
   });
 
   it('includes updatedInput from permission deny', () => {
@@ -87,17 +64,6 @@ describe('parseHookOutput', () => {
     expect(result.reason).toBe('Failed');
   });
 
-  it.skip('returns allow with additional context', () => {
-    const stdout = JSON.stringify({
-      additionalContext: 'Extra info',
-      systemMessage: 'System msg',
-    });
-    const result = parseHookOutput(stdout, '', 0);
-    expect(result.action).toBe('allow');
-    expect(result.additionalContext).toBe('Extra info');
-    expect(result.systemMessage).toBe('System msg');
-  });
-
   it('returns allow with updatedInput from hookSpecificOutput', () => {
     const stdout = JSON.stringify({
       hookSpecificOutput: {
@@ -111,58 +77,11 @@ describe('parseHookOutput', () => {
 });
 
 describe('buildClaudeStdin', () => {
-  it.skip('builds base with event name mapped', () => {
-    const result = buildClaudeStdin('tool.execute.before', 'Bash', {
-      sessionID: 'sess-1',
-      args: { command: 'ls' },
-    });
-    expect(result.hook_event_name).toBe('PreToolUse');
-    expect(result.session_id).toBe('sess-1');
-    expect(result.cwd).toBe(process.cwd());
-    expect(result.permission_mode).toBe('default');
-  });
-
-  it.skip('includes tool info when toolName provided', () => {
-    const result = buildClaudeStdin('tool.execute.before', 'Bash', {
-      sessionID: 'sess-1',
-      args: { command: 'ls' },
-    });
-    expect(result.tool_name).toBe('Bash');
-    expect(result.tool_input).toEqual({ command: 'ls' });
-  });
-
   it('uses empty object when input has no args', () => {
     const result = buildClaudeStdin('tool.execute.before', 'Bash', {
       sessionID: 'sess-1',
     });
     expect(result.tool_input).toEqual({});
-  });
-
-  it.skip('omits tool info when toolName is empty', () => {
-    const result = buildClaudeStdin('session.created', '', {
-      sessionID: 'sess-1',
-    });
-    expect(result.tool_name).toBeUndefined();
-    expect(result.tool_input).toBeUndefined();
-  });
-
-  it.skip('maps known events to claude names', () => {
-    const cases: Record<string, string> = {
-      'tool.execute.before': 'PreToolUse',
-      'tool.execute.after': 'PostToolUse',
-      'tool.execute.after.subagent': 'SubagentStop',
-      'session.created': 'SessionStart',
-      'session.deleted': 'SessionEnd',
-      'session.idle': 'Stop',
-      'chat.message': 'UserPromptSubmit',
-      'permission.asked': 'PermissionRequest',
-      'experimental.session.compacting': 'PreCompact',
-      'file.watcher.updated': 'FileChanged',
-    };
-    for (const [eventType, expected] of Object.entries(cases)) {
-      const result = buildClaudeStdin(eventType, '', { sessionID: '' });
-      expect(result.hook_event_name).toBe(expected);
-    }
   });
 
   it('uses event type as fallback for unknown events', () => {
@@ -229,47 +148,6 @@ describe('executeScript', () => {
     expect(result.output).toBe('');
   });
 
-  it.skip('handles process close with stdout/stderr', async () => {
-    const { spawn } = await import('child_process');
-    const { executeScript } =
-      await import('.opencode/plugins/features/scripts/executor');
-    const mockSpawn = vi.mocked(spawn);
-
-    const mockStdout = {
-      on: vi.fn((event, cb) => {
-        if (event === 'data') cb(Buffer.from('output'));
-      }),
-    };
-    const mockStderr = {
-      on: vi.fn((event, cb) => {
-        if (event === 'data') cb(Buffer.from('error'));
-      }),
-    };
-
-    const mockProc = {
-      stdout: mockStdout,
-      stderr: mockStderr,
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn(),
-    };
-    mockSpawn.mockReturnValue(mockProc as unknown as ReturnType<typeof spawn>);
-
-    const resultPromise = executeScript(
-      { source: 'claude', path: 'hook.sh' },
-      'tool.execute.before',
-      'Bash',
-      { sessionID: 'sess-1', args: { command: 'ls' } }
-    );
-
-    const closeHandler = mockProc.on.mock.calls.find(
-      ([event]) => event === 'close'
-    )?.[1];
-    closeHandler(0);
-
-    const result = await resultPromise;
-    expect(result.output).toBe('output');
-  });
-
   it('passes event type as arg when toolName is empty', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
@@ -296,34 +174,6 @@ describe('executeScript', () => {
     expect(mockSpawn).toHaveBeenCalled();
     const callArgs = mockSpawn.mock.calls[0];
     expect(callArgs[1]).toEqual(['session.created']);
-  });
-
-  it.skip('uses empty args for non-native scripts', async () => {
-    const { spawn } = await import('child_process');
-    const { executeScript } =
-      await import('.opencode/plugins/features/scripts/executor');
-    const mockSpawn = vi.mocked(spawn);
-
-    const mockProc = {
-      stdout: { on: vi.fn() },
-      stderr: { on: vi.fn() },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event, cb) => {
-        if (event === 'close') cb(0);
-      }),
-    };
-    mockSpawn.mockReturnValue(mockProc as unknown as ReturnType<typeof spawn>);
-
-    await executeScript(
-      { source: 'claude', path: 'hook.sh' },
-      'tool.execute.before',
-      'Bash',
-      { sessionID: 'sess-1', args: { command: 'ls' } }
-    );
-
-    expect(mockSpawn).toHaveBeenCalled();
-    const callArgs = mockSpawn.mock.calls[0];
-    expect(callArgs[1]).toEqual([]);
   });
 
   it('handles null exit code as error', async () => {
@@ -355,40 +205,6 @@ describe('executeScript', () => {
     const result = await resultPromise;
     expect(result.output).toContain('Process terminated unexpectedly');
     expect(result.exitCode).toBe(1);
-  });
-
-  it.skip('passes stdin for native scripts with passStdin enabled', async () => {
-    const { spawn } = await import('child_process');
-    const { executeScript } =
-      await import('.opencode/plugins/features/scripts/executor');
-    const mockSpawn = vi.mocked(spawn);
-
-    const mockProc = {
-      stdout: { on: vi.fn() },
-      stderr: { on: vi.fn() },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event, cb) => {
-        if (event === 'close') cb(0);
-      }),
-    };
-    mockSpawn.mockReturnValue(mockProc as unknown as ReturnType<typeof spawn>);
-
-    await executeScript(
-      { source: 'native', path: 'hook.sh', passStdin: true },
-      'tool.execute.before',
-      'Bash',
-      { sessionID: 'sess-1', args: { command: 'ls' } },
-      { result: 'done' }
-    );
-
-    expect(mockProc.stdin.write).toHaveBeenCalled();
-    const writeCall = mockProc.stdin.write.mock.calls[0][0] as string;
-    const parsed = JSON.parse(writeCall);
-    expect(parsed.event_type).toBe('tool.execute.before');
-    expect(parsed.session_id).toBe('sess-1');
-    expect(parsed.tool_name).toBe('Bash');
-    expect(parsed.tool_input).toEqual({ command: 'ls' });
-    expect(parsed.tool_result).toEqual({ result: 'done' });
   });
 
   it('does not pass stdin for native scripts without passStdin', async () => {
@@ -423,20 +239,6 @@ describe('executeScript', () => {
 
     const result = await executeScript(
       { source: 'native', path: '../evil.sh' },
-      'session.created',
-      '',
-      { sessionID: 'sess-1' }
-    );
-
-    expect(result.output).toContain('Invalid script path');
-  });
-
-  it.skip('returns invalid path error for absolute path', async () => {
-    const { executeScript } =
-      await import('.opencode/plugins/features/scripts/executor');
-
-    const result = await executeScript(
-      { source: 'native', path: '/etc/passwd' },
       'session.created',
       '',
       { sessionID: 'sess-1' }
@@ -532,199 +334,6 @@ describe('executeScript', () => {
     );
 
     expect(result.output).toBe('Blocked by exit code 2');
-  });
-
-  it.skip('parses JSON with decision block', async () => {
-    const { spawn } = await import('child_process');
-    const { executeScript } =
-      await import('.opencode/plugins/features/scripts/executor');
-    const mockSpawn = vi.mocked(spawn);
-
-    const mockStdout = {
-      on: vi.fn((event, cb) => {
-        if (event === 'data')
-          cb(Buffer.from('{"decision":"block","reason":"No way"}'));
-      }),
-    };
-    const mockStderr = { on: vi.fn() };
-
-    const mockProc = {
-      stdout: mockStdout,
-      stderr: mockStderr,
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event, cb) => {
-        if (event === 'close') cb(0);
-      }),
-    };
-    mockSpawn.mockReturnValue(mockProc as unknown as ReturnType<typeof spawn>);
-
-    const result = await executeScript(
-      { source: 'native', path: 'block.sh' },
-      'tool.execute.before',
-      'Bash',
-      { sessionID: 'sess-1', args: {} }
-    );
-
-    expect(result.output).toBe('No way');
-  });
-
-  it.skip('parses JSON with continue false', async () => {
-    const { spawn } = await import('child_process');
-    const { executeScript } =
-      await import('.opencode/plugins/features/scripts/executor');
-    const mockSpawn = vi.mocked(spawn);
-
-    const mockStdout = {
-      on: vi.fn((event, cb) => {
-        if (event === 'data')
-          cb(Buffer.from('{"continue":false,"stopReason":"Stopped"}'));
-      }),
-    };
-    const mockStderr = { on: vi.fn() };
-
-    const mockProc = {
-      stdout: mockStdout,
-      stderr: mockStderr,
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event, cb) => {
-        if (event === 'close') cb(0);
-      }),
-    };
-    mockSpawn.mockReturnValue(mockProc as unknown as ReturnType<typeof spawn>);
-
-    const result = await executeScript(
-      { source: 'native', path: 'stop.sh' },
-      'tool.execute.before',
-      'Bash',
-      { sessionID: 'sess-1', args: {} }
-    );
-
-    expect(result.output).toBe('Stopped');
-  });
-
-  it.skip('parses JSON with ok false', async () => {
-    const { spawn } = await import('child_process');
-    const { executeScript } =
-      await import('.opencode/plugins/features/scripts/executor');
-    const mockSpawn = vi.mocked(spawn);
-
-    const mockStdout = {
-      on: vi.fn((event, cb) => {
-        if (event === 'data') cb(Buffer.from('{"ok":false,"reason":"Failed"}'));
-      }),
-    };
-    const mockStderr = { on: vi.fn() };
-
-    const mockProc = {
-      stdout: mockStdout,
-      stderr: mockStderr,
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event, cb) => {
-        if (event === 'close') cb(0);
-      }),
-    };
-    mockSpawn.mockReturnValue(mockProc as unknown as ReturnType<typeof spawn>);
-
-    const result = await executeScript(
-      { source: 'native', path: 'fail.sh' },
-      'tool.execute.before',
-      'Bash',
-      { sessionID: 'sess-1', args: {} }
-    );
-
-    expect(result.output).toBe('Failed');
-  });
-
-  it.skip('passes tool name as arg for native scripts', async () => {
-    const { spawn } = await import('child_process');
-    const { executeScript } =
-      await import('.opencode/plugins/features/scripts/executor');
-    const mockSpawn = vi.mocked(spawn);
-
-    const mockProc = {
-      stdout: { on: vi.fn() },
-      stderr: { on: vi.fn() },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event, cb) => {
-        if (event === 'close') cb(0);
-      }),
-    };
-    mockSpawn.mockReturnValue(mockProc as unknown as ReturnType<typeof spawn>);
-
-    await executeScript(
-      { source: 'native', path: 'tool-hook.sh' },
-      'tool.execute.before',
-      'Bash',
-      { sessionID: 'sess-1' }
-    );
-
-    expect(mockSpawn).toHaveBeenCalled();
-    const callArgs = mockSpawn.mock.calls[0];
-    expect(callArgs[1]).toEqual(['Bash']);
-  });
-
-  it.skip('default passStdin is true for native scripts', async () => {
-    const { spawn } = await import('child_process');
-    const { executeScript } =
-      await import('.opencode/plugins/features/scripts/executor');
-    const mockSpawn = vi.mocked(spawn);
-
-    const mockProc = {
-      stdout: { on: vi.fn() },
-      stderr: { on: vi.fn() },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event, cb) => {
-        if (event === 'close') cb(0);
-      }),
-    };
-    mockSpawn.mockReturnValue(mockProc as unknown as ReturnType<typeof spawn>);
-
-    await executeScript(
-      { source: 'native', path: 'hook.sh' },
-      'tool.execute.before',
-      'Bash',
-      { sessionID: 'sess-1', args: { command: 'ls' } }
-    );
-
-    expect(mockProc.stdin.write).toHaveBeenCalled();
-  });
-
-  it.skip('parses JSON with permission deny', async () => {
-    const { spawn } = await import('child_process');
-    const { executeScript } =
-      await import('.opencode/plugins/features/scripts/executor');
-    const mockSpawn = vi.mocked(spawn);
-
-    const mockStdout = {
-      on: vi.fn((event, cb) => {
-        if (event === 'data')
-          cb(
-            Buffer.from(
-              '{"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":"Not allowed"}}'
-            )
-          );
-      }),
-    };
-    const mockStderr = { on: vi.fn() };
-
-    const mockProc = {
-      stdout: mockStdout,
-      stderr: mockStderr,
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event, cb) => {
-        if (event === 'close') cb(0);
-      }),
-    };
-    mockSpawn.mockReturnValue(mockProc as unknown as ReturnType<typeof spawn>);
-
-    const result = await executeScript(
-      { source: 'native', path: 'perm.sh' },
-      'tool.execute.before',
-      'Bash',
-      { sessionID: 'sess-1', args: {} }
-    );
-
-    expect(result.output).toBe('Not allowed');
   });
 
   it('parses JSON with permission deny without reason', async () => {
@@ -897,55 +506,6 @@ describe('executeScript', () => {
 });
 
 describe('buildOpencodeStdin', () => {
-  it.skip('builds base with event type', () => {
-    const result = buildOpencodeStdin('session.created', '', {
-      sessionID: 'sess-123',
-    });
-    expect(result.event_type).toBe('session.created');
-    expect(result.session_id).toBe('sess-123');
-    expect(result.cwd).toBe(process.cwd());
-  });
-
-  it.skip('includes tool_name and tool_input when toolName provided', () => {
-    const result = buildOpencodeStdin(
-      'tool.execute.before',
-      'Bash',
-      { sessionID: 'sess-1', args: { command: 'ls -la' } },
-      {}
-    );
-    expect(result.tool_name).toBe('Bash');
-    expect(result.tool_input).toEqual({ command: 'ls -la' });
-  });
-
-  it.skip('includes tool_result when output provided', () => {
-    const output = { success: true, result: 'output' };
-    const result = buildOpencodeStdin(
-      'tool.execute.after',
-      'Bash',
-      { sessionID: 'sess-1', args: {} },
-      output
-    );
-    expect(result.tool_result).toEqual(output);
-  });
-
-  it.skip('omits tool_result when output is undefined', () => {
-    const result = buildOpencodeStdin(
-      'tool.execute.before',
-      'Bash',
-      { sessionID: 'sess-1', args: {} },
-      undefined
-    );
-    expect(result.tool_result).toBeUndefined();
-  });
-
-  it.skip('omits tool_name when toolName is empty', () => {
-    const result = buildOpencodeStdin('session.created', '', {
-      sessionID: 'sess-1',
-    });
-    expect(result.tool_name).toBeUndefined();
-    expect(result.tool_input).toBeUndefined();
-  });
-
   it('uses empty object when args is not provided', () => {
     const result = buildOpencodeStdin('tool.execute.before', 'Bash', {
       sessionID: 'sess-1',

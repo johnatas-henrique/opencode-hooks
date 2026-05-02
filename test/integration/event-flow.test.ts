@@ -70,107 +70,17 @@ vi.mock('.opencode/plugins/config/settings', () => ({
 
 describe('Integration: Event Flow', () => {
   describe('resolveEventConfig', () => {
-    it.skip('should resolve config with event-specific overrides', () => {
-      const config = resolveEventConfig('session.created');
-
-      expect(config.enabled).toBe(true);
-      expect(config.toast).toBe(true);
-      expect(config.toastTitle).toBe('====SESSION CREATED====');
-      expect(config.logToAudit).toBe(true);
-    });
-
-    it.skip('should resolve session.error config', () => {
-      const config = resolveEventConfig('session.error');
-
-      expect(config.enabled).toBe(true);
-      expect(config.toast).toBe(true);
-      expect(config.toastVariant).toBe('error');
-    });
-
     it('should return default for unknown events', () => {
       const config = resolveEventConfig('unknown.event');
 
       expect(config.enabled).toBe(true);
       expect(config.toast).toBe(false);
-      expect(config.logToAudit).toBe(true); // default.logToAudit is true
+      expect(config.logToAudit).toBe(true);
     });
-  });
-
-  describe('resolveToolConfig', () => {
-    it.skip('should resolve tool config with tool-specific overrides for task', () => {
-      const config = resolveToolConfig('tool.execute.after', 'task');
-
-      expect(config.enabled).toBe(true);
-      expect(config.toast).toBe(true);
-      expect(config.scripts).toContain('log-agent.sh');
-    });
-
-    it.skip('should resolve tool config for skill', () => {
-      const config = resolveToolConfig('tool.execute.after', 'skill');
-
-      expect(config.enabled).toBe(true);
-      expect(config.scripts).toContain('log-skill.sh');
-    });
-
-    it.skip('should return event base config for unknown tools', () => {
-      const config = resolveToolConfig('tool.execute.after', 'unknown');
-
-      expect(config.enabled).toBe(true);
-      expect(config.toast).toBe(false);
-    });
-  });
-
-  describe('Event Resolution Chain', () => {
-    it.skip('should follow priority: user config > default > system', () => {
-      const sessionConfig = resolveEventConfig('session.created');
-      expect(sessionConfig.toastTitle).toBe('====SESSION CREATED====');
-    });
-
-    it.skip('should merge event and tool configs correctly', () => {
-      const eventConfig = resolveEventConfig('tool.execute.after');
-      const toolConfig = resolveToolConfig('tool.execute.after', 'task');
-
-      expect(eventConfig.toast).toBe(false);
-      expect(toolConfig.toast).toBe(true);
-      expect(toolConfig.scripts).toEqual(['log-agent.sh']);
-    });
-  });
-});
-
-describe('Integration: Script Execution Flow', () => {
-  it.skip('should resolve script configuration correctly', () => {
-    const toolConfig = resolveToolConfig('tool.execute.after', 'task');
-
-    expect(toolConfig.scripts).toHaveLength(1);
-    expect(toolConfig.scripts[0]).toBe('log-agent.sh');
-  });
-
-  it.skip('should handle multiple tool types with different scripts', () => {
-    const taskConfig = resolveToolConfig('tool.execute.after', 'task');
-    const skillConfig = resolveToolConfig('tool.execute.after', 'skill');
-
-    expect(taskConfig.scripts).not.toEqual(skillConfig.scripts);
-    expect(taskConfig.scripts[0]).toBe('log-agent.sh');
-    expect(skillConfig.scripts[0]).toBe('log-skill.sh');
   });
 });
 
 describe('Integration: Toast Flow', () => {
-  it.skip('should resolve toast configuration for session events', () => {
-    const config = resolveEventConfig('session.created');
-
-    expect(config.toast).toBe(true);
-    expect(config.toastVariant).toBe('success');
-    expect(config.toastDuration).toBe(2000);
-  });
-
-  it.skip('should resolve toast configuration for tool events', () => {
-    const config = resolveToolConfig('tool.execute.after', 'task');
-
-    expect(config.toast).toBe(true);
-    expect(config.toastVariant).toBe('info');
-  });
-
   it('should inherit toast settings from event base for unknown tools', () => {
     const config = resolveToolConfig('tool.execute.after', 'glob');
 

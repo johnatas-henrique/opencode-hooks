@@ -17,32 +17,6 @@ describe('run-script', () => {
   });
 
   describe('validateScriptPath', () => {
-    it.skip('should allow simple script name', async () => {
-      const result = await runScript(
-        mockDollar as PluginInput['$'],
-        'test-script.sh'
-      );
-      expect(result.exitCode).not.toBe(-1);
-    });
-
-    it.skip('should allow subdirectories', async () => {
-      const result = await runScript(
-        mockDollar as PluginInput['$'],
-        'subdir/script.sh'
-      );
-      expect(result.error).toBeNull();
-      expect(result.exitCode).toBe(0);
-    });
-
-    it.skip('should block path traversal with /../', async () => {
-      const result = await runScript(
-        mockDollar as PluginInput['$'],
-        '../outside.sh'
-      );
-      expect(result.error).toContain('Invalid script path');
-      expect(result.exitCode).toBe(-1);
-    });
-
     it('should block path traversal with /.. in middle', async () => {
       const result = await runScript(
         mockDollar as PluginInput['$'],

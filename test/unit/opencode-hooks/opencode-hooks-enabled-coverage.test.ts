@@ -1,12 +1,8 @@
-import type { PluginInput, Hooks } from '@opencode-ai/plugin';
+import type { PluginInput } from '@opencode-ai/plugin';
 import { OpencodeHooks } from '.opencode/plugins/opencode-hooks';
 import type { MockPluginInput } from 'test/__mocks__/@opencode-ai/plugin';
 import { createMockPluginInput } from 'test/__mocks__/@opencode-ai/plugin';
 import { vi, beforeEach, describe, it } from 'vitest';
-import type {
-  ToolExecuteBeforeInput,
-  ToolExecuteBeforeOutput,
-} from '.opencode/plugins/types/core';
 
 const mockClient = {
   tui: {
@@ -328,28 +324,6 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
     });
   });
 
-  describe('line 163: tool.execute.before with block', () => {
-    it.skip('should execute when tool.execute.before has block config', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-      const hooks = plugin as Hooks;
-      const handler = hooks['tool.execute.before'];
-
-      if (handler) {
-        const input: ToolExecuteBeforeInput = {
-          tool: 'read',
-          sessionID: 'test-session',
-          callID: 'call-123',
-        };
-        const output: ToolExecuteBeforeOutput = { args: {} };
-
-        await handler(input, output);
-      } else {
-        throw new Error('tool.execute.before handler not found');
-      }
-    });
-  });
-
   describe('line 238: session.created with parentID', () => {
     it('should handle session.created with parentID', async () => {
       const ctx = createMockCtx();
@@ -405,63 +379,6 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
         },
       });
     });
-
-    it.skip('should NOT call setAuditSessionId when session.created has invalid sessionId', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-      const eventHandler = plugin.event as (arg: {
-        event: { type: string; properties: Record<string, unknown> };
-      }) => Promise<void>;
-
-      await eventHandler({
-        event: {
-          type: 'session.created',
-          properties: {
-            sessionID: 'new-session-id',
-            info: { id: 'new-session-id', title: 'New Session' },
-          },
-        },
-      });
-    });
-  });
-
-  describe('line 295: setAuditSessionId on CHAT_MESSAGE', () => {
-    it.skip('should call setAuditSessionId when chat.message with valid ses_ sessionId', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-      const eventHandler = plugin.event as (arg: {
-        event: { type: string; properties: Record<string, unknown> };
-      }) => Promise<void>;
-
-      await eventHandler({
-        event: {
-          type: 'chat.message',
-          properties: {
-            sessionID: 'ses_xyz789',
-            info: { id: 'ses_xyz789' },
-          },
-        },
-      });
-    });
-  });
-
-  describe('line 295: setAuditSessionId on other events', () => {
-    it.skip('should NOT call setAuditSessionId for unknown event types', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-      const eventHandler = plugin.event as (arg: {
-        event: { type: string; properties: Record<string, unknown> };
-      }) => Promise<void>;
-
-      await eventHandler({
-        event: {
-          type: 'unknown.event',
-          properties: {
-            sessionID: 'ses_test123',
-          },
-        },
-      });
-    });
   });
 
   describe('line 94: getNormalizedSessionId fallback to defaultSessionId', () => {
@@ -507,27 +424,6 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
           },
         },
       });
-    });
-  });
-
-  describe('line 617: config hook', () => {
-    it.skip('should handle config hook', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-      const hooks = plugin as {
-        config: (input: Record<string, unknown>) => Promise<void>;
-      };
-      const configHandler = hooks.config;
-
-      expect(configHandler).toBeDefined();
-      await configHandler({ sessionID: 'test-session' });
-    });
-  });
-
-  describe('scripts directory validation', () => {
-    it.skip('should call validateScriptsDirectory during init', async () => {
-      const ctx = createMockCtx();
-      await OpencodeHooks(ctx);
     });
   });
 });

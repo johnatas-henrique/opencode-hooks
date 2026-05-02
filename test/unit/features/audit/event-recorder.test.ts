@@ -9,7 +9,6 @@ import {
   createEventRecorder,
   createToolExecuteAfterRecord,
   createSessionEventRecord,
-  createToolExecuteBeforeRecord,
   extractTool,
   extractSession,
   extractDirectory,
@@ -76,46 +75,12 @@ describe('event-recorder', () => {
       expect(record?.session).toBe('session-456');
       expect(record?.directory).toBe('/home');
     });
-
-    it.skip('should return null when shouldLogResult is false', () => {
-      const input = { info: { id: 'session-123' } };
-      const record = createSessionEventRecord('session.created', input, false);
-
-      expect(record).toBeNull();
-    });
   });
 
   describe('extractDirectory', () => {
-    it.skip('should return unknown when directory is not available', () => {
-      const input = { info: { id: 'session-123' } };
-      expect(extractDirectory(input)).toBe('unknown');
-    });
-  });
-
-  describe('createToolExecuteBeforeRecord', () => {
-    it.skip('should return null when shouldLogResult is false', () => {
-      const input = {
-        tool: 'read',
-        sessionID: 'session-123',
-        callID: 'call-1',
-      } as ToolExecuteBeforeInput;
-      const record = createToolExecuteBeforeRecord(input, false);
-
-      expect(record).toBeNull();
-    });
-
-    it.skip('should return record when shouldLogResult is true', () => {
-      const input = {
-        tool: 'read',
-        sessionID: 'session-123',
-        callID: 'call-1',
-      } as ToolExecuteBeforeInput;
-      const record = createToolExecuteBeforeRecord(input, true);
-
-      expect(record).not.toBeNull();
-      expect(record?.event).toBe('tool.execute.before');
-      expect(record?.tool).toBe('read');
-      expect(record?.session).toBe('session-123');
+    it('should return directory from input.info.directory', () => {
+      const input = { info: { id: 'session-123', directory: '/project' } };
+      expect(extractDirectory(input)).toBe('/project');
     });
   });
 });
@@ -129,127 +94,6 @@ describe('createEventRecorder', () => {
   });
 
   describe('logEvent', () => {
-    it.skip('should log generic event with input and output', async () => {
-      const { createEventRecorder } =
-        await import('.opencode/plugins/features/audit/event-recorder');
-      const config = {
-        enabled: true,
-        level: 'debug',
-        maxSizeMB: 10,
-        maxAgeDays: 30,
-        logTruncationKB: 10,
-        maxFieldSize: 1000,
-        maxArrayItems: 50,
-        basePath: '/tmp/audit-test/test',
-        largeFields: [],
-      };
-
-      const recorder = createEventRecorder(config as AuditConfig, {
-        writeLine: mockWriteLine,
-      });
-
-      // sessionID must be in the input object to be captured
-      await recorder.logEvent('session.idle', {
-        sessionID: 'session-123',
-        input: { sessionID: 'session-123', duration: 5000 },
-        output: { status: 'idle' },
-      });
-
-      expect(mockWriteLine).toHaveBeenCalledOnce();
-      const loggedData = mockWriteLine.mock.calls[0][1];
-      expect(loggedData.event).toBe('session.idle');
-      expect(loggedData.session).toBe('session-123');
-      expect(loggedData.input).toBeDefined();
-      expect(loggedData.input?.duration).toBe(5000);
-      expect(loggedData.output).toBeDefined();
-      expect(loggedData.output?.status).toBe('idle');
-    });
-
-    it.skip('should not log when level is audit', async () => {
-      const { createEventRecorder } =
-        await import('.opencode/plugins/features/audit/event-recorder');
-      const config = {
-        enabled: true,
-        level: 'audit',
-        maxSizeMB: 10,
-        maxAgeDays: 30,
-        logTruncationKB: 10,
-        maxFieldSize: 1000,
-        maxArrayItems: 50,
-      };
-
-      const recorder = createEventRecorder(config as AuditConfig, {
-        writeLine: mockWriteLine,
-      });
-
-      await recorder.logEvent('session.idle', {
-        sessionID: 'session-123',
-        input: { duration: 5000 },
-      });
-
-      expect(mockWriteLine).not.toHaveBeenCalled();
-    });
-
-    it.skip('should include tool name when provided', async () => {
-      const { createEventRecorder } =
-        await import('.opencode/plugins/features/audit/event-recorder');
-      const config = {
-        enabled: true,
-        level: 'debug',
-        maxSizeMB: 10,
-        maxAgeDays: 30,
-        logTruncationKB: 10,
-        maxFieldSize: 1000,
-        maxArrayItems: 50,
-        basePath: '/tmp/audit-test/test',
-        largeFields: [],
-      };
-
-      const recorder = createEventRecorder(config as AuditConfig, {
-        writeLine: mockWriteLine,
-      });
-
-      await recorder.logEvent('tool.execute.after', {
-        sessionID: 'session-123',
-        tool: 'write',
-        input: { filePath: '/test.txt' },
-        output: { success: true },
-      });
-
-      expect(mockWriteLine).toHaveBeenCalledOnce();
-      const loggedData = mockWriteLine.mock.calls[0][1];
-      expect(loggedData.tool).toBe('write');
-    });
-
-    it.skip('should add context field when provided', async () => {
-      const mockWriteLine = vi.fn();
-      const config = {
-        enabled: true,
-        level: 'debug',
-        maxSizeMB: 10,
-        maxAgeDays: 30,
-        logTruncationKB: 10,
-        maxFieldSize: 1000,
-        maxArrayItems: 50,
-        basePath: '/tmp/audit-test/test',
-        largeFields: [],
-      };
-
-      const recorder = createEventRecorder(config as AuditConfig, {
-        writeLine: mockWriteLine,
-      });
-
-      await recorder.logEvent('custom.event', {
-        sessionID: 'session-123',
-        context: 'hook',
-        input: {},
-      });
-
-      expect(mockWriteLine).toHaveBeenCalledOnce();
-      const loggedData = mockWriteLine.mock.calls[0][1];
-      expect(loggedData.context).toBe('hook');
-    });
-
     it('should handle null record gracefully', async () => {
       const mockWriteLine = vi.fn();
       const config = {
@@ -273,36 +117,6 @@ describe('createEventRecorder', () => {
       });
 
       expect(mockWriteLine).not.toHaveBeenCalled();
-    });
-
-    it.skip('should handle undefined input and pass sessionID', async () => {
-      const { createEventRecorder } =
-        await import('.opencode/plugins/features/audit/event-recorder');
-      const mockWriteLine = vi.fn().mockResolvedValue(undefined);
-      const config = {
-        enabled: true,
-        level: 'debug',
-        maxSizeMB: 10,
-        maxAgeDays: 30,
-        logTruncationKB: 10,
-        maxFieldSize: 1000,
-        maxArrayItems: 50,
-        basePath: '/tmp/audit-test/test',
-        largeFields: [],
-      };
-
-      const recorder = createEventRecorder(config as AuditConfig, {
-        writeLine: mockWriteLine,
-      });
-
-      await recorder.logEvent('session.idle', {
-        sessionID: 'session-123',
-        input: undefined,
-      });
-
-      expect(mockWriteLine).toHaveBeenCalledOnce();
-      const loggedData = mockWriteLine.mock.calls[0][1];
-      expect(loggedData.session).toBe('session-123');
     });
   });
 
@@ -391,31 +205,31 @@ describe('createEventRecorder', () => {
         'session-123'
       );
     });
-  });
 
-  it('should not log when level is audit', async () => {
-    const { createEventRecorder } =
-      await import('.opencode/plugins/features/audit/event-recorder');
-    const config = {
-      enabled: true,
-      level: 'audit',
-      maxSizeMB: 10,
-      maxAgeDays: 30,
-      logTruncationKB: 10,
-      maxFieldSize: 1000,
-      maxArrayItems: 50,
-      basePath: '/tmp/audit-test/test',
-      largeFields: [],
-    };
-    const recorder = createEventRecorder(config as AuditConfig, {
-      writeLine: mockWriteLine,
+    it('should not log when level is audit', async () => {
+      const { createEventRecorder } =
+        await import('.opencode/plugins/features/audit/event-recorder');
+      const config = {
+        enabled: true,
+        level: 'audit',
+        maxSizeMB: 10,
+        maxAgeDays: 30,
+        logTruncationKB: 10,
+        maxFieldSize: 1000,
+        maxArrayItems: 50,
+        basePath: '/tmp/audit-test/test',
+        largeFields: [],
+      };
+      const recorder = createEventRecorder(config as AuditConfig, {
+        writeLine: mockWriteLine,
+      });
+      await recorder.logToolExecuteAfter(
+        { tool: 'bash', sessionID: 'session-123', callID: 'call-1', args: {} },
+        { title: '', output: '', metadata: { exit: 0 } }
+      );
+
+      expect(mockWriteLine).not.toHaveBeenCalled();
     });
-    await recorder.logToolExecuteAfter(
-      { tool: 'bash', sessionID: 'session-123', callID: 'call-1', args: {} },
-      { title: '', output: '', metadata: { exit: 0 } }
-    );
-
-    expect(mockWriteLine).not.toHaveBeenCalled();
   });
 
   describe('logSessionEvent', () => {
@@ -469,36 +283,6 @@ describe('createEventRecorder', () => {
 });
 
 describe('createGenericEventRecord', () => {
-  it.skip('should create record with sanitized input and output', () => {
-    const input = {
-      tool: 'read',
-      sessionID: 'session-123',
-      args: { filePath: '/test/file.txt' },
-    };
-    const output = {
-      content: 'Lorem ipsum dolor sit amet',
-      lines: 42,
-    };
-
-    const record = createGenericEventRecord(
-      'tool.execute.before',
-      input,
-      output,
-      'read',
-      true,
-      [],
-      1000,
-      50
-    );
-
-    expect(record).not.toBeNull();
-    expect(record?.event).toBe('tool.execute.before');
-    expect(record?.tool).toBe('read');
-    expect(record?.session).toBe('session-123');
-    expect(record?.input).toBeDefined();
-    expect(record?.output).toBeDefined();
-  });
-
   it('should extract session from info.id when sessionID not present', () => {
     const input = {
       info: { id: 'session-info-123', title: 'Test' },
@@ -518,66 +302,6 @@ describe('createGenericEventRecord', () => {
 
     expect(record).not.toBeNull();
     expect(record?.session).toBe('session-info-123');
-  });
-
-  it.skip('should return null when shouldLogResult is false', () => {
-    const record = createGenericEventRecord(
-      'tool.execute.before',
-      { tool: 'read', sessionID: 'session-123' },
-      undefined,
-      'read',
-      false,
-      [],
-      1000,
-      50
-    );
-
-    expect(record).toBeNull();
-  });
-
-  it.skip('should truncate large string fields', () => {
-    const longData = 'a'.repeat(1500);
-    const input = {
-      data: longData,
-      sessionID: 'session-123',
-    };
-
-    const record = createGenericEventRecord(
-      'tool.execute.before',
-      input,
-      undefined,
-      undefined,
-      true,
-      [],
-      1000,
-      50
-    );
-
-    expect(record).not.toBeNull();
-    expect(record?.input?.data).toBe('a'.repeat(1000) + '... [truncated]');
-  });
-
-  it.skip('should redact sensitive fields', () => {
-    const input = {
-      password: 'supersecret123',
-      apiKey: 'sk-abc123xyz789',
-      sessionID: 'session-123',
-    };
-
-    const record = createGenericEventRecord(
-      'tool.execute.before',
-      input,
-      undefined,
-      undefined,
-      true,
-      [],
-      1000,
-      50
-    );
-
-    expect(record).not.toBeNull();
-    expect(record?.input?.password).toBe('[REDACTED: 14 chars]');
-    expect(record?.input?.apiKey).toBe('[REDACTED: 15 chars]');
   });
 
   it('should limit array items', () => {
@@ -602,7 +326,7 @@ describe('createGenericEventRecord', () => {
 
     expect(record).not.toBeNull();
     const items = record?.input?.items as Array<unknown>;
-    expect(items.length).toBe(51); // 50 items + "more items" indicator
+    expect(items.length).toBe(51);
     expect(items[50]).toBe('... [50 more items]');
   });
 
@@ -672,118 +396,9 @@ describe('createGenericEventRecord', () => {
   });
 });
 
-describe('setGlobalTruncationKB', () => {
-  it.skip('should set global truncation KB value', () => {
-    setGlobalTruncationKB(5);
-    const input = {
-      content: 'x'.repeat(10000),
-      sessionID: 'session-123',
-    };
-
-    const record = createGenericEventRecord(
-      'tool.execute.before',
-      input,
-      undefined,
-      undefined,
-      true,
-      ['content'],
-      1000,
-      50
-    );
-
-    const content = record?.input?.content as string;
-    expect(content).toContain('... [truncated]');
-    expect(content.length).toBeLessThan(10000);
-  });
-});
-
 describe('LARGE_FIELDS truncation (line 166)', () => {
   beforeEach(() => {
     setGlobalTruncationKB(10);
-  });
-
-  it.skip('should truncate patch field when larger than truncationKB', () => {
-    const input = {
-      patch: 'y'.repeat(20000),
-      sessionID: 'session-123',
-    };
-
-    const record = createGenericEventRecord(
-      'tool.execute.before',
-      input,
-      undefined,
-      undefined,
-      true,
-      ['patch', 'diff', 'content', 'snapshot', 'output', 'result', 'text'],
-      1000,
-      50
-    );
-
-    const patch = record?.input?.patch as string;
-    expect(patch).toContain('... [truncated]');
-    expect(patch).not.toBe('y'.repeat(20000));
-  });
-
-  it.skip('should truncate diff field', () => {
-    const input = {
-      diff: 'z'.repeat(25000),
-      sessionID: 'session-123',
-    };
-
-    const record = createGenericEventRecord(
-      'tool.execute.after',
-      input,
-      undefined,
-      undefined,
-      true,
-      ['patch', 'diff', 'content', 'snapshot', 'output', 'result', 'text'],
-      1000,
-      50
-    );
-
-    const diff = record?.input?.diff as string;
-    expect(diff).toContain('... [truncated]');
-  });
-
-  it.skip('should truncate diff field inside properties (session.diff structure)', () => {
-    const input = {
-      type: 'session.diff',
-      properties: {
-        sessionID: 'session-123',
-        diff: [
-          {
-            file: 'settings.ts',
-            patch: 'x'.repeat(20000), // Long patch inside diff array
-          },
-        ],
-      },
-    };
-
-    const record = createGenericEventRecord(
-      'session.diff',
-      input,
-      undefined,
-      undefined,
-      true,
-      ['patch', 'diff', 'content', 'snapshot', 'output', 'result', 'text'],
-      1000,
-      50
-    );
-
-    // The diff array should be present
-    const recordInput = record?.input as Record<string, unknown>;
-    const properties = recordInput?.properties as
-      | Record<string, unknown>
-      | undefined;
-    const diffArray = properties?.diff as unknown;
-    expect(diffArray).toBeDefined();
-    expect(Array.isArray(diffArray)).toBe(true);
-
-    // The patch inside the first diff item should be truncated
-    const firstPatch = (diffArray as Record<string, unknown>[])[0]
-      ?.patch as string;
-    expect(firstPatch).toContain('... [truncated]');
-    expect(firstPatch.length).toBeLessThan(20000);
   });
 
   it('should truncate content field when it is LARGE_FIELD', () => {

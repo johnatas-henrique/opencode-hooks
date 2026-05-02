@@ -97,43 +97,8 @@ function resolveToastParams(eventType: string): ToastContract {
 }
 
 describe('Toast Contract', () => {
-  describe('handler resolution', () => {
-    it.skip('should find handler for session.error', () => {
-      const handler = getHandler('session.error');
-      expect(handler).toBeDefined();
-      expect(handler?.title).toBe('====SESSION ERROR====');
-    });
-
-    it.skip('should return undefined for nonexistent event', () => {
-      const handler = getHandler('nonexistent.event');
-      expect(handler).toBeUndefined();
-    });
-  });
-
-  describe('toast params resolution', () => {
-    it.skip('should return shouldShow: true when enabled and toast true', () => {
-      const contract = resolveToastParams('session.created');
-      expect(contract.shouldShow).toBe(true);
-    });
-
-    it.skip('should return shouldShow: false when event is disabled', () => {
-      const contract = resolveToastParams('session.disabled');
-      expect(contract.shouldShow).toBe(false);
-    });
-
-    it.skip('should return shouldShow: false when handler not found', () => {
-      const contract = resolveToastParams('nonexistent.event');
-      expect(contract.shouldShow).toBe(false);
-    });
-
-    it.skip('should use handler variant when config variant not set', () => {
-      const contract = resolveToastParams('session.created');
-      expect(contract.params.variant).toBe('success');
-    });
-
-    it('should use handler duration when config duration not set', () => {
-      const contract = resolveToastParams('session.created');
-      expect(contract.params.duration).toBe(10000);
-    });
+  it('should use handler duration when config duration not set', () => {
+    const contract = resolveToastParams('session.created');
+    expect(contract.params.duration).toBe(10000);
   });
 });

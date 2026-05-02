@@ -119,25 +119,6 @@ describe('handleDebugLog', () => {
       data: { nonSensitive: 'value' },
     });
   });
-
-  it.skip('should handle non-object data gracefully in debugRecorder', async () => {
-    // Line 69-73 branch: data isobject but sanitizedData also has data
-    const mockLogDebug = vi.fn().mockResolvedValue(undefined);
-    mockGetDebugRecorder.mockReturnValue({
-      logDebug: mockLogDebug,
-    } as unknown as DebugRecorder);
-
-    // Non-object data - should not call debugRecorder.logDebug
-    await handleDebugLog('ts', 'title', 'string data');
-
-    // Toast should still be called with string representation
-    const mockQueue = useGlobalToastQueue();
-    expect(mockQueue.add).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: '"string data"',
-      })
-    );
-  });
 });
 
 describe('sanitizeData', () => {

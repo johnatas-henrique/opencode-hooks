@@ -40,15 +40,6 @@ describe('security-recorder', () => {
   });
 
   describe('getSecurityRecorder', () => {
-    it.skip('should return null when not set', () => {
-      expect(getSecurityRecorder()).toBeNull();
-    });
-
-    it.skip('should return set recorder', () => {
-      setSecurityRecorder(securityRecorder);
-      expect(getSecurityRecorder()).toBe(securityRecorder);
-    });
-
     it('should handle multiple set/get cycles', () => {
       setSecurityRecorder(securityRecorder);
       const r1 = getSecurityRecorder();

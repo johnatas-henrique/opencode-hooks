@@ -18,7 +18,6 @@ import { runScriptAndHandle } from '.opencode/plugins/features/scripts/run-scrip
 const mockedRunScriptAndHandle = vi.mocked(runScriptAndHandle, true);
 
 describe('createScriptRunner', () => {
-  // Minimal valid PluginInput using cast to satisfy type system
   const mockCtx = {
     $: async () => ({ exitCode: 0, stdout: '', stderr: '' }),
     client: { tui: { showToast: () => {} }, session: { prompt: () => {} } },
@@ -80,46 +79,6 @@ describe('createScriptRunner', () => {
     });
   });
 
-  it.skip('should call runScriptAndHandle with correct config', async () => {
-    const runner = createScriptRunner(deps);
-    const result = await runner('test.sh', 'arg1');
-
-    expect(mockedRunScriptAndHandle).toHaveBeenCalledTimes(1);
-    const passedConfig = mockedRunScriptAndHandle.mock
-      .calls[0][0] as HandlerConfig;
-
-    expect(passedConfig.ctx).toBe(mockCtx);
-    expect(passedConfig.script).toBe('test.sh');
-    expect(passedConfig.scriptArg).toBe('arg1');
-    expect(passedConfig.eventType).toBe('session.created');
-    expect(passedConfig.toolName).toBe('test-tool');
-    expect(passedConfig.sessionId).toBe('test-session');
-    expect(passedConfig.resolved).not.toBe(deps.resolved);
-    expect(passedConfig.scriptToasts).not.toBe(deps.scriptToasts);
-    expect(result).toEqual({ script: 'test.sh', output: 'ok' });
-  });
-
-  it.skip('should set suppressToast option by changing showError', async () => {
-    const runner = createScriptRunner(deps);
-    await runner('test.sh', undefined, { suppressToast: true });
-
-    const passedConfig = mockedRunScriptAndHandle.mock
-      .calls[0][0] as HandlerConfig;
-    expect(passedConfig.scriptToasts.showError).toBe(false);
-    expect(passedConfig.scriptToasts.showOutput).toBe(
-      mockScriptToasts.showOutput
-    );
-  });
-
-  it.skip('should set skipAudit option by setting logToAudit false', async () => {
-    const runner = createScriptRunner(deps);
-    await runner('test.sh', undefined, { skipAudit: true });
-
-    const passedConfig = mockedRunScriptAndHandle.mock
-      .calls[0][0] as HandlerConfig;
-    expect(passedConfig.resolved.logToAudit).toBe(false);
-  });
-
   it('should set skipSession option by setting appendToSession false', async () => {
     const runner = createScriptRunner(deps);
     await runner('test.sh', undefined, { skipSession: true });
@@ -127,15 +86,6 @@ describe('createScriptRunner', () => {
     const passedConfig = mockedRunScriptAndHandle.mock
       .calls[0][0] as HandlerConfig;
     expect(passedConfig.resolved.appendToSession).toBe(false);
-  });
-
-  it.skip('should override runOnlyOnce flag', async () => {
-    const runner = createScriptRunner(deps);
-    await runner('test.sh', undefined, { runOnlyOnce: true });
-
-    const passedConfig = mockedRunScriptAndHandle.mock
-      .calls[0][0] as HandlerConfig;
-    expect(passedConfig.resolved.runOnlyOnce).toBe(true);
   });
 
   it('should combine multiple options', async () => {
@@ -152,36 +102,5 @@ describe('createScriptRunner', () => {
     expect(passedConfig.resolved.logToAudit).toBe(false);
     expect(passedConfig.resolved.runOnlyOnce).toBe(false);
     expect(passedConfig.resolved.appendToSession).toBe(true);
-  });
-
-  it.skip('should pass scriptRecorder from deps to handler', async () => {
-    const runner = createScriptRunner(deps);
-    await runner('test.sh');
-
-    const callArg = mockedRunScriptAndHandle.mock.calls[0][0] as HandlerConfig;
-    expect(callArg.scriptRecorder).toBe(mockRecorder);
-  });
-
-  it.skip('should work without scriptRecorder in deps', async () => {
-    const depsNoRecorder = { ...deps, scriptRecorder: undefined };
-    const runner = createScriptRunner(depsNoRecorder);
-    await runner('test.sh');
-
-    const callArg = mockedRunScriptAndHandle.mock.calls[0][0] as HandlerConfig;
-    expect(callArg.scriptRecorder).toBeUndefined();
-  });
-
-  it.skip('should use Date.now().toString() for timestamp', async () => {
-    const runner = createScriptRunner(deps);
-    const mockNow = 1234567890000;
-    vi.spyOn(Date, 'now').mockReturnValue(mockNow);
-
-    await runner('test.sh');
-
-    const passedConfig = mockedRunScriptAndHandle.mock
-      .calls[0][0] as HandlerConfig;
-    expect(passedConfig.timestamp).toBe(mockNow.toString());
-
-    vi.restoreAllMocks();
   });
 });

@@ -1,7 +1,6 @@
 import { createResolvers } from 'test/helpers/create-resolver';
 import { createUserConfig } from 'test/helpers/create-config';
 import type { UserEventsConfig } from '.opencode/plugins/types/config';
-import { getHandler } from '.opencode/plugins/features/events/events';
 
 describe('events - resolveEventConfig', () => {
   it('should return toast: false when default toast is object with enabled: false', () => {
@@ -24,16 +23,6 @@ describe('events - resolveToolConfig', () => {
     });
     const { eventResolver } = createResolvers(config);
     const result = eventResolver.resolve('session.created');
-
-    expect(result.enabled).toBe(false);
-  });
-
-  it.skip('should return enabled: false for event config boolean false', () => {
-    const config = createUserConfig({
-      events: { 'session.test': false } as UserEventsConfig['events'],
-    });
-    const { eventResolver } = createResolvers(config);
-    const result = eventResolver.resolve('session.test');
 
     expect(result.enabled).toBe(false);
   });
@@ -64,10 +53,5 @@ describe('events - resolveToolConfig', () => {
     const result = toolResolver.resolve('invalid', 'task');
 
     expect(result.enabled).toBe(true);
-  });
-
-  it.skip('getHandler should return handler for valid event type', () => {
-    const handler = getHandler('session.created');
-    expect(handler).toBeDefined();
   });
 });

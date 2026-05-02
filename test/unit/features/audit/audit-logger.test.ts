@@ -68,16 +68,6 @@ describe('audit-logger', () => {
       expect(mockAppendFile).not.toHaveBeenCalled();
     });
 
-    it.skip('should write when enabled (debug level)', async () => {
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: { ...defaultConfig, level: 'debug', enabled: true },
-        deps: { appendFile: mockAppendFile, mkdir: mockMkdir },
-      });
-      await logger.writeLine('events', { event: 'test' });
-      expect(mockAppendFile).toHaveBeenCalled();
-    });
-
     it('should skip events file in audit mode', async () => {
       const logger = createAuditLogger({
         basePath: BASE_PATH,
@@ -86,26 +76,6 @@ describe('audit-logger', () => {
       });
       await logger.writeLine('events', { event: 'test' });
       expect(mockAppendFile).not.toHaveBeenCalled();
-    });
-
-    it.skip('should write to scripts file in audit mode', async () => {
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: { ...defaultConfig, level: 'audit', enabled: true },
-        deps: { appendFile: mockAppendFile, mkdir: mockMkdir },
-      });
-      await logger.writeLine('scripts', { script: 'test.sh' });
-      expect(mockAppendFile).toHaveBeenCalled();
-    });
-
-    it.skip('should write to errors file in audit mode', async () => {
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: { ...defaultConfig, level: 'audit', enabled: true },
-        deps: { appendFile: mockAppendFile, mkdir: mockMkdir },
-      });
-      await logger.writeLine('errors', { error: 'Test error' });
-      expect(mockAppendFile).toHaveBeenCalled();
     });
 
     it('should handle write errors gracefully', async () => {
@@ -203,16 +173,6 @@ describe('audit-logger', () => {
       expect(mockReaddir).not.toHaveBeenCalled();
     });
 
-    it.skip('should handle directory not found gracefully', async () => {
-      mockReaddir.mockRejectedValue(new Error('Directory not found'));
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: defaultConfig,
-        deps: { unlink: mockUnlink, readdir: mockReaddir },
-      });
-      await expect(logger.cleanup()).resolves.not.toThrow();
-    });
-
     it('should skip cleanup when stat dependency is missing', async () => {
       const logger = createAuditLogger({
         basePath: BASE_PATH,
@@ -225,71 +185,6 @@ describe('audit-logger', () => {
   });
 
   describe('archiveSession', () => {
-    it.skip('should archive all session files', async () => {
-      mockStat
-        .mockResolvedValueOnce({ size: 100 } as unknown as ReturnType<
-          typeof vi.fn
-        >)
-        .mockResolvedValueOnce({ size: 200 } as unknown as ReturnType<
-          typeof vi.fn
-        >)
-        .mockResolvedValueOnce({ size: 300 } as unknown as ReturnType<
-          typeof vi.fn
-        >)
-        .mockResolvedValueOnce({ size: 400 } as unknown as ReturnType<
-          typeof vi.fn
-        >)
-        .mockResolvedValueOnce({ size: 500 } as unknown as ReturnType<
-          typeof vi.fn
-        >);
-
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: {
-          ...defaultConfig,
-          sessionId: 'test-session',
-          files: {
-            events: 'plugin-events_{session}.json',
-            scripts: 'plugin-scripts_{session}.json',
-            errors: 'plugin-errors_{session}.json',
-            security: 'plugin-security_{session}.json',
-            debug: 'plugin-debug_{session}.json',
-          },
-          archiveDir: 'audit-archive',
-        },
-      });
-
-      await logger.archiveSession();
-
-      expect(mockMkdir).toHaveBeenCalledWith(`${BASE_PATH}/audit-archive`, {
-        recursive: true,
-      });
-      expect(mockRename).toHaveBeenCalledTimes(5);
-    });
-
-    it.skip('should skip files that do not exist', async () => {
-      mockStat.mockRejectedValue(new Error('ENOENT'));
-
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: {
-          ...defaultConfig,
-          sessionId: 'test-session',
-          files: {
-            events: 'plugin-events_{session}.json',
-            scripts: 'plugin-scripts_{session}.json',
-            errors: 'plugin-errors_{session}.json',
-            security: 'plugin-security_{session}.json',
-            debug: 'plugin-debug_{session}.json',
-          },
-        },
-      });
-
-      await logger.archiveSession();
-
-      expect(mockRename).not.toHaveBeenCalled();
-    });
-
     it('should handle empty files', async () => {
       mockStat.mockResolvedValue({ size: 0 } as unknown as ReturnType<
         typeof vi.fn
@@ -362,135 +257,6 @@ describe('audit-logger', () => {
   });
 
   describe('setSessionId', () => {
-    it.skip('should update sessionId when value starts with ses_', async () => {
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: {
-          ...defaultConfig,
-          files: {
-            events: 'plugin-events_{session}.json',
-            scripts: 'plugin-scripts_{session}.json',
-            errors: 'plugin-errors_{session}.json',
-            security: 'plugin-security_{session}.json',
-            debug: 'plugin-debug_{session}.json',
-          },
-        },
-      });
-
-      logger.setSessionId('ses_abc123');
-
-      await logger.writeLine('events', { test: 'data' });
-
-      expect(mockAppendFile).toHaveBeenCalledWith(
-        '/tmp/audit-test/plugin-events_ses_abc123.json',
-        expect.any(String)
-      );
-    });
-
-    it.skip('should use sessionId from config initially', async () => {
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: {
-          ...defaultConfig,
-          sessionId: 'ses_initial',
-          files: {
-            events: 'plugin-events_{session}.json',
-            scripts: 'plugin-scripts_{session}.json',
-            errors: 'plugin-errors_{session}.json',
-            security: 'plugin-security_{session}.json',
-            debug: 'plugin-debug_{session}.json',
-          },
-        },
-      });
-
-      await logger.writeLine('events', { test: 'data' });
-
-      expect(mockAppendFile).toHaveBeenCalledWith(
-        '/tmp/audit-test/plugin-events_ses_initial.json',
-        expect.any(String)
-      );
-    });
-
-    it.skip('should ignore non-ses_ values', async () => {
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: {
-          ...defaultConfig,
-          files: {
-            events: 'plugin-events_{session}.json',
-            scripts: 'plugin-scripts_{session}.json',
-            errors: 'plugin-errors_{session}.json',
-            security: 'plugin-security_{session}.json',
-            debug: 'plugin-debug_{session}.json',
-          },
-        },
-      });
-
-      logger.setSessionId('ses_valid');
-      await logger.writeLine('events', { test: 'data1' });
-      expect(mockAppendFile).toHaveBeenLastCalledWith(
-        '/tmp/audit-test/plugin-events_ses_valid.json',
-        expect.any(String)
-      );
-
-      logger.setSessionId('unknown');
-      await logger.writeLine('events', { test: 'data2' });
-      expect(mockAppendFile).toHaveBeenLastCalledWith(
-        '/tmp/audit-test/plugin-events_ses_valid.json',
-        expect.any(String)
-      );
-    });
-
-    it.skip('should ignore msg_ values', async () => {
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: {
-          ...defaultConfig,
-          files: {
-            events: 'plugin-events_{session}.json',
-            scripts: 'plugin-scripts_{session}.json',
-            errors: 'plugin-errors_{session}.json',
-            security: 'plugin-security_{session}.json',
-            debug: 'plugin-debug_{session}.json',
-          },
-        },
-      });
-
-      logger.setSessionId('ses_valid');
-      logger.setSessionId('msg_de0cb4c4e001sojlCORYpE12cc');
-
-      await logger.writeLine('events', { test: 'data' });
-      expect(mockAppendFile).toHaveBeenLastCalledWith(
-        '/tmp/audit-test/plugin-events_ses_valid.json',
-        expect.any(String)
-      );
-    });
-
-    it.skip('should ignore empty string', async () => {
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: {
-          ...defaultConfig,
-          files: {
-            events: 'plugin-events_{session}.json',
-            scripts: 'plugin-scripts_{session}.json',
-            errors: 'plugin-errors_{session}.json',
-            security: 'plugin-security_{session}.json',
-            debug: 'plugin-debug_{session}.json',
-          },
-        },
-      });
-
-      logger.setSessionId('ses_valid');
-      logger.setSessionId('');
-
-      await logger.writeLine('events', { test: 'data' });
-      expect(mockAppendFile).toHaveBeenLastCalledWith(
-        '/tmp/audit-test/plugin-events_ses_valid.json',
-        expect.any(String)
-      );
-    });
-
     it('should return last known sessionId via getLastKnownSessionId', async () => {
       const logger = createAuditLogger({
         basePath: BASE_PATH,
@@ -515,46 +281,6 @@ describe('archiveFileIfNeeded', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it.skip('should return false if file does not exist', async () => {
-    mockStat.mockRejectedValue(new Error('ENOENT'));
-    const { archiveFileIfNeeded } =
-      await import('.opencode/plugins/features/audit/audit-logger');
-    const result = await archiveFileIfNeeded(
-      '/base/test.json',
-      '/archive',
-      1024 * 1024,
-      {
-        mkdir: mockMkdir,
-        rename: mockRename,
-        stat: mockStat,
-      }
-    );
-    expect(result).toBe(false);
-    expect(mockMkdir).not.toHaveBeenCalled();
-    expect(mockRename).not.toHaveBeenCalled();
-  });
-
-  it.skip('should return false if file is smaller than 1MB', async () => {
-    mockStat.mockResolvedValue({ size: 500 * 1024 } as unknown as ReturnType<
-      typeof vi.fn
-    >);
-    const { archiveFileIfNeeded } =
-      await import('.opencode/plugins/features/audit/audit-logger');
-    const result = await archiveFileIfNeeded(
-      '/base/test.json',
-      '/archive',
-      1024 * 1024,
-      {
-        mkdir: mockMkdir,
-        rename: mockRename,
-        stat: mockStat,
-      }
-    );
-    expect(result).toBe(false);
-    expect(mockMkdir).not.toHaveBeenCalled();
-    expect(mockRename).not.toHaveBeenCalled();
   });
 
   it('should archive file if larger than 1MB', async () => {

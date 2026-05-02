@@ -1,8 +1,5 @@
 import { EventConfigResolverImpl } from '.opencode/plugins/features/events/resolvers/event-config.resolver';
-import type {
-  ConfigResolverContext,
-  EventHandler,
-} from '.opencode/plugins/types/events';
+import type { ConfigResolverContext } from '.opencode/plugins/types/events';
 import type { EventOverride } from '.opencode/plugins/types/config';
 import type { Mock } from 'vitest';
 import * as pluginIntegration from '.opencode/plugins/features/audit/plugin-integration';
@@ -66,24 +63,6 @@ describe('EventConfigResolverImpl', () => {
     expect(result.allowedFields).toEqual(['customField']);
   });
 
-  it.skip('should return handler by event type', () => {
-    const mockHandler: EventHandler = {
-      title: 'Test Event',
-      variant: 'info',
-      duration: 2000,
-      defaultScript: 'test.sh',
-      allowedFields: ['field1'],
-      buildMessage: () => 'Test Message',
-    };
-    const mockContext = createMockContext({
-      'test.event': mockHandler,
-    });
-    const resolver = new EventConfigResolverImpl(mockContext);
-
-    const handler = resolver.getHandler('test.event');
-    expect(handler).toEqual(mockHandler);
-  });
-
   it('should return undefined for unknown handler', () => {
     const mockContext = createMockContext({});
     const resolver = new EventConfigResolverImpl(mockContext);
@@ -101,24 +80,6 @@ describe('EventConfigResolverImpl', () => {
   });
 
   describe('unknown event handling', () => {
-    it.skip('logs unknown event when no handler and no user config', () => {
-      const mockContext = createMockContext({});
-      const resolver = new EventConfigResolverImpl(mockContext);
-      (mockContext.getEventConfig as Mock).mockReturnValue(undefined);
-
-      const mockRecorder = createMockRecorder();
-      vi.spyOn(pluginIntegration, 'getEventRecorder').mockReturnValue(
-        mockRecorder
-      );
-
-      resolver.resolve('unknown.event');
-
-      expect(mockRecorder.logEvent).toHaveBeenCalledWith(
-        'UNKNOWN_EVENT_IN_RESOLVE',
-        expect.anything()
-      );
-    });
-
     it('handles rejected logEvent gracefully', async () => {
       const mockContext = createMockContext({});
       const resolver = new EventConfigResolverImpl(mockContext);
@@ -130,7 +91,6 @@ describe('EventConfigResolverImpl', () => {
         mockRecorder
       );
 
-      // Should not throw even though logEvent rejects
       resolver.resolve('unknown.event');
       expect(mockRecorder.logEvent).toHaveBeenCalled();
     });

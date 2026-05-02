@@ -52,42 +52,4 @@ describe('buildKeysMessage with allowedFields', () => {
     const message = buildKeysMessage(event);
     expect(message).toContain('output.result:');
   });
-
-  it.skip('should cover unprefixed field lookup (line 48)', () => {
-    const event = {
-      input: { status: 'active' },
-      output: { status: 'done' },
-      properties: { status: 'final' },
-    };
-    const message = buildKeysMessage(event, ['status']);
-    expect(message).toContain('status:');
-  });
-
-  it.skip('should cover unprefixed field lookup fallback chain (lines 48-54)', () => {
-    const event = {
-      input: {},
-      output: { status: 'done' },
-      properties: {},
-    };
-    const message = buildKeysMessage(event, ['status']);
-    expect(message).toContain('status:');
-    expect(message).toContain('done');
-  });
-
-  it.skip('should cover output branch without input (lines 31-36)', () => {
-    const event = { output: { result: 'success', data: 'test' } };
-    const message = buildKeysMessage(event);
-    expect(message).toContain('output.result:');
-    expect(message).toContain('output.data:');
-  });
-
-  it.skip('should cover field lookup value is undefined (lines 54-56)', () => {
-    const event = {
-      input: null as unknown as Record<string, unknown>,
-      output: {},
-      properties: {},
-    };
-    const message = buildKeysMessage(event, ['nonexistent']);
-    expect(message).toBeDefined();
-  });
 });

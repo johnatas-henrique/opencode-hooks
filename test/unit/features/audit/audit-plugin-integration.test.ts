@@ -1,5 +1,4 @@
 import {
-  initAuditLogging,
   resetAuditLogging,
   getEventRecorder,
   getScriptRecorder,
@@ -7,18 +6,6 @@ import {
   getAuditLogger,
 } from '.opencode/plugins/features/audit/plugin-integration';
 import type { AuditConfig } from '.opencode/plugins/types/audit';
-
-const defaultConfig: AuditConfig = {
-  enabled: true,
-  level: 'debug',
-  basePath: '/tmp/audit-test',
-  maxSizeMB: 1,
-  maxAgeDays: 30,
-  logTruncationKB: 0.5,
-  maxFieldSize: 1000,
-  maxArrayItems: 50,
-  largeFields: [],
-};
 
 const mockMkdir = vi.fn().mockResolvedValue(undefined);
 const mockRename = vi.fn().mockResolvedValue(undefined);
@@ -123,22 +110,6 @@ describe('archiveAuditSession', () => {
 });
 
 describe('setAuditSessionId', () => {
-  it.skip('should call setSessionId on auditLogger when initialized', async () => {
-    vi.resetModules();
-    const { initAuditLogging, setAuditSessionId } =
-      await import('.opencode/plugins/features/audit/plugin-integration');
-
-    await initAuditLogging(defaultConfig);
-
-    const { getAuditLogger } =
-      await import('.opencode/plugins/features/audit/plugin-integration');
-    const logger = getAuditLogger()!;
-    const setSessionIdMock = vi.spyOn(logger, 'setSessionId');
-
-    setAuditSessionId('new-session-id');
-    expect(setSessionIdMock).toHaveBeenCalledWith('new-session-id');
-  });
-
   it('should not throw when auditLogger is not initialized', async () => {
     vi.resetModules();
     resetAuditLogging();
@@ -153,12 +124,6 @@ describe('getAuditLogger', () => {
   it('should return undefined before initialization', () => {
     const recorder = getAuditLogger();
     expect(recorder).toBeUndefined();
-  });
-
-  it.skip('should return auditLogger after initialization', async () => {
-    await initAuditLogging(defaultConfig);
-    const logger = getAuditLogger();
-    expect(logger).toBeDefined();
   });
 });
 
@@ -183,41 +148,9 @@ describe('Audit Plugin Integration', () => {
   });
 
   describe('getErrorRecorder', () => {
-    it.skip('should return undefined before initialization', () => {
+    it('should return undefined before initialization', () => {
       const recorder = getErrorRecorder();
       expect(recorder).toBeUndefined();
-    });
-  });
-
-  describe('initAuditLogging', () => {
-    it.skip('should initialize and return recorders', async () => {
-      await initAuditLogging(defaultConfig);
-
-      expect(getEventRecorder()).toBeDefined();
-      expect(getScriptRecorder()).toBeDefined();
-      expect(getErrorRecorder()).toBeDefined();
-    });
-
-    it.skip('should be idempotent - calling twice should not reinitialize', async () => {
-      await initAuditLogging(defaultConfig);
-      const firstEventRecorder = getEventRecorder();
-
-      await initAuditLogging(defaultConfig);
-      const secondEventRecorder = getEventRecorder();
-
-      expect(firstEventRecorder).toBe(secondEventRecorder);
-    });
-
-    it.skip('should handle concurrent calls - return same promise', async () => {
-      const promise1 = initAuditLogging(defaultConfig);
-      const promise2 = initAuditLogging(defaultConfig);
-      const promise3 = initAuditLogging(defaultConfig);
-
-      expect(promise1).toBe(promise2);
-      expect(promise2).toBe(promise3);
-
-      await Promise.all([promise1, promise2, promise3]);
-      expect(getEventRecorder()).toBeDefined();
     });
   });
 });

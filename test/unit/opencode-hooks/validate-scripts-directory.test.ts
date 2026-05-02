@@ -1,41 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import type { PluginInput } from '@opencode-ai/plugin';
-import { DEFAULTS } from '.opencode/plugins/core/constants';
-
-// Unit test for validateScriptsDirectory logic (extracted from opencode-hooks.ts)
-function validateScriptsDirectory(): void {
-  const scriptsDir = path.join(process.cwd(), DEFAULTS.scripts.dir);
-  if (!fs.existsSync(scriptsDir) || !fs.statSync(scriptsDir).isDirectory()) {
-    throw new Error(`Scripts directory not found: ${scriptsDir}`);
-  }
-}
-
-describe('validateScriptsDirectory', () => {
-  const originalCwd = process.cwd();
-
-  beforeEach(() => {
-    // Reset to project root for tests
-    process.chdir(originalCwd);
-    vi.resetModules();
-  });
-
-  afterEach(() => {
-    // Cleanup temp directories
-    const tempDirs = ['test-temp', 'test-temp-file', 'test-temp-init'];
-    tempDirs.forEach((dir) => {
-      const fullPath = path.join(originalCwd, dir);
-      if (fs.existsSync(fullPath)) {
-        fs.rmSync(fullPath, { recursive: true, force: true });
-      }
-    });
-  });
-
-  it.skip('should pass when .opencode/scripts exists', () => {
-    // Assuming .opencode/scripts exists in project root (it does)
-    expect(() => validateScriptsDirectory()).not.toThrow();
-  });
-});
 
 describe('OpencodeHooks plugin startup validation', () => {
   const originalCwd = process.cwd();
@@ -58,17 +23,14 @@ describe('OpencodeHooks plugin startup validation', () => {
   });
 
   it('should throw during plugin initialization when scripts directory missing', async () => {
-    // Create temp dir without .opencode/scripts
     const tempDir = path.join(originalCwd, 'test-temp-init');
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir);
     }
     process.chdir(tempDir);
 
-    // Dynamically import the plugin after changing cwd
     const { OpencodeHooks } = await import('.opencode/plugins/opencode-hooks');
 
-    // Mock minimal PluginInput using Partial to avoid needing full structure
     const mockPluginInput = {
       client: {
         tui: {
@@ -78,30 +40,8 @@ describe('OpencodeHooks plugin startup validation', () => {
       },
     } as Partial<PluginInput> as PluginInput;
 
-    // Should reject because scripts directory missing
     await expect(OpencodeHooks(mockPluginInput)).rejects.toThrow(
       'Scripts directory not found'
     );
-  });
-
-  it.skip('should initialize successfully when scripts directory exists', async () => {
-    // Change to project root where .opencode/scripts exists
-    process.chdir(originalCwd);
-
-    const { OpencodeHooks } = await import('.opencode/plugins/opencode-hooks');
-
-    const mockPluginInput = {
-      client: {
-        tui: {
-          showToast: () => {},
-        },
-        config: {},
-      },
-    } as Partial<PluginInput> as PluginInput;
-
-    // Should not throw and return Hooks
-    const hooks = await OpencodeHooks(mockPluginInput);
-    expect(hooks).toBeDefined();
-    expect(typeof hooks).toBe('object');
   });
 });

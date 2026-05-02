@@ -44,23 +44,6 @@ describe('plugin-status', () => {
       expect(result).toEqual([]);
     });
 
-    it.skip('should override active status with failed when both exist', () => {
-      const logWithFailedAfterLoading = [
-        'INFO  2026-04-03T14:30:22 +50ms service=plugin name=opencode-hooks loading internal plugin',
-        'ERROR  2026-04-03T14:30:22 +200ms service=plugin name=opencode-hooks error=ModuleNotFound failed to load plugin',
-      ].join('\n');
-
-      mockExistsSync.mockReturnValue(true);
-      mockReaddirSync.mockReturnValue(['2026-04-03T143022.log'] as never);
-      mockReadFileSync.mockReturnValue(logWithFailedAfterLoading);
-
-      const result = getPluginStatus();
-
-      expect(result).toHaveLength(1);
-      expect(result[0].status).toBe('failed');
-      expect(result[0].error).toBe('ModuleNotFound');
-    });
-
     it('should skip non-plugin log entries', () => {
       const mixedLog = [
         'INFO  2026-04-03T14:30:22 +50ms service=server message=Server started',
@@ -337,27 +320,6 @@ describe('plugin-status', () => {
         const result = formatPluginStatus(statuses, 'all-labeled');
 
         expect(result).toContain('2 active');
-      });
-
-      it.skip('should show failed section with labels when failed plugins exist', () => {
-        const statuses = [
-          {
-            name: 'user-plugin',
-            status: 'active' as const,
-            source: 'user' as const,
-          },
-          {
-            name: 'broken-plugin',
-            status: 'failed' as const,
-            error: 'Error',
-            source: 'user' as const,
-          },
-        ];
-
-        const result = formatPluginStatus(statuses, 'all-labeled');
-
-        expect(result).toContain('Failed:');
-        expect(result).toContain('(user)');
       });
 
       it('should show incompatible section with labels when incompatible plugins exist', () => {
