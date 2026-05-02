@@ -4,30 +4,6 @@ import { createScriptRecorder } from '.opencode/plugins/features/audit/script-re
 import { createErrorRecorder } from '.opencode/plugins/features/audit/error-recorder';
 import type { AuditConfig } from '.opencode/plugins/types/audit';
 import type { ScriptRecorder } from '.opencode/plugins/types/audit';
-import fs from 'fs';
-import path from 'path';
-
-function getDebugLogPath(): string {
-  return path.join(
-    process.cwd(),
-    'production',
-    'session-logs',
-    'audit-debug.log'
-  );
-}
-
-function debugLog(...args: unknown[]): void {
-  try {
-    const logPath = getDebugLogPath();
-    const timestamp = new Date().toISOString();
-    const message = args
-      .map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a)))
-      .join(' ');
-    fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
-  } catch {
-    // Silently ignore if we can't write to debug log
-  }
-}
 
 let initPromise: Promise<void> | null = null;
 let auditLogger: ReturnType<typeof createAuditLogger>;
@@ -74,41 +50,6 @@ export function getErrorRecorder() {
 
 export function getAuditLogger() {
   return initPromise ? auditLogger : undefined;
-}
-
-export function getLastKnownSessionId(): string | undefined {
-  if (!auditLogger) return undefined;
-  return auditLogger.getLastKnownSessionId();
-}
-
-export function setAuditSessionId(sessionId: string): void {
-  if (auditLogger) {
-    auditLogger.setSessionId(sessionId);
-  }
-}
-
-export function archiveAuditSession(): Promise<void> {
-  if (!auditLogger) {
-    debugLog('archiveAuditSession: auditLogger is null');
-    return Promise.resolve();
-  }
-
-  const targetSessionId = auditLogger.getLastKnownSessionId();
-  debugLog(
-    'archiveAuditSession: getLastKnownSessionId() returned:',
-    targetSessionId
-  );
-
-  if (!targetSessionId) {
-    debugLog('archiveAuditSession: no targetSessionId, skipping archive');
-    return Promise.resolve();
-  }
-
-  debugLog(
-    'archiveAuditSession: calling archiveSession with:',
-    targetSessionId
-  );
-  return auditLogger.archiveSession(targetSessionId);
 }
 
 export function resetAuditLogging() {

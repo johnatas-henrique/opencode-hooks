@@ -187,7 +187,7 @@ export function buildOpencodeStdin(
   if (toolName) {
     base.tool_name = toolName;
     base.tool_input = input.args || {};
-    base.tool_use_id = input.callID;
+    base.call_id = input.callID;
   }
 
   if (output) {

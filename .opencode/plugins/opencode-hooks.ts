@@ -45,9 +45,6 @@ import type { ExecuteHookParams } from '.opencode/plugins/types/executor';
 import {
   initAuditLogging,
   getScriptRecorder,
-  setAuditSessionId,
-  getLastKnownSessionId,
-  archiveAuditSession,
 } from '.opencode/plugins/features/audit/plugin-integration';
 import fs from 'fs';
 import path from 'path';
@@ -87,17 +84,9 @@ function validateScriptsDirectory(): void {
   }
 }
 
-function getNormalizedSessionId(
-  sessionId: string,
-  getLastKnown: () => string | undefined
-): string {
+function getNormalizedSessionId(sessionId: string): string {
   if (sessionId && sessionId.startsWith('ses_')) {
     return sessionId;
-  }
-
-  const lastKnown = getLastKnown();
-  if (lastKnown) {
-    return lastKnown;
   }
   return DEFAULTS.core.defaultSessionId;
 }
@@ -112,7 +101,7 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     toolName,
     scriptRecorder,
   } = params;
-  const sessionId = getNormalizedSessionId(rawSessionId, getLastKnownSessionId);
+  const sessionId = getNormalizedSessionId(rawSessionId);
   const timestamp = new Date().toISOString();
   void params.eventRecorder;
   void params.ctx;
@@ -352,56 +341,6 @@ export const OpencodeHooks: Plugin = async (
 
       if (event.type === EventType.SESSION_CREATED && info?.parentID) {
         addSubagentSession(sessionId);
-      }
-
-      // Update audit session ID based on event type:
-      // - session.created WITHOUT parentID (main session) → update
-      // - session.created WITH parentID (subagent) → DON'T update
-      // - chat.message → ALWAYS update (user only on main session)
-      // - others → NEVER update
-      const eventTypeStr = String(event.type);
-      const isSubagentSession =
-        eventTypeStr === 'session.created' && info?.parentID;
-      const isValidSessionId = sessionId?.startsWith('ses_');
-
-      if (
-        eventTypeStr === 'session.created' &&
-        !isSubagentSession &&
-        isValidSessionId
-      ) {
-        debugLog(
-          eventTypeStr,
-          '- Setting sessionId (main session):',
-          sessionId
-        );
-        setAuditSessionId(sessionId);
-      } else if (eventTypeStr === 'chat.message' && isValidSessionId) {
-        debugLog(
-          eventTypeStr,
-          '- Setting sessionId (chat.message):',
-          sessionId
-        );
-        setAuditSessionId(sessionId);
-      } else {
-        debugLog(eventTypeStr, '- NOT updating sessionId, keeping last known');
-      }
-
-      // Debug: log current sessionId in audit logger
-      debugLog(
-        event.type,
-        '- After setAuditSessionId check, currentSessionId in audit-logger'
-      );
-
-      // Archive audit files when session is deleted
-      if (event.type === EventType.SESSION_DELETED) {
-        await archiveAuditSession();
-      }
-
-      if (event.type === EventType.SERVER_INSTANCE_DISPOSED) {
-        debugLog(
-          'server.instance.disposed detected, calling archiveAuditSession()'
-        );
-        await archiveAuditSession();
       }
 
       const eventInput = { ...event, ...event.properties } as Record<
