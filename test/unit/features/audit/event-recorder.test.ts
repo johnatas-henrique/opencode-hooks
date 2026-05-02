@@ -5,6 +5,7 @@ import type {
   ToolExecuteAfterOutput,
 } from '.opencode/plugins/types/core';
 import type { AuditConfig } from '.opencode/plugins/types/audit';
+import { createTestAuditConfig } from '../../../helpers/audit-test-config';
 import {
   createEventRecorder,
   createToolExecuteAfterRecord,
@@ -96,17 +97,7 @@ describe('createEventRecorder', () => {
   describe('logEvent', () => {
     it('should handle null record gracefully', async () => {
       const mockWriteLine = vi.fn();
-      const config = {
-        enabled: false,
-        level: 'debug',
-        maxSizeMB: 10,
-        maxAgeDays: 30,
-        logTruncationKB: 10,
-        maxFieldSize: 1000,
-        maxArrayItems: 50,
-        basePath: '/tmp/audit-test/test',
-        largeFields: [],
-      };
+      const config = createTestAuditConfig({ level: 'debug' });
 
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
@@ -124,15 +115,7 @@ describe('createEventRecorder', () => {
     it('should not log when level is audit', async () => {
       const { createEventRecorder } =
         await import('.opencode/plugins/features/audit/event-recorder');
-      const config = {
-        enabled: true,
-        level: 'audit',
-        maxSizeMB: 10,
-        maxAgeDays: 30,
-        logTruncationKB: 10,
-        maxFieldSize: 1000,
-        maxArrayItems: 50,
-      };
+      const config = createTestAuditConfig({ level: 'audit' });
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
       });
@@ -141,23 +124,12 @@ describe('createEventRecorder', () => {
         sessionID: 'session-123',
         callID: 'call-1',
       });
-
       expect(mockWriteLine).not.toHaveBeenCalled();
     });
 
     it('should log when record is not null', async () => {
       const mockWriteLine = vi.fn();
-      const config = {
-        enabled: true,
-        level: 'debug',
-        maxSizeMB: 10,
-        maxAgeDays: 30,
-        logTruncationKB: 10,
-        maxFieldSize: 1000,
-        maxArrayItems: 50,
-        basePath: '/tmp/audit-test/test',
-        largeFields: [],
-      };
+      const config = createTestAuditConfig({ level: 'debug' });
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
       });
@@ -175,18 +147,8 @@ describe('createEventRecorder', () => {
     it('should log tool.execute.after with correct fields', async () => {
       const { createEventRecorder } =
         await import('.opencode/plugins/features/audit/event-recorder');
-      const defaultConfig = {
-        enabled: true,
-        level: 'debug',
-        maxSizeMB: 10,
-        maxAgeDays: 30,
-        logTruncationKB: 10,
-        maxFieldSize: 1000,
-        maxArrayItems: 50,
-        basePath: '/tmp/audit-test/test',
-        largeFields: [],
-      };
-      const recorder = createEventRecorder(defaultConfig as AuditConfig, {
+      const config = createTestAuditConfig({ level: 'debug' });
+      const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
       });
       await recorder.logToolExecuteAfter(
@@ -208,17 +170,7 @@ describe('createEventRecorder', () => {
     it('should not log when level is audit', async () => {
       const { createEventRecorder } =
         await import('.opencode/plugins/features/audit/event-recorder');
-      const config = {
-        enabled: true,
-        level: 'audit',
-        maxSizeMB: 10,
-        maxAgeDays: 30,
-        logTruncationKB: 10,
-        maxFieldSize: 1000,
-        maxArrayItems: 50,
-        basePath: '/tmp/audit-test/test',
-        largeFields: [],
-      };
+      const config = createTestAuditConfig({ level: 'audit' });
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
       });
@@ -235,17 +187,7 @@ describe('createEventRecorder', () => {
     it('should not log when disabled', async () => {
       const { createEventRecorder } =
         await import('.opencode/plugins/features/audit/event-recorder');
-      const config = {
-        enabled: true,
-        level: 'audit',
-        maxSizeMB: 10,
-        maxAgeDays: 30,
-        logTruncationKB: 10,
-        maxFieldSize: 1000,
-        maxArrayItems: 50,
-        basePath: '/tmp/audit-test/test',
-        largeFields: [],
-      };
+      const config = createTestAuditConfig({ level: 'audit' });
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
       });
@@ -258,17 +200,7 @@ describe('createEventRecorder', () => {
 
     it('should log when record is not null', async () => {
       const mockWriteLine = vi.fn();
-      const config = {
-        enabled: true,
-        level: 'debug',
-        maxSizeMB: 10,
-        maxAgeDays: 30,
-        logTruncationKB: 10,
-        maxFieldSize: 1000,
-        maxArrayItems: 50,
-        basePath: '/tmp/audit-test/test',
-        largeFields: [],
-      };
+      const config = createTestAuditConfig({ level: 'debug' });
       const recorder = createEventRecorder(config as AuditConfig, {
         writeLine: mockWriteLine,
       });

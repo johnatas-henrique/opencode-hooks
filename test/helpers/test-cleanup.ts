@@ -28,35 +28,33 @@ export async function cleanupTestDirs(): Promise<void> {
   }
 }
 
-export async function cleanupProductionTestFiles(): Promise<void> {
-  try {
-    if (existsSync(PRODUCTION_TEST_DIR)) {
-      const files = [
-        'plugin-events_123.json',
-        'plugin-events_chat-session.json',
-        'plugin-events_cmd-session.json',
-        'plugin-events_exp-session.json',
-        'plugin-events_init.json',
-        'plugin-events_perm-session.json',
-        'plugin-events_plugin-init.json',
-        'plugin-events_unknown.json',
-        'plugin-scripts_init.json',
-      ];
+const PRODUCTION_FILES = [
+  'plugin-events_123.json',
+  'plugin-events_chat-session.json',
+  'plugin-events_cmd-session.json',
+  'plugin-events_exp-session.json',
+  'plugin-events_init.json',
+  'plugin-events_perm-session.json',
+  'plugin-events_plugin-init.json',
+  'plugin-events_unknown.json',
+  'plugin-scripts_init.json',
+];
 
-      for (const file of files) {
-        const filePath = path.join(PRODUCTION_TEST_DIR, file);
-        try {
-          if (existsSync(filePath)) {
-            await rm(filePath);
-          }
-        } catch {
-          // Ignore individual file errors
-        }
-      }
+async function deleteTestFile(fileName: string): Promise<void> {
+  const filePath = path.join(PRODUCTION_TEST_DIR, fileName);
+  try {
+    if (existsSync(filePath)) {
+      await rm(filePath);
     }
   } catch {
-    // Ignore cleanup errors
+    // Ignore individual file errors
   }
+}
+
+export async function cleanupProductionTestFiles(): Promise<void> {
+  if (!existsSync(PRODUCTION_TEST_DIR)) return;
+
+  await Promise.all(PRODUCTION_FILES.map(deleteTestFile));
 }
 
 export function createTempAuditDir(prefix = 'audit-test'): string {

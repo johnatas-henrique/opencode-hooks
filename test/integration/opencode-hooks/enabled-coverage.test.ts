@@ -1,27 +1,54 @@
 import type { PluginInput } from '@opencode-ai/plugin';
 import { OpencodeHooks } from '.opencode/plugins/opencode-hooks';
-import type { MockPluginInput } from 'test/__mocks__/@opencode-ai/plugin';
-import { createMockPluginInput } from 'test/__mocks__/@opencode-ai/plugin';
-import { vi, beforeEach, describe, it } from 'vitest';
+import {
+  mockClient,
+  mockDollar,
+  createMockCtx,
+} from '../../helpers/mock-plugin-input';
+import { createDefaultMockSetup } from '../../helpers/mock-test-helpers';
 
-const mockClient = {
-  tui: {
-    showToast: vi.fn().mockResolvedValue(undefined),
-  },
-  session: {
-    prompt: vi.fn().mockResolvedValue(undefined),
-  },
-};
+createDefaultMockSetup();
 
-function createMockCtx(overrides: Partial<MockPluginInput> = {}): PluginInput {
-  const mock = createMockPluginInput({
-    client: mockClient,
-    $: vi.fn<
-      () => Promise<{ exitCode: number; stdout: string; stderr: string }>
-    >(),
+function createEventConfigMock(
+  overrides: Partial<EventConfig> = {}
+): EventConfig {
+  return {
+    runOnlyOnce: true,
+    enabled: true,
+    debug: false,
+    toast: false,
+    toastTitle: 'Test',
+    toastMessage: '',
+    toastVariant: 'info' as const,
+    toastDuration: 0,
+    scripts: [],
+    runScripts: true,
+    logToAudit: false,
+    appendToSession: false,
+    block: [],
+    scriptToasts: { showOutput: false, showError: false },
     ...overrides,
-  });
-  return mock as unknown as PluginInput;
+  };
+}
+
+async function runEventHandler(
+  event: { type: string; properties: Record<string, unknown> },
+  configOverrides: Partial<EventConfig> = {}
+): Promise<Awaited<ReturnType<typeof OpencodeHooks>>> {
+  const { resolveEventConfig } =
+    await import('.opencode/plugins/features/events/events');
+  (resolveEventConfig as ReturnType<typeof vi.fn>).mockReturnValue(
+    createEventConfigMock(configOverrides)
+  );
+
+  const ctx = createMockCtx();
+  const plugin = await OpencodeHooks(ctx);
+  const eventHandler = plugin.event as (arg: {
+    event: { type: string; properties: Record<string, unknown> };
+  }) => Promise<void>;
+
+  await eventHandler({ event });
+  return plugin;
 }
 
 // Mock with enabled: true
@@ -33,6 +60,7 @@ vi.mock('.opencode/plugins/config/settings', () => ({
     appendToSession: false,
     runScripts: true,
     logDisabledEvents: false,
+    loadClaudeHookSettings: { enabled: false },
     default: {
       debug: false,
       toast: true,
@@ -63,101 +91,6 @@ vi.mock('.opencode/plugins/config/settings', () => ({
   },
 }));
 
-vi.mock('.opencode/plugins/features/handlers', () => ({
-  handlers: {},
-}));
-
-vi.mock('.opencode/plugins/features/messages/append-to-session', () => ({
-  appendToSession: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock('.opencode/plugins/features/scripts/run-script-handler', () => ({
-  isSubagent: vi.fn().mockReturnValue(false),
-  addSubagentSession: vi.fn(),
-  resetSubagentTracking: vi.fn(),
-  runScriptAndHandle: vi.fn(),
-}));
-
-vi.mock('.opencode/plugins/features/scripts/show-startup-toast', () => ({
-  showStartupToast: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock('.opencode/plugins/core/debug', () => ({
-  handleDebugLog: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock('.opencode/plugins/core/toast-queue', () => ({
-  initGlobalToastQueue: vi.fn(),
-  useGlobalToastQueue: vi.fn().mockReturnValue({
-    add: vi.fn(),
-  }),
-}));
-
-vi.mock('.opencode/plugins/features/scripts/executor', () => ({
-  executeScript: vi
-    .fn()
-    .mockResolvedValue({ script: '', exitCode: 0, output: '' }),
-}));
-
-vi.mock('.opencode/plugins/features/block-system/block-handler', () => ({
-  executeBlocking: vi.fn(),
-}));
-
-vi.mock('.opencode/plugins/features/audit/plugin-integration', () => ({
-  initAuditLogging: vi.fn().mockResolvedValue(undefined),
-  getEventRecorder: vi
-    .fn()
-    .mockReturnValue({ logEvent: vi.fn().mockResolvedValue(undefined) }),
-  getScriptRecorder: vi.fn().mockReturnValue(null),
-  getAuditLogger: vi.fn().mockReturnValue({
-    writeLine: vi.fn().mockResolvedValue(undefined),
-    cleanup: vi.fn().mockResolvedValue(undefined),
-  }),
-}));
-
-vi.mock('.opencode/plugins/features/events/events', () => ({
-  resolveEventConfig: vi.fn().mockReturnValue({
-    debug: true,
-    toast: true,
-    runScripts: true,
-    runOnlyOnce: false,
-    logToAudit: true,
-    appendToSession: false,
-    toastTitle: 'Test',
-    toastMessage: 'Test message',
-    toastVariant: 'info' as const,
-    toastDuration: 5000,
-    scripts: [],
-    scriptToasts: {
-      showOutput: false,
-      showError: false,
-      outputVariant: 'info',
-      errorVariant: 'error',
-      outputDuration: 0,
-      errorDuration: 0,
-      outputTitle: '',
-      errorTitle: '',
-    },
-    block: undefined,
-  }),
-  resolveToolConfig: vi.fn().mockReturnValue({
-    debug: false,
-    toast: true,
-    runScripts: true,
-    runOnlyOnce: false,
-    logToAudit: true,
-    appendToSession: false,
-    block: [{ check: vi.fn().mockReturnValue(true), message: 'Blocked' }],
-    scripts: [],
-  }),
-  EventType: {
-    SESSION_CREATED: 'session.created',
-    SHELL_ENV: 'shell.env',
-    CHAT_MESSAGE: 'chat.message',
-    CHAT_PARAMS: 'chat.params',
-  },
-}));
-
 describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -169,32 +102,7 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
         await import('.opencode/plugins/features/scripts/run-script-handler');
       (isSubagent as ReturnType<typeof vi.fn>).mockReturnValue(true);
 
-      const { resolveEventConfig } =
-        await import('.opencode/plugins/features/events/events');
-      (resolveEventConfig as ReturnType<typeof vi.fn>).mockReturnValue({
-        runOnlyOnce: true,
-        enabled: true,
-        debug: false,
-        toast: false,
-        toastTitle: 'Test',
-        toastMessage: '',
-        toastVariant: 'info' as const,
-        toastDuration: 0,
-        scripts: [],
-        runScripts: true,
-        logToAudit: false,
-        appendToSession: false,
-        block: [],
-        scriptToasts: { showOutput: false, showError: false },
-      });
-
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-      const eventHandler = plugin.event as (arg: {
-        event: { type: string; properties: Record<string, unknown> };
-      }) => Promise<void>;
-
-      await eventHandler({
+      const plugin = await runEventHandler({
         event: {
           type: 'session.created',
           properties: { sessionID: 'subagent-session' },
@@ -219,34 +127,6 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
         output: 'Script error occurred',
       });
 
-      const { resolveEventConfig } =
-        await import('.opencode/plugins/features/events/events');
-      (resolveEventConfig as ReturnType<typeof vi.fn>).mockReturnValue({
-        runOnlyOnce: false,
-        enabled: true,
-        debug: false,
-        toast: false,
-        toastTitle: 'Test Event',
-        toastMessage: '',
-        toastVariant: 'info' as const,
-        toastDuration: 0,
-        scripts: [{ script: 'failing-script.sh', type: 'native' }],
-        runScripts: true,
-        logToAudit: false,
-        appendToSession: false,
-        block: [],
-        scriptToasts: {
-          showOutput: false,
-          showError: true,
-          outputVariant: 'info',
-          errorVariant: 'error',
-          outputDuration: 0,
-          errorDuration: 5000,
-          outputTitle: 'Output',
-          errorTitle: 'Error',
-        },
-      });
-
       const { useGlobalToastQueue } =
         await import('.opencode/plugins/core/toast-queue');
       const mockQueue = {
@@ -256,18 +136,34 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
         mockQueue
       );
 
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-      const eventHandler = plugin.event as (arg: {
-        event: { type: string; properties: Record<string, unknown> };
-      }) => Promise<void>;
-
-      await eventHandler({
-        event: {
-          type: 'session.created',
-          properties: { sessionID: 'test-session' },
+      await runEventHandler(
+        {
+          event: {
+            type: 'session.created',
+            properties: { sessionID: 'test-session' },
+          },
         },
-      });
+        {
+          runOnlyOnce: false,
+          debug: false,
+          toast: false,
+          toastTitle: 'Test Event',
+          toastMessage: '',
+          toastVariant: 'info' as const,
+          toastDuration: 0,
+          scripts: [{ script: 'failing-script.sh', type: 'native' }],
+          scriptToasts: {
+            showOutput: false,
+            showError: true,
+            outputVariant: 'info',
+            errorVariant: 'error',
+            outputDuration: 0,
+            errorDuration: 5000,
+            outputTitle: 'Output',
+            errorTitle: 'Error',
+          },
+        }
+      );
 
       expect(mockQueue.add).toHaveBeenCalled();
     });
@@ -278,40 +174,18 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
       const { handleDebugLog } = await import('.opencode/plugins/core/debug');
       (handleDebugLog as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
-      const { resolveEventConfig } =
-        await import('.opencode/plugins/features/events/events');
-      (resolveEventConfig as ReturnType<typeof vi.fn>).mockReturnValue({
-        debug: true,
-        enabled: true,
-        toast: false,
-        toastTitle: 'Test',
-        toastMessage: '',
-        toastVariant: 'info' as const,
-        toastDuration: 0,
-        scripts: [],
-        runScripts: true,
-        runOnlyOnce: false,
-        logToAudit: false,
-        appendToSession: false,
-        block: [],
-        scriptToasts: { showOutput: false, showError: false },
-      });
-
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-      const eventHandler = plugin.event as (arg: {
-        event: { type: string; properties: Record<string, unknown> };
-      }) => Promise<void>;
-
-      await eventHandler({
-        event: {
-          type: 'session.created',
-          properties: {
-            sessionID: 'test-session',
-            info: { id: '123', title: 'Test' },
+      await runEventHandler(
+        {
+          event: {
+            type: 'session.created',
+            properties: {
+              sessionID: 'test-session',
+              info: { id: '123', title: 'Test' },
+            },
           },
         },
-      });
+        { debug: true }
+      );
 
       expect(handleDebugLog).toHaveBeenCalled();
     });
@@ -319,24 +193,15 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
 
   describe('line 238: session.created with parentID', () => {
     it('should handle session.created with parentID', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-      const eventHandler = plugin.event as (arg: {
-        event: { type: string; properties: Record<string, unknown> };
-      }) => Promise<void>;
-
-      await eventHandler({
-        event: {
-          type: 'session.created',
-          properties: {
-            sessionID: 'child-session',
-            info: { id: '123', title: 'Child', parentID: 'parent-session' },
-          },
+      await runEventHandler({
+        type: 'session.created',
+        properties: {
+          sessionID: 'child-session',
+          info: { id: '123', title: 'Child', parentID: 'parent-session' },
         },
       });
     });
   });
-
   describe('line 252: server.instance.disposed', () => {
     it('should handle server.instance.disposed event', async () => {
       const ctx = createMockCtx();
@@ -356,19 +221,11 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
 
   describe('line 295: setAuditSessionId on SESSION_CREATED', () => {
     it('should call setAuditSessionId when session.created with valid ses_ sessionId', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-      const eventHandler = plugin.event as (arg: {
-        event: { type: string; properties: Record<string, unknown> };
-      }) => Promise<void>;
-
-      await eventHandler({
-        event: {
-          type: 'session.created',
-          properties: {
-            sessionID: 'ses_abc123test',
-            info: { id: 'ses_abc123test', title: 'New Session' },
-          },
+      await runEventHandler({
+        type: 'session.created',
+        properties: {
+          sessionID: 'ses_abc123test',
+          info: { id: 'ses_abc123test', title: 'New Session' },
         },
       });
     });

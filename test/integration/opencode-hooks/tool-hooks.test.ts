@@ -1,21 +1,19 @@
 import { OpencodeHooks } from '.opencode/plugins/opencode-hooks';
 import type { PluginInput } from '@opencode-ai/plugin';
+import {
+  createMockClient,
+  createMockCtx,
+  createMockDollar,
+} from '../../helpers/mock-shared';
+import {
+  createDefaultMockSetup,
+  createGlobalMockQueue,
+} from '../../helpers/mock-test-helpers';
 
-let capturedShowFn: ((toast: unknown) => void) | null = null;
+createDefaultMockSetup();
 
-const { mockQueue: globalMockQueue } = vi.hoisted(() => ({
-  mockQueue: {
-    add: vi.fn((toast: unknown) => {
-      if (capturedShowFn) capturedShowFn(toast);
-    }),
-    addMultiple: vi.fn(),
-    clear: vi.fn(),
-    flush: vi.fn().mockResolvedValue(undefined),
-    get pending() {
-      return 0;
-    },
-  },
-}));
+const { mockQueue: globalMockQueue, setCapturedShowFn } =
+  createGlobalMockQueue();
 
 vi.mock('.opencode/plugins/config/settings', () => ({
   userConfig: {
@@ -75,7 +73,7 @@ vi.mock('.opencode/plugins/features/scripts/executor', () => ({
 
 vi.mock('.opencode/plugins/core/toast-queue', () => ({
   initGlobalToastQueue: (showFn: (toast: unknown) => void) => {
-    capturedShowFn = showFn;
+    setCapturedShowFn(showFn);
     return globalMockQueue;
   },
   useGlobalToastQueue: () => globalMockQueue,
@@ -89,19 +87,13 @@ vi.mock('.opencode/plugins/features/messages/show-startup-toast', () => ({
 
 vi.mock('.opencode/plugins/features/events/events', () => ({
   resolveEventConfig: vi.fn(),
-  resolveToolConfig: vi.fn().mockReturnValue({
-    enabled: true,
-    toast: true,
-    toastMessage: 'Running script',
-    toastTitle: 'Script',
-    toastVariant: 'info' as const,
-    toastDuration: 2000,
-    runScripts: true,
-    scripts: ['tool-execute-before-read.sh'],
-    logToAudit: true,
-    debug: false,
-    block: [],
-  }),
+  resolveToolConfig: vi.fn(),
+  EventType: {
+    SESSION_CREATED: 'session.created',
+    SHELL_ENV: 'shell.env',
+    CHAT_MESSAGE: 'chat.message',
+    CHAT_PARAMS: 'chat.params',
+  },
   handlers: {
     'session.created': {
       title: 'Test',
@@ -124,41 +116,10 @@ vi.mock('.opencode/plugins/features/audit/plugin-integration', () => ({
   }),
   getScriptRecorder: vi.fn(),
   getErrorRecorder: vi.fn(),
-  getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
+  getLastKnownSessionId: vi.fn().mockReturnValue('test-session'),
+  setAuditSessionId: vi.fn(),
+  archiveAuditSession: vi.fn().mockResolvedValue(undefined),
 }));
-
-const createMockCtx = (
-  client: MockClient,
-  dollar: () => Promise<{ exitCode: number; stdout: string; stderr: string }>
-): PluginInput => ({
-  client: client as unknown as PluginInput['client'],
-  $: dollar as unknown as PluginInput['$'],
-  project: 'test-project' as unknown as PluginInput['project'],
-  directory: '/test/dir' as unknown as PluginInput['directory'],
-  worktree: '/test/dir' as unknown as PluginInput['worktree'],
-  serverUrl: 'http://localhost:3000' as unknown as PluginInput['serverUrl'],
-  experimental_workspace: {
-    register: vi.fn(),
-  } as unknown as PluginInput['experimental_workspace'],
-});
-
-interface MockClient {
-  tui: {
-    showToast: ReturnType<typeof vi.fn>;
-  };
-  session: {
-    prompt: ReturnType<typeof vi.fn>;
-  };
-}
-
-const createMockClient = (): MockClient => ({
-  tui: {
-    showToast: vi.fn().mockResolvedValue(undefined),
-  },
-  session: {
-    prompt: vi.fn().mockResolvedValue(undefined),
-  },
-});
 
 describe('tool.execute.after hook', () => {
   let mockClient: MockClient;
@@ -170,13 +131,7 @@ describe('tool.execute.after hook', () => {
 
   beforeEach(() => {
     mockClient = createMockClient();
-    mockDollar = vi
-      .fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>()
-      .mockResolvedValue({
-        exitCode: 0,
-        stdout: '',
-        stderr: '',
-      });
+    mockDollar = createMockDollar();
     vi.clearAllMocks();
   });
 

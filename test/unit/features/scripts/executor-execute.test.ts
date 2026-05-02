@@ -29,6 +29,16 @@ vi.mock('fs', async (importOriginal) => {
 
 const mockSpawn = spawn as unknown as ReturnType<typeof vi.fn>;
 
+const createMockSpawnResult = () => ({
+  stdin: { write: vi.fn(), end: vi.fn() },
+  stdout: { on: vi.fn() },
+  stderr: { on: vi.fn() },
+  on: vi.fn((event, cb) => {
+    if (event === 'close') setTimeout(() => cb(0), 0);
+  }),
+  removeAllListeners: vi.fn(),
+});
+
 describe('executor - executeScript', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -50,15 +60,7 @@ describe('executor - executeScript', () => {
 
   it('calls spawn with resolved script path', async () => {
     const script: ScriptEntry = { path: 'test.sh', source: 'native' };
-    mockSpawn.mockImplementationOnce(() => ({
-      stdin: { write: vi.fn(), end: vi.fn() },
-      stdout: { on: vi.fn() },
-      stderr: { on: vi.fn() },
-      on: vi.fn((event, cb) => {
-        if (event === 'close') setTimeout(() => cb(0), 0);
-      }),
-      removeAllListeners: vi.fn(),
-    }));
+    mockSpawn.mockImplementationOnce(createMockSpawnResult);
 
     await executeScript(script, 'session.created', '', {});
 
@@ -69,15 +71,7 @@ describe('executor - executeScript', () => {
 
   it('passes toolName as arg for native source', async () => {
     const script: ScriptEntry = { path: 'test.sh', source: 'native' };
-    mockSpawn.mockImplementationOnce(() => ({
-      stdin: { write: vi.fn(), end: vi.fn() },
-      stdout: { on: vi.fn() },
-      stderr: { on: vi.fn() },
-      on: vi.fn((event, cb) => {
-        if (event === 'close') setTimeout(() => cb(0), 0);
-      }),
-      removeAllListeners: vi.fn(),
-    }));
+    mockSpawn.mockImplementationOnce(createMockSpawnResult);
 
     await executeScript(script, 'tool.execute.before', 'bash', {});
 

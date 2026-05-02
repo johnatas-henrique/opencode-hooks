@@ -1,6 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import type { PluginInput } from '@opencode-ai/plugin';
+import { createDefaultMockSetup } from '../../helpers/mock-test-helpers';
+
+createDefaultMockSetup();
 
 vi.mock('.opencode/plugins/config/settings', () => ({
   userConfig: {
@@ -61,19 +64,14 @@ vi.mock('.opencode/plugins/core/constants', () => ({
 }));
 
 vi.mock('.opencode/plugins/features/events/events', () => ({
-  resolveEventConfig: vi.fn().mockReturnValue({
-    enabled: true,
-    toast: true,
-    toastMessage: undefined,
-    toastTitle: undefined,
-    toastVariant: undefined,
-    toastDuration: 0,
-    runScripts: false,
-    scripts: [],
-    logToAudit: false,
-    debug: false,
-  }),
+  resolveEventConfig: vi.fn(),
   resolveToolConfig: vi.fn(),
+  EventType: {
+    SESSION_CREATED: 'session.created',
+    SHELL_ENV: 'shell.env',
+    CHAT_MESSAGE: 'chat.message',
+    CHAT_PARAMS: 'chat.params',
+  },
   handlers: {},
   getHandler: vi.fn(),
   getToolHandler: vi.fn(),
@@ -83,9 +81,9 @@ vi.mock('.opencode/plugins/features/audit/plugin-integration', () => ({
   initAuditLogging: vi.fn().mockResolvedValue(undefined),
   getEventRecorder: () => ({
     logEvent: vi.fn(),
-    logToolExecuteBefore: async () => {},
-    logToolExecuteAfter: async () => {},
-    logSessionEvent: async () => {},
+    logToolExecuteBefore: vi.fn(),
+    logToolExecuteAfter: vi.fn(),
+    logSessionEvent: vi.fn(),
   }),
   getScriptRecorder: vi.fn(),
   getErrorRecorder: vi.fn(),

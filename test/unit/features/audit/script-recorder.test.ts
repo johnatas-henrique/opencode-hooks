@@ -6,6 +6,23 @@ import {
 } from '.opencode/plugins/features/audit/script-recorder';
 import type { AuditConfig } from '.opencode/plugins/types/audit';
 
+function createTestAuditConfig(
+  overrides: Partial<AuditConfig> = {}
+): AuditConfig {
+  return {
+    enabled: true,
+    level: 'debug' as const,
+    basePath: '/tmp',
+    maxSizeMB: 10,
+    maxAgeDays: 30,
+    logTruncationKB: 10,
+    maxFieldSize: 1000,
+    maxArrayItems: 50,
+    largeFields: [],
+    ...overrides,
+  };
+}
+
 describe('script-recorder', () => {
   describe('shouldLogScripts', () => {
     it('returns true when enabled', () => {
@@ -126,17 +143,7 @@ describe('script-recorder', () => {
     it('should not call writeLine when disabled', async () => {
       const mockWriteLine = vi.fn().mockResolvedValue(undefined);
       const deps = { writeLine: mockWriteLine };
-      const config: AuditConfig = {
-        enabled: false,
-        level: 'debug' as const,
-        basePath: '/tmp',
-        maxSizeMB: 10,
-        maxAgeDays: 30,
-        logTruncationKB: 10,
-        maxFieldSize: 1000,
-        maxArrayItems: 50,
-        largeFields: [],
-      };
+      const config = createTestAuditConfig({ enabled: false });
       const recorder = createScriptRecorder(config, deps);
 
       await recorder.logScript(
@@ -150,17 +157,7 @@ describe('script-recorder', () => {
     it('should call writeLine when enabled', async () => {
       const mockWriteLine = vi.fn().mockResolvedValue(undefined);
       const deps = { writeLine: mockWriteLine };
-      const config: AuditConfig = {
-        enabled: true,
-        level: 'debug' as const,
-        basePath: '/tmp',
-        maxSizeMB: 10,
-        maxAgeDays: 30,
-        logTruncationKB: 10,
-        maxFieldSize: 1000,
-        maxArrayItems: 50,
-        largeFields: [],
-      };
+      const config = createTestAuditConfig(); // enabled: true por padrão
       const recorder = createScriptRecorder(config, deps);
 
       await recorder.logScript(

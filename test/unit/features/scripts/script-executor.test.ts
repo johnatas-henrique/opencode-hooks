@@ -34,6 +34,47 @@ function makeDeps(
   };
 }
 
+function createScriptExecutorAuditTest(skipAudit: boolean = false) {
+  const executeScript = vi.fn().mockResolvedValue({
+    output: 'success',
+    error: null,
+    exitCode: 0,
+  });
+  const logScript = vi.fn().mockResolvedValue(undefined);
+  const audit = { logScript };
+  const executor = new ScriptExecutor(makeDeps({ executeScript, audit }));
+  return { executor, logScript, options: { skipAudit } };
+}
+
+function createToastErrorTest(suppressToast: boolean): {
+  executor: ScriptExecutor;
+  options: { suppressToast: boolean };
+  eventContext: typeof fakeEventContext;
+  showToast: ReturnType<typeof vi.fn>;
+} {
+  const executeScript = vi.fn().mockResolvedValue({
+    output: '',
+    error: 'fail',
+    exitCode: 1,
+  });
+  const showToast = vi.fn();
+  const toast = { showToast };
+  const executor = new ScriptExecutor(makeDeps({ executeScript, toast }));
+  return {
+    executor,
+    options: { suppressToast },
+    eventContext: {
+      ...fakeEventContext,
+      toast,
+      scriptToasts: {
+        ...fakeEventContext.scriptToasts,
+        showError: true,
+      },
+    },
+    showToast,
+  };
+}
+
 describe('script-executor', () => {
   describe('validateScriptPath', () => {
     it('rejects empty string', () => {
@@ -153,55 +194,16 @@ describe('script-executor', () => {
     });
 
     it('shows toast on error when showError=true and toast available', async () => {
-      const executeScript = vi.fn().mockResolvedValue({
-        output: '',
-        error: 'fail',
-        exitCode: 1,
-      });
-      const showToast = vi.fn();
-      const toast = { showToast };
-      const executor = new ScriptExecutor(
-        makeDeps({
-          executeScript,
-          toast,
-        })
-      );
-      await executor.execute(
-        'fail.sh',
-        undefined,
-        { suppressToast: false },
-        {
-          ...fakeEventContext,
-          scriptToasts: {
-            ...fakeEventContext.scriptToasts,
-            showError: true,
-          },
-        }
-      );
+      const { executor, options, eventContext, showToast } =
+        createToastErrorTest(false);
+      await executor.execute('fail.sh', undefined, options, eventContext);
       expect(showToast).toHaveBeenCalled();
     });
 
     it('does not toast when suppressToast=true', async () => {
-      const executeScript = vi.fn().mockResolvedValue({
-        output: '',
-        error: 'fail',
-        exitCode: 1,
-      });
-      const showToast = vi.fn();
-      const toast = { showToast };
-      const executor = new ScriptExecutor(makeDeps({ executeScript, toast }));
-      await executor.execute(
-        'fail.sh',
-        undefined,
-        { suppressToast: true },
-        {
-          ...fakeEventContext,
-          scriptToasts: {
-            ...fakeEventContext.scriptToasts,
-            showError: true,
-          },
-        }
-      );
+      const { executor, options, eventContext, showToast } =
+        createToastErrorTest(true);
+      await executor.execute('fail.sh', undefined, options, eventContext);
       expect(showToast).not.toHaveBeenCalled();
     });
 
@@ -219,27 +221,13 @@ describe('script-executor', () => {
     });
 
     it('audits on success when not skipped', async () => {
-      const executeScript = vi.fn().mockResolvedValue({
-        output: 'success',
-        error: null,
-        exitCode: 0,
-      });
-      const logScript = vi.fn().mockResolvedValue(undefined);
-      const audit = { logScript };
-      const executor = new ScriptExecutor(makeDeps({ executeScript, audit }));
+      const { executor, logScript } = createScriptExecutorAuditTest(false);
       await executor.execute('ok.sh', undefined, {}, fakeEventContext);
       expect(logScript).toHaveBeenCalled();
     });
 
     it('skips audit when skipAudit=true', async () => {
-      const executeScript = vi.fn().mockResolvedValue({
-        output: 'success',
-        error: null,
-        exitCode: 0,
-      });
-      const logScript = vi.fn().mockResolvedValue(undefined);
-      const audit = { logScript };
-      const executor = new ScriptExecutor(makeDeps({ executeScript, audit }));
+      const { executor, logScript } = createScriptExecutorAuditTest(true);
       await executor.execute(
         'ok.sh',
         undefined,

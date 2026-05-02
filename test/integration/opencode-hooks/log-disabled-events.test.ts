@@ -1,5 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { PluginInput } from '@opencode-ai/plugin';
+import {
+  createMockCtx,
+  createMockClient,
+  createMockDollar,
+} from '../../helpers/mock-shared';
+import {
+  createDefaultMockSetup,
+  createMockEvents,
+} from '../../helpers/mock-test-helpers';
+
+createDefaultMockSetup();
 
 const { mockLogEvent } = vi.hoisted(() => {
   const mockLogEvent = vi.fn().mockResolvedValue(undefined);
@@ -15,29 +26,6 @@ const { mockEventRecorder } = vi.hoisted(() => ({
   },
 }));
 
-const createMockCtx = (
-  client: MockClient,
-  dollar: ReturnType<typeof vi.fn>
-): PluginInput => ({
-  client: client as unknown as PluginInput['client'],
-  $: dollar as unknown as PluginInput['$'],
-  project: 'test-project' as unknown as PluginInput['project'],
-  directory: '/test/dir' as unknown as PluginInput['directory'],
-  worktree: '/test/dir' as unknown as PluginInput['worktree'],
-  serverUrl: 'http://localhost:3000' as unknown as PluginInput['serverUrl'],
-  experimental_workspace: {
-    register: vi.fn(),
-  } as unknown as PluginInput['experimental_workspace'],
-});
-
-interface MockClient {
-  tui: { showToast: ReturnType<typeof vi.fn> };
-}
-
-const createMockClient = (): MockClient => ({
-  tui: { showToast: vi.fn().mockResolvedValue(undefined) },
-});
-
 const { mockQueue: globalMockQueue } = vi.hoisted(() => ({
   mockQueue: {
     add: vi.fn(),
@@ -51,15 +39,13 @@ const { mockQueue: globalMockQueue } = vi.hoisted(() => ({
 }));
 
 describe('OpencodeHooks - logDisabledEvents', () => {
-  let mockClient: MockClient;
-  let mockDollar: ReturnType<typeof vi.fn>;
+  let mockClient: ReturnType<typeof createMockClient>;
+  let mockDollar: ReturnType<typeof createMockDollar>;
 
   beforeEach(async () => {
     vi.resetModules();
     mockClient = createMockClient();
-    mockDollar = vi
-      .fn()
-      .mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' });
+    mockDollar = createMockDollar();
     vi.clearAllMocks();
     mockLogEvent.mockClear();
   });

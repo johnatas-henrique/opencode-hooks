@@ -1,20 +1,16 @@
 import { OpencodeHooks } from '.opencode/plugins/opencode-hooks';
 import type { PluginInput } from '@opencode-ai/plugin';
-
-const createMockCtx = (
-  client: MockClient,
-  dollar: () => Promise<{ exitCode: number; stdout: string; stderr: string }>
-): PluginInput => ({
-  client: client as unknown as PluginInput['client'],
-  $: dollar as unknown as PluginInput['$'],
-  project: 'test-project' as unknown as PluginInput['project'],
-  directory: '/test/dir' as unknown as PluginInput['directory'],
-  worktree: '/test/dir' as unknown as PluginInput['worktree'],
-  serverUrl: 'http://localhost:3000' as unknown as PluginInput['serverUrl'],
-  experimental_workspace: {
-    register: vi.fn(),
-  } as unknown as PluginInput['experimental_workspace'],
-});
+import {
+  createMockClient,
+  createMockCtx,
+  createMockDollar,
+} from '../../helpers/mock-shared';
+import {
+  createDefaultMockSetup,
+  createMockEvents,
+  createMockAuditPluginIntegration,
+  createGlobalMockQueue,
+} from '../../helpers/mock-test-helpers';
 
 const { mockRunScript, mockHandleDebugLog, mockAppendToSession } = vi.hoisted(
   () => ({
@@ -137,25 +133,11 @@ vi.mock('.opencode/plugins/config', () => ({
   },
 }));
 
-const { mockQueue: globalMockQueue, setCapturedShowFn } = vi.hoisted(() => {
-  let capturedShowFn: ((toast: unknown) => void) | null = null;
-  const mockQueue = {
-    add: vi.fn((toast: unknown) => {
-      if (capturedShowFn) capturedShowFn(toast);
-    }),
-    addMultiple: vi.fn(),
-    clear: vi.fn(),
-    flush: vi.fn().mockResolvedValue(undefined),
-    get pending() {
-      return 0;
-    },
-  };
-  const setCapturedShowFn = (fn: (toast: unknown) => void) => {
-    capturedShowFn = fn;
-  };
-  const getQueue = () => mockQueue;
-  return { mockQueue, setCapturedShowFn, getQueue };
-});
+const {
+  mockQueue: globalMockQueue,
+  setCapturedShowFn,
+  getQueue,
+} = createGlobalMockQueue();
 
 vi.mock('.opencode/plugins/core/toast-queue', () => ({
   ...vi.importActual('.opencode/plugins/core/toast-queue'),
@@ -168,27 +150,7 @@ vi.mock('.opencode/plugins/core/toast-queue', () => ({
   resetGlobalToastQueue: vi.fn(),
 }));
 
-vi.mock('.opencode/plugins/features/messages/show-startup-toast', () => ({
-  showStartupToast: vi.fn().mockResolvedValue(undefined),
-}));
-
-interface MockClient {
-  tui: {
-    showToast: ReturnType<typeof vi.fn>;
-  };
-  session: {
-    prompt: ReturnType<typeof vi.fn>;
-  };
-}
-
-const createMockClient = (): MockClient => ({
-  tui: {
-    showToast: vi.fn().mockResolvedValue(undefined),
-  },
-  session: {
-    prompt: vi.fn().mockResolvedValue(undefined),
-  },
-});
+// ... mock imports ...
 
 describe('event handler', () => {
   let mockClient: MockClient;
@@ -200,13 +162,7 @@ describe('event handler', () => {
 
   beforeEach(() => {
     mockClient = createMockClient();
-    mockDollar = vi
-      .fn<() => Promise<{ exitCode: number; stdout: string; stderr: string }>>()
-      .mockResolvedValue({
-        exitCode: 0,
-        stdout: '',
-        stderr: '',
-      });
+    mockDollar = createMockDollar();
     vi.clearAllMocks();
   });
 

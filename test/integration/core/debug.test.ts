@@ -1,5 +1,12 @@
 import { handleDebugLog, sanitizeData } from '.opencode/plugins/core/debug';
 import type { DebugRecorder } from '.opencode/plugins/types/audit';
+import {
+  TOAST_DEFAULTS,
+  SCRIPTS_DEFAULTS,
+  CORE_DEFAULTS,
+  AUDIT_DEFAULTS,
+  DISABLED_CONFIG_DEFAULTS,
+} from '../../helpers/mock-defaults';
 
 // Use vi.hoisted to isolate mocks properly - factory functions create fresh mocks per test run
 const {
@@ -23,54 +30,12 @@ vi.mock('.opencode/plugins/core/toast-queue', () => ({
 
 vi.mock('.opencode/plugins/core/constants', () => ({
   DEFAULTS: {
-    toast: {
-      durations: { TEN_SECONDS: 10000 },
-      timeouts: { ONE_SECOND_AND_HALF: 1500 },
-      stagger: { DEFAULT: 300, QUEUE: 500 },
-      timer: { OVERWRITE_CHECK_DELAY: 2500, OVERWRITE_CHECK_INTERVAL: 3000 },
-    },
-    scripts: { dir: '.opencode/scripts' },
-    core: {
-      defaultSessionId: 'unknown',
-      maxPromptLength: 10000,
-      maxToastLength: 1000,
-      tool: { TASK: 'task', SUBAGENT_TYPE_ARG: 'subagent_type' },
-    },
-    audit: {
-      files: {
-        events: 'plugin-events.json',
-        scripts: 'plugin-scripts.json',
-        errors: 'plugin-errors.json',
-        security: 'plugin-security.json',
-        debug: 'plugin-debug.json',
-      },
-      archiveDir: 'audit-archive',
-    },
+    toast: TOAST_DEFAULTS,
+    scripts: SCRIPTS_DEFAULTS,
+    core: CORE_DEFAULTS,
+    audit: AUDIT_DEFAULTS,
     config: {
-      disabled: {
-        enabled: false,
-        debug: false,
-        toast: false,
-        toastTitle: '',
-        toastMessage: '',
-        toastVariant: 'info',
-        toastDuration: 0,
-        scripts: [],
-        runScripts: false,
-        logToAudit: false,
-        appendToSession: false,
-        runOnlyOnce: false,
-        scriptToasts: {
-          showOutput: true,
-          showError: true,
-          outputVariant: 'info',
-          errorVariant: 'error',
-          outputDuration: 5000,
-          errorDuration: 15000,
-          outputTitle: 'Script Output',
-          errorTitle: 'Script Error',
-        },
-      },
+      disabled: DISABLED_CONFIG_DEFAULTS,
     },
   },
 }));

@@ -1,5 +1,13 @@
 import type { PluginInput } from '@opencode-ai/plugin';
 import { OpencodeHooks } from '.opencode/plugins/opencode-hooks';
+import {
+  mockClient,
+  mockDollar,
+  createMockCtx,
+} from '../../helpers/mock-plugin-input';
+import { createDefaultMockSetup } from '../../helpers/mock-test-helpers';
+
+createDefaultMockSetup();
 
 vi.mock('.opencode/plugins/config', () => ({
   userConfig: {
@@ -32,40 +40,6 @@ vi.mock('.opencode/plugins/config', () => ({
       },
     },
   },
-}));
-
-vi.mock('.opencode/plugins/features/handlers', () => ({
-  handlers: {},
-}));
-
-vi.mock('.opencode/plugins/features/messages/append-to-session', () => ({
-  appendToSession: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock('.opencode/plugins/features/scripts/run-script', () => ({
-  runScript: vi
-    .fn()
-    .mockResolvedValue({ output: 'Script output', error: null, exitCode: 0 }),
-}));
-
-vi.mock('.opencode/plugins/features/messages/show-startup-toast', () => ({
-  showStartupToast: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock('.opencode/plugins/features/scripts/executor', () => ({
-  executeScript: vi.fn().mockResolvedValue({
-    script: 'mock-script.sh',
-    output: '',
-    exitCode: 0,
-  }),
-  resolveScriptPath: vi.fn().mockReturnValue('/mock/path'),
-  validateScriptPath: vi.fn().mockReturnValue(true),
-  parseHookOutput: vi.fn().mockReturnValue({ action: 'continue' }),
-}));
-
-vi.mock('.opencode/plugins/features/audit/script-recorder', () => ({
-  getScriptRecorder: vi.fn().mockReturnValue(null),
-  createScriptRecorder: vi.fn().mockReturnValue(null),
 }));
 
 import type { MockPluginInput } from 'test/__mocks__/@opencode-ai/plugin';

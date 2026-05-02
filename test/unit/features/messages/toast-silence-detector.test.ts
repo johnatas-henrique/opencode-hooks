@@ -10,13 +10,19 @@ const createMockReadFile = (content: string | Error) =>
     return content;
   });
 
-const createSequenceReadFile = (contents: string[]) => {
-  let index = 0;
-  return vi.fn().mockImplementation(async () => {
-    const result = contents[index] ?? contents[contents.length - 1];
-    index++;
-    return result;
-  });
+const runSilenceTest = async (errorContent: Error) => {
+  const mockReadFile = createMockReadFile(errorContent);
+  const { promise, cleanup } = waitForToastSilence(
+    '/fake/log.log',
+    { pollMs: 100 },
+    mockReadFile
+  );
+  await Promise.resolve();
+  vi.advanceTimersByTime(100);
+  await Promise.resolve();
+  await Promise.resolve();
+  await promise;
+  cleanup();
 };
 
 describe('toast-silence-detector', () => {
@@ -71,41 +77,11 @@ describe('toast-silence-detector', () => {
     });
 
     it('should handle readFile error in catch block', async () => {
-      const mockReadFile = vi
-        .fn()
-        .mockRejectedValue(new Error('File read error'));
-
-      const { promise, cleanup } = waitForToastSilence(
-        '/fake/log.log',
-        { pollMs: 100 },
-        mockReadFile
-      );
-
-      await Promise.resolve();
-      vi.advanceTimersByTime(100);
-      await Promise.resolve();
-      await Promise.resolve();
-      await promise;
-
-      cleanup();
+      await runSilenceTest(new Error('File read error'));
     });
 
     it('should clear timers in catch block', async () => {
-      const mockReadFile = createMockReadFile(new Error('Read error'));
-
-      const { promise, cleanup } = waitForToastSilence(
-        '/fake/log.log',
-        { pollMs: 100 },
-        mockReadFile
-      );
-
-      await Promise.resolve();
-      vi.advanceTimersByTime(100);
-      await Promise.resolve();
-      await Promise.resolve();
-      await promise;
-
-      cleanup();
+      await runSilenceTest(new Error('Read error'));
     });
   });
 
