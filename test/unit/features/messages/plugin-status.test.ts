@@ -1,6 +1,7 @@
 import {
   getPluginStatus,
   formatPluginStatus,
+  getLatestLogFile,
 } from '.opencode/plugins/features/messages/plugin-status';
 
 vi.mock('fs', () => ({
@@ -410,6 +411,18 @@ describe('plugin-status', () => {
         expect(result).toContain('user-plugin');
         expect(result).not.toContain('CodexAuthPlugin');
       });
+    });
+  });
+
+  describe('getLatestLogFile', () => {
+    it('should sort dev.log to the end', () => {
+      mockExistsSync.mockReturnValue(true);
+      mockReaddirSync.mockReturnValue(['other.log', 'dev.log', 'another.log']);
+      mockReadFileSync.mockReturnValue(JSON.stringify({ logs: [] }));
+
+      const result = getLatestLogFile();
+
+      expect(result).toMatch(/other\.log$/);
     });
   });
 });
