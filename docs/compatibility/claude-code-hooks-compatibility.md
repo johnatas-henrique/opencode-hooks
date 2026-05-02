@@ -50,35 +50,35 @@ retornado), mas a mineração automática do transcript não acontece.
 
 ### `PreToolUse` (mapeado de `tool.execute.before`)
 
-| Campo             | CC  | Plugin | Como preenchemos  |
-| ----------------- | --- | ------ | ----------------- |
-| `session_id`      | ✅  | ✅     | `input.sessionID` |
-| `cwd`             | ✅  | ✅     | `process.cwd()`   |
-| `hook_event_name` | ✅  | ✅     | `"PreToolUse"`    |
-| `permission_mode` | ✅  | ✅     | `"default"`       |
-| `transcript_path` | ✅  | ❌     | Não disponível    |
-| `tool_name`       | ✅  | ✅     | `input.tool`      |
-| `tool_input`      | ✅  | ✅     | `input.args`      |
-| `tool_use_id`     | ✅  | ✅     | `input.callID`    |
+| Campo             | CC  | Plugin | Como preenchemos          |
+| ----------------- | --- | ------ | ------------------------- |
+| `session_id`      | ✅  | ✅     | `input.sessionID`         |
+| `cwd`             | ✅  | ✅     | `process.cwd()`           |
+| `hook_event_name` | ✅  | ✅     | `"PreToolUse"`            |
+| `permission_mode` | ✅  | ✅     | `"default"`               |
+| `transcript_path` | ✅  | ❌     | Não disponível            |
+| `tool_name`       | ✅  | ✅     | `input.tool`              |
+| `tool_input`      | ✅  | ✅     | `input.args`              |
+| `tool_use_id`     | ✅  | ✅     | `input.callID` — **novo** |
 
 ### `PostToolUse` (mapeado de `tool.execute.after`)
 
-| Campo           | CC  | Plugin | Como preenchemos         |
-| --------------- | --- | ------ | ------------------------ |
-| (campos comuns) | ✅  | ✅     | mesmos que PreToolUse    |
-| `tool_name`     | ✅  | ✅     | `input.tool`             |
-| `tool_input`    | ✅  | ✅     | `input.args`             |
-| `tool_use_id`   | ✅  | ✅     | `input.callID`           |
-| `tool_response` | ✅  | ⚠️     | `output.output` (string) |
-| `duration_ms`   | ✅  | ❌     | Não existe               |
+| Campo           | CC  | Plugin | Como preenchemos          |
+| --------------- | --- | ------ | ------------------------- |
+| (campos comuns) | ✅  | ✅     | mesmos que PreToolUse     |
+| `tool_name`     | ✅  | ✅     | `input.tool`              |
+| `tool_input`    | ✅  | ✅     | `input.args`              |
+| `tool_use_id`   | ✅  | ✅     | `input.callID` — **novo** |
+| `tool_response` | ✅  | ⚠️     | `output.output` (string)  |
+| `duration_ms`   | ✅  | ❌     | Não existe                |
 
 ### `SubagentStop` (mapeado de `tool.execute.after.subagent`)
 
 | Campo                    | CC  | Plugin | Como preenchemos                          |
 | ------------------------ | --- | ------ | ----------------------------------------- |
 | (campos comuns)          | ✅  | ✅     |                                           |
-| `stop_hook_active`       | ✅  | ✅     | Estado local                              |
-| `agent_type`             | ✅  | ✅     | `input.subagentType`                      |
+| `stop_hook_active`       | ✅  | ✅     | Estado local — **novo**                   |
+| `agent_type`             | ✅  | ✅     | `input.subagentType` — **novo**           |
 | `agent_id`               | ✅  | ⚠️     | `input.sessionID` (usamos o ID da sessão) |
 | `last_assistant_message` | ✅  | ❌     | Não existe                                |
 
@@ -101,7 +101,7 @@ retornado), mas a mineração automática do transcript não acontece.
 
 ## 3. Stdin OpenCode (Scripts Nativos)
 
-Os mesmos campos também são enviados no formato OpenCode via
+Os mesmos campos acima também são enviados no formato OpenCode via
 `buildOpencodeStdin()` para scripts com `source: 'native'`:
 
 | Campo no Claude Stdin | Campo no OpenCode Stdin |
