@@ -15,9 +15,6 @@ describe('debug-recorder', () => {
     debugRecorder = createDebugRecorder({
       writeLine: mockWriteLine,
       cleanup: vi.fn().mockResolvedValue(undefined),
-      archiveSession: vi.fn().mockResolvedValue(undefined),
-      setSessionId: vi.fn(),
-      getLastKnownSessionId: vi.fn().mockReturnValue(undefined),
     });
   });
 

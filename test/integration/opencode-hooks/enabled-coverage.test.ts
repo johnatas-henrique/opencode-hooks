@@ -104,21 +104,14 @@ vi.mock('.opencode/plugins/features/block-system/block-handler', () => ({
 }));
 
 vi.mock('.opencode/plugins/features/audit/plugin-integration', () => ({
-  archiveAllJsonFiles: vi.fn().mockResolvedValue(undefined),
   initAuditLogging: vi.fn().mockResolvedValue(undefined),
   getEventRecorder: vi
     .fn()
     .mockReturnValue({ logEvent: vi.fn().mockResolvedValue(undefined) }),
   getScriptRecorder: vi.fn().mockReturnValue(null),
-  setAuditSessionId: vi.fn(),
-  getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
-  archiveAuditSession: vi.fn().mockResolvedValue(undefined),
-  createAuditLogger: vi.fn().mockReturnValue({
+  getAuditLogger: vi.fn().mockReturnValue({
     writeLine: vi.fn().mockResolvedValue(undefined),
     cleanup: vi.fn().mockResolvedValue(undefined),
-    archiveSession: vi.fn().mockResolvedValue(undefined),
-    setSessionId: vi.fn(),
-    getLastKnownSessionId: vi.fn().mockReturnValue('ses_test123'),
   }),
 }));
 
@@ -375,52 +368,6 @@ describe('opencode-hooks-enabled-coverage - enabled: true branch coverage', () =
           properties: {
             sessionID: 'ses_abc123test',
             info: { id: 'ses_abc123test', title: 'New Session' },
-          },
-        },
-      });
-    });
-  });
-
-  describe('line 94: getNormalizedSessionId fallback to defaultSessionId', () => {
-    it('should return defaultSessionId when getLastKnown returns undefined', async () => {
-      const { getLastKnownSessionId } =
-        await import('.opencode/plugins/features/audit/plugin-integration');
-      (getLastKnownSessionId as ReturnType<typeof vi.fn>).mockReturnValue(
-        undefined
-      );
-
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-      const eventHandler = plugin.event as (arg: {
-        event: { type: string; properties: Record<string, unknown> };
-      }) => Promise<void>;
-
-      await eventHandler({
-        event: {
-          type: 'chat.message',
-          properties: {
-            sessionID: 'ses_xyz789',
-            info: { id: 'ses_xyz789' },
-          },
-        },
-      });
-    });
-  });
-
-  describe('line 299: archiveAuditSession on SESSION_DELETED', () => {
-    it('should call archiveAuditSession when session.deleted', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-      const eventHandler = plugin.event as (arg: {
-        event: { type: string; properties: Record<string, unknown> };
-      }) => Promise<void>;
-
-      await eventHandler({
-        event: {
-          type: 'session.deleted',
-          properties: {
-            sessionID: 'deleted-session-id',
-            info: { id: 'deleted-session-id', title: 'Deleted Session' },
           },
         },
       });

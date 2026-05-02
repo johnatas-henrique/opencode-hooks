@@ -48,7 +48,7 @@ export const userConfig: UserEventsConfig = {
     enabled: true,
     level: 'debug',
     basePath: './production/session-logs',
-    maxSizeMB: 3,
+    maxSizeMB: 1,
     maxAgeDays: 30,
     logTruncationKB: 2,
     maxFieldSize: 1000,
@@ -62,9 +62,7 @@ export const userConfig: UserEventsConfig = {
       'result',
       'text',
     ],
-    sessionId: 'init',
     files: DEFAULTS.audit.files,
-    archiveDir: DEFAULTS.audit.archiveDir,
   },
 
   events: {

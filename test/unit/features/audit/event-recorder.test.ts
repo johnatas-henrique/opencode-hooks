@@ -201,8 +201,7 @@ describe('createEventRecorder', () => {
           tool: 'bash',
           session: 'session-123',
           status: 'success',
-        }),
-        'session-123'
+        })
       );
     });
 
