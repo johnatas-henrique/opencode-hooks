@@ -275,6 +275,34 @@ describe('executeScript', () => {
     expect(result.output).toContain('Invalid script path');
   });
 
+  it('returns invalid path error for backslash', async () => {
+    const { executeScript } =
+      await import('.opencode/plugins/features/scripts/executor');
+
+    const result = await executeScript(
+      { source: 'native', path: 'script\\test.sh' },
+      'session.created',
+      '',
+      { sessionID: 'sess-1' }
+    );
+
+    expect(result.output).toContain('Invalid script path');
+  });
+
+  it('returns invalid path for empty string path', async () => {
+    const { executeScript } =
+      await import('.opencode/plugins/features/scripts/executor');
+
+    const result = await executeScript(
+      { source: 'native', path: '' },
+      'session.created',
+      '',
+      { sessionID: 'sess-1' }
+    );
+
+    expect(result.output).toContain('Invalid script path');
+  });
+
   it('handles exit code 2 with stderr', async () => {
     const { spawn } = await import('child_process');
     const { executeScript } =
@@ -334,6 +362,39 @@ describe('executeScript', () => {
     );
 
     expect(result.output).toBe('Blocked by exit code 2');
+  });
+
+  it('handles non-zero exit code with stderr', async () => {
+    const { spawn } = await import('child_process');
+    const { executeScript } =
+      await import('.opencode/plugins/features/scripts/executor');
+    const mockSpawn = vi.mocked(spawn);
+
+    const mockStderr = {
+      on: vi.fn((event, cb) => {
+        if (event === 'data') cb(Buffer.from('Script error output'));
+      }),
+    };
+
+    const mockProc = {
+      stdout: { on: vi.fn() },
+      stderr: mockStderr,
+      stdin: { write: vi.fn(), end: vi.fn() },
+      on: vi.fn((event, cb) => {
+        if (event === 'close') cb(5);
+      }),
+    };
+    mockSpawn.mockReturnValue(mockProc as unknown as ReturnType<typeof spawn>);
+
+    const result = await executeScript(
+      { source: 'native', path: 'error.sh' },
+      'tool.execute.before',
+      'Bash',
+      { sessionID: 'sess-1', args: {} }
+    );
+
+    expect(result.exitCode).toBe(5);
+    expect(result.output).toContain('Exit code 5');
   });
 
   it('parses JSON with permission deny without reason', async () => {
@@ -511,5 +572,36 @@ describe('buildOpencodeStdin', () => {
       sessionID: 'sess-1',
     });
     expect(result.tool_input).toEqual({});
+  });
+
+  it('includes tool_result when output is provided', () => {
+    const output = { result: 'tool result data' };
+    const result = buildOpencodeStdin(
+      'tool.execute.after',
+      'Bash',
+      {
+        sessionID: 'sess-1',
+        args: { command: 'ls' },
+      },
+      output
+    );
+    expect(result.tool_result).toEqual(output);
+  });
+
+  it('includes tool_name and tool_input when toolName is provided', () => {
+    const result = buildOpencodeStdin('tool.execute.before', 'Bash', {
+      sessionID: 'sess-1',
+      args: { command: 'ls -la' },
+    });
+    expect(result.tool_name).toBe('Bash');
+    expect(result.tool_input).toEqual({ command: 'ls -la' });
+  });
+
+  it('uses event type when toolName is empty string', () => {
+    const result = buildOpencodeStdin('session.created', '', {
+      sessionID: 'sess-1',
+    });
+    expect(result.event_type).toBe('session.created');
+    expect(result.tool_name).toBeUndefined();
   });
 });

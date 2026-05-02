@@ -7,6 +7,8 @@ const TEST_DIRS = [
   '/tmp/audit-test-2',
   '/tmp/audit-test-3',
   'test-temp-init',
+  'test-temp-validation-file',
+  'test-temp-validation-init',
 ];
 
 const PRODUCTION_TEST_DIR = path.resolve(
