@@ -65,6 +65,7 @@ describe('OpencodeHooks - logDisabledEvents', () => {
   });
 
   it('should not show toast when event is disabled', async () => {
+    vi.useFakeTimers();
     vi.doMock('.opencode/plugins/core/toast-queue', () => ({
       initGlobalToastQueue: vi.fn(),
       useGlobalToastQueue: () => globalMockQueue,
@@ -156,6 +157,51 @@ describe('OpencodeHooks - logDisabledEvents', () => {
       getToolHandler: vi.fn(),
     }));
 
+    vi.doMock('.opencode/plugins/features/scripts/executor', () => ({
+      executeScript: vi
+        .fn()
+        .mockResolvedValue({ script: '', output: '', exitCode: 0 }),
+    }));
+
+    vi.doMock('.opencode/plugins/features/audit/script-recorder', () => ({
+      createScriptRecorder: vi.fn().mockReturnValue({
+        logScript: vi.fn().mockResolvedValue(undefined),
+      }),
+    }));
+
+    vi.doMock(
+      '.opencode/plugins/features/messages/toast-silence-detector',
+      () => ({
+        createToastSilenceDetector: vi.fn().mockReturnValue({
+          shouldSilence: vi.fn().mockReturnValue(false),
+          record: vi.fn(),
+        }),
+      })
+    );
+
+    vi.doMock('.opencode/plugins/features/messages/plugin-status', () => ({
+      createPluginStatusManager: vi.fn().mockReturnValue({
+        hasShownStatus: vi.fn().mockReturnValue(false),
+        markStatusShown: vi.fn(),
+      }),
+    }));
+
+    vi.doMock('.opencode/plugins/core/debug', () => ({
+      handleDebugLog: vi.fn(),
+    }));
+
+    vi.doMock('.opencode/plugins/features/block-system/block-handler', () => ({
+      executeBlocking: vi.fn().mockResolvedValue({ action: 'allow' }),
+    }));
+
+    vi.doMock('.opencode/plugins/features/messages/append-to-session', () => ({
+      appendToSession: vi.fn().mockResolvedValue(undefined),
+    }));
+
+    vi.doMock('.opencode/plugins/features/handlers', () => ({
+      handlers: {},
+    }));
+
     const { OpencodeHooks: FreshPlugin } =
       await import('.opencode/plugins/opencode-hooks');
     const plugin = await FreshPlugin(createMockCtx(mockClient, mockDollar));
@@ -167,5 +213,6 @@ describe('OpencodeHooks - logDisabledEvents', () => {
     await plugin.event!({ event: event as never });
 
     expect(globalMockQueue.add).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 });

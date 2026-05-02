@@ -18,10 +18,10 @@ vi.mock('.opencode/plugins/config', () => ({
     default: {
       debug: false,
       toast: true,
-      runScripts: true,
+      runScripts: false,
       runOnlyOnce: false,
-      logToAudit: true,
-      appendToSession: true,
+      logToAudit: false,
+      appendToSession: false,
     },
     events: {
       'session.created': { toast: true },
@@ -48,12 +48,24 @@ vi.mock('.opencode/plugins/features/scripts/run-script', () => ({
     .mockResolvedValue({ output: 'Script output', error: null, exitCode: 0 }),
 }));
 
-vi.mock('.opencode/plugins/features/scripts/show-startup-toast', () => ({
+vi.mock('.opencode/plugins/features/messages/show-startup-toast', () => ({
   showStartupToast: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('.opencode/plugins/core/debug', () => ({
-  handleDebugLog: vi.fn().mockResolvedValue(undefined),
+vi.mock('.opencode/plugins/features/scripts/executor', () => ({
+  executeScript: vi.fn().mockResolvedValue({
+    script: 'mock-script.sh',
+    output: '',
+    exitCode: 0,
+  }),
+  resolveScriptPath: vi.fn().mockReturnValue('/mock/path'),
+  validateScriptPath: vi.fn().mockReturnValue(true),
+  parseHookOutput: vi.fn().mockReturnValue({ action: 'continue' }),
+}));
+
+vi.mock('.opencode/plugins/features/audit/script-recorder', () => ({
+  getScriptRecorder: vi.fn().mockReturnValue(null),
+  createScriptRecorder: vi.fn().mockReturnValue(null),
 }));
 
 import type { MockPluginInput } from 'test/__mocks__/@opencode-ai/plugin';
@@ -82,15 +94,21 @@ function createMockCtx(overrides: Partial<MockPluginInput> = {}): PluginInput {
 }
 
 describe('opencode-hooks.ts - additional hook coverage', () => {
-  beforeEach(() => {
+  let plugin: Awaited<ReturnType<typeof OpencodeHooks>>;
+
+  beforeEach(async () => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
+    const ctx = createMockCtx();
+    plugin = await OpencodeHooks(ctx);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('shell.env hook', () => {
     it('should handle shell.env event', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = {
         cwd: '/home',
         sessionID: 'test-session',
@@ -104,9 +122,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
   describe('chat.message hook', () => {
     it('should handle chat.message event', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = {
         sessionID: 'chat-session',
         agent: 'claude',
@@ -121,9 +136,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
   describe('chat.params hook', () => {
     it('should handle chat.params event', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = {
         sessionID: 'params-session',
         agent: 'claude',
@@ -149,9 +161,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
   describe('chat.headers hook', () => {
     it('should handle chat.headers event', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = {
         sessionID: 'headers-session',
         agent: 'claude',
@@ -167,9 +176,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
   describe('permission.ask hook', () => {
     it('should handle permission.ask event', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = { sessionID: 'perm-session', tool: 'bash' } as never;
       const output = { status: 'allow' as const };
 
@@ -177,9 +183,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
     });
 
     it('should use DEFAULT_SESSION_ID when sessionID is undefined in permission.ask', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = { tool: 'bash' } as never;
       const output = { status: 'allow' as const };
 
@@ -189,9 +192,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
   describe('command.execute.before hook', () => {
     it('should handle command.execute.before event', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = {
         command: 'git status',
         sessionID: 'cmd-session',
@@ -205,9 +205,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
   describe('experimental hooks', () => {
     it('should handle experimental.chat.messages.transform', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = { sessionID: 'exp-session', messages: [] };
       const output = { messages: [] };
 
@@ -215,9 +212,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
     });
 
     it('should handle experimental.chat.system.transform with sessionID', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = { sessionID: 'exp-session', model: {} as never } as never;
       const output = { system: ['You are helpful'] };
 
@@ -225,9 +219,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
     });
 
     it('should use DEFAULT_SESSION_ID when sessionID is undefined in experimental.chat.system.transform', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = { model: {} as never } as never;
       const output = { system: ['You are helpful'] };
 
@@ -235,9 +226,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
     });
 
     it('should handle experimental.session.compacting', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = { sessionID: 'exp-session' };
       const output = { context: [], prompt: undefined };
 
@@ -247,9 +235,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
   describe('tool.definition hook', () => {
     it('should handle tool.definition event', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = { toolID: 'custom-tool', name: 'CustomTool' };
       const output = {
         description: 'A custom tool',
@@ -262,9 +247,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
   describe('config hook', () => {
     it('should handle config event', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = { model: { providerID: 'anthropic' } } as never;
 
       await plugin.config!(input);
@@ -273,9 +255,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
   describe('tool.execute.after - skill tool', () => {
     it('should set toast message for skill tool execution', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = {
         tool: 'skill',
         sessionID: 'skill-session',
@@ -292,9 +271,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
     });
 
     it('should set toast message for skill tool without name arg', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = {
         tool: 'skill',
         sessionID: 'skill-session',
@@ -313,9 +289,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
   describe('runOnlyOnce logic', () => {
     it('should run script when runOnlyOnce is false', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const event = {
         type: 'session.created' as const,
         properties: { sessionID: 'test-session', info: { id: '123' } },
@@ -327,9 +300,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
   describe('tool.execute.after - non-task tool', () => {
     it('should handle non-task tool execution', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const input = {
         tool: 'read',
         sessionID: 'test-session',
@@ -348,9 +318,6 @@ describe('opencode-hooks.ts - additional hook coverage', () => {
 
   describe('eventRecorder tool.execute without toolName', () => {
     it('should log tool.execute.before without toolName (line 93)', async () => {
-      const ctx = createMockCtx();
-      const plugin = await OpencodeHooks(ctx);
-
       const event = {
         type: 'tool.execute.before' as const,
         properties: { tool: undefined },
