@@ -13,12 +13,17 @@ export function getHandler(eventType: string) {
   return handlers[eventType];
 }
 
-export function getToolHandler(toolName: string, toolEventType?: string) {
+export function getToolHandler(
+  toolName: string,
+  toolEventType?: string,
+  customHandlers?: Record<string, unknown>
+) {
+  const h = customHandlers ?? handlers;
   if (toolEventType?.includes('.before')) {
-    return handlers[`tool.execute.before.${toolName}`];
+    return h[`tool.execute.before.${toolName}`];
   }
   if (toolEventType?.includes('.after')) {
-    return handlers[`tool.execute.after.${toolName}`];
+    return h[`tool.execute.after.${toolName}`];
   }
   return undefined;
 }

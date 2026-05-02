@@ -7,11 +7,11 @@ import type { HookResult } from '.opencode/plugins/types/scripts';
 
 const shellSpecialChars = /[;&|`$(){}[\]<>\\!#*?"'\n\r]/g;
 
-const sanitizeArg = (arg: string): string => {
+export const sanitizeArg = (arg: string): string => {
   return arg.replace(shellSpecialChars, '\\$&');
 };
 
-const validateScriptPath = (scriptPath: string): boolean => {
+export const validateScriptPath = (scriptPath: string): boolean => {
   if (!scriptPath || typeof scriptPath !== 'string') return false;
   if (scriptPath.includes('..')) return false;
   if (scriptPath.startsWith('/') || scriptPath.startsWith('~')) return false;
@@ -33,7 +33,7 @@ const EVENT_NAME_MAP: Record<string, string> = {
   'file.watcher.updated': 'FileChanged',
 };
 
-function resolveScriptPath(scriptPath: string): string {
+export function resolveScriptPath(scriptPath: string): string {
   const scriptsDir = path.join(process.cwd(), DEFAULTS.scripts.dir);
   return path.join(scriptsDir, scriptPath);
 }
@@ -44,7 +44,7 @@ const STOP_HOOK_STATE_DIR = path.join(
   'hook-state'
 );
 
-function getStopHookStateFile(sessionId: string): string {
+export function getStopHookStateFile(sessionId: string): string {
   return path.join(STOP_HOOK_STATE_DIR, `${sessionId}_stop_flag`);
 }
 
