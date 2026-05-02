@@ -33,7 +33,7 @@ export function getLatestLogFile(): string | null {
   return join(logDir, sorted[0]);
 }
 
-function parseLogLine(line: string): PluginEntry | null {
+export function parseLogLine(line: string): PluginEntry | null {
   const match = line.match(LINE_REGEX);
   if (!match) return null;
 
