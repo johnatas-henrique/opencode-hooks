@@ -5,6 +5,7 @@
     "lib": ["dom", "es2020"],
     "sourceMap": false,
     "paths": {
+      ".opencode/plugins/*": ["./.opencode/plugins/*"],
       "*": ["./*"]
     },
     "outDir": "./dist",
