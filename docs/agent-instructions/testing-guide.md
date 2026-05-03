@@ -14,18 +14,25 @@ Pure unit tests that verify individual functions or components in isolation.
 
 - Must NOT depend on external services (databases, APIs, network)
 - Must NOT use real `fs` operations (unless testing fs utilities directly)
-- **Mock `fs` and `shell` only when necessary** - these are the ONLY allowed mocks
-- No other mocks allowed - use Dependency Injection (DI) instead
-- Test one thing per test case
-- Must complete in **≤500ms** per test
+- The ONLY allowed `vi.mock()` targets are: `fs`, `shell`, `http`, `.opencode/plugins/config/settings`
+- **No `__mocks__/` directory** — use `vi.hoisted()` inline per test file
+- Shared mock defaults via `test/unit/helpers/mock-factories.ts` (plain factories, no `vi`)
+- No `any` anywhere
+- **Never** use `as Mock` from vitest — use `vi.mocked()` for type-safe mock access
+- Types always from `.opencode/plugins/types/` — never inline
+- One `.test.ts` per source file, mirror `.opencode/plugins/` structure
+- No code duplication — extract helpers (created on demand)
+- **≤500ms per test — HARD rule** (not guideline)
+- No vitest globals (`import { describe, it, expect, vi } from 'vitest'`)
 
 **Structure:**
 
 ```typescript
-import { functionToTest } from '../../.opencode/plugins/path/to/module';
+import { functionToTest } from '.opencode/plugins/path/to/module';
+import { vi } from 'vitest';
 
-describe('module-name', () => {
-  it('should do something specific', () => {
+describe('functionName', () => {
+  it('does something specific', () => {
     const result = functionToTest(input);
     expect(result).toBe(expected);
   });
@@ -35,16 +42,19 @@ describe('module-name', () => {
 **Allowed Patterns:**
 
 - Direct function calls with controlled inputs
-- Mocking `fs` module for file system tests
-- Mocking `shell` module for shell command tests
+- `vi.mock()` only for `fs`, `shell`, `http`, `settings` (with `vi.hoisted()`)
 - Dependency Injection for providing test doubles
+- `vi.mocked()` for accessing mock methods with proper types
 
 **Forbidden Patterns:**
 
-- Using `vi.mock()` for anything except `fs` or `shell`
-- Testing multiple behaviors in one test
-- Using real file system operations (unless the unit under test IS the file system utility)
+- `vi.mock()` for anything except the 4 allowed targets
+- `as Mock` type assertion
+- `any` type
+- Re-exports; inline type definitions
+- Real file system operations (unless the unit under test IS the fs utility)
 - Tests that take >500ms
+- Vitest globals (`describe`, `it`, `expect`, `vi`) without explicit import
 
 ### Integration Tests (`test/integration/`)
 
@@ -61,7 +71,7 @@ Tests that verify interactions between components or with external systems.
 **Structure:**
 
 ```typescript
-import { componentToTest } from '../../.opencode/plugins/path/to/module';
+import { componentToTest } from '.opencode/plugins/path/to/module';
 import fs from 'fs';
 import path from 'path';
 
@@ -94,15 +104,14 @@ describe('component integration', () => {
 
 If a test takes longer:
 
-1. **Unit tests**: Remove the test or refactor to not need delays
-2. **Integration tests**: Optimize real operations, reduce file sizes, use faster assertions
-3. **Never** use `vi.setTimeout()` to increase timeout - fix the test instead
+1. **Unit tests**: Remove or refactor to avoid delays
+2. **Integration tests**: Optimize operations, reduce file sizes, use faster assertions
+3. **Never** use `vi.setTimeout()` to increase timeout — fix the test instead
 
 **Checking test speed:**
 
 ```bash
-# Run tests with verbose output to see timing
-npm run test:unit -- --reporter=verbose
+npm run test -- --reporter=verbose
 ```
 
 **Common causes of slow tests:**
@@ -126,16 +135,19 @@ npm run test:cov      # All tests with coverage
 
 ## TypeScript Rules for Tests
 
-1. **No `any` type** - use proper types from `types/` directory
-2. **Import types from `types/` folder** - never define inline
-3. **No re-exports** - import directly from source
-4. **Use strict type checking** - ensure types match exactly
+1. **No `any` type** — use proper types from `types/` directory
+2. **Import types from `.opencode/plugins/types/`** — never define inline
+3. **No re-exports** — import directly from source
+4. **Use strict type checking** — ensure types match exactly
+5. **No `as Mock`** — use `vi.mocked()` for typed mocks
 
 **Correct:**
 
 ```typescript
 import type { PluginStatus } from '.opencode/plugins/types/plugin';
 import type { AuditConfig } from '.opencode/plugins/types/audit';
+
+const mockFn = vi.fn() as jest.MockedFunction<typeof realFn>; // Use vi.mocked() instead
 ```
 
 **Wrong:**
@@ -149,6 +161,9 @@ const data: any = getData();
 
 // Don't re-export
 export { PluginStatus } from './types/plugin';
+
+// Don't use as Mock from vitest
+(mockFn as Mock).mockReturnValue(42);
 ```
 
 ## Test File Organization
@@ -157,19 +172,38 @@ export { PluginStatus } from './types/plugin';
 test/
 ├── unit/
 │   ├── core/
+│   │   ├── constants.test.ts
+│   │   ├── debug.test.ts
 │   │   └── toast-queue.test.ts
+│   ├── config/
+│   │   ├── settings.test.ts
+│   │   ├── claude-settings.test.ts
+│   │   └── security-rules.test.ts
 │   ├── features/
 │   │   ├── audit/
-│   │   │   └── plugin-integration.test.ts
-│   │   └── messages/
-│   │       └── plugin-status.test.ts
-│   └── helpers/
-│       └── test-helper.test.ts
+│   │   │   └── ... (7 test files)
+│   │   ├── events/
+│   │   │   ├── context.test.ts
+│   │   │   ├── resolvers/
+│   │   │   └── resolution/
+│   │   ├── handlers/
+│   │   │   └── ... (6 test files)
+│   │   ├── message-formatter/
+│   │   │   └── ... (6 test files)
+│   │   ├── messages/
+│   │   │   └── ... (5 test files)
+│   │   └── scripts/
+│   │       └── ... (6 test files)
+│   ├── helpers/
+│   │   ├── create-config.ts
+│   │   ├── create-handler.ts
+│   │   ├── create-context.ts
+│   │   ├── audit-test-config.ts
+│   │   ├── test-defaults.ts
+│   │   └── mock-factories.ts
+│   └── opencode-hooks.test.ts
 └── integration/
-    ├── plugins/
-    │   └── show-active-plugins.test.ts
-    └── scripts/
-        └── run-script.test.ts
+    └── (future)
 ```
 
 ## Best Practices
@@ -206,39 +240,43 @@ expect(() => function()).toThrow();  // Too vague
 
 ```bash
 npm run test:unit        # Run unit tests only
-npm run test:integration  # Run integration tests only
-npm run test              # Run all tests
-npm run test:unit:cov    # Unit tests with coverage report
+npm run test:integration # Run integration tests only
+npm run test            # Run all tests
+npm run test:unit:cov   # Unit tests with coverage report
 ```
 
 ## Common Patterns
 
-### Testing with fs mocks (unit tests only)
+### Mocking fs with vi.hoisted (no **mocks**/)
 
 ```typescript
-vi.mock('fs', () => ({
-  readdirSync: vi.fn(() => ['file1.log']),
-  existsSync: vi.fn(() => true),
-  readFileSync: vi.fn(() => 'content'),
-}));
+import { vi } from 'vitest';
+import { loadClaudeSettings } from '.opencode/plugins/config/claude-settings';
+import { defaultFs } from '../helpers/mock-factories';
 
-// Get mocked functions with proper typing
-const mockReaddirSync = readdirSync as unknown as ReturnType<typeof vi.fn>;
+const mockFs = vi.hoisted(() => defaultFs());
+vi.mock('fs', () => mockFs);
+
+describe('loadClaudeSettings', () => {
+  it('loads settings from claude config', () => {
+    mockFs.readFileSync.mockReturnValue('{"hooks": {}}');
+    const result = loadClaudeSettings('/test/project');
+    expect(result.hooks).toEqual({});
+  });
+});
 ```
 
-### Testing with real fs (integration tests)
+### Using vi.mocked for type-safe mocks
 
 ```typescript
-import fs from 'fs';
-import path from 'path';
+import { vi } from 'vitest';
+import { someFunction } from '.opencode/plugins/core/module';
+import { readdirSync } from 'fs';
 
-const testDir = path.join(process.cwd(), 'test-tmp');
+vi.mock('fs');
+const mockReaddir = vi.mocked(readdirSync);
 
-beforeEach(() => {
-  if (fs.existsSync(testDir)) {
-    fs.rmSync(testDir, { recursive: true });
-  }
-});
+mockReaddir.mockReturnValue(['file1.log']);
 ```
 
 ### Dependency Injection pattern
