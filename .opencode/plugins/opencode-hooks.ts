@@ -179,6 +179,17 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     }
   }
 
+  // Cancel tool execution if any script reported a block
+  if (
+    eventType === 'tool.execute.before' ||
+    eventType === 'command.execute.before'
+  ) {
+    const blockedScript = results.find((r) => r.exitCode === 2);
+    if (blockedScript) {
+      throw new Error(blockedScript.output);
+    }
+  }
+
   const successfulScripts = results
     .filter(
       (
