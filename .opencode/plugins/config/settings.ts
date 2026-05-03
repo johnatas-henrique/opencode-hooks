@@ -138,6 +138,7 @@ export const userConfig: UserEventsConfig = {
     [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
       task: {
         logToAudit: true,
+        toast: true,
         runScripts: true,
         scripts: [{ source: 'native', path: 'log-agent.sh' }],
       },
@@ -146,16 +147,17 @@ export const userConfig: UserEventsConfig = {
       task: {},
       skill: {
         logToAudit: true,
+        toast: true,
         runScripts: true,
         scripts: [{ source: 'native', path: 'log-skill.sh' }],
       },
-      bash: {},
+      bash: { toast: true },
       write: {},
       edit: {},
       chat: {},
       read: {},
       glob: {},
-      grep: {},
+      grep: { toast: true },
       list: {},
       patch: {},
       webfetch: {},
@@ -181,6 +183,7 @@ export const userConfig: UserEventsConfig = {
       skill: {},
       bash: {
         runScripts: true,
+        toast: true,
         scripts: [
           { source: 'claude', path: 'block-destructive.sh' },
           { source: 'claude', path: 'block-sensitive.sh' },
@@ -188,10 +191,12 @@ export const userConfig: UserEventsConfig = {
       },
       write: {
         runScripts: true,
+        toast: true,
         scripts: [{ source: 'claude', path: 'block-sensitive.sh' }],
       },
       read: {
         runScripts: true,
+        toast: true,
         scripts: [{ source: 'claude', path: 'block-sensitive.sh' }],
       },
       edit: {},
@@ -211,10 +216,12 @@ export const userConfig: UserEventsConfig = {
       'git.pull': {},
       filesystem_read_file: {
         runScripts: true,
+        toast: true,
         scripts: [{ source: 'claude', path: 'block-sensitive.sh' }],
       },
       filesystem_write_file: {
         runScripts: true,
+        toast: true,
         scripts: [{ source: 'claude', path: 'block-sensitive.sh' }],
       },
       filesystem_list_directory: {},

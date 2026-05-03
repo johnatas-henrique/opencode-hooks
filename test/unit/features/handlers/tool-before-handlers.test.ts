@@ -37,9 +37,38 @@ describe('toolBeforeHandlers', () => {
     expect(Object.keys(toolBeforeHandlers).length).toBe(expectedKeys.length);
   });
 
-  it('all handlers have title "====TOOL EXECUTE BEFORE====', () => {
+  const expectedTitles: Record<string, string> = {
+    'tool.execute.before.bash': '====BASH BEFORE====',
+    'tool.execute.before.codesearch': '====CODE SEARCH BEFORE====',
+    'tool.execute.before.edit': '====EDIT BEFORE====',
+    'tool.execute.before.filesystem_create_directory':
+      '====FS MKDIR BEFORE====',
+    'tool.execute.before.filesystem_get_file_info': '====FS STAT BEFORE====',
+    'tool.execute.before.filesystem_list_directory': '====FS LS BEFORE====',
+    'tool.execute.before.filesystem_move_file': '====FS MV BEFORE====',
+    'tool.execute.before.filesystem_read_file': '====FS READ BEFORE====',
+    'tool.execute.before.filesystem_search_files': '====FS FIND BEFORE====',
+    'tool.execute.before.filesystem_write_file': '====FS WRITE BEFORE====',
+    'tool.execute.before.gh_grep_searchGitHub': '====GH SEARCH BEFORE====',
+    'tool.execute.before.git-commit': '====GIT COMMIT BEFORE====',
+    'tool.execute.before.glob': '====GLOB BEFORE====',
+    'tool.execute.before.grep': '====GREP BEFORE====',
+    'tool.execute.before.list': '====LIST BEFORE====',
+    'tool.execute.before.patch': '====PATCH BEFORE====',
+    'tool.execute.before.question': '====QUESTION BEFORE====',
+    'tool.execute.before.read': '====READ BEFORE====',
+    'tool.execute.before.skill': '====SKILL BEFORE====',
+    'tool.execute.before.task': '====TASK BEFORE====',
+    'tool.execute.before.todoread': '====TODO READ BEFORE====',
+    'tool.execute.before.todowrite': '====TODO WRITE BEFORE====',
+    'tool.execute.before.webfetch': '====WEB FETCH BEFORE====',
+    'tool.execute.before.websearch': '====WEB SEARCH BEFORE====',
+    'tool.execute.before.write': '====WRITE BEFORE====',
+  };
+
+  it('all handlers have unique tool-specific titles', () => {
     for (const key of expectedKeys) {
-      expect(toolBeforeHandlers[key].title).toBe('====TOOL EXECUTE BEFORE====');
+      expect(toolBeforeHandlers[key].title).toBe(expectedTitles[key]);
     }
   });
 
@@ -55,7 +84,7 @@ describe('toolBeforeHandlers', () => {
     }
   });
 
-  it('all handlers use buildKeysMessageSimple', () => {
+  it('all handlers use buildKeysMessage', () => {
     for (const key of expectedKeys) {
       expect(typeof toolBeforeHandlers[key].buildMessage).toBe('function');
     }

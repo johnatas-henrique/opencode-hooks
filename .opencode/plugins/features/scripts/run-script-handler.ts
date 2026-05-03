@@ -37,7 +37,6 @@ export async function runScriptAndHandle(
     isSubagent: (sessionId) => isSubagent(sessionId),
   });
 
-  // Execute using the executor
   return executor.execute(
     config.script,
     config.scriptArg,

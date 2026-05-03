@@ -110,6 +110,7 @@ describe('userConfig', () => {
     expect(subagentTools).toHaveProperty('task');
     expect(subagentTools.task).toEqual({
       logToAudit: true,
+      toast: true,
       runScripts: true,
       scripts: [{ source: 'native', path: 'log-agent.sh' }],
     });

@@ -37,9 +37,37 @@ describe('toolAfterHandlers', () => {
     expect(Object.keys(toolAfterHandlers).length).toBe(expectedKeys.length);
   });
 
-  it('all handlers have title "====TOOL EXECUTE AFTER====', () => {
+  const expectedTitles: Record<string, string> = {
+    'tool.execute.after.bash': '====BASH AFTER====',
+    'tool.execute.after.codesearch': '====CODE SEARCH AFTER====',
+    'tool.execute.after.edit': '====EDIT AFTER====',
+    'tool.execute.after.filesystem_create_directory': '====FS MKDIR AFTER====',
+    'tool.execute.after.filesystem_get_file_info': '====FS STAT AFTER====',
+    'tool.execute.after.filesystem_list_directory': '====FS LS AFTER====',
+    'tool.execute.after.filesystem_move_file': '====FS MV AFTER====',
+    'tool.execute.after.filesystem_read_file': '====FS READ AFTER====',
+    'tool.execute.after.filesystem_search_files': '====FS FIND AFTER====',
+    'tool.execute.after.filesystem_write_file': '====FS WRITE AFTER====',
+    'tool.execute.after.gh_grep_searchGitHub': '====GH SEARCH AFTER====',
+    'tool.execute.after.git-commit': '====GIT COMMIT AFTER====',
+    'tool.execute.after.glob': '====GLOB AFTER====',
+    'tool.execute.after.grep': '====GREP AFTER====',
+    'tool.execute.after.list': '====LIST AFTER====',
+    'tool.execute.after.patch': '====PATCH AFTER====',
+    'tool.execute.after.question': '====QUESTION AFTER====',
+    'tool.execute.after.read': '====READ AFTER====',
+    'tool.execute.after.skill': '====SKILL AFTER====',
+    'tool.execute.after.task': '====TASK AFTER====',
+    'tool.execute.after.todoread': '====TODO READ AFTER====',
+    'tool.execute.after.todowrite': '====TODO WRITE AFTER====',
+    'tool.execute.after.webfetch': '====WEB FETCH AFTER====',
+    'tool.execute.after.websearch': '====WEB SEARCH AFTER====',
+    'tool.execute.after.write': '====WRITE AFTER====',
+  };
+
+  it('all handlers have unique tool-specific titles', () => {
     for (const key of expectedKeys) {
-      expect(toolAfterHandlers[key].title).toBe('====TOOL EXECUTE AFTER====');
+      expect(toolAfterHandlers[key].title).toBe(expectedTitles[key]);
     }
   });
 
@@ -63,7 +91,7 @@ describe('toolAfterHandlers', () => {
     }
   });
 
-  it('all handlers have buildMessage function', () => {
+  it('all handlers use buildKeysMessage', () => {
     for (const key of expectedKeys) {
       expect(typeof toolAfterHandlers[key].buildMessage).toBe('function');
     }
