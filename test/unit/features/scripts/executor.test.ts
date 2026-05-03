@@ -230,7 +230,7 @@ describe('parseHookOutput', () => {
       '',
       0
     );
-    expect(result.action).toBe('block');
+    expect(result.action).toBe('error');
     expect(result.reason).toBe('fail');
   });
 

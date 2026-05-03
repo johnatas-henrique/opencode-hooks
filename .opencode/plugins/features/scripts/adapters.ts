@@ -2,10 +2,7 @@ import type { EventScriptConfig } from '.opencode/plugins/types/scripts';
 import type { ScriptRecorder } from '.opencode/plugins/types/audit';
 import { useGlobalToastQueue } from '.opencode/plugins/core/toast-queue';
 import { appendToSession } from '.opencode/plugins/features/messages/append-to-session';
-import {
-  isSubagent,
-  addSubagentSession,
-} from '.opencode/plugins/features/scripts/run-script-handler';
+
 import type {
   ScriptAuditLogger,
   SessionAppender,
@@ -45,17 +42,6 @@ export function createAuditAdapter(
   return {
     async logScript(input, result) {
       await scriptRecorder.logScript(input, result);
-    },
-  };
-}
-
-export function createSubagentTracker() {
-  return {
-    isSubagent(sessionId: string | undefined): boolean {
-      return isSubagent(sessionId);
-    },
-    addSubagentSession(id: string): void {
-      addSubagentSession(id);
     },
   };
 }

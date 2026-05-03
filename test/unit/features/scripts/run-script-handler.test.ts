@@ -4,7 +4,6 @@ import type { PluginInput } from '@opencode-ai/plugin';
 import {
   isSubagent,
   addSubagentSession,
-  resetSubagentTracking,
   runScriptAndHandle,
 } from '.opencode/plugins/features/scripts/run-script-handler';
 import {
@@ -13,10 +12,6 @@ import {
 } from '.opencode/plugins/core/toast-queue';
 
 describe('isSubagent', () => {
-  beforeEach(() => {
-    resetSubagentTracking();
-  });
-
   it('returns false for undefined', () => {
     expect(isSubagent(undefined)).toBe(false);
   });
@@ -48,10 +43,6 @@ describe('isSubagent', () => {
 });
 
 describe('addSubagentSession', () => {
-  beforeEach(() => {
-    resetSubagentTracking();
-  });
-
   it('adds a session to tracking', () => {
     addSubagentSession('ses_new');
     expect(isSubagent('ses_new')).toBe(true);
@@ -61,14 +52,6 @@ describe('addSubagentSession', () => {
     addSubagentSession('ses_dup');
     addSubagentSession('ses_dup');
     expect(isSubagent('ses_dup')).toBe(true);
-  });
-});
-
-describe('resetSubagentTracking', () => {
-  it('clears all tracked sessions', () => {
-    addSubagentSession('ses_clear');
-    resetSubagentTracking();
-    expect(isSubagent('ses_clear')).toBe(false);
   });
 });
 
@@ -123,7 +106,6 @@ describe('runScriptAndHandle', () => {
           outputTitle: 'Script Output',
           errorTitle: 'Script Error',
         },
-        block: [],
       },
       scriptToasts: {
         showOutput: true,

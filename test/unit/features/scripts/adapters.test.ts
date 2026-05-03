@@ -10,9 +10,7 @@ import {
   createToastAdapter,
   createSessionAdapter,
   createAuditAdapter,
-  createSubagentTracker,
 } from '.opencode/plugins/features/scripts/adapters';
-import { resetSubagentTracking } from '.opencode/plugins/features/scripts/run-script-handler';
 
 describe('createToastAdapter', () => {
   beforeEach(() => {
@@ -96,7 +94,6 @@ describe('createSessionAdapter', () => {
           outputTitle: 'Output',
           errorTitle: 'Error',
         },
-        block: [],
       },
       scriptToasts: {
         showOutput: true,
@@ -139,36 +136,5 @@ describe('createAuditAdapter', () => {
     await adapter.logScript(input, result);
 
     expect(mockLogScript).toHaveBeenCalledWith(input, result);
-  });
-});
-
-describe('createSubagentTracker', () => {
-  beforeEach(() => {
-    resetSubagentTracking();
-  });
-
-  it('isSubagent returns false for unknown session', () => {
-    const tracker = createSubagentTracker();
-    expect(tracker.isSubagent('unknown')).toBe(false);
-  });
-
-  it('isSubagent returns false for undefined', () => {
-    const tracker = createSubagentTracker();
-    expect(tracker.isSubagent(undefined)).toBe(false);
-  });
-
-  it('isSubagent returns true after addSubagentSession', () => {
-    const tracker = createSubagentTracker();
-    tracker.addSubagentSession('ses_sub1');
-    expect(tracker.isSubagent('ses_sub1')).toBe(true);
-  });
-
-  it('tracks multiple subagent sessions', () => {
-    const tracker = createSubagentTracker();
-    tracker.addSubagentSession('ses_a');
-    tracker.addSubagentSession('ses_b');
-    expect(tracker.isSubagent('ses_a')).toBe(true);
-    expect(tracker.isSubagent('ses_b')).toBe(true);
-    expect(tracker.isSubagent('ses_c')).toBe(false);
   });
 });

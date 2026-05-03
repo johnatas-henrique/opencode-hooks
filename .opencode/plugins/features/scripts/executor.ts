@@ -98,7 +98,7 @@ export function parseHookOutput(
     if (hookSpecific?.permissionDecision === 'deny') {
       return {
         action: 'block',
-        reason: hookSpecific.permissionDecisionReason as string,
+        reason: (hookSpecific.permissionDecisionReason as string) || 'Denied',
         updatedInput: hookSpecific.updatedInput as Record<string, unknown>,
       };
     }
@@ -106,21 +106,21 @@ export function parseHookOutput(
     if (output.decision === 'block') {
       return {
         action: 'block',
-        reason: output.reason as string,
+        reason: (output.reason as string) || 'Blocked',
       };
     }
 
     if (output.continue === false) {
       return {
         action: 'block',
-        reason: output.stopReason as string,
+        reason: (output.stopReason as string) || 'Stopped',
       };
     }
 
     if (output.ok === false) {
       return {
-        action: 'block',
-        reason: output.reason as string,
+        action: 'error',
+        reason: (output.reason as string) || 'Failed',
       };
     }
 
@@ -276,24 +276,6 @@ export async function executeScript(
         const stdout = Buffer.concat(outChunks).toString();
         const stderr = Buffer.concat(errChunks).toString();
 
-        if (code === 2) {
-          resolve({
-            script: scriptEntry.path,
-            output: stderr || 'Blocked by exit code 2',
-            exitCode: 2,
-          });
-          return;
-        }
-
-        if (code !== 0 && code !== null) {
-          resolve({
-            script: scriptEntry.path,
-            output: `Exit code ${code}: ${stderr}`,
-            exitCode: code,
-          });
-          return;
-        }
-
         if (code === null) {
           resolve({
             script: scriptEntry.path,
@@ -303,45 +285,27 @@ export async function executeScript(
           return;
         }
 
-        try {
-          const parsed = JSON.parse(stdout.trim());
-          if (parsed.hookSpecificOutput?.permissionDecision === 'deny') {
-            resolve({
-              script: scriptEntry.path,
-              output:
-                parsed.hookSpecificOutput.permissionDecisionReason || 'Denied',
-              exitCode: 2,
-            });
-            return;
-          }
-          if (parsed.decision === 'block') {
-            resolve({
-              script: scriptEntry.path,
-              output: parsed.reason || 'Blocked',
-              exitCode: 2,
-            });
-            return;
-          }
-          if (parsed.continue === false) {
-            resolve({
-              script: scriptEntry.path,
-              output: parsed.stopReason || 'Stopped',
-              exitCode: 2,
-            });
-            return;
-          }
-          if (parsed.ok === false) {
-            resolve({
-              script: scriptEntry.path,
-              output: parsed.reason || 'Failed',
-              exitCode: 1,
-            });
-            return;
-          }
-          resolve({ script: scriptEntry.path, output: stdout, exitCode: 0 });
-        } catch {
-          resolve({ script: scriptEntry.path, output: stdout, exitCode: 0 });
+        const result = parseHookOutput(stdout, stderr, code);
+
+        if (result.action === 'block') {
+          resolve({
+            script: scriptEntry.path,
+            output: result.reason!,
+            exitCode: 2,
+          });
+          return;
         }
+
+        if (result.action === 'error') {
+          resolve({
+            script: scriptEntry.path,
+            output: result.reason!,
+            exitCode: code === 0 ? 1 : code,
+          });
+          return;
+        }
+
+        resolve({ script: scriptEntry.path, output: stdout, exitCode: 0 });
       });
 
       proc.on('error', (err) => {

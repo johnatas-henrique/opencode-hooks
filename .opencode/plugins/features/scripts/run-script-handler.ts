@@ -22,10 +22,6 @@ export function addSubagentSession(sessionId: string): void {
   subagentSessionIds.add(sessionId);
 }
 
-export function resetSubagentTracking(): void {
-  subagentSessionIds.clear();
-}
-
 export async function runScriptAndHandle(
   config: EventScriptConfig & { scriptRecorder?: ScriptRecorder }
 ): Promise<ScriptExecutionResult> {
