@@ -4,7 +4,7 @@ import {
   resolveScripts,
   mergeClaudeScripts,
 } from '.opencode/plugins/features/events/resolution/scripts';
-import type { ScriptEntry } from '.opencode/plugins/types/config';
+import type { ScriptEntry, EventConfig } from '.opencode/plugins/types/config';
 
 describe('asScriptEntry', () => {
   it('returns a ScriptEntry with source native and given path', () => {
@@ -73,6 +73,15 @@ describe('resolveScripts', () => {
       scripts: [{ source: 'native', path: handlerDefault }],
       runScripts: true,
     });
+  });
+
+  it('returns fallthrough for unexpected cfg type', () => {
+    const result = resolveScripts(
+      42 as unknown as EventConfig,
+      handlerDefault,
+      baseScripts
+    );
+    expect(result).toEqual({ scripts: [], runScripts: false });
   });
 });
 

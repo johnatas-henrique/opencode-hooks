@@ -57,6 +57,14 @@ describe('truncateOutput', () => {
     const result = truncateOutput(output, 1);
     expect(result).toBe(big);
   });
+
+  it('slices from newline when newline is within truncated portion', () => {
+    const prefix = 'a'.repeat(40);
+    const suffix = 'b'.repeat(1000);
+    const output = prefix + '\n' + suffix;
+    const result = truncateOutput(output, 1);
+    expect(result).toBe(suffix);
+  });
 });
 
 describe('createScriptRecord', () => {

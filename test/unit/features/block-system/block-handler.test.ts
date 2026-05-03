@@ -17,7 +17,7 @@ import {
   getBlockSystem,
   executeBlocking,
 } from '.opencode/plugins/features/block-system/block-handler';
-import type { BlockCheck } from '.opencode/plugins/types/config';
+import type { BlockCheck, ScriptResult } from '.opencode/plugins/types/config';
 
 describe('block-handler', () => {
   let mockAdd: ReturnType<typeof vi.fn>;
@@ -82,6 +82,35 @@ describe('block-handler', () => {
     });
   });
 
+  describe('defaultEffects.log via evaluateWithEffects', () => {
+    it('calls securityRecorder when block check passes', () => {
+      const system = getBlockSystem();
+      const blockConfig: BlockCheck[] = [
+        { check: () => true, message: 'default-block' },
+      ];
+      const input: ToolExecuteBeforeInput = {
+        tool: 'bash',
+        sessionID: 'ses_test',
+        callID: 'call_1',
+      };
+      const output: ToolExecuteBeforeOutput = { args: { command: 'ls' } };
+      const scriptResults: ScriptResult[] = [
+        { script: 'test.sh', exitCode: 0 },
+      ];
+
+      expect(() => {
+        system.evaluateWithEffects(
+          blockConfig,
+          input,
+          output,
+          scriptResults,
+          'tool.execute.before'
+        );
+      }).toThrow('default-block');
+      expect(mockLogSecurity).toHaveBeenCalled();
+    });
+  });
+
   describe('executeBlocking', () => {
     const input: ToolExecuteBeforeInput = {
       tool: 'bash',
@@ -113,6 +142,22 @@ describe('block-handler', () => {
         );
       }).toThrow('blocked by rule');
       expect(mockLogSecurity).toHaveBeenCalled();
+    });
+
+    it('returns early without throwing when securityRecorder is null', () => {
+      delete (globalThis as Record<string, unknown>)
+        .__opencode_security_recorder;
+      const blockConfig: BlockCheck[] = [
+        { check: () => true, message: 'blocked' },
+      ];
+      executeBlocking(
+        blockConfig,
+        input,
+        output,
+        scriptResults,
+        'tool.execute.before'
+      );
+      expect(mockLogSecurity).not.toHaveBeenCalled();
     });
   });
 });

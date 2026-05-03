@@ -1,4 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
+
+const mockReadFileDefault = vi.hoisted(() => vi.fn().mockResolvedValue(''));
+vi.mock('fs/promises', () => ({ readFile: mockReadFileDefault }));
+
 import {
   waitForToastSilence,
   countToastsInLog,
@@ -143,6 +147,11 @@ describe('countToastsInLog', () => {
     const readFileFn = vi.fn().mockRejectedValue(new Error('read error'));
 
     const count = await countToastsInLog('/fake/log.log', readFileFn);
+    expect(count).toBe(0);
+  });
+
+  it('uses default readFile when no readFileFn provided', async () => {
+    const count = await countToastsInLog('/fake/log.log');
     expect(count).toBe(0);
   });
 });

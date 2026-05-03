@@ -246,5 +246,23 @@ describe('ScriptExecutor', () => {
         expect.any(Number)
       );
     });
+
+    it('creates scriptData with args when arg is provided on error', async () => {
+      const deps = makeDeps({
+        executeScript: vi
+          .fn()
+          .mockResolvedValue({ output: 'fail', error: 'err', exitCode: 1 }),
+      });
+      const executor = new ScriptExecutor(deps);
+      const ctx = makeEventContext();
+      ctx.eventType = 'tool.execute.before';
+      ctx.toolName = 'bash';
+      await executor.execute('test.sh', 'bash', {}, ctx);
+
+      expect(deps.audit!.logScript).toHaveBeenCalledWith(
+        expect.objectContaining({ args: ['bash'] }),
+        expect.any(Object)
+      );
+    });
   });
 });

@@ -43,6 +43,8 @@ import {
   executeScript,
 } from '.opencode/plugins/features/scripts/executor';
 import type { ScriptEntry } from '.opencode/plugins/types/config';
+import type { ChildProcess } from 'child_process';
+import { spawn } from 'child_process';
 
 describe('sanitizeArg', () => {
   it('replaces shell special chars with escaped versions', () => {
@@ -434,5 +436,183 @@ describe('executeScript', () => {
 
     const result = await promise;
     expect(result.exitCode).toBe(2);
+  });
+
+  it('handles non-zero exit code', async () => {
+    vi.mocked(spawn).mockReturnValueOnce({
+      stdout: { on: vi.fn() },
+      stderr: { on: vi.fn() },
+      stdin: { write: vi.fn(), end: vi.fn() },
+      on: vi.fn((event: string, cb: (code: number | null) => void) => {
+        if (event === 'close') cb(1);
+      }),
+      unref: vi.fn(),
+    } as unknown as ChildProcess);
+
+    const result = await executeScript(
+      { source: 'native', path: 'test.sh' },
+      'session.created',
+      '',
+      { sessionID: 's1' }
+    );
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain('Exit code 1');
+  });
+
+  it('handles null exit code (process terminated unexpectedly)', async () => {
+    vi.mocked(spawn).mockReturnValueOnce({
+      stdout: { on: vi.fn() },
+      stderr: { on: vi.fn() },
+      stdin: { write: vi.fn(), end: vi.fn() },
+      on: vi.fn((event: string, cb: (code: number | null) => void) => {
+        if (event === 'close') cb(null);
+      }),
+      unref: vi.fn(),
+    } as unknown as ChildProcess);
+
+    const result = await executeScript(
+      { source: 'native', path: 'test.sh' },
+      'session.created',
+      '',
+      { sessionID: 's1' }
+    );
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain('terminated unexpectedly');
+  });
+
+  it('parses JSON stdout with permissionDecision deny', async () => {
+    const stdoutData = JSON.stringify({
+      hookSpecificOutput: {
+        permissionDecision: 'deny',
+        permissionDecisionReason: 'not allowed',
+      },
+    });
+    vi.mocked(spawn).mockReturnValueOnce({
+      stdout: {
+        on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+          if (event === 'data') cb(Buffer.from(stdoutData));
+        }),
+      },
+      stderr: { on: vi.fn() },
+      stdin: { write: vi.fn(), end: vi.fn() },
+      on: vi.fn((event: string, cb: (code: number | null) => void) => {
+        if (event === 'close') cb(0);
+      }),
+      unref: vi.fn(),
+    } as unknown as ChildProcess);
+
+    const result = await executeScript(
+      { source: 'native', path: 'test.sh' },
+      'session.created',
+      '',
+      { sessionID: 's1' }
+    );
+    expect(result.exitCode).toBe(2);
+    expect(result.output).toBe('not allowed');
+  });
+
+  it('parses JSON stdout with decision block', async () => {
+    const stdoutData = JSON.stringify({
+      decision: 'block',
+      reason: 'blocked by policy',
+    });
+    vi.mocked(spawn).mockReturnValueOnce({
+      stdout: {
+        on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+          if (event === 'data') cb(Buffer.from(stdoutData));
+        }),
+      },
+      stderr: { on: vi.fn() },
+      stdin: { write: vi.fn(), end: vi.fn() },
+      on: vi.fn((event: string, cb: (code: number | null) => void) => {
+        if (event === 'close') cb(0);
+      }),
+      unref: vi.fn(),
+    } as unknown as ChildProcess);
+
+    const result = await executeScript(
+      { source: 'native', path: 'test.sh' },
+      'session.created',
+      '',
+      { sessionID: 's1' }
+    );
+    expect(result.exitCode).toBe(2);
+    expect(result.output).toContain('blocked by policy');
+  });
+
+  it('parses JSON stdout with continue false', async () => {
+    const stdoutData = JSON.stringify({
+      continue: false,
+      stopReason: 'user requested stop',
+    });
+    vi.mocked(spawn).mockReturnValueOnce({
+      stdout: {
+        on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+          if (event === 'data') cb(Buffer.from(stdoutData));
+        }),
+      },
+      stderr: { on: vi.fn() },
+      stdin: { write: vi.fn(), end: vi.fn() },
+      on: vi.fn((event: string, cb: (code: number | null) => void) => {
+        if (event === 'close') cb(0);
+      }),
+      unref: vi.fn(),
+    } as unknown as ChildProcess);
+
+    const result = await executeScript(
+      { source: 'native', path: 'test.sh' },
+      'session.created',
+      '',
+      { sessionID: 's1' }
+    );
+    expect(result.exitCode).toBe(2);
+    expect(result.output).toContain('user requested stop');
+  });
+
+  it('parses JSON stdout with ok false', async () => {
+    const stdoutData = JSON.stringify({ ok: false, reason: 'failed' });
+    vi.mocked(spawn).mockReturnValueOnce({
+      stdout: {
+        on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+          if (event === 'data') cb(Buffer.from(stdoutData));
+        }),
+      },
+      stderr: { on: vi.fn() },
+      stdin: { write: vi.fn(), end: vi.fn() },
+      on: vi.fn((event: string, cb: (code: number | null) => void) => {
+        if (event === 'close') cb(0);
+      }),
+      unref: vi.fn(),
+    } as unknown as ChildProcess);
+
+    const result = await executeScript(
+      { source: 'native', path: 'test.sh' },
+      'session.created',
+      '',
+      { sessionID: 's1' }
+    );
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain('failed');
+  });
+
+  it('handles spawn error event', async () => {
+    vi.mocked(spawn).mockReturnValueOnce({
+      stdout: { on: vi.fn() },
+      stderr: { on: vi.fn() },
+      stdin: { write: vi.fn(), end: vi.fn() },
+      on: vi.fn((event: string, cb: (err: Error) => void) => {
+        if (event === 'error') cb(new Error('ENOENT'));
+      }),
+      unref: vi.fn(),
+    } as unknown as ChildProcess);
+
+    const result = await executeScript(
+      { source: 'native', path: 'test.sh' },
+      'session.created',
+      '',
+      { sessionID: 's1' }
+    );
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain('Spawn failed');
   });
 });

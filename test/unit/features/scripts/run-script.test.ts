@@ -97,4 +97,18 @@ describe('runScript', () => {
     expect(result.error).toBeNull();
     expect(result.output).toBe('something failed');
   });
+
+  it('rejects Windows-style absolute paths', async () => {
+    const $ = vi.fn() as unknown as PluginInput['$'];
+    const result = await runScript($, 'C:\\scripts\\test.sh');
+    expect(result.exitCode).toBe(-1);
+    expect(result.error).toContain('Invalid script path');
+  });
+
+  it('rejects paths with backslashes', async () => {
+    const $ = vi.fn() as unknown as PluginInput['$'];
+    const result = await runScript($, 'subdir\\test.sh');
+    expect(result.exitCode).toBe(-1);
+    expect(result.error).toContain('Invalid script path');
+  });
 });

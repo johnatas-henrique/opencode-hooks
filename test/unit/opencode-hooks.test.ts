@@ -863,4 +863,169 @@ describe('OpencodeHooks', () => {
       expect(hooks.tool).toEqual({});
     });
   });
+
+  describe('remaining event handlers', () => {
+    it('calls resolveEventConfig for chat.params', async () => {
+      const resolveSpy = vi
+        .spyOn(eventsModule, 'resolveEventConfig')
+        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+
+      const input = {
+        sessionID: 'ses_123',
+        agent: 'test-agent',
+        model: { providerID: 'anthropic', modelID: 'claude-3' },
+        provider: { baseURL: 'https://api.anthropic.com' },
+        message: { role: 'user', content: 'hello' },
+      };
+      const output = { temperature: 0.7, topP: 0.9, topK: 50, options: {} };
+
+      await hooks['chat.params']!(input, output as never);
+
+      expect(resolveSpy).toHaveBeenCalledWith('chat.params', input);
+    });
+
+    it('calls resolveEventConfig for chat.headers', async () => {
+      const resolveSpy = vi
+        .spyOn(eventsModule, 'resolveEventConfig')
+        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+
+      const input = {
+        sessionID: 'ses_123',
+        agent: 'test-agent',
+        model: { providerID: 'anthropic', modelID: 'claude-3' },
+        provider: { baseURL: 'https://api.anthropic.com' },
+        message: { role: 'user', content: 'hello' },
+      };
+      const output = { headers: { 'x-api-key': 'test' } };
+
+      await hooks['chat.headers']!(input, output as never);
+
+      expect(resolveSpy).toHaveBeenCalledWith('chat.headers', input);
+    });
+
+    it('calls resolveEventConfig for permission.ask', async () => {
+      const resolveSpy = vi
+        .spyOn(eventsModule, 'resolveEventConfig')
+        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+
+      const input = {
+        sessionID: 'ses_123',
+        tool: 'bash',
+        id: 'perm_1',
+        type: 'tool',
+      };
+      const output = { status: 'ask' as const };
+
+      await hooks['permission.ask']!(input, output as never);
+
+      expect(resolveSpy).toHaveBeenCalledWith('permission.ask', input);
+    });
+
+    it('calls resolveEventConfig for command.execute.before', async () => {
+      const resolveSpy = vi
+        .spyOn(eventsModule, 'resolveEventConfig')
+        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+
+      const input = {
+        command: '/help',
+        sessionID: 'ses_123',
+        arguments: '--verbose',
+      };
+      const output = { parts: [] };
+
+      await hooks['command.execute.before']!(input, output as never);
+
+      expect(resolveSpy).toHaveBeenCalledWith('command.execute.before', input);
+    });
+
+    it('calls resolveEventConfig for experimental.chat.messages.transform', async () => {
+      const resolveSpy = vi
+        .spyOn(eventsModule, 'resolveEventConfig')
+        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+
+      const input = { messages: [] };
+      const output = { messages: [] };
+
+      await hooks['experimental.chat.messages.transform']!(
+        input,
+        output as never
+      );
+
+      expect(resolveSpy).toHaveBeenCalledWith(
+        'experimental.chat.messages.transform',
+        input
+      );
+    });
+
+    it('calls resolveEventConfig for experimental.chat.system.transform', async () => {
+      const resolveSpy = vi
+        .spyOn(eventsModule, 'resolveEventConfig')
+        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+
+      const input = {
+        sessionID: 'ses_123',
+        model: { providerID: 'anthropic', modelID: 'claude-3' },
+      };
+      const output = { system: [] };
+
+      await hooks['experimental.chat.system.transform']!(
+        input,
+        output as never
+      );
+
+      expect(resolveSpy).toHaveBeenCalledWith(
+        'experimental.chat.system.transform',
+        input
+      );
+    });
+
+    it('calls resolveEventConfig for experimental.session.compacting', async () => {
+      const resolveSpy = vi
+        .spyOn(eventsModule, 'resolveEventConfig')
+        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+
+      const input = { sessionID: 'ses_123' };
+      const output = { context: [] };
+
+      await hooks['experimental.session.compacting']!(input, output as never);
+
+      expect(resolveSpy).toHaveBeenCalledWith(
+        'experimental.session.compacting',
+        input
+      );
+    });
+
+    it('calls resolveEventConfig for experimental.text.complete', async () => {
+      const resolveSpy = vi
+        .spyOn(eventsModule, 'resolveEventConfig')
+        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+
+      const input = {
+        sessionID: 'ses_123',
+        messageID: 'msg_1',
+        partID: 'part_1',
+      };
+      const output = { text: '' };
+
+      await hooks['experimental.text.complete']!(input, output as never);
+
+      expect(resolveSpy).toHaveBeenCalledWith(
+        'experimental.text.complete',
+        input
+      );
+    });
+
+    it('calls resolveEventConfig for tool.definition', async () => {
+      const resolveSpy = vi
+        .spyOn(eventsModule, 'resolveEventConfig')
+        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+
+      const input = { toolID: 'bash' };
+      const output = { description: 'Run shell commands', parameters: {} };
+
+      await hooks['tool.definition']!(input, output as never);
+
+      expect(resolveSpy).toHaveBeenCalledWith('tool.definition', input);
+    });
+  });
 });

@@ -249,6 +249,27 @@ describe('loadClaudeSettings', () => {
     expect(result.unsupported).toContain('Notification');
   });
 
+  it('appends scripts to existing event key from multiple hook groups', () => {
+    vi.mocked(mockFs.existsSync).mockReturnValue(true);
+    vi.mocked(mockFs.readFileSync).mockReturnValue(
+      JSON.stringify({
+        hooks: {
+          PreToolUse: [
+            { matcher: { app: 'bash' }, hooks: [{ command: 'first.sh' }] },
+            {
+              matcher: { app: 'write' },
+              hooks: [{ command: 'second.sh' }],
+            },
+          ],
+        },
+      })
+    );
+    const result = loadClaudeSettings('/test/project');
+    expect(result.hooks['tool.execute.before']).toHaveLength(2);
+    expect(result.hooks['tool.execute.before'][0].path).toBe('first.sh');
+    expect(result.hooks['tool.execute.before'][1].path).toBe('second.sh');
+  });
+
   it('parses hooks with valid matcher', () => {
     vi.mocked(mockFs.existsSync).mockReturnValue(true);
     vi.mocked(mockFs.readFileSync).mockReturnValue(

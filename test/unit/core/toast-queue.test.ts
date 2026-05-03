@@ -169,4 +169,26 @@ describe('global toast queue', () => {
 
     expect(showFn).toHaveBeenCalledTimes(1);
   });
+
+  it('initGlobalToastQueue addMultiple and clear and flush work', async () => {
+    const showFn = vi.fn();
+    const queue = initGlobalToastQueue(showFn);
+    queue.addMultiple([
+      { title: 'A', message: 'a', variant: 'info', duration: 50 },
+      { title: 'B', message: 'b', variant: 'info', duration: 50 },
+    ]);
+    expect(queue.pending).toBe(2);
+    queue.clear();
+    expect(queue.pending).toBe(0);
+  });
+
+  it('createToastQueue flush works', async () => {
+    const showFn = vi.fn();
+    const queue = createToastQueue(showFn, { staggerMs: 10 });
+    queue.add({ title: 'T', message: 'M', variant: 'info', duration: 50 });
+    const p = queue.flush();
+    await vi.advanceTimersByTimeAsync(500);
+    await p;
+    expect(showFn).toHaveBeenCalledTimes(1);
+  });
 });

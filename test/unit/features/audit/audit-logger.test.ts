@@ -199,6 +199,47 @@ describe('createAuditLogger', () => {
     await expect(logger.cleanup()).resolves.toBeUndefined();
   });
 
+  it('falls through to real stat when no deps provided', async () => {
+    const result = await archiveFileIfNeeded(
+      '/tmp/log.json',
+      '/tmp/archive',
+      1024
+    );
+    expect(result).toBe(false);
+    expect(mockFs.stat).toHaveBeenCalled();
+  });
+
+  it('skips cleanup when deps.stat is undefined', async () => {
+    vi.mocked(mockFs.readdir).mockResolvedValue(['old.gz']);
+    const config = makeConfig({ maxAgeDays: 30 });
+    const logger = createAuditLogger({
+      basePath: '/tmp',
+      config,
+      deps: { stat: undefined as undefined },
+    });
+    await logger.cleanup();
+    expect(mockFs.readdir).not.toHaveBeenCalled();
+  });
+
+  it('skips non-.gz files during cleanup', async () => {
+    vi.mocked(mockFs.readdir).mockResolvedValue([
+      'normal.log',
+      'old.gz',
+      'readme.txt',
+    ]);
+    const oldMtime = Date.now() - 40 * 24 * 60 * 60 * 1000;
+    vi.mocked(mockFs.stat).mockReset();
+    vi.mocked(mockFs.stat)
+      .mockResolvedValueOnce({ size: 100, mtimeMs: oldMtime })
+      .mockResolvedValueOnce({ size: 100, mtimeMs: oldMtime });
+    vi.mocked(mockFs.unlink).mockResolvedValue(undefined);
+    const config = makeConfig({ maxAgeDays: 30 });
+    const logger = createAuditLogger({ basePath: '/tmp', config });
+    await logger.cleanup();
+    expect(mockFs.unlink).toHaveBeenCalledTimes(1);
+    expect(mockFs.unlink).toHaveBeenCalledWith('/tmp/old.gz');
+  });
+
   it('writes with injected deps', async () => {
     const mockAppend = vi.fn().mockResolvedValue(undefined);
     const mockMkdirFn = vi.fn().mockResolvedValue(undefined);

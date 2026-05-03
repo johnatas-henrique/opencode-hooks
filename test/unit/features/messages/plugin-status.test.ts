@@ -328,4 +328,13 @@ describe('formatPluginStatus', () => {
     const result = formatPluginStatus([failed], 'user-only');
     expect(result).toContain('(timeout)');
   });
+
+  it('shows incompatible section in user-separated mode', () => {
+    const result = formatPluginStatus(
+      [userActive, builtInActive, failed, incompatible],
+      'user-separated'
+    );
+    expect(result).toContain('Incompatible:');
+    expect(result).toContain('⚠ legacy');
+  });
 });

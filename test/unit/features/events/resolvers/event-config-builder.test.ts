@@ -84,4 +84,62 @@ describe('ConfigBuilder', () => {
       path: 'claude.sh',
     });
   });
+
+  it('returns empty toastTitle when no handler found', () => {
+    const ctx = createContext({ getEventConfig: () => undefined });
+    const builder = new ConfigBuilder(ctx, 'session.created');
+    const result = builder.resolve();
+    expect(result.toastTitle).toBe('');
+  });
+
+  it('uses allowedFields from user override', () => {
+    const handler = createHandler({ allowedFields: ['default'] });
+    const ctx = createContext({
+      handlers: { 'session.created': handler },
+      getEventConfig: () => ({ allowedFields: ['override'], enabled: true }),
+    });
+    const builder = new ConfigBuilder(ctx, 'session.created');
+    const result = builder.resolve();
+    expect(result.allowedFields).toEqual(['override']);
+  });
+
+  it('calls getDefaultScript when handler has no defaultScript', () => {
+    const handler = createHandler({ defaultScript: undefined });
+    const ctx = createContext({
+      handlers: { 'session.created': handler },
+      getEventConfig: () => ({ runScripts: true }),
+    });
+    const builder = new ConfigBuilder(ctx, 'session.created');
+    const result = builder.resolve();
+    expect(result.scripts[0]?.path).toBe('session-created.sh');
+  });
+
+  it('handles buildMessage that throws', () => {
+    const handler = createHandler({
+      buildMessage: () => {
+        throw new Error('boom');
+      },
+    });
+    const ctx = createContext({
+      handlers: { 'session.created': handler },
+      getEventConfig: () => ({ toast: true }),
+    });
+    const builder = new ConfigBuilder(ctx, 'session.created');
+    const result = builder.resolve();
+    expect(result.toastMessage).toBe('');
+  });
+
+  it('uses handler with custom buildMessage returning string', () => {
+    const handler = createHandler({
+      defaultScript: 'custom.sh',
+      buildMessage: () => 'custom message',
+    });
+    const ctx = createContext({
+      handlers: { 'session.created': handler },
+      getEventConfig: () => undefined,
+    });
+    const builder = new ConfigBuilder(ctx, 'session.created');
+    const result = builder.resolve();
+    expect(result.toastMessage).toBe('custom message');
+  });
 });

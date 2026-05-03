@@ -86,4 +86,14 @@ describe('getBooleanField', () => {
     const result = getBooleanField(true, defaultCfg, 'appendToSession', true);
     expect(result).toBe(false);
   });
+
+  it('uses fallback when defaultCfg is null', () => {
+    const result = getBooleanField(
+      true,
+      null as unknown as EventOverride,
+      'debug',
+      true
+    );
+    expect(result).toBe(true);
+  });
 });

@@ -9,6 +9,7 @@ import {
   createSessionEventRecord,
   createGenericEventRecord,
   createEventRecorder,
+  setGlobalTruncationKB,
 } from '.opencode/plugins/features/audit/event-recorder';
 import type { AuditConfig } from '.opencode/plugins/types/audit';
 import type {
@@ -266,6 +267,24 @@ describe('createGenericEventRecord', () => {
     );
   });
 
+  it('handles arrays with primitive items', () => {
+    const record = createGenericEventRecord(
+      'test',
+      { items: [1, 'hello', true, null] },
+      {},
+      undefined,
+      true,
+      [],
+      100,
+      10
+    );
+    const result = record!.input?.items as Array<unknown>;
+    expect(result[0]).toBe(1);
+    expect(result[1]).toBe('hello');
+    expect(result[2]).toBe(true);
+    expect(result[3]).toBeNull();
+  });
+
   it('limits array items', () => {
     const items = [{ name: 'a' }, { name: 'b' }, { name: 'c' }, { name: 'd' }];
     const record = createGenericEventRecord(
@@ -295,6 +314,20 @@ describe('createGenericEventRecord', () => {
       3
     );
     expect(record!.tool).toBe('bash');
+  });
+
+  it('skips sanitization when input is undefined', () => {
+    const record = createGenericEventRecord(
+      'test',
+      undefined,
+      {},
+      undefined,
+      true,
+      [],
+      100,
+      3
+    );
+    expect(record!.input).toBeUndefined();
   });
 
   it('sanitizes output fields', () => {
@@ -374,6 +407,33 @@ describe('createEventRecorder', () => {
     expect(mockWriteLine).not.toHaveBeenCalled();
   });
 
+  it('does not write when config level is audit [logToolExecuteAfter]', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig({ level: 'audit' });
+    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
+    await recorder.logToolExecuteAfter(
+      { tool: 'bash', sessionID: 's1', callID: 'c1', args: {} },
+      { title: 't', output: 'o', metadata: { exit: 0 } }
+    );
+    expect(mockWriteLine).not.toHaveBeenCalled();
+  });
+
+  it('does not write when config level is audit [logSessionEvent]', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig({ level: 'audit' });
+    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
+    await recorder.logSessionEvent('session.created', { info: { id: 's1' } });
+    expect(mockWriteLine).not.toHaveBeenCalled();
+  });
+
+  it('does not write when config level is audit [logEvent]', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig({ level: 'audit' });
+    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
+    await recorder.logEvent('custom', { sessionID: 's1' });
+    expect(mockWriteLine).not.toHaveBeenCalled();
+  });
+
   it('appends context to logEvent records', async () => {
     const mockWriteLine = vi.fn().mockResolvedValue(undefined);
     const config = makeConfig();
@@ -385,5 +445,39 @@ describe('createEventRecorder', () => {
     });
     const record = mockWriteLine.mock.calls[0][1] as Record<string, unknown>;
     expect(record.context).toBe('my-context');
+  });
+});
+
+describe('setGlobalTruncationKB', () => {
+  it('sets global truncation KB value', () => {
+    setGlobalTruncationKB(5);
+    const record = createGenericEventRecord(
+      'test',
+      { output: 'x'.repeat(6000) },
+      {},
+      undefined,
+      true,
+      ['output'],
+      100,
+      3
+    );
+    expect(record!.input?.output).toContain('[truncated]');
+  });
+});
+
+describe('sanitizeAndTruncate large fields', () => {
+  it('truncates content field when it is in largeFields and over maxBytes', () => {
+    const largeContent = 'y'.repeat(12000);
+    const record = createGenericEventRecord(
+      'test',
+      { content: largeContent },
+      {},
+      undefined,
+      true,
+      ['content'],
+      100,
+      3
+    );
+    expect(record!.input?.content).toContain('[truncated]');
   });
 });

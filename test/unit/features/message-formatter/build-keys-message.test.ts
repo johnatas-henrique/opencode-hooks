@@ -105,6 +105,12 @@ describe('buildKeysMessage', () => {
     expect(result).toContain('key');
     expect(result).toContain('val');
   });
+
+  it('handles undefined args gracefully', () => {
+    const event: BuildKeysEvent = { input: { args: undefined } };
+    const result = buildKeysMessage(event);
+    expect(result).toContain('Time:');
+  });
 });
 
 describe('buildKeysMessageSimple', () => {

@@ -73,6 +73,11 @@ describe('blockGitForce', () => {
     const output = makeOutput({ command: '' });
     expect(blockGitForce(makeInput(), output, [])).toBe(false);
   });
+
+  it('returns false when command is undefined', () => {
+    const output = makeOutput({});
+    expect(blockGitForce(makeInput(), output, [])).toBe(false);
+  });
 });
 
 describe('blockScriptsFailed', () => {
@@ -135,6 +140,11 @@ describe('blockNoVerify', () => {
 
   it('returns false for empty command', () => {
     const output = makeOutput({ command: '' });
+    expect(blockNoVerify(makeInput(), output, [])).toBe(false);
+  });
+
+  it('returns false when command is undefined', () => {
+    const output = makeOutput({});
     expect(blockNoVerify(makeInput(), output, [])).toBe(false);
   });
 });
@@ -202,6 +212,11 @@ describe('blockSecrets', () => {
   it('recursively checks nested objects', () => {
     const output = makeOutput({ nested: { deep: 'token=abc123' } });
     expect(blockSecrets(makeInput(), output, [])).toBe(true);
+  });
+
+  it('handles null values in nested args', () => {
+    const output = makeOutput({ data: null, other: 'safe' });
+    expect(blockSecrets(makeInput(), output, [])).toBe(false);
   });
 });
 

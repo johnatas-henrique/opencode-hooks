@@ -1,4 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+const mockFs = vi.hoisted(() => ({
+  existsSync: vi.fn(),
+  readFileSync: vi.fn(),
+}));
+vi.mock('fs', () => ({ default: mockFs }));
+
 import { createUserConfig } from '../../helpers/create-config';
 import {
   createContext,
@@ -48,6 +55,15 @@ describe('createContext', () => {
     expect(ctx.claudeUnsupported).toEqual([]);
   });
 
+  it('provides scriptToasts from config', () => {
+    const userCfg = createUserConfig({
+      scriptToasts: { showOutput: false, showError: false },
+    });
+    const ctx = createContext(userCfg);
+    expect(ctx.scriptToasts.showOutput).toBe(false);
+    expect(ctx.scriptToasts.showError).toBe(false);
+  });
+
   it('uses custom eventHandlers when provided', () => {
     const customHandler: EventHandler = {
       title: 'Custom',
@@ -62,15 +78,41 @@ describe('createContext', () => {
     });
     expect(ctx.handlers['session.created']).toBe(customHandler);
   });
+
+  it('loads claude settings when loadClaudeHookSettings is enabled', () => {
+    mockFs.existsSync.mockReturnValue(true);
+    mockFs.readFileSync.mockReturnValue(
+      JSON.stringify({
+        hooks: {
+          PreToolUse: [
+            {
+              matcher: { app: 'bash' },
+              hooks: [{ command: 'hook.sh' }],
+            },
+          ],
+        },
+      })
+    );
+    const userCfg = createUserConfig({
+      loadClaudeHookSettings: { enabled: true },
+    });
+    const ctx = createContext(userCfg);
+    expect(ctx.claudeScripts).not.toEqual({});
+    expect(ctx.claudeUnsupported).toEqual([]);
+  });
 });
 
 describe('createFactory', () => {
-  it('returns a ResolverFactory with both resolvers', () => {
+  it('returns a ResolverFactory whose resolvers resolve correctly', () => {
     const userCfg = createUserConfig();
     const ctx = createContext(userCfg);
     const factory = createFactory(ctx) as ResolverFactory;
-    expect(typeof factory.createEventResolver).toBe('function');
-    expect(typeof factory.createToolResolver).toBe('function');
+    const eventResolver = factory.createEventResolver(ctx);
+    const eventResult = eventResolver.resolve('session.created');
+    expect(eventResult.enabled).toBe(true);
+    const toolResolver = factory.createToolResolver(ctx);
+    const toolResult = toolResolver.resolve('tool.execute.before', 'bash');
+    expect(toolResult).toBeDefined();
   });
 });
 
