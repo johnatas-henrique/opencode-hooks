@@ -1,7 +1,3 @@
-import type {
-  ToolExecuteBeforeInput,
-  ToolExecuteBeforeOutput,
-} from '.opencode/plugins/types/core';
 import type { AuditConfig } from '.opencode/plugins/types/audit';
 import { EventType } from '.opencode/plugins/types/events';
 
@@ -95,24 +91,12 @@ export interface ResolvedEventConfig {
   runOnlyOnce: boolean;
   scriptToasts: ScriptToastsConfig;
   allowedFields?: string[];
-  block: BlockCheck[];
 }
 
 export interface ScriptResult {
   script: string;
   exitCode: number;
   output?: string;
-}
-
-export type BlockPredicate = (
-  input: ToolExecuteBeforeInput,
-  output: ToolExecuteBeforeOutput,
-  scriptResults: ScriptResult[]
-) => boolean;
-
-export interface BlockCheck {
-  check: BlockPredicate;
-  message: string;
 }
 
 export interface FileTemplate {
@@ -130,7 +114,6 @@ export interface ToolOverride {
   runOnlyOnce?: boolean;
   logToAudit?: boolean;
   appendToSession?: boolean;
-  block?: BlockCheck[];
   messageFn?: (input: unknown, output?: unknown) => string | undefined;
 }
 

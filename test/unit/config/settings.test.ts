@@ -103,15 +103,6 @@ describe('userConfig', () => {
     expect(beforeTools).toHaveProperty('read');
     expect(beforeTools).toHaveProperty('edit');
     expect(beforeTools).toHaveProperty('filesystem_read_file');
-
-    const bashBlock = beforeTools.bash.block;
-    expect(bashBlock).toBeDefined();
-    expect(Array.isArray(bashBlock)).toBe(true);
-    expect(bashBlock!.length).toBeGreaterThan(0);
-
-    const writeBlock = beforeTools.write.block;
-    expect(writeBlock).toBeDefined();
-    expect(writeBlock!.length).toBe(1);
   });
 
   it('has tool.execute.after.subagent with task config', () => {

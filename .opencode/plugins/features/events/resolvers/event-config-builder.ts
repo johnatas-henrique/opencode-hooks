@@ -98,7 +98,6 @@ export class ConfigBuilder {
       runOnlyOnce: false,
       scriptToasts: this.context.scriptToasts,
       allowedFields,
-      block: [],
     };
   }
 
@@ -153,7 +152,6 @@ export class ConfigBuilder {
       ),
       scriptToasts: this.context.scriptToasts,
       allowedFields,
-      block: [],
     };
   }
 

@@ -6,7 +6,6 @@ import type {
 import type {
   ResolvedEventConfig,
   ToolConfig,
-  ToolOverride,
   ScriptEntry,
 } from '.opencode/plugins/types/config';
 import { getBooleanField } from '.opencode/plugins/features/events/resolution/boolean-field';
@@ -105,7 +104,6 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       runOnlyOnce: false,
       scriptToasts: this.context.scriptToasts,
       allowedFields: handler?.allowedFields,
-      block: [],
     };
   }
 
@@ -134,7 +132,6 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
         runOnlyOnce: false,
         debug: false,
         scriptToasts: this.context.scriptToasts,
-        block: [],
       };
     }
 
@@ -200,7 +197,6 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       baseWithToolHandler.scripts
     );
     const toastCfg = resolveToastOverride(toolConfig);
-    const toolOverride = toolConfig as ToolOverride;
 
     const mergedScripts = mergeClaudeScripts(
       scripts,
@@ -259,7 +255,6 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
         baseWithToolHandler.runOnlyOnce
       ),
       scriptToasts: this.context.scriptToasts,
-      block: toolOverride?.block ?? [],
     };
   }
 
@@ -350,7 +345,6 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       ),
       scriptToasts: this.context.scriptToasts,
       allowedFields: handler?.allowedFields,
-      block: [],
     };
   }
 }

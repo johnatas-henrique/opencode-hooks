@@ -92,7 +92,6 @@ export class MockEventResolver implements EventConfigResolver {
         outputTitle: 'Script Output',
         errorTitle: 'Script Error',
       },
-      block: [],
     };
   }
 }
@@ -122,7 +121,6 @@ export class MockToolResolver implements ToolConfigResolver {
         outputTitle: 'Script Output',
         errorTitle: 'Script Error',
       },
-      block: [],
     };
   }
 }

@@ -116,8 +116,6 @@ import {
   resetGlobalToastQueue,
   useGlobalToastQueue,
 } from '.opencode/plugins/core/toast-queue';
-import { setDebugRecorder } from '.opencode/plugins/features/audit/debug-recorder';
-import { setSecurityRecorder } from '.opencode/plugins/features/audit/security-recorder';
 import { OpencodeHooks } from '.opencode/plugins/opencode-hooks';
 
 function createMockResolvedConfig(
@@ -146,7 +144,6 @@ function createMockResolvedConfig(
       outputTitle: 'Script Output',
       errorTitle: 'Script Error',
     },
-    block: [],
     ...overrides,
   };
 }
@@ -196,8 +193,12 @@ function setupCommonMocks(): void {
 function setupHooks(): Promise<Hooks> {
   resetGlobalToastQueue();
   pluginIntegration.resetAuditLogging();
-  setDebugRecorder({ logDebug: vi.fn() });
-  setSecurityRecorder({ logSecurity: vi.fn() });
+  (globalThis as Record<string, unknown>).__opencode_debug_recorder = {
+    logDebug: vi.fn(),
+  };
+  (globalThis as Record<string, unknown>).__opencode_security_recorder = {
+    logSecurity: vi.fn(),
+  };
   setupCommonMocks();
   return OpencodeHooks(mockCtx as never);
 }
@@ -214,8 +215,12 @@ describe('OpencodeHooks initialization', () => {
     vi.useFakeTimers();
     pluginIntegration.resetAuditLogging();
     setupCommonMocks();
-    setDebugRecorder({ logDebug: vi.fn() });
-    setSecurityRecorder({ logSecurity: vi.fn() });
+    (globalThis as Record<string, unknown>).__opencode_debug_recorder = {
+      logDebug: vi.fn(),
+    };
+    (globalThis as Record<string, unknown>).__opencode_security_recorder = {
+      logSecurity: vi.fn(),
+    };
 
     const showSpy = vi.spyOn(startupToastModule, 'showStartupToast');
 

@@ -39,8 +39,6 @@ import {
   setStopHookState,
   clearStopHookState,
 } from '.opencode/plugins/features/scripts/executor';
-import type { ScriptResult } from '.opencode/plugins/types/config';
-import { executeBlocking } from '.opencode/plugins/features/block-system/block-handler';
 import type { ExecuteHookParams } from '.opencode/plugins/types/executor';
 import {
   initAuditLogging,
@@ -209,12 +207,6 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     });
   }
 
-  const scriptResults: ScriptResult[] = results.map((r) => ({
-    script: r.script,
-    exitCode: r.exitCode,
-    output: r.output,
-  }));
-
   // Log to plugin-scripts.json
   if (scriptRecorder) {
     for (const r of results) {
@@ -267,17 +259,6 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
         await appendToSession(params.ctx, sessionId, r.output);
       }
     }
-  }
-
-  // Execute blocking checks only for tool.execute.before events
-  if (eventType === EventType.TOOL_EXECUTE_BEFORE && resolved.block.length) {
-    executeBlocking(
-      resolved.block,
-      input as ToolExecuteBeforeInput,
-      output as ToolExecuteBeforeOutput,
-      scriptResults,
-      eventType
-    );
   }
 }
 

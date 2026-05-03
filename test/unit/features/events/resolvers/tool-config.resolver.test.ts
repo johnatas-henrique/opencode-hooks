@@ -64,20 +64,6 @@ describe('ToolConfigResolverImpl', () => {
     expect(result.toastTitle).toBe('');
   });
 
-  it('applies toolOverride block config', () => {
-    const ctx = createContext({
-      getToolConfigs: () => ({
-        bash: {
-          block: [{ check: () => true, message: 'custom block' }],
-        },
-      }),
-    });
-    const resolver = new ToolConfigResolverImpl(ctx);
-    const result = resolver.resolve('tool.execute.before', 'bash');
-    expect(result.block).toHaveLength(1);
-    expect(result.block[0].message).toBe('custom block');
-  });
-
   it('merges claude scripts when runScripts is true', () => {
     const handler = createHandler({ defaultScript: 'handler.sh' });
     const ctx = createContext({
