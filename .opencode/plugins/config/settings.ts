@@ -1,14 +1,6 @@
 import { DEFAULTS } from '.opencode/plugins/core/constants';
 import { EventType } from '.opencode/plugins/types/events';
 import type { UserEventsConfig } from '.opencode/plugins/types/config';
-import {
-  blockEnvFiles,
-  blockGitForce,
-  blockScriptsFailed,
-  blockByPath,
-  blockNoVerify,
-  blockProtectedBranch,
-} from '.opencode/plugins/config/security-rules';
 
 export const userConfig: UserEventsConfig = {
   enabled: true,
@@ -188,29 +180,19 @@ export const userConfig: UserEventsConfig = {
       task: {},
       skill: {},
       bash: {
-        block: [
-          { check: blockNoVerify, message: '🚫 --no-verify flag blocked' },
-          { check: blockGitForce, message: '🚫 git --force forbidden' },
-          {
-            check: blockProtectedBranch,
-            message: '🚫 Push to protected branch',
-          },
-          { check: blockScriptsFailed, message: '🚫 Blocking: scripts failed' },
+        runScripts: true,
+        scripts: [
+          { source: 'claude', path: 'block-destructive.sh' },
+          { source: 'claude', path: 'block-sensitive.sh' },
         ],
       },
       write: {
-        block: [
-          { check: blockEnvFiles, message: '🚫 Cannot write .env files' },
-        ],
+        runScripts: true,
+        scripts: [{ source: 'claude', path: 'block-sensitive.sh' }],
       },
       read: {
-        block: [
-          { check: blockEnvFiles, message: '🚫 Cannot read .env files' },
-          {
-            check: blockByPath(['credentials.json', 'secrets/', '.ssh/']),
-            message: '🚫 Protected files',
-          },
-        ],
+        runScripts: true,
+        scripts: [{ source: 'claude', path: 'block-sensitive.sh' }],
       },
       edit: {},
       chat: {},
@@ -228,15 +210,13 @@ export const userConfig: UserEventsConfig = {
       'git.push': {},
       'git.pull': {},
       filesystem_read_file: {
-        block: [
-          { check: blockEnvFiles, message: '🚫 Cannot read .env files' },
-          {
-            check: blockByPath(['credentials.json', 'secrets/', '.ssh/']),
-            message: '🚫 Protected files',
-          },
-        ],
+        runScripts: true,
+        scripts: [{ source: 'claude', path: 'block-sensitive.sh' }],
       },
-      filesystem_write_file: {},
+      filesystem_write_file: {
+        runScripts: true,
+        scripts: [{ source: 'claude', path: 'block-sensitive.sh' }],
+      },
       filesystem_list_directory: {},
       filesystem_search_files: {},
       filesystem_create_directory: {},
