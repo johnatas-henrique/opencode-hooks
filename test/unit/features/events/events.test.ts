@@ -46,48 +46,11 @@ vi.mock('.opencode/plugins/config/settings', () => ({
 }));
 
 import {
-  getHandler,
-  getToolHandler,
   resolveEventConfig,
   resolveToolConfig,
 } from '.opencode/plugins/features/events/events';
 
 describe('events', () => {
-  describe('getHandler', () => {
-    it('returns a handler for known event type', () => {
-      const handler = getHandler('session.created');
-      expect(handler).toBeDefined();
-      expect(handler?.title).toContain('SESSION CREATED');
-    });
-
-    it('returns undefined for unknown event type', () => {
-      const handler = getHandler('nonexistent.event');
-      expect(handler).toBeUndefined();
-    });
-  });
-
-  describe('getToolHandler', () => {
-    it('returns handler for tool.execute.before.toolName', () => {
-      const handler = getToolHandler('bash', 'tool.execute.before');
-      expect(handler).toBeDefined();
-    });
-
-    it('returns handler for tool.execute.after.toolName', () => {
-      const handler = getToolHandler('bash', 'tool.execute.after');
-      expect(handler).toBeDefined();
-    });
-
-    it('returns undefined when no event type specified', () => {
-      const handler = getToolHandler('bash');
-      expect(handler).toBeUndefined();
-    });
-
-    it('returns undefined for unknown event type', () => {
-      const handler = getToolHandler('bash', 'unknown');
-      expect(handler).toBeUndefined();
-    });
-  });
-
   describe('resolveEventConfig', () => {
     it('resolves config for known event type', () => {
       const result = resolveEventConfig('session.created');

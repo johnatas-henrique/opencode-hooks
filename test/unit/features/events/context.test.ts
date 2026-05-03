@@ -9,12 +9,10 @@ vi.mock('fs', () => ({ default: mockFs }));
 import { createUserConfig } from '../../helpers/create-config';
 import {
   createContext,
-  createFactory,
   createEventResolver,
   createToolResolver,
 } from '.opencode/plugins/features/events/context';
 import type { EventHandler } from '.opencode/plugins/types/events';
-import type { ResolverFactory } from '.opencode/plugins/types/events';
 
 describe('createContext', () => {
   it('creates a ConfigResolverContext from UserEventsConfig', () => {
@@ -99,20 +97,6 @@ describe('createContext', () => {
     const ctx = createContext(userCfg);
     expect(ctx.claudeScripts).not.toEqual({});
     expect(ctx.claudeUnsupported).toEqual([]);
-  });
-});
-
-describe('createFactory', () => {
-  it('returns a ResolverFactory whose resolvers resolve correctly', () => {
-    const userCfg = createUserConfig();
-    const ctx = createContext(userCfg);
-    const factory = createFactory(ctx) as ResolverFactory;
-    const eventResolver = factory.createEventResolver(ctx);
-    const eventResult = eventResolver.resolve('session.created');
-    expect(eventResult.enabled).toBe(true);
-    const toolResolver = factory.createToolResolver(ctx);
-    const toolResult = toolResolver.resolve('tool.execute.before', 'bash');
-    expect(toolResult).toBeDefined();
   });
 });
 

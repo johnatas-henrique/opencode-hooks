@@ -5,7 +5,6 @@ import type {
 import type {
   EventHandler,
   ConfigResolverContext,
-  ResolverFactory,
   EventConfigResolver,
   ToolConfigResolver,
 } from '.opencode/plugins/types/events';
@@ -49,13 +48,6 @@ export function createContext(
       userConfig.events[eventType as keyof typeof userConfig.events],
     getToolConfigs: (toolEventType) =>
       userConfig.tools[toolEventType as keyof typeof userConfig.tools],
-  };
-}
-
-export function createFactory(context: ConfigResolverContext): ResolverFactory {
-  return {
-    createEventResolver: (_ctx) => new EventConfigResolverImpl(context),
-    createToolResolver: (_ctx) => new ToolConfigResolverImpl(context),
   };
 }
 
