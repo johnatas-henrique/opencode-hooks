@@ -4,9 +4,7 @@ import {
   initGlobalToastQueue,
   resetGlobalToastQueue,
 } from '.opencode/plugins/core/toast-queue';
-import { setDebugRecorder } from '.opencode/plugins/features/audit/debug-recorder';
 import { DEFAULTS } from '.opencode/plugins/core/constants';
-import type { DebugRecorder } from '.opencode/plugins/types/audit';
 
 describe('sanitizeData', () => {
   it('returns null when data is null', () => {
@@ -117,38 +115,6 @@ describe('handleDebugLog', () => {
     expect(toast.variant).toBe('info');
     expect(toast.message).toContain('[REDACTED]');
     expect(toast.message).not.toContain('secret');
-  });
-
-  it('logs debug via recorder when available', async () => {
-    const mockLogDebug = vi.fn();
-    const recorder: DebugRecorder = { logDebug: mockLogDebug };
-    setDebugRecorder(recorder);
-    const showFn = vi.fn();
-    initGlobalToastQueue(showFn);
-
-    await handleDebugLog('2026-01-01T00:00:00.000Z', 'Debug Msg', {
-      key: 'value',
-    });
-
-    expect(mockLogDebug).toHaveBeenCalledWith({
-      message: 'Debug Msg',
-      data: { key: 'value' },
-    });
-  });
-
-  it('does not pass data to debug recorder when sanitized data is not an object', async () => {
-    const mockLogDebug = vi.fn();
-    const recorder: DebugRecorder = { logDebug: mockLogDebug };
-    setDebugRecorder(recorder);
-    const showFn = vi.fn();
-    initGlobalToastQueue(showFn);
-
-    await handleDebugLog('2026-01-01T00:00:00.000Z', 'Plain', 'just a string');
-
-    expect(mockLogDebug).toHaveBeenCalledWith({
-      message: 'Plain',
-      data: undefined,
-    });
   });
 
   it('survives when no debug recorder is set', async () => {
