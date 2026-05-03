@@ -107,10 +107,6 @@ export function createSessionEventRecord(
   };
 }
 
-// ============================================
-// Sanitization and Truncation Functions
-// ============================================
-
 const SENSITIVE_FIELDS = [
   'password',
   'token',
@@ -133,11 +129,7 @@ function isSensitiveField(key: string): boolean {
   return SENSITIVE_FIELDS.some((sensitive) => lowerKey.includes(sensitive));
 }
 
-let globalTruncationKB = 10;
-
-export function setGlobalTruncationKB(kb: number) {
-  globalTruncationKB = kb;
-}
+let globalTruncationKB: number;
 
 function sanitizeAndTruncate(
   data: Record<string, unknown>,
@@ -208,10 +200,6 @@ function sanitizeAndTruncate(
 
   return result;
 }
-
-// ============================================
-// Generic Event Record Creation
-// ============================================
 
 export function createGenericEventRecord(
   eventType: string,

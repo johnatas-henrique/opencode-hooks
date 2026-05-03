@@ -48,10 +48,6 @@ export function getErrorRecorder() {
   return initPromise ? errorRecorder : undefined;
 }
 
-export function getAuditLogger() {
-  return initPromise ? auditLogger : undefined;
-}
-
 export function resetAuditLogging() {
   initPromise = null;
 }

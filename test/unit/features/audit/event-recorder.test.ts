@@ -9,7 +9,6 @@ import {
   createSessionEventRecord,
   createGenericEventRecord,
   createEventRecorder,
-  setGlobalTruncationKB,
 } from '.opencode/plugins/features/audit/event-recorder';
 import type { AuditConfig } from '.opencode/plugins/types/audit';
 import type {
@@ -445,23 +444,6 @@ describe('createEventRecorder', () => {
     });
     const record = mockWriteLine.mock.calls[0][1] as Record<string, unknown>;
     expect(record.context).toBe('my-context');
-  });
-});
-
-describe('setGlobalTruncationKB', () => {
-  it('sets global truncation KB value', () => {
-    setGlobalTruncationKB(5);
-    const record = createGenericEventRecord(
-      'test',
-      { output: 'x'.repeat(6000) },
-      {},
-      undefined,
-      true,
-      ['output'],
-      100,
-      3
-    );
-    expect(record!.input?.output).toContain('[truncated]');
   });
 });
 

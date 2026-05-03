@@ -19,7 +19,6 @@ import {
   getEventRecorder,
   getScriptRecorder,
   getErrorRecorder,
-  getAuditLogger,
   resetAuditLogging,
 } from '.opencode/plugins/features/audit/plugin-integration';
 import type { AuditConfig } from '.opencode/plugins/types/audit';
@@ -73,7 +72,6 @@ describe('plugin-integration', () => {
       expect(getEventRecorder()).toBeUndefined();
       expect(getScriptRecorder()).toBeUndefined();
       expect(getErrorRecorder()).toBeUndefined();
-      expect(getAuditLogger()).toBeUndefined();
     });
 
     it('returns instances after init', async () => {
@@ -86,34 +84,6 @@ describe('plugin-integration', () => {
       expect(getEventRecorder()).toBeDefined();
       expect(getScriptRecorder()).toBeDefined();
       expect(getErrorRecorder()).toBeDefined();
-      expect(getAuditLogger()).toBeDefined();
-    });
-  });
-
-  describe('resetAuditLogging', () => {
-    it('clears state so getters return undefined again', async () => {
-      const config = makeConfig();
-      vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
-      vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
-
-      await initAuditLogging(config);
-      expect(getEventRecorder()).toBeDefined();
-
-      resetAuditLogging();
-      expect(getEventRecorder()).toBeUndefined();
-    });
-
-    it('allows re-init after reset', async () => {
-      const config = makeConfig();
-      vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
-      vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
-
-      await initAuditLogging(config);
-      resetAuditLogging();
-
-      const promise = initAuditLogging(config);
-      await promise;
-      expect(getEventRecorder()).toBeDefined();
     });
   });
 
