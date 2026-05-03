@@ -1,87 +1,136 @@
-import { createErrorRecorder } from '.opencode/plugins/features/audit/error-recorder';
-import type { AuditConfig } from '.opencode/plugins/types/audit';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import {
+  getErrorType,
+  createErrorRecord,
+  createErrorRecorder,
+} from '.opencode/plugins/features/audit/error-recorder';
+import type {
+  AuditConfig,
+  ConfigErrorContext,
+  CodeErrorContext,
+} from '.opencode/plugins/types/audit';
 
-describe('error-recorder', () => {
-  const defaultConfig: AuditConfig = {
+function makeConfig(overrides: Partial<AuditConfig> = {}): AuditConfig {
+  return {
     enabled: true,
     level: 'debug',
-    basePath: '/tmp/audit-test',
-    maxSizeMB: 10,
+    basePath: '/tmp/test',
+    maxSizeMB: 1,
     maxAgeDays: 30,
     logTruncationKB: 10,
     maxFieldSize: 1000,
     maxArrayItems: 50,
-    largeFields: [],
+    largeFields: ['output'],
+    ...overrides,
   };
+}
 
-  describe('createErrorRecorder', () => {
-    it('should not call writeLine when disabled', async () => {
-      const mockWriteLine = vi.fn();
-      const deps = { writeLine: mockWriteLine };
-      const config = { ...defaultConfig, enabled: false };
-      const recorder = createErrorRecorder(config, deps);
+describe('getErrorType', () => {
+  it('returns "code" when context has "error" key', () => {
+    const context: CodeErrorContext = { error: new Error('boom') };
+    expect(getErrorType(context)).toBe('code');
+  });
 
-      await recorder.logError({ message: 'Test error' });
+  it('returns "config" when context does not have "error" key', () => {
+    const context: ConfigErrorContext = { message: 'invalid config' };
+    expect(getErrorType(context)).toBe('config');
+  });
+});
 
-      expect(mockWriteLine).not.toHaveBeenCalled();
-    });
+describe('createErrorRecord', () => {
+  beforeEach(() => {
+    vi.useRealTimers();
+  });
 
-    it('should pass correct record data to writeLine', async () => {
-      const mockWriteLine = vi.fn().mockResolvedValue(undefined);
-      const deps = { writeLine: mockWriteLine };
-      const recorder = createErrorRecorder(defaultConfig, deps);
+  it('returns null when shouldLog is false', () => {
+    const context: ConfigErrorContext = { message: 'err' };
+    expect(createErrorRecord(context, false)).toBeNull();
+  });
 
-      await recorder.logError({
-        message: 'Script failed',
-        scriptPath: 'deploy.sh',
-      });
+  it('creates config error record', () => {
+    const context: ConfigErrorContext = {
+      message: 'missing field',
+      eventType: 'tool.execute.before',
+      toolName: 'bash',
+      scriptPath: 'test.sh',
+    };
+    const record = createErrorRecord(context, true);
+    expect(record).not.toBeNull();
+    expect(record!.type).toBe('config');
+    expect(record!.error).toBe('missing field');
+    expect(record!.eventType).toBe('tool.execute.before');
+    expect(record!.toolName).toBe('bash');
+    expect(record!.scriptPath).toBe('test.sh');
+    expect(record!.ts).toEqual(expect.any(String));
+  });
 
-      const recordArg = mockWriteLine.mock.calls[0][1];
-      expect(recordArg.type).toBe('config');
-      expect(recordArg.error).toBe('Script failed');
-      expect(recordArg.scriptPath).toBe('deploy.sh');
-    });
+  it('creates code error record with stack', () => {
+    const error = new Error('runtime error');
+    const context: CodeErrorContext = { error, context: 'during execution' };
+    const record = createErrorRecord(context, true);
+    expect(record).not.toBeNull();
+    expect(record!.type).toBe('code');
+    expect(record!.error).toBe('runtime error');
+    expect(record!.context).toBe('during execution');
+    expect(record!.stack).toEqual(expect.any(String));
+  });
 
-    it('should include stack for code errors', async () => {
-      const mockWriteLine = vi.fn().mockResolvedValue(undefined);
-      const deps = { writeLine: mockWriteLine };
-      const recorder = createErrorRecorder(defaultConfig, deps);
+  it('skips stack when skipStack is true', () => {
+    const error = new Error('no stack');
+    const context: CodeErrorContext = { error, skipStack: true };
+    const record = createErrorRecord(context, true);
+    expect(record).not.toBeNull();
+    expect(record!.error).toBe('no stack');
+    expect(record!.stack).toBeUndefined();
+  });
+});
 
-      await recorder.logError({
-        error: new Error('Code error'),
-        context: 'handler',
-      });
+describe('createErrorRecorder', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-      const recordArg = mockWriteLine.mock.calls[0][1];
-      expect(recordArg.type).toBe('code');
-      expect(recordArg.stack).toBeDefined();
-    });
+  it('calls writeLine on error', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig();
+    const recorder = createErrorRecorder(config, { writeLine: mockWriteLine });
 
-    it('should not include stack when skipStack is true', async () => {
-      const mockWriteLine = vi.fn();
-      const recorder = createErrorRecorder(
-        {
-          enabled: true,
-          level: 'debug',
-          basePath: '/tmp/audit-test',
-          maxSizeMB: 10,
-          maxAgeDays: 30,
-          logTruncationKB: 10,
-          maxFieldSize: 1000,
-          maxArrayItems: 50,
-          largeFields: [],
-        },
-        { writeLine: mockWriteLine }
-      );
+    const context: ConfigErrorContext = { message: 'test error' };
+    await recorder.logError(context);
 
-      await recorder.logError({
-        error: new Error('Code error'),
-        context: 'handler',
-        skipStack: true,
-      });
+    expect(mockWriteLine).toHaveBeenCalledOnce();
+    expect(mockWriteLine.mock.calls[0][0]).toBe('errors');
+    const record = mockWriteLine.mock.calls[0][1] as Record<string, unknown>;
+    expect(record.type).toBe('config');
+    expect(record.error).toBe('test error');
+  });
 
-      const recordArg = mockWriteLine.mock.calls[0][1];
-      expect(recordArg.stack).toBeUndefined();
-    });
+  it('does not call writeLine when config is disabled', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig({ enabled: false });
+    const recorder = createErrorRecorder(config, { writeLine: mockWriteLine });
+
+    const context: ConfigErrorContext = { message: 'should not log' };
+    await recorder.logError(context);
+
+    expect(mockWriteLine).not.toHaveBeenCalled();
+  });
+
+  it('creates code error record via logError', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig();
+    const recorder = createErrorRecorder(config, { writeLine: mockWriteLine });
+
+    const context: CodeErrorContext = {
+      error: new Error('code error'),
+      context: 'exec',
+    };
+    await recorder.logError(context);
+
+    expect(mockWriteLine).toHaveBeenCalledOnce();
+    const record = mockWriteLine.mock.calls[0][1] as Record<string, unknown>;
+    expect(record.type).toBe('code');
+    expect(record.error).toBe('code error');
+    expect(record.context).toBe('exec');
   });
 });

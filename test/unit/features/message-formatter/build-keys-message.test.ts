@@ -1,73 +1,175 @@
+import { describe, it, expect, vi } from 'vitest';
 import {
   buildKeysMessage,
   buildKeysMessageSimple,
 } from '.opencode/plugins/features/message-formatter/build-keys-message';
-import { SENSITIVE_PATTERNS } from '.opencode/plugins/features/message-formatter/mask-sensitive';
-import { truncate } from '.opencode/plugins/features/message-formatter/truncate';
+import type { BuildKeysEvent } from '.opencode/plugins/types/messages';
 
-describe('buildKeysMessage with allowedFields', () => {
-  it('should use properties. prefix to get value from properties', () => {
-    const event = { properties: { duration: 1000, status: 'ok' } };
-    const message = buildKeysMessage(event, ['properties.duration']);
-    expect(message).toContain('properties.duration:');
-    expect(message).toContain('1000');
+describe('buildKeysMessage', () => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-01-15T14:30:00'));
   });
 
-  it('should handle multiple allowed fields', () => {
-    const event = {
-      input: { name: 'John' },
-      output: { result: 'success' },
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('builds message from input.args when no allowedFields', () => {
+    const event: BuildKeysEvent = {
+      input: { args: { command: 'ls', path: '/tmp' } },
     };
-    const message = buildKeysMessage(event, ['input.name', 'output.result']);
-    expect(message).toContain('input.name:');
-    expect(message).toContain('output.result:');
+    const result = buildKeysMessage(event);
+    expect(result).toContain('input.args.command:');
+    expect(result).toContain('input.args.path:');
+    expect(result).toContain('Time:');
   });
 
-  it('should handle null args', () => {
-    const event = { input: { args: null } };
-    const message = buildKeysMessage(event);
-    expect(message).toBeDefined();
+  it('builds message from input fields other than args', () => {
+    const event: BuildKeysEvent = {
+      input: { tool: 'bash', sessionID: 'ses_123' },
+    };
+    const result = buildKeysMessage(event);
+    expect(result).toContain('input.tool');
+    expect(result).toContain('input.sessionID');
   });
 
-  it('should handle null properties', () => {
-    const event = { properties: null as unknown as Record<string, unknown> };
-    const message = buildKeysMessageSimple(event);
-    expect(message).toContain('Time:');
+  it('builds message from output when no allowedFields', () => {
+    const event: BuildKeysEvent = {
+      output: { status: 'success', exitCode: 0 },
+    };
+    const result = buildKeysMessage(event);
+    expect(result).toContain('output.status');
+    expect(result).toContain('output.exitCode');
   });
 
-  it('should cover line 104 in buildKeysMessageSimple', () => {
-    const event = { properties: { key: 'value' } };
-    const message = buildKeysMessageSimple(event, ['key']);
-    expect(message).toContain('key:');
-    expect(message).toContain('value');
+  it('uses allowedFields with input. prefix', () => {
+    const event: BuildKeysEvent = {
+      input: { tool: 'bash', sessionID: 'ses_123' },
+      output: { status: 'success' },
+    };
+    const result = buildKeysMessage(event, ['input.tool', 'output.status']);
+    expect(result).toContain('input.tool');
+    expect(result).toContain('output.status');
+    expect(result).not.toContain('input.sessionID');
   });
 
-  it('should cover input.args branch (lines 23-26)', () => {
-    const event = { input: { args: { port: '3000', host: 'localhost' } } };
-    const message = buildKeysMessage(event);
-    expect(message).toContain('input.args.port:');
-    expect(message).toContain('input.args.host:');
+  it('uses allowedFields with properties. prefix', () => {
+    const event: BuildKeysEvent = {
+      properties: { file: 'test.ts', action: 'write' },
+    };
+    const result = buildKeysMessage(event, ['properties.file']);
+    expect(result).toContain('properties.file');
+    expect(result).not.toContain('properties.action');
   });
 
-  it('should cover input without args branch (lines 32-34)', () => {
-    const event = { input: { name: 'test' }, output: { result: 'ok' } };
-    const message = buildKeysMessage(event);
-    expect(message).toContain('output.result:');
+  it('allows bare field name without prefix, searching input/output/properties', () => {
+    const event: BuildKeysEvent = {
+      input: { tool: 'bash' },
+      output: { status: 'done' },
+    };
+    const result = buildKeysMessage(event, ['tool']);
+    expect(result).toContain('tool');
+  });
+
+  it('skips undefined values from allowedFields', () => {
+    const event: BuildKeysEvent = {
+      input: { tool: 'bash' },
+    };
+    const result = buildKeysMessage(event, ['input.tool', 'output.status']);
+    expect(result).toContain('input.tool');
+    expect(result).not.toContain('output.status');
+  });
+
+  it('falls back to event.properties when no lines from input/output', () => {
+    const event: BuildKeysEvent = {
+      properties: { reason: 'test fallback', count: 3 },
+    };
+    const result = buildKeysMessage(event);
+    expect(result).toContain('reason');
+    expect(result).toContain('count');
+  });
+
+  it('appends Time at the end', () => {
+    const event: BuildKeysEvent = { input: { tool: 'bash' } };
+    const result = buildKeysMessage(event);
+    const lines = result.split('\n');
+    expect(lines[lines.length - 1]).toMatch(/^Time:/);
+  });
+
+  it('serializes object properties as JSON', () => {
+    const event: BuildKeysEvent = {
+      properties: { metadata: { key: 'val' } },
+    };
+    const result = buildKeysMessage(event);
+    expect(result).toContain('metadata:');
+    expect(result).toContain('key');
+    expect(result).toContain('val');
   });
 });
 
-describe('SENSITIVE_PATTERNS', () => {
-  it('each pattern is a tuple of RegExp and string', () => {
-    for (const [pattern, replacement] of SENSITIVE_PATTERNS) {
-      expect(pattern instanceof RegExp).toBe(true);
-      expect(typeof replacement).toBe('string');
-    }
+describe('buildKeysMessageSimple', () => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-01-15T14:30:00'));
   });
-});
 
-describe('truncate', () => {
-  it('handles unicode characters', () => {
-    const result = truncate('🎉🎉🎉🎉🎉', 4);
-    expect(result).toBe('🎉🎉...');
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('flattens properties when no allowedFields', () => {
+    const event: BuildKeysEvent = {
+      properties: { name: 'test', value: 42 },
+    };
+    const result = buildKeysMessageSimple(event);
+    expect(result).toContain('name:');
+    expect(result).toContain('value:');
+  });
+
+  it('recursively flattens nested objects', () => {
+    const event: BuildKeysEvent = {
+      properties: { outer: { inner: 'deep', count: 1 } },
+    };
+    const result = buildKeysMessageSimple(event);
+    expect(result).toContain('outer.inner:');
+    expect(result).toContain('outer.count:');
+  });
+
+  it('handles array values without recursion', () => {
+    const event: BuildKeysEvent = {
+      properties: { items: [1, 2, 3] },
+    };
+    const result = buildKeysMessageSimple(event);
+    expect(result).toContain('items:');
+  });
+
+  it('uses allowedFields to filter', () => {
+    const event: BuildKeysEvent = {
+      properties: { name: 'test', value: 42, extra: 'hidden' },
+    };
+    const result = buildKeysMessageSimple(event, ['name', 'value']);
+    expect(result).toContain('name:');
+    expect(result).toContain('value:');
+    expect(result).not.toContain('extra');
+  });
+
+  it('skips undefined allowedFields', () => {
+    const event: BuildKeysEvent = {
+      properties: { name: 'test' },
+    };
+    const result = buildKeysMessageSimple(event, ['missing']);
+    expect(result).not.toContain('missing');
+  });
+
+  it('returns only Time when no properties and no allowedFields', () => {
+    const event: BuildKeysEvent = {};
+    const result = buildKeysMessageSimple(event);
+    expect(result).toMatch(/^Time:/);
+  });
+
+  it('appends Time at the end', () => {
+    const event: BuildKeysEvent = { properties: { x: 1 } };
+    const result = buildKeysMessageSimple(event);
+    const lines = result.split('\n');
+    expect(lines[lines.length - 1]).toMatch(/^Time:/);
   });
 });

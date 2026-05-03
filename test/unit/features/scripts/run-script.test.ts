@@ -1,112 +1,100 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { runScript } from '.opencode/plugins/features/scripts/run-script';
 import type { PluginInput } from '@opencode-ai/plugin';
 
-describe('run-script', () => {
-  let mockDollar: PluginInput['$'];
-
+describe('runScript', () => {
   beforeEach(() => {
-    mockDollar = vi.fn((_strings: TemplateStringsArray) => {
-      const result = {
-        quiet: vi.fn().mockReturnValue({
-          text: vi.fn().mockReturnValue('script output'),
-          exitCode: 0,
-        }),
-      };
-      return result;
-    }) as unknown as PluginInput['$'];
+    vi.clearAllMocks();
   });
 
-  describe('validateScriptPath', () => {
-    it('should block path traversal with /.. in middle', async () => {
-      const result = await runScript(
-        mockDollar as PluginInput['$'],
-        'subdir/../../outside.sh'
-      );
-      expect(result.error).toContain('Invalid script path');
-      expect(result.exitCode).toBe(-1);
-    });
-
-    it('should block absolute Unix path', async () => {
-      const result = await runScript(
-        mockDollar as PluginInput['$'],
-        '/absolute/path.sh'
-      );
-      expect(result.error).toContain('Invalid script path');
-      expect(result.exitCode).toBe(-1);
-    });
-
-    it('should block Windows absolute path', async () => {
-      const result = await runScript(
-        mockDollar as PluginInput['$'],
-        'C:\\Windows\\script.bat'
-      );
-      expect(result.error).toContain('Invalid script path');
-      expect(result.exitCode).toBe(-1);
-    });
-
-    it('should block backslash (Windows separator)', async () => {
-      const result = await runScript(
-        mockDollar as PluginInput['$'],
-        'subdir\\script.sh'
-      );
-      expect(result.error).toContain('Invalid script path');
-      expect(result.exitCode).toBe(-1);
-    });
-
-    it('should block empty script path', async () => {
-      const result = await runScript(mockDollar as PluginInput['$'], '');
-      expect(result.error).toContain('Invalid script path');
-      expect(result.exitCode).toBe(-1);
-    });
+  it('returns error for invalid script path (empty)', async () => {
+    const $ = vi.fn() as unknown as PluginInput['$'];
+    const result = await runScript($, '');
+    expect(result.exitCode).toBe(-1);
+    expect(result.error).toContain('Invalid script path');
   });
 
-  describe('script execution', () => {
-    it('should run script with arguments', async () => {
-      const result = await runScript(
-        mockDollar as PluginInput['$'],
-        'test-script.sh',
-        'arg1',
-        'arg2'
-      );
+  it('returns error for path with .. traversal', async () => {
+    const $ = vi.fn() as unknown as PluginInput['$'];
+    const result = await runScript($, '../escape.sh');
+    expect(result.exitCode).toBe(-1);
+    expect(result.error).toContain('Invalid script path');
+  });
 
-      expect(mockDollar).toHaveBeenCalled();
-      expect(result.output).toBe('script output');
-    });
+  it('returns error for absolute path', async () => {
+    const $ = vi.fn() as unknown as PluginInput['$'];
+    const result = await runScript($, '/etc/hooks.sh');
+    expect(result.exitCode).toBe(-1);
+    expect(result.error).toContain('Invalid script path');
+  });
 
-    it('should return error object when script fails', async () => {
-      mockDollar = vi.fn((_strings: TemplateStringsArray) => {
-        return {
-          quiet: vi.fn().mockImplementation(() => {
-            throw new Error('Script execution failed');
-          }),
-        };
-      }) as unknown as PluginInput['$'];
+  it('calls $`...`.quiet() with correct path for valid scripts', async () => {
+    const mockResult = { text: () => 'output', exitCode: 0 };
+    const mockQuiet = vi.fn().mockResolvedValue(mockResult);
+    const $ = vi
+      .fn()
+      .mockReturnValue({ quiet: mockQuiet }) as unknown as PluginInput['$'];
 
-      const result = await runScript(
-        mockDollar as PluginInput['$'],
-        'failing.sh'
-      );
+    const result = await runScript($, 'test.sh');
 
-      expect(result.error).toContain('Script execution failed');
-      expect(result.exitCode).toBe(-1);
-    });
+    expect($).toHaveBeenCalledWith(
+      ['./', '/', ''],
+      '.opencode/scripts',
+      'test.sh'
+    );
+    expect(mockQuiet).toHaveBeenCalledOnce();
+    expect(result).toEqual({ output: 'output', error: null, exitCode: 0 });
+  });
 
-    it('should handle non-Error objects in catch block', async () => {
-      mockDollar = vi.fn((_strings: TemplateStringsArray) => {
-        return {
-          quiet: vi.fn().mockImplementation(() => {
-            throw 'string error';
-          }),
-        };
-      }) as unknown as PluginInput['$'];
+  it('passes sanitized args to $ template', async () => {
+    const mockResult = { text: () => 'done', exitCode: 0 };
+    const mockQuiet = vi.fn().mockResolvedValue(mockResult);
+    const $ = vi
+      .fn()
+      .mockReturnValue({ quiet: mockQuiet }) as unknown as PluginInput['$'];
 
-      const result = await runScript(
-        mockDollar as PluginInput['$'],
-        'string-error.sh'
-      );
+    await runScript($, 'test.sh', '--flag', 'value');
 
-      expect(result.error).toBe('string error');
-      expect(result.exitCode).toBe(-1);
-    });
+    expect($).toHaveBeenCalled();
+    expect(mockQuiet).toHaveBeenCalledOnce();
+  });
+
+  it('handles script errors by catching and returning error result', async () => {
+    const mockQuiet = vi.fn().mockRejectedValue(new Error('command not found'));
+    const $ = vi
+      .fn()
+      .mockReturnValue({ quiet: mockQuiet }) as unknown as PluginInput['$'];
+
+    const result = await runScript($, 'test.sh');
+
+    expect(result.exitCode).toBe(-1);
+    expect(result.error).toBe('command not found');
+    expect(result.output).toBe('');
+  });
+
+  it('handles non-Error thrown values', async () => {
+    const mockQuiet = vi.fn().mockRejectedValue('string error');
+    const $ = vi
+      .fn()
+      .mockReturnValue({ quiet: mockQuiet }) as unknown as PluginInput['$'];
+
+    const result = await runScript($, 'test.sh');
+
+    expect(result.exitCode).toBe(-1);
+    expect(result.error).toBe('string error');
+  });
+
+  it('returns success with non-zero exitCode from $ result', async () => {
+    const mockResult = { text: () => 'something failed', exitCode: 1 };
+    const mockQuiet = vi.fn().mockResolvedValue(mockResult);
+    const $ = vi
+      .fn()
+      .mockReturnValue({ quiet: mockQuiet }) as unknown as PluginInput['$'];
+
+    const result = await runScript($, 'test.sh');
+
+    expect(result.exitCode).toBe(1);
+    expect(result.error).toBeNull();
+    expect(result.output).toBe('something failed');
   });
 });

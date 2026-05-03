@@ -1,59 +1,95 @@
+import { describe, it, expect } from 'vitest';
 import { normalizeInputForHandler } from '.opencode/plugins/features/events/resolvers/normalize-input';
 
 describe('normalizeInputForHandler', () => {
-  describe('line 10 branch - exact match shell.env', () => {
-    it('should cover line 10 when eventType exactly equals shell.env', () => {
-      const input = { test: 'value' };
-      const output = { result: 'output' };
-      const result = normalizeInputForHandler('shell.env', input, output);
-      expect(result).toHaveProperty('properties');
-      expect(result).toHaveProperty('output');
+  it('returns { input, output } for tool.execute events', () => {
+    const result = normalizeInputForHandler(
+      'tool.execute.before',
+      { tool: 'bash', sessionID: 'ses_1' },
+      { args: { command: 'ls' } }
+    );
+    expect(result).toEqual({
+      input: { tool: 'bash', sessionID: 'ses_1' },
+      output: { args: { command: 'ls' } },
     });
   });
 
-  describe('command.execute.before event', () => {
-    it('should wrap command input in properties', () => {
-      const input = {
-        command: 'npm test',
-        sessionID: 'ses_123',
-        arguments: '--coverage',
-      };
-
-      const result = normalizeInputForHandler('command.execute.before', input);
-
-      expect((result.properties as Record<string, unknown>).command).toBe(
-        'npm test'
-      );
-      expect((result.properties as Record<string, unknown>).sessionID).toBe(
-        'ses_123'
-      );
+  it('wraps input in { properties, output } for shell.env', () => {
+    const result = normalizeInputForHandler(
+      'shell.env',
+      { cwd: '/tmp' },
+      { env: { PATH: '/usr/bin' } }
+    );
+    expect(result).toEqual({
+      properties: { cwd: '/tmp' },
+      output: { env: { PATH: '/usr/bin' } },
     });
   });
 
-  describe('experimental events (line 14 branch)', () => {
-    it('should handle experimental.audio.start', () => {
-      const input = { sessionID: 'ses_123', streamID: 'stream_1' };
-      const result = normalizeInputForHandler(
-        'experimental.audio.start',
-        input
-      );
-      expect(result.properties).toEqual(input);
+  it('returns { properties, output } for chat events', () => {
+    const result = normalizeInputForHandler(
+      'chat.message',
+      { sessionID: 'ses_1' },
+      { message: { role: 'user', content: 'hello' } }
+    );
+    expect(result).toEqual({
+      properties: { sessionID: 'ses_1' },
+      output: { message: { role: 'user', content: 'hello' } },
     });
   });
 
-  describe('permission events with sub-type (line 18 branch)', () => {
-    it('should handle permission.check', () => {
-      const input = { tool: 'read', level: 'medium' };
-      const result = normalizeInputForHandler('permission.check', input);
-      expect(result).toEqual({ properties: input });
+  it('returns { properties, output } for experimental events', () => {
+    const result = normalizeInputForHandler(
+      'experimental.chat.messages.transform',
+      { sessionID: 'ses_1' },
+      { messages: [] }
+    );
+    expect(result).toEqual({
+      properties: { sessionID: 'ses_1' },
+      output: { messages: [] },
     });
   });
 
-  describe('custom event with properties', () => {
-    it('should handle input with empty properties object', () => {
-      const input = { properties: {}, other: 'field' };
-      const result = normalizeInputForHandler('custom.event', input);
-      expect(result).toEqual({ properties: {} });
+  it('returns { properties, output } for permission events', () => {
+    const result = normalizeInputForHandler(
+      'permission.ask',
+      { sessionID: 'ses_1', tool: 'bash' },
+      { status: 'approved' }
+    );
+    expect(result).toEqual({
+      properties: { sessionID: 'ses_1', tool: 'bash' },
+      output: { status: 'approved' },
+    });
+  });
+
+  it('returns { properties, output } for command.execute.before', () => {
+    const result = normalizeInputForHandler(
+      'command.execute.before',
+      { command: 'ls -la', sessionID: 'ses_1' },
+      { parts: [] }
+    );
+    expect(result).toEqual({
+      properties: { command: 'ls -la', sessionID: 'ses_1' },
+      output: { parts: [] },
+    });
+  });
+
+  it('uses input.properties when available and not a known event type', () => {
+    const result = normalizeInputForHandler('file.edited', {
+      properties: { file: 'test.ts' },
+    });
+    expect(result).toEqual({
+      properties: { file: 'test.ts' },
+    });
+  });
+
+  it('wraps input in { properties: input } as fallback', () => {
+    const result = normalizeInputForHandler('session.created', {
+      sessionID: 'ses_1',
+      info: { id: 'x', title: 't' },
+    });
+    expect(result).toEqual({
+      properties: { sessionID: 'ses_1', info: { id: 'x', title: 't' } },
     });
   });
 });

@@ -1,188 +1,438 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const mockFs = vi.hoisted(() => {
+  const fn = () => vi.fn();
+  return {
+    existsSync: fn(),
+    readFileSync: fn(),
+    readdirSync: fn(),
+    writeFileSync: fn(),
+    mkdirSync: fn(),
+    unlinkSync: fn(),
+    statSync: fn(),
+    appendFileSync: fn(),
+  };
+});
+vi.mock('fs', () => ({ default: mockFs }));
+
+const mockSpawn = vi.hoisted(() => {
+  const procFn = () => vi.fn();
+  return {
+    spawn: vi.fn(() => ({
+      stdout: { on: procFn() },
+      stderr: { on: procFn() },
+      stdin: { write: procFn(), end: procFn() },
+      on: procFn(),
+      unref: procFn(),
+    })),
+  };
+});
+vi.mock('child_process', () => mockSpawn);
+
 import {
+  sanitizeArg,
+  validateScriptPath,
+  resolveScriptPath,
+  getStopHookStateFile,
+  getStopHookActive,
+  setStopHookState,
+  clearStopHookState,
   parseHookOutput,
   buildClaudeStdin,
   buildOpencodeStdin,
+  executeScript,
 } from '.opencode/plugins/features/scripts/executor';
+import type { ScriptEntry } from '.opencode/plugins/types/config';
+
+describe('sanitizeArg', () => {
+  it('replaces shell special chars with escaped versions', () => {
+    expect(sanitizeArg('normal')).toBe('normal');
+    expect(sanitizeArg('arg;')).toBe('arg\\;');
+    expect(sanitizeArg('$HOME')).toBe('\\$HOME');
+    expect(sanitizeArg('$(cmd)')).toBe('\\$\\(cmd\\)');
+    expect(sanitizeArg('back`tick')).toBe('back\\`tick');
+  });
+
+  it('escapes newlines and quotes', () => {
+    expect(sanitizeArg('it\'s "quoted"')).toBe('it\\\'s \\"quoted\\"');
+  });
+});
+
+describe('validateScriptPath', () => {
+  it('rejects empty string', () => {
+    expect(validateScriptPath('')).toBe(false);
+  });
+
+  it('rejects path with ".."', () => {
+    expect(validateScriptPath('../escape.sh')).toBe(false);
+  });
+
+  it('rejects absolute unix paths', () => {
+    expect(validateScriptPath('/etc/passwd')).toBe(false);
+  });
+
+  it('rejects tilde paths', () => {
+    expect(validateScriptPath('~/script.sh')).toBe(false);
+  });
+
+  it('rejects windows absolute paths', () => {
+    expect(validateScriptPath('C:\\script.sh')).toBe(false);
+  });
+
+  it('rejects paths with backslash', () => {
+    expect(validateScriptPath('sub\\dir\\script.sh')).toBe(false);
+  });
+
+  it('allows relative paths with subdirectories', () => {
+    expect(validateScriptPath('subdir/script.sh')).toBe(true);
+  });
+
+  it('allows simple script names', () => {
+    expect(validateScriptPath('test.sh')).toBe(true);
+  });
+});
+
+describe('resolveScriptPath', () => {
+  it('joins cwd with .opencode/scripts and the script path', () => {
+    const originalCwd = process.cwd;
+    process.cwd = vi.fn(() => '/home/project');
+    const result = resolveScriptPath('test.sh');
+    expect(result).toBe('/home/project/.opencode/scripts/test.sh');
+    process.cwd = originalCwd;
+  });
+});
+
+describe('getStopHookStateFile', () => {
+  it('returns path with session id', () => {
+    const result = getStopHookStateFile('ses_123');
+    expect(result).toContain('ses_123_stop_flag');
+  });
+});
+
+describe('getStopHookActive', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns true when state file exists', () => {
+    vi.mocked(mockFs.existsSync).mockReturnValue(true);
+    expect(getStopHookActive('ses_1')).toBe(true);
+  });
+
+  it('returns false when state file does not exist', () => {
+    vi.mocked(mockFs.existsSync).mockReturnValue(false);
+    expect(getStopHookActive('ses_1')).toBe(false);
+  });
+
+  it('returns false when existsSync throws', () => {
+    vi.mocked(mockFs.existsSync).mockImplementation(() => {
+      throw new Error('permission');
+    });
+    expect(getStopHookActive('ses_1')).toBe(false);
+  });
+});
+
+describe('setStopHookState', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('creates directory and writes state file', () => {
+    vi.mocked(mockFs.mkdirSync).mockReturnValue(undefined);
+    vi.mocked(mockFs.writeFileSync).mockReturnValue(undefined);
+
+    setStopHookState('ses_1');
+    expect(mockFs.mkdirSync).toHaveBeenCalled();
+    expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('ses_1_stop_flag'),
+      'true'
+    );
+  });
+
+  it('silently handles errors', () => {
+    vi.mocked(mockFs.mkdirSync).mockImplementation(() => {
+      throw new Error('permission');
+    });
+    expect(() => setStopHookState('ses_1')).not.toThrow();
+  });
+});
+
+describe('clearStopHookState', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('removes state file when it exists', () => {
+    vi.mocked(mockFs.existsSync).mockReturnValue(true);
+    vi.mocked(mockFs.unlinkSync).mockReturnValue(undefined);
+
+    clearStopHookState('ses_1');
+    expect(mockFs.unlinkSync).toHaveBeenCalledWith(
+      expect.stringContaining('ses_1_stop_flag')
+    );
+  });
+
+  it('does not call unlink when file does not exist', () => {
+    vi.mocked(mockFs.existsSync).mockReturnValue(false);
+
+    clearStopHookState('ses_1');
+    expect(mockFs.unlinkSync).not.toHaveBeenCalled();
+  });
+});
 
 describe('parseHookOutput', () => {
-  it('uses stderr as reason for exit code 2', () => {
-    const result = parseHookOutput('', '', 2);
+  it('returns block action for exit code 2', () => {
+    const result = parseHookOutput('', 'Denied by policy', 2);
     expect(result.action).toBe('block');
-    expect(result.reason).toBe('Blocked by exit code 2');
+    expect(result.reason).toBe('Denied by policy');
   });
 
-  it('returns error for non-zero exit code', () => {
-    const result = parseHookOutput('', 'Error message', 1);
+  it('returns error action for non-zero exit code', () => {
+    const result = parseHookOutput('', 'Something broke', 1);
     expect(result.action).toBe('error');
-    expect(result.reason).toBe('Exit code 1: Error message');
+    expect(result.reason).toContain('Something broke');
   });
 
-  it('returns allow when stdout is empty', () => {
-    const result = parseHookOutput('', '', 0);
+  it('returns allow for valid JSON stdout with allow decision', () => {
+    const result = parseHookOutput(
+      JSON.stringify({ decision: 'allow' }),
+      '',
+      0
+    );
     expect(result.action).toBe('allow');
   });
 
-  it('includes updatedInput from permission deny', () => {
+  it('returns block when JSON has decision "block"', () => {
+    const result = parseHookOutput(
+      JSON.stringify({ decision: 'block', reason: 'nope' }),
+      '',
+      0
+    );
+    expect(result.action).toBe('block');
+    expect(result.reason).toBe('nope');
+  });
+
+  it('returns block when JSON has continue false', () => {
+    const result = parseHookOutput(
+      JSON.stringify({ continue: false, stopReason: 'stopped' }),
+      '',
+      0
+    );
+    expect(result.action).toBe('block');
+    expect(result.reason).toBe('stopped');
+  });
+
+  it('returns block when JSON has ok false', () => {
+    const result = parseHookOutput(
+      JSON.stringify({ ok: false, reason: 'fail' }),
+      '',
+      0
+    );
+    expect(result.action).toBe('block');
+    expect(result.reason).toBe('fail');
+  });
+
+  it('handles hookSpecificOutput with deny', () => {
     const stdout = JSON.stringify({
       hookSpecificOutput: {
         permissionDecision: 'deny',
-        permissionDecisionReason: 'Denied',
-        updatedInput: { safe: true },
+        permissionDecisionReason: 'not allowed',
+        updatedInput: {},
       },
     });
     const result = parseHookOutput(stdout, '', 0);
-    expect(result.updatedInput).toEqual({ safe: true });
+    expect(result.action).toBe('block');
+    expect(result.reason).toBe('not allowed');
+    expect(result.updatedInput).toEqual({});
   });
 
-  it('returns block when decision is block', () => {
+  it('returns allow for invalid JSON', () => {
+    const result = parseHookOutput('not-json', '', 0);
+    expect(result.action).toBe('allow');
+  });
+
+  it('includes additionalContext and systemMessage on allow', () => {
     const stdout = JSON.stringify({
-      decision: 'block',
-      reason: 'Block reason',
-    });
-    const result = parseHookOutput(stdout, '', 0);
-    expect(result.action).toBe('block');
-    expect(result.reason).toBe('Block reason');
-  });
-
-  it('returns block when continue is false', () => {
-    const stdout = JSON.stringify({ continue: false, stopReason: 'Stopped' });
-    const result = parseHookOutput(stdout, '', 0);
-    expect(result.action).toBe('block');
-    expect(result.reason).toBe('Stopped');
-  });
-
-  it('returns block when ok is false', () => {
-    const stdout = JSON.stringify({ ok: false, reason: 'Failed' });
-    const result = parseHookOutput(stdout, '', 0);
-    expect(result.action).toBe('block');
-    expect(result.reason).toBe('Failed');
-  });
-
-  it('returns allow with updatedInput from hookSpecificOutput', () => {
-    const stdout = JSON.stringify({
-      hookSpecificOutput: {
-        updatedInput: { modified: true },
-      },
+      additionalContext: 'ctx',
+      systemMessage: 'msg',
     });
     const result = parseHookOutput(stdout, '', 0);
     expect(result.action).toBe('allow');
-    expect(result.updatedInput).toEqual({ modified: true });
-  });
-
-  it('returns block when permissionDecision is deny', () => {
-    const stdout = JSON.stringify({
-      hookSpecificOutput: {
-        permissionDecision: 'deny',
-        permissionDecisionReason: 'Denied',
-        updatedInput: { safe: true },
-      },
-    });
-    const result = parseHookOutput(stdout, '', 0);
-    expect(result.action).toBe('block');
-    expect(result.reason).toBe('Denied');
-  });
-
-  it('returns block with default reason when permissionDecisionReason is missing', () => {
-    const stdout = JSON.stringify({
-      hookSpecificOutput: {
-        permissionDecision: 'deny',
-      },
-    });
-    const result = parseHookOutput(stdout, '', 0);
-    expect(result.action).toBe('block');
-  });
-
-  it('returns block with undefined reason when reason is missing', () => {
-    const stdout = JSON.stringify({ decision: 'block' });
-    const result = parseHookOutput(stdout, '', 0);
-    expect(result.action).toBe('block');
-    expect(result.reason).toBeUndefined();
-  });
-
-  it('returns block with undefined stopReason when stopReason is missing', () => {
-    const stdout = JSON.stringify({ continue: false });
-    const result = parseHookOutput(stdout, '', 0);
-    expect(result.action).toBe('block');
-    expect(result.reason).toBeUndefined();
-  });
-
-  it('returns block with undefined reason when ok is false but reason is missing', () => {
-    const stdout = JSON.stringify({ ok: false });
-    const result = parseHookOutput(stdout, '', 0);
-    expect(result.action).toBe('block');
-    expect(result.reason).toBeUndefined();
+    expect(result.additionalContext).toBe('ctx');
+    expect(result.systemMessage).toBe('msg');
   });
 });
 
 describe('buildClaudeStdin', () => {
-  it('uses empty object when input has no args', () => {
-    const result = buildClaudeStdin('tool.execute.before', 'Bash', {
-      sessionID: 'sess-1',
+  it('builds base structure', () => {
+    const result = buildClaudeStdin('tool.execute.before', 'bash', {
+      sessionID: 's1',
     });
-    expect(result.tool_input).toEqual({});
+    expect(result.hook_event_name).toBe('PreToolUse');
+    expect(result.session_id).toBe('s1');
+    expect(result.tool_name).toBe('bash');
   });
 
-  it('uses event type as fallback for unknown events', () => {
-    const result = buildClaudeStdin('unknown.event', '', { sessionID: '' });
-    expect(result.hook_event_name).toBe('unknown.event');
+  it('maps event types to claude names', () => {
+    const result = buildClaudeStdin('session.created', '', { sessionID: 's1' });
+    expect(result.hook_event_name).toBe('SessionStart');
   });
 
-  it('includes tool_input with args', () => {
-    const result = buildClaudeStdin('tool.execute.before', 'Bash', {
-      sessionID: 'sess-1',
-      args: { command: 'ls' },
+  it('passes through unknown event types', () => {
+    const result = buildClaudeStdin('custom.event', '', { sessionID: 's1' });
+    expect(result.hook_event_name).toBe('custom.event');
+  });
+
+  it('includes stop_hook_active for Stop events', () => {
+    const result = buildClaudeStdin('session.idle', '', {
+      sessionID: 's1',
+      stopHookActive: true,
     });
-    expect(result.tool_input).toEqual({ command: 'ls' });
+    expect(result.stop_hook_active).toBe(true);
+  });
+
+  it('includes agent_type for SubagentStop', () => {
+    const result = buildClaudeStdin('tool.execute.after.subagent', '', {
+      sessionID: 's1',
+      subagentType: 'explore',
+    });
+    expect(result.agent_type).toBe('explore');
+  });
+
+  it('includes file_path for FileChanged', () => {
+    const result = buildClaudeStdin('file.watcher.updated', '', {
+      sessionID: 's1',
+      file: '/tmp/test.ts',
+    });
+    expect(result.file_path).toBe('/tmp/test.ts');
   });
 });
 
 describe('buildOpencodeStdin', () => {
-  it('uses empty object when args is not provided', () => {
-    const result = buildOpencodeStdin('tool.execute.before', 'Bash', {
-      sessionID: 'sess-1',
+  it('builds base structure', () => {
+    const result = buildOpencodeStdin('tool.execute.before', 'bash', {
+      sessionID: 's1',
     });
-    expect(result.tool_input).toEqual({});
+    expect(result.event_type).toBe('tool.execute.before');
+    expect(result.session_id).toBe('s1');
+    expect(result.tool_name).toBe('bash');
   });
 
-  it('includes tool_result when output is provided', () => {
-    const output = { result: 'tool result data' };
+  it('includes tool_result when output provided', () => {
     const result = buildOpencodeStdin(
       'tool.execute.after',
-      'Bash',
-      {
-        sessionID: 'sess-1',
-        args: { command: 'ls' },
+      'bash',
+      { sessionID: 's1' },
+      { status: 'ok' }
+    );
+    expect(result.tool_result).toEqual({ status: 'ok' });
+  });
+
+  it('includes stop_hook_active for session.idle', () => {
+    const result = buildOpencodeStdin('session.idle', '', {
+      sessionID: 's1',
+      stopHookActive: true,
+    });
+    expect(result.stop_hook_active).toBe(true);
+  });
+
+  it('includes agent_type for tool.execute.after.subagent', () => {
+    const result = buildOpencodeStdin('tool.execute.after.subagent', '', {
+      sessionID: 's1',
+      subagentType: 'explore',
+    });
+    expect(result.agent_type).toBe('explore');
+  });
+
+  it('includes file_path for file.watcher.updated', () => {
+    const result = buildOpencodeStdin('file.watcher.updated', '', {
+      sessionID: 's1',
+      file: 'src/main.ts',
+    });
+    expect(result.file_path).toBe('src/main.ts');
+  });
+});
+
+describe('executeScript', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns error for invalid script path', async () => {
+    const entry: ScriptEntry = { source: 'native', path: '../escape.sh' };
+    const result = await executeScript(entry, 'tool.execute.before', 'bash', {
+      sessionID: 's1',
+    });
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain('Invalid script path');
+  });
+
+  it('returns immediately for async scripts', async () => {
+    const entry: ScriptEntry = {
+      source: 'native',
+      path: 'async.sh',
+      async: true,
+    };
+    const result = await executeScript(entry, 'tool.execute.before', 'bash', {
+      sessionID: 's1',
+    });
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toBe('');
+  });
+
+  it('spawns a process for sync scripts', async () => {
+    const mockProc = {
+      stdout: { on: vi.fn() },
+      stderr: { on: vi.fn() },
+      stdin: { write: vi.fn(), end: vi.fn() },
+      on: vi.fn(),
+      unref: vi.fn(),
+    };
+    vi.mocked(mockSpawn.spawn).mockReturnValue(mockProc);
+
+    const entry: ScriptEntry = { source: 'native', path: 'valid.sh' };
+    const promise = executeScript(entry, 'tool.execute.before', 'bash', {
+      sessionID: 's1',
+    });
+
+    const closeHandler = mockProc.on.mock.calls.find(
+      (c: unknown[]) => c[0] === 'close'
+    );
+    if (closeHandler) {
+      (closeHandler[1] as (code: number) => void)(0);
+    }
+
+    const result = await promise;
+    expect(result.script).toBe('valid.sh');
+  });
+
+  it('resolves with block output when exit code is 2', async () => {
+    const mockProc = {
+      stdout: { on: vi.fn() },
+      stderr: {
+        on: vi.fn(function (event: string, cb: (d: Buffer) => void) {
+          if (event === 'data') cb(Buffer.from('Denied'));
+        }),
       },
-      output
-    );
-    expect(result.tool_result).toEqual(output);
-  });
+      stdin: { write: vi.fn(), end: vi.fn() },
+      on: vi.fn(),
+      unref: vi.fn(),
+    };
+    vi.mocked(mockSpawn.spawn).mockReturnValue(mockProc);
 
-  it('includes tool_name and tool_input when toolName is provided', () => {
-    const result = buildOpencodeStdin('tool.execute.before', 'Bash', {
-      sessionID: 'sess-1',
-      args: { command: 'ls -la' },
+    const entry: ScriptEntry = { source: 'native', path: 'block.sh' };
+    const promise = executeScript(entry, 'tool.execute.before', 'bash', {
+      sessionID: 's1',
     });
-    expect(result.tool_name).toBe('Bash');
-    expect(result.tool_input).toEqual({ command: 'ls -la' });
-  });
 
-  it('uses event type when toolName is empty string', () => {
-    const result = buildOpencodeStdin('session.created', '', {
-      sessionID: 'sess-1',
-    });
-    expect(result.event_type).toBe('session.created');
-    expect(result.tool_name).toBeUndefined();
-  });
-
-  it('includes tool_result for after events', () => {
-    const result = buildOpencodeStdin(
-      'tool.execute.after',
-      'Read',
-      { sessionID: 's1', args: { path: '/tmp' } },
-      { content: 'file contents' }
+    const closeHandler = mockProc.on.mock.calls.find(
+      (c: unknown[]) => c[0] === 'close'
     );
-    expect(result.tool_name).toBe('Read');
-    expect(result.tool_result).toEqual({ content: 'file contents' });
+    if (closeHandler) {
+      (closeHandler[1] as (code: number) => void)(2);
+    }
+
+    const result = await promise;
+    expect(result.exitCode).toBe(2);
   });
 });

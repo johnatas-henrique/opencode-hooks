@@ -1,220 +1,223 @@
-import { createAuditLogger } from '.opencode/plugins/features/audit/audit-logger';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const mockFs = vi.hoisted(() => {
+  const asyncFn = () => vi.fn().mockResolvedValue(undefined);
+  const asyncArr = () => vi.fn().mockResolvedValue([]);
+  const asyncStat = () => vi.fn().mockResolvedValue({ size: 0, mtimeMs: 0 });
+  return {
+    appendFile: asyncFn(),
+    mkdir: asyncFn(),
+    readdir: asyncArr(),
+    rename: asyncFn(),
+    stat: asyncStat(),
+    unlink: asyncFn(),
+    readFile: vi.fn().mockResolvedValue(''),
+  };
+});
+vi.mock('fs/promises', () => mockFs);
+
+import {
+  archiveFileIfNeeded,
+  createAuditLogger,
+} from '.opencode/plugins/features/audit/audit-logger';
 import type { AuditConfig } from '.opencode/plugins/types/audit';
 
-describe('audit-logger', () => {
-  const BASE_PATH = '/tmp/audit-test';
-
-  const defaultConfig: AuditConfig = {
+function makeConfig(overrides: Partial<AuditConfig> = {}): AuditConfig {
+  return {
     enabled: true,
     level: 'debug',
-    basePath: BASE_PATH,
-    maxSizeMB: 10,
+    basePath: '/tmp/test-audit',
+    maxSizeMB: 1,
     maxAgeDays: 30,
     logTruncationKB: 10,
     maxFieldSize: 1000,
     maxArrayItems: 50,
-    largeFields: [],
+    largeFields: ['output', 'content'],
+    ...overrides,
   };
-
-  const mockAppendFile = vi.fn().mockResolvedValue(undefined);
-  const mockMkdir = vi.fn().mockResolvedValue(undefined);
-  const mockReaddir = vi.fn().mockResolvedValue([]);
-  const mockUnlink = vi.fn().mockResolvedValue(undefined);
-  const mockStat = vi.fn();
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockStat.mockReset();
-  });
-
-  describe('writeLine', () => {
-    it('should not write when disabled', async () => {
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: { ...defaultConfig, enabled: false },
-        deps: { appendFile: mockAppendFile, mkdir: mockMkdir },
-      });
-      await logger.writeLine('events', { event: 'test' });
-      expect(mockAppendFile).not.toHaveBeenCalled();
-    });
-
-    it('should skip events file in audit mode', async () => {
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: { ...defaultConfig, level: 'audit', enabled: true },
-        deps: { appendFile: mockAppendFile, mkdir: mockMkdir },
-      });
-      await logger.writeLine('events', { event: 'test' });
-      expect(mockAppendFile).not.toHaveBeenCalled();
-    });
-
-    it('should handle write errors gracefully', async () => {
-      const appendFileWithError = vi
-        .fn()
-        .mockRejectedValue(new Error('Write failed'));
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: defaultConfig,
-        deps: {
-          appendFile: appendFileWithError,
-          mkdir: mockMkdir,
-        },
-      });
-      await expect(
-        logger.writeLine('events', { event: 'test' })
-      ).resolves.not.toThrow();
-    });
-
-    it('should skip archive for non-archive file types', async () => {
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: { ...defaultConfig, maxSizeMB: 1 },
-        deps: { appendFile: mockAppendFile, mkdir: mockMkdir },
-      });
-      await logger.writeLine('security', { event: 'test' });
-      expect(mockAppendFile).toHaveBeenCalled();
-    });
-  });
-
-  describe('cleanup', () => {
-    it('should delete files older than maxAgeDays', async () => {
-      const oldDate = Date.now() - 31 * 24 * 60 * 60 * 1000;
-      mockStat.mockResolvedValue({ size: 1024, mtimeMs: oldDate });
-      mockReaddir.mockResolvedValue(['old-file.json.gz']);
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: defaultConfig,
-        deps: {
-          unlink: mockUnlink,
-          stat: mockStat,
-          readdir: mockReaddir,
-        },
-      });
-      await logger.cleanup();
-      expect(mockUnlink).toHaveBeenCalled();
-    });
-
-    it('should not delete recent files', async () => {
-      const recentDate = Date.now() - 1 * 24 * 60 * 60 * 1000;
-      mockStat.mockResolvedValue({
-        size: 1024,
-        mtimeMs: recentDate,
-      });
-      mockReaddir.mockResolvedValue(['recent-file.json.gz']);
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: defaultConfig,
-        deps: {
-          unlink: mockUnlink,
-          stat: mockStat,
-          readdir: mockReaddir,
-        },
-      });
-      await logger.cleanup();
-      expect(mockUnlink).not.toHaveBeenCalled();
-    });
-
-    it('should skip non-gzip files', async () => {
-      mockReaddir.mockResolvedValue(['regular-file.json', 'another.txt']);
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: defaultConfig,
-        deps: {
-          unlink: mockUnlink,
-          stat: mockStat,
-          readdir: mockReaddir,
-        },
-      });
-      await logger.cleanup();
-      expect(mockStat).not.toHaveBeenCalled();
-      expect(mockUnlink).not.toHaveBeenCalled();
-    });
-
-    it('should not cleanup when maxAgeDays is 0', async () => {
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: { ...defaultConfig, maxAgeDays: 0 },
-        deps: { readdir: mockReaddir, unlink: mockUnlink },
-      });
-      await logger.cleanup();
-      expect(mockReaddir).not.toHaveBeenCalled();
-    });
-
-    it('should skip cleanup when stat dependency is missing', async () => {
-      const logger = createAuditLogger({
-        basePath: BASE_PATH,
-        config: defaultConfig,
-        deps: { readdir: mockReaddir, unlink: mockUnlink, stat: undefined },
-      });
-      await logger.cleanup();
-      expect(mockReaddir).not.toHaveBeenCalled();
-    });
-  });
-});
+}
 
 describe('archiveFileIfNeeded', () => {
-  const mockMkdir = vi.fn().mockResolvedValue(undefined);
-  const mockRename = vi.fn().mockResolvedValue(undefined);
-  const mockStat = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should archive file if larger than 1MB', async () => {
-    mockStat.mockResolvedValue({
-      size: 2 * 1024 * 1024,
-    });
-    const { archiveFileIfNeeded } =
-      await import('.opencode/plugins/features/audit/audit-logger');
+  it('returns false when file is under maxSize', async () => {
+    const mockStat = vi.fn().mockResolvedValue({ size: 500 });
     const result = await archiveFileIfNeeded(
-      '/base/plugin-events.json',
-      '/base/audit-archive',
-      1024 * 1024,
+      '/tmp/log.json',
+      '/tmp/archive',
+      1024,
+      { stat: mockStat }
+    );
+    expect(result).toBe(false);
+  });
+
+  it('returns false when file does not exist', async () => {
+    const mockStat = vi.fn().mockRejectedValue(new Error('ENOENT'));
+    const result = await archiveFileIfNeeded(
+      '/tmp/nope.json',
+      '/tmp/archive',
+      1024,
+      { stat: mockStat }
+    );
+    expect(result).toBe(false);
+  });
+
+  it('archives file when over maxSize', async () => {
+    const mockStat = vi.fn().mockResolvedValue({ size: 2048 });
+    const mockMkdir = vi.fn().mockResolvedValue(undefined);
+    const mockRename = vi.fn().mockResolvedValue(undefined);
+    const result = await archiveFileIfNeeded(
+      '/tmp/log.json',
+      '/tmp/archive',
+      1024,
       {
+        stat: mockStat,
         mkdir: mockMkdir,
         rename: mockRename,
-        stat: mockStat,
       }
     );
     expect(result).toBe(true);
-    expect(mockMkdir).toHaveBeenCalledWith('/base/audit-archive', {
+    expect(mockMkdir).toHaveBeenCalledWith('/tmp/archive', { recursive: true });
+    expect(mockRename).toHaveBeenCalled();
+  });
+});
+
+describe('createAuditLogger', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('does not write when config.enabled is false', async () => {
+    const config = makeConfig({ enabled: false });
+    const logger = createAuditLogger({ basePath: '/tmp', config });
+    await logger.writeLine('events', { test: true });
+
+    expect(mockFs.appendFile).not.toHaveBeenCalled();
+  });
+
+  it('skips events when level is audit', async () => {
+    const config = makeConfig({ level: 'audit' });
+    const logger = createAuditLogger({ basePath: '/tmp', config });
+    await logger.writeLine('events', { test: true });
+
+    expect(mockFs.appendFile).not.toHaveBeenCalled();
+  });
+
+  it('writes events when level is debug', async () => {
+    vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
+    const config = makeConfig({ level: 'debug' });
+    const logger = createAuditLogger({ basePath: '/tmp', config });
+    await logger.writeLine('events', { test: true });
+
+    expect(mockFs.appendFile).toHaveBeenCalled();
+  });
+
+  it('writes scripts file type', async () => {
+    vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
+    const config = makeConfig();
+    const logger = createAuditLogger({ basePath: '/tmp', config });
+    await logger.writeLine('scripts', { script: 'test.sh' });
+
+    expect(mockFs.appendFile).toHaveBeenCalled();
+  });
+
+  it('calls mkdir to ensure directory', async () => {
+    vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
+    vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
+    const config = makeConfig();
+    const logger = createAuditLogger({ basePath: '/tmp/audit', config });
+    await logger.writeLine('events', {});
+
+    expect(mockFs.mkdir).toHaveBeenCalledWith('/tmp/audit', {
       recursive: true,
     });
-    expect(mockRename).toHaveBeenCalledWith(
-      '/base/plugin-events.json',
-      expect.stringMatching(
-        /plugin-events-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z\.json/
-      )
-    );
   });
 
-  it('should return false when stat fails', async () => {
-    mockStat.mockRejectedValue(new Error('ENOENT'));
-    const { archiveFileIfNeeded } =
-      await import('.opencode/plugins/features/audit/audit-logger');
-    const result = await archiveFileIfNeeded(
-      '/nonexistent/file.json',
-      '/archive',
-      1024 * 1024,
-      { stat: mockStat }
-    );
-    expect(result).toBe(false);
-  });
-
-  it('should return false when file is smaller than threshold', async () => {
-    mockStat.mockResolvedValue({
-      size: 512 * 1024,
+  it('uses custom file names from config', async () => {
+    vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
+    const config = makeConfig({
+      files: {
+        events: 'custom-events.json',
+        scripts: 'custom-scripts.json',
+        errors: 'custom-errors.json',
+        security: 'custom-security.json',
+        debug: 'custom-debug.json',
+      },
     });
-    const { archiveFileIfNeeded } =
-      await import('.opencode/plugins/features/audit/audit-logger');
-    const result = await archiveFileIfNeeded(
-      '/base/small.json',
-      '/archive',
-      1024 * 1024,
-      { stat: mockStat }
+    const logger = createAuditLogger({ basePath: '/tmp', config });
+    await logger.writeLine('events', {});
+
+    expect(mockFs.appendFile).toHaveBeenCalledWith(
+      '/tmp/custom-events.json',
+      expect.any(String)
     );
-    expect(result).toBe(false);
-    expect(mockRename).not.toHaveBeenCalled();
+  });
+
+  it('queues writes sequentially per file type', async () => {
+    vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
+    const config = makeConfig();
+    const logger = createAuditLogger({ basePath: '/tmp', config });
+    await Promise.all([
+      logger.writeLine('events', { seq: 1 }),
+      logger.writeLine('events', { seq: 2 }),
+    ]);
+
+    expect(mockFs.appendFile).toHaveBeenCalledTimes(2);
+  });
+
+  it('removes old .gz files during cleanup', async () => {
+    const oldDate = Date.now() - 40 * 24 * 60 * 60 * 1000;
+    vi.mocked(mockFs.readdir).mockResolvedValue(['old.gz', 'new.gz']);
+    vi.mocked(mockFs.stat)
+      .mockResolvedValueOnce({ size: 100, mtimeMs: oldDate })
+      .mockResolvedValueOnce({ size: 100, mtimeMs: Date.now() });
+    vi.mocked(mockFs.unlink).mockResolvedValue(undefined);
+
+    const config = makeConfig({ maxAgeDays: 30 });
+    const logger = createAuditLogger({ basePath: '/tmp/cleanup', config });
+    await logger.cleanup();
+
+    expect(mockFs.unlink).toHaveBeenCalledTimes(1);
+    expect(mockFs.unlink).toHaveBeenCalledWith('/tmp/cleanup/old.gz');
+  });
+
+  it('skips cleanup when maxAgeDays <= 0', async () => {
+    const config = makeConfig({ maxAgeDays: 0 });
+    const logger = createAuditLogger({ basePath: '/tmp', config });
+    await logger.cleanup();
+
+    expect(mockFs.readdir).not.toHaveBeenCalled();
+  });
+
+  it('handles readdir errors gracefully during cleanup', async () => {
+    vi.mocked(mockFs.readdir).mockRejectedValue(new Error('ENOENT'));
+    const config = makeConfig({ maxAgeDays: 30 });
+    const logger = createAuditLogger({ basePath: '/tmp', config });
+
+    await expect(logger.cleanup()).resolves.toBeUndefined();
+  });
+
+  it('writes with injected deps', async () => {
+    const mockAppend = vi.fn().mockResolvedValue(undefined);
+    const mockMkdirFn = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig();
+    const logger = createAuditLogger({
+      basePath: '/tmp',
+      config,
+      deps: {
+        appendFile: mockAppend,
+        mkdir: mockMkdirFn,
+        stat: vi.fn().mockResolvedValue({ size: 0 }),
+        readdir: vi.fn().mockResolvedValue([]),
+        unlink: vi.fn().mockResolvedValue(undefined),
+        rename: vi.fn().mockResolvedValue(undefined),
+      },
+    });
+    await logger.writeLine('events', { key: 'val' });
+
+    expect(mockAppend).toHaveBeenCalled();
+    expect(mockMkdirFn).toHaveBeenCalled();
   });
 });

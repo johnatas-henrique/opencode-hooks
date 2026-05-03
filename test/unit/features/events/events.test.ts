@@ -1,29 +1,116 @@
-import { describe, it, expect } from 'vitest';
-import { getHandler } from '.opencode/plugins/features/events/events';
+import { describe, it, expect, vi } from 'vitest';
 
-describe('getHandler', () => {
-  it('should return handler for known event type', () => {
-    const handler = getHandler('session.created');
-    expect(handler).toBeDefined();
+vi.mock('.opencode/plugins/config/settings', () => ({
+  userConfig: {
+    enabled: true,
+    logDisabledEvents: false,
+    showPluginStatus: true,
+    pluginStatusDisplayMode: 'user-only',
+    loadClaudeHookSettings: { enabled: false },
+    scriptToasts: {
+      showOutput: true,
+      showError: true,
+      outputVariant: 'info',
+      errorVariant: 'error',
+      outputDuration: 5000,
+      errorDuration: 15000,
+      outputTitle: 'Script Output',
+      errorTitle: 'Script Error',
+    },
+    default: {
+      debug: false,
+      toast: false,
+      runScripts: false,
+      runOnlyOnce: false,
+      logToAudit: true,
+      appendToSession: false,
+    },
+    audit: {
+      enabled: true,
+      level: 'debug',
+      basePath: '/tmp',
+      maxSizeMB: 1,
+      maxAgeDays: 30,
+      logTruncationKB: 10,
+      maxFieldSize: 1000,
+      maxArrayItems: 50,
+      largeFields: ['patch', 'diff'],
+    },
+    events: {},
+    tools: {
+      'tool.execute.after': {},
+      'tool.execute.after.subagent': {},
+      'tool.execute.before': {},
+    },
+  },
+}));
+
+import {
+  getHandler,
+  getToolHandler,
+  resolveEventConfig,
+  resolveToolConfig,
+} from '.opencode/plugins/features/events/events';
+
+describe('events', () => {
+  describe('getHandler', () => {
+    it('returns a handler for known event type', () => {
+      const handler = getHandler('session.created');
+      expect(handler).toBeDefined();
+      expect(handler?.title).toContain('SESSION CREATED');
+    });
+
+    it('returns undefined for unknown event type', () => {
+      const handler = getHandler('nonexistent.event');
+      expect(handler).toBeUndefined();
+    });
   });
 
-  it('should return undefined for unknown event type', () => {
-    const handler = getHandler('nonexistent.event');
-    expect(handler).toBeUndefined();
+  describe('getToolHandler', () => {
+    it('returns handler for tool.execute.before.toolName', () => {
+      const handler = getToolHandler('bash', 'tool.execute.before');
+      expect(handler).toBeDefined();
+    });
+
+    it('returns handler for tool.execute.after.toolName', () => {
+      const handler = getToolHandler('bash', 'tool.execute.after');
+      expect(handler).toBeDefined();
+    });
+
+    it('returns undefined when no event type specified', () => {
+      const handler = getToolHandler('bash');
+      expect(handler).toBeUndefined();
+    });
+
+    it('returns undefined for unknown event type', () => {
+      const handler = getToolHandler('bash', 'unknown');
+      expect(handler).toBeUndefined();
+    });
   });
 
-  it('should return handler for tool.execute.before event', () => {
-    const handler = getHandler('tool.execute.before');
-    expect(handler).toBeDefined();
+  describe('resolveEventConfig', () => {
+    it('resolves config for known event type', () => {
+      const result = resolveEventConfig('session.created');
+      expect(result.enabled).toBe(true);
+      expect(typeof result.toast).toBe('boolean');
+    });
+
+    it('resolves config for unknown event type with defaults', () => {
+      const result = resolveEventConfig('custom.event');
+      expect(result).toBeDefined();
+      expect(result.enabled).toBe(true);
+    });
   });
 
-  it('should return handler for tool.execute.after event', () => {
-    const handler = getHandler('tool.execute.after');
-    expect(handler).toBeDefined();
-  });
-
-  it('should return handler for message event', () => {
-    const handler = getHandler('session.created');
-    expect(handler).toBeDefined();
+  describe('resolveToolConfig', () => {
+    it('resolves tool config for known tool', () => {
+      const result = resolveToolConfig('tool.execute.before', 'bash', {
+        tool: 'bash',
+        sessionID: 'ses_1',
+        callID: 'call_1',
+      });
+      expect(result).toBeDefined();
+      expect(result.enabled).toBe(true);
+    });
   });
 });

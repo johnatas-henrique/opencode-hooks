@@ -1,356 +1,389 @@
-import { vi } from 'vitest';
-import type {
-  ToolExecuteAfterInput,
-  ToolExecuteBeforeInput,
-  ToolExecuteAfterOutput,
-} from '.opencode/plugins/types/core';
-import type { AuditConfig } from '.opencode/plugins/types/audit';
-import { createTestAuditConfig } from '../../../helpers/audit-test-config';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  createEventRecorder,
-  createToolExecuteAfterRecord,
-  createSessionEventRecord,
+  shouldLogEvents,
   extractTool,
   extractSession,
   extractDirectory,
+  createToolExecuteBeforeRecord,
+  createToolExecuteAfterRecord,
+  createSessionEventRecord,
   createGenericEventRecord,
-  setGlobalTruncationKB,
+  createEventRecorder,
 } from '.opencode/plugins/features/audit/event-recorder';
+import type { AuditConfig } from '.opencode/plugins/types/audit';
+import type {
+  ToolExecuteBeforeInput,
+  ToolExecuteAfterInput,
+} from '.opencode/plugins/types/core';
 
-describe('event-recorder', () => {
-  describe('extractTool', () => {
-    it('should return unknown when tool is undefined', () => {
-      expect(extractTool({} as ToolExecuteBeforeInput)).toBe('unknown');
-    });
+function makeConfig(overrides: Partial<AuditConfig> = {}): AuditConfig {
+  return {
+    enabled: true,
+    level: 'debug',
+    basePath: '/tmp/test',
+    maxSizeMB: 1,
+    maxAgeDays: 30,
+    logTruncationKB: 10,
+    maxFieldSize: 100,
+    maxArrayItems: 3,
+    largeFields: ['output', 'content'],
+    ...overrides,
+  };
+}
+
+describe('shouldLogEvents', () => {
+  it('returns true when enabled and level is debug', () => {
+    expect(shouldLogEvents(makeConfig())).toBe(true);
   });
 
-  describe('extractSession', () => {
-    it('should return unknown when no session identifier', () => {
-      expect(extractSession({} as ToolExecuteBeforeInput)).toBe('unknown');
-    });
+  it('returns false when disabled', () => {
+    expect(shouldLogEvents(makeConfig({ enabled: false }))).toBe(false);
   });
 
-  describe('createToolExecuteAfterRecord', () => {
-    it('should create record with error status for non-zero exit', () => {
-      const input: ToolExecuteAfterInput = {
-        tool: 'bash',
-        sessionID: 'session-123',
-        callID: 'call-1',
-        args: {},
-      };
-      const output = {
-        title: '',
-        output: '',
-        metadata: { exit: 1 },
-      } as ToolExecuteAfterOutput;
-      const record = createToolExecuteAfterRecord(input, output, true);
-
-      expect(record).not.toBeNull();
-      expect(record).toMatchObject({
-        status: 'error',
-        error: 'Exit code: 1',
-      });
-    });
-  });
-
-  describe('createSessionEventRecord', () => {
-    it('should create record with correct fields', () => {
-      const input = {
-        info: { id: 'session-123', title: 'Test', directory: '/project' },
-      };
-      const record = createSessionEventRecord('session.created', input, true);
-
-      expect(record).not.toBeNull();
-      expect(record).toMatchObject({
-        event: 'session.created',
-        session: 'session-123',
-        directory: '/project',
-      });
-    });
-
-    it('should use sessionID directly when provided', () => {
-      const input = { sessionID: 'session-456', directory: '/home' };
-      const record = createSessionEventRecord('session.updated', input, true);
-
-      expect(record).not.toBeNull();
-      expect(record?.session).toBe('session-456');
-      expect(record?.directory).toBe('/home');
-    });
-  });
-
-  describe('extractDirectory', () => {
-    it('should return directory from input.info.directory', () => {
-      const input = { info: { id: 'session-123', directory: '/project' } };
-      expect(extractDirectory(input)).toBe('/project');
-    });
+  it('returns false when level is audit', () => {
+    expect(shouldLogEvents(makeConfig({ level: 'audit' }))).toBe(false);
   });
 });
 
-describe('createEventRecorder', () => {
-  const mockWriteLine = vi.fn();
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockWriteLine.mockResolvedValue(undefined);
+describe('extractTool', () => {
+  it('returns tool name from input', () => {
+    const input: ToolExecuteBeforeInput = {
+      tool: 'bash',
+      sessionID: 's1',
+      callID: 'c1',
+    };
+    expect(extractTool(input)).toBe('bash');
   });
 
-  describe('logEvent', () => {
-    it('should handle null record gracefully', async () => {
-      const mockWriteLine = vi.fn();
-      const config = createTestAuditConfig({ level: 'debug' });
+  it('returns "unknown" when tool is missing', () => {
+    const input = {} as ToolExecuteBeforeInput;
+    expect(extractTool(input)).toBe('unknown');
+  });
+});
 
-      const recorder = createEventRecorder(config as AuditConfig, {
-        writeLine: mockWriteLine,
-      });
-
-      await recorder.logEvent('session.idle', {
-        sessionID: 'session-123',
-      });
-
-      expect(mockWriteLine).not.toHaveBeenCalled();
-    });
+describe('extractSession', () => {
+  it('returns sessionID from tool input', () => {
+    const input: ToolExecuteBeforeInput = {
+      tool: 'bash',
+      sessionID: 's1',
+      callID: 'c1',
+    };
+    expect(extractSession(input)).toBe('s1');
   });
 
-  describe('logToolExecuteBefore', () => {
-    it('should not log when level is audit', async () => {
-      const { createEventRecorder } =
-        await import('.opencode/plugins/features/audit/event-recorder');
-      const config = createTestAuditConfig({ level: 'audit' });
-      const recorder = createEventRecorder(config as AuditConfig, {
-        writeLine: mockWriteLine,
-      });
-      await recorder.logToolExecuteBefore({
-        tool: 'bash',
-        sessionID: 'session-123',
-        callID: 'call-1',
-      });
-      expect(mockWriteLine).not.toHaveBeenCalled();
-    });
-
-    it('should log when record is not null', async () => {
-      const mockWriteLine = vi.fn();
-      const config = createTestAuditConfig({ level: 'debug' });
-      const recorder = createEventRecorder(config as AuditConfig, {
-        writeLine: mockWriteLine,
-      });
-      await recorder.logToolExecuteBefore({
-        tool: 'bash',
-        sessionID: 'session-123',
-        callID: 'call-1',
-      });
-
-      expect(mockWriteLine).toHaveBeenCalled();
-    });
+  it('returns info.id from session input', () => {
+    const input = { info: { id: 's2' } };
+    expect(extractSession(input)).toBe('s2');
   });
 
-  describe('logToolExecuteAfter', () => {
-    it('should log tool.execute.after with correct fields', async () => {
-      const { createEventRecorder } =
-        await import('.opencode/plugins/features/audit/event-recorder');
-      const config = createTestAuditConfig({ level: 'debug' });
-      const recorder = createEventRecorder(config as AuditConfig, {
-        writeLine: mockWriteLine,
-      });
-      await recorder.logToolExecuteAfter(
-        { tool: 'bash', sessionID: 'session-123', callID: 'call-1', args: {} },
-        { title: '', output: '', metadata: { exit: 0 } }
-      );
+  it('returns "unknown" when no session info', () => {
+    expect(extractSession({})).toBe('unknown');
+  });
+});
 
-      expect(mockWriteLine).toHaveBeenCalledWith(
-        'events',
-        expect.objectContaining({
-          event: 'tool.execute.after',
-          tool: 'bash',
-          session: 'session-123',
-          status: 'success',
-        })
-      );
-    });
-
-    it('should not log when level is audit', async () => {
-      const { createEventRecorder } =
-        await import('.opencode/plugins/features/audit/event-recorder');
-      const config = createTestAuditConfig({ level: 'audit' });
-      const recorder = createEventRecorder(config as AuditConfig, {
-        writeLine: mockWriteLine,
-      });
-      await recorder.logToolExecuteAfter(
-        { tool: 'bash', sessionID: 'session-123', callID: 'call-1', args: {} },
-        { title: '', output: '', metadata: { exit: 0 } }
-      );
-
-      expect(mockWriteLine).not.toHaveBeenCalled();
-    });
+describe('extractDirectory', () => {
+  it('returns info.directory when present', () => {
+    const input = { info: { id: 's1', title: 't', directory: '/home' } };
+    expect(extractDirectory(input)).toBe('/home');
   });
 
-  describe('logSessionEvent', () => {
-    it('should not log when disabled', async () => {
-      const { createEventRecorder } =
-        await import('.opencode/plugins/features/audit/event-recorder');
-      const config = createTestAuditConfig({ level: 'audit' });
-      const recorder = createEventRecorder(config as AuditConfig, {
-        writeLine: mockWriteLine,
-      });
-      await recorder.logSessionEvent('session.created', {
-        info: { id: 'session-123' },
-      });
+  it('falls back to top-level directory', () => {
+    const input = { directory: '/tmp' };
+    expect(extractDirectory(input)).toBe('/tmp');
+  });
 
-      expect(mockWriteLine).not.toHaveBeenCalled();
-    });
+  it('returns "unknown" when no directory', () => {
+    expect(extractDirectory({})).toBe('unknown');
+  });
+});
 
-    it('should log when record is not null', async () => {
-      const mockWriteLine = vi.fn();
-      const config = createTestAuditConfig({ level: 'debug' });
-      const recorder = createEventRecorder(config as AuditConfig, {
-        writeLine: mockWriteLine,
-      });
-      await recorder.logSessionEvent('session.created', {
-        info: { id: 'session-123' },
-      });
+describe('createToolExecuteBeforeRecord', () => {
+  it('returns null when shouldLogResult is false', () => {
+    const input: ToolExecuteBeforeInput = {
+      tool: 'bash',
+      sessionID: 's1',
+      callID: 'c1',
+    };
+    expect(createToolExecuteBeforeRecord(input, false)).toBeNull();
+  });
 
-      expect(mockWriteLine).toHaveBeenCalled();
-    });
+  it('creates record with correct fields', () => {
+    const input: ToolExecuteBeforeInput = {
+      tool: 'read',
+      sessionID: 's1',
+      callID: 'c1',
+    };
+    const record = createToolExecuteBeforeRecord(input, true);
+    expect(record).not.toBeNull();
+    expect(record!.event).toBe('tool.execute.before');
+    expect(record!.tool).toBe('read');
+    expect(record!.session).toBe('s1');
+    expect(record!.ts).toEqual(expect.any(String));
+  });
+});
+
+describe('createToolExecuteAfterRecord', () => {
+  it('returns null when shouldLogResult is false', () => {
+    const input: ToolExecuteAfterInput = {
+      tool: 'bash',
+      sessionID: 's1',
+      callID: 'c1',
+      args: {},
+    };
+    expect(createToolExecuteAfterRecord(input, undefined, false)).toBeNull();
+  });
+
+  it('creates success record when exit is 0', () => {
+    const input: ToolExecuteAfterInput = {
+      tool: 'bash',
+      sessionID: 's1',
+      callID: 'c1',
+      args: {},
+    };
+    const output = { title: 'ok', output: 'done', metadata: { exit: 0 } };
+    const record = createToolExecuteAfterRecord(input, output, true);
+    expect(record!.status).toBe('success');
+    expect(record!.error).toBeUndefined();
+  });
+
+  it('creates error record when exit is non-zero', () => {
+    const input: ToolExecuteAfterInput = {
+      tool: 'bash',
+      sessionID: 's1',
+      callID: 'c1',
+      args: {},
+    };
+    const output = { title: 'fail', output: '', metadata: { exit: 1 } };
+    const record = createToolExecuteAfterRecord(input, output, true);
+    expect(record!.status).toBe('error');
+    expect(record!.error).toBe('Exit code: 1');
+  });
+
+  it('creates success record when no metadata.exit', () => {
+    const input: ToolExecuteAfterInput = {
+      tool: 'bash',
+      sessionID: 's1',
+      callID: 'c1',
+      args: {},
+    };
+    const output = { title: 'ok', output: 'done', metadata: {} };
+    const record = createToolExecuteAfterRecord(input, output, true);
+    expect(record!.status).toBe('success');
+    expect(record!.error).toBeUndefined();
+  });
+});
+
+describe('createSessionEventRecord', () => {
+  it('returns null when shouldLogResult is false', () => {
+    expect(createSessionEventRecord('session.created', {}, false)).toBeNull();
+  });
+
+  it('creates record with event type and directory', () => {
+    const input = { info: { id: 's1', title: 't', directory: '/home' } };
+    const record = createSessionEventRecord('session.created', input, true);
+    expect(record!.event).toBe('session.created');
+    expect(record!.session).toBe('s1');
+    expect(record!.directory).toBe('/home');
   });
 });
 
 describe('createGenericEventRecord', () => {
-  it('should extract session from info.id when sessionID not present', () => {
-    const input = {
-      info: { id: 'session-info-123', title: 'Test' },
-      data: 'test',
-    };
-
-    const record = createGenericEventRecord(
-      'session.created',
-      input,
-      undefined,
-      undefined,
-      true,
-      [],
-      1000,
-      50
-    );
-
-    expect(record).not.toBeNull();
-    expect(record?.session).toBe('session-info-123');
+  it('returns null when shouldLogResult is false', () => {
+    expect(
+      createGenericEventRecord(
+        'custom',
+        { sessionID: 's1' },
+        {},
+        'tool',
+        false,
+        [],
+        100,
+        3
+      )
+    ).toBeNull();
   });
 
-  it('should limit array items', () => {
-    const input = {
-      items: Array.from({ length: 100 }, (_, i) => ({
-        id: i,
-        name: `item-${i}`,
-      })),
-      sessionID: 'session-123',
-    };
-
+  it('creates record with session from input.sessionID', () => {
     const record = createGenericEventRecord(
-      'tool.execute.before',
-      input,
-      undefined,
-      undefined,
-      true,
-      [],
-      1000,
-      50
-    );
-
-    expect(record).not.toBeNull();
-    const items = record?.input?.items as Array<unknown>;
-    expect(items.length).toBe(51);
-    expect(items[50]).toBe('... [50 more items]');
-  });
-
-  it('should sanitize nested objects', () => {
-    const input = {
-      nested: {
-        password: 'secret123',
-        data: 'x'.repeat(2000),
-      },
-      sessionID: 'session-123',
-    };
-
-    const record = createGenericEventRecord(
-      'tool.execute.before',
-      input,
-      undefined,
-      undefined,
-      true,
-      [],
-      1000,
-      50
-    );
-
-    expect(record).not.toBeNull();
-    const nested = record?.input?.nested as Record<string, unknown>;
-    expect(nested.password).toBe('[REDACTED: 9 chars]');
-    expect(nested.data).toBe('x'.repeat(1000) + '... [truncated]');
-  });
-
-  it('should handle arrays with primitive values', () => {
-    const input = {
-      tags: ['tag1', 'tag2', 'tag3'],
-      sessionID: 'session-123',
-    };
-
-    const record = createGenericEventRecord(
-      'tool.execute.before',
-      input,
-      undefined,
-      undefined,
-      true,
-      [],
-      1000,
-      50
-    );
-
-    expect(record).not.toBeNull();
-    expect(record?.input?.tags).toEqual(['tag1', 'tag2', 'tag3']);
-  });
-
-  it('should handle empty input and output', () => {
-    const record = createGenericEventRecord(
-      'session.idle',
+      'custom',
+      { sessionID: 's1' },
       {},
+      'tool',
+      true,
+      [],
+      100,
+      3
+    );
+    expect(record!.event).toBe('custom');
+    expect(record!.session).toBe('s1');
+    expect(record!.tool).toBe('tool');
+  });
+
+  it('extracts session from input.info.id', () => {
+    const record = createGenericEventRecord(
+      'custom',
+      { info: { id: 's2' } },
       {},
       undefined,
       true,
       [],
-      1000,
-      50
+      100,
+      3
     );
+    expect(record!.session).toBe('s2');
+  });
 
-    expect(record).not.toBeNull();
-    expect(record?.event).toBe('session.idle');
-    expect(record?.input).toBeUndefined();
-    expect(record?.output).toBeUndefined();
+  it('sanitizes input fields', () => {
+    const record = createGenericEventRecord(
+      'test',
+      { password: 'secret', name: 'ok' },
+      {},
+      undefined,
+      true,
+      [],
+      100,
+      3
+    );
+    expect(record!.input?.password).toBe('[REDACTED: 6 chars]');
+    expect(record!.input?.name).toBe('ok');
+  });
+
+  it('truncates large fields', () => {
+    const largeContent = 'x'.repeat(200);
+    const record = createGenericEventRecord(
+      'test',
+      { patch: largeContent },
+      {},
+      undefined,
+      true,
+      ['patch'],
+      10,
+      3
+    );
+    expect(record!.input?.patch).toContain('[truncated]');
+    expect((record!.input?.patch as string).length).toBeLessThan(
+      largeContent.length
+    );
+  });
+
+  it('limits array items', () => {
+    const items = [{ name: 'a' }, { name: 'b' }, { name: 'c' }, { name: 'd' }];
+    const record = createGenericEventRecord(
+      'test',
+      { items },
+      {},
+      undefined,
+      true,
+      [],
+      100,
+      2
+    );
+    const result = record!.input?.items as Array<unknown>;
+    expect(result).toHaveLength(3);
+    expect(result[2]).toContain('more items');
+  });
+
+  it('includes tool name from input.tool', () => {
+    const record = createGenericEventRecord(
+      'test',
+      { sessionID: 's1', tool: 'bash' },
+      {},
+      undefined,
+      true,
+      [],
+      100,
+      3
+    );
+    expect(record!.tool).toBe('bash');
+  });
+
+  it('sanitizes output fields', () => {
+    const record = createGenericEventRecord(
+      'test',
+      { sessionID: 's1' },
+      { token: 'abc' },
+      undefined,
+      true,
+      [],
+      100,
+      3
+    );
+    expect(record!.output?.token).toBe('[REDACTED: 3 chars]');
   });
 });
 
-describe('LARGE_FIELDS truncation (line 166)', () => {
+describe('createEventRecorder', () => {
   beforeEach(() => {
-    setGlobalTruncationKB(10);
+    vi.clearAllMocks();
   });
 
-  it('should truncate content field when it is LARGE_FIELD', () => {
-    const input = {
-      content: 'w'.repeat(30000),
-      sessionID: 'session-123',
-    };
+  it('calls writeLine on logToolExecuteBefore', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig();
+    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
 
-    const record = createGenericEventRecord(
-      'tool.execute.after',
-      input,
-      undefined,
-      undefined,
-      true,
-      ['patch', 'diff', 'content', 'snapshot', 'output', 'result', 'text'],
-      1000,
-      50
+    await recorder.logToolExecuteBefore({
+      tool: 'bash',
+      sessionID: 's1',
+      callID: 'c1',
+    });
+    expect(mockWriteLine).toHaveBeenCalledOnce();
+    expect(mockWriteLine.mock.calls[0][0]).toBe('events');
+  });
+
+  it('calls writeLine on logToolExecuteAfter', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig();
+    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
+
+    await recorder.logToolExecuteAfter(
+      { tool: 'bash', sessionID: 's1', callID: 'c1', args: {} },
+      { title: 't', output: 'o', metadata: { exit: 0 } }
     );
+    expect(mockWriteLine).toHaveBeenCalledOnce();
+  });
 
-    const content = record?.input?.content as string;
-    expect(content).toContain('... [truncated]');
-    expect(content.length).toBeLessThan(30000);
+  it('calls writeLine on logSessionEvent', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig();
+    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
+
+    await recorder.logSessionEvent('session.created', { info: { id: 's1' } });
+    expect(mockWriteLine).toHaveBeenCalledOnce();
+  });
+
+  it('calls writeLine on logEvent', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig();
+    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
+
+    await recorder.logEvent('custom', { sessionID: 's1' });
+    expect(mockWriteLine).toHaveBeenCalledOnce();
+  });
+
+  it('does not write when config level is audit', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig({ level: 'audit' });
+    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
+
+    await recorder.logToolExecuteBefore({
+      tool: 'bash',
+      sessionID: 's1',
+      callID: 'c1',
+    });
+    expect(mockWriteLine).not.toHaveBeenCalled();
+  });
+
+  it('appends context to logEvent records', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig();
+    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
+
+    await recorder.logEvent('custom', {
+      sessionID: 's1',
+      context: 'my-context',
+    });
+    const record = mockWriteLine.mock.calls[0][1] as Record<string, unknown>;
+    expect(record.context).toBe('my-context');
   });
 });

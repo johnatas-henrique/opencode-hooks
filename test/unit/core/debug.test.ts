@@ -1,101 +1,162 @@
-import { sanitizeData } from '.opencode/plugins/core/debug';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { sanitizeData, handleDebugLog } from '.opencode/plugins/core/debug';
+import {
+  initGlobalToastQueue,
+  resetGlobalToastQueue,
+} from '.opencode/plugins/core/toast-queue';
+import { setDebugRecorder } from '.opencode/plugins/features/audit/debug-recorder';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import type { DebugRecorder } from '.opencode/plugins/types/audit';
 
-describe('debug', () => {
-  describe('sanitizeData', () => {
-    it('returns null unchanged', () => {
-      expect(sanitizeData(null)).toBeNull();
+describe('sanitizeData', () => {
+  it('returns null when data is null', () => {
+    expect(sanitizeData(null)).toBeNull();
+  });
+
+  it('returns undefined when data is undefined', () => {
+    expect(sanitizeData(undefined)).toBeUndefined();
+  });
+
+  it('returns primitive values unchanged', () => {
+    expect(sanitizeData('hello')).toBe('hello');
+    expect(sanitizeData(42)).toBe(42);
+    expect(sanitizeData(true)).toBe(true);
+  });
+
+  it('redacts sensitive keys in objects', () => {
+    const result = sanitizeData({
+      password: 'secret123',
+      name: 'john',
+    }) as Record<string, unknown>;
+    expect(result.password).toBe('[REDACTED]');
+    expect(result.name).toBe('john');
+  });
+
+  it('redacts all known sensitive key patterns', () => {
+    const keys = [
+      'password',
+      'token',
+      'secret',
+      'apiKey',
+      'api_key',
+      'auth',
+      'credentials',
+      'authorization',
+      'privateKey',
+      'private_key',
+      'accessToken',
+      'access_token',
+    ];
+    const input: Record<string, string> = {};
+    for (const key of keys) {
+      input[key] = 'sensitive-value';
+    }
+    const result = sanitizeData(input) as Record<string, string>;
+    for (const key of keys) {
+      expect(result[key]).toBe('[REDACTED]');
+    }
+  });
+
+  it('redacts keys case-insensitively', () => {
+    const result = sanitizeData({
+      PASSWORD: 'secret',
+      ApiKey: 'abc',
+    }) as Record<string, unknown>;
+    expect(result.PASSWORD).toBe('[REDACTED]');
+    expect(result.ApiKey).toBe('[REDACTED]');
+  });
+
+  it('handles nested objects', () => {
+    const result = sanitizeData({
+      user: { token: 'abc', name: 'john' },
+    }) as Record<string, unknown>;
+    const nested = result.user as Record<string, unknown>;
+    expect(nested.token).toBe('[REDACTED]');
+    expect(nested.name).toBe('john');
+  });
+
+  it('processes arrays recursively', () => {
+    const result = sanitizeData([
+      { password: 'abc' },
+      { name: 'john' },
+    ]) as Array<Record<string, unknown>>;
+    expect(result[0].password).toBe('[REDACTED]');
+    expect(result[1].name).toBe('john');
+  });
+
+  it('handles arrays nested in objects', () => {
+    const input = { items: [{ secret: 'xyz' }, { value: 'ok' }], name: 'test' };
+    const result = sanitizeData(input) as Record<string, unknown>;
+    const items = result.items as Array<Record<string, unknown>>;
+    expect(items[0].secret).toBe('[REDACTED]');
+    expect(items[1].value).toBe('ok');
+  });
+});
+
+describe('handleDebugLog', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    resetGlobalToastQueue();
+  });
+
+  it('creates a toast with sanitized data', async () => {
+    const showFn = vi.fn();
+    initGlobalToastQueue(showFn);
+
+    const promise = handleDebugLog('2026-01-01T00:00:00.000Z', 'Test Title', {
+      password: 'secret',
+      name: 'test',
+    });
+    await promise;
+
+    await vi.advanceTimersByTimeAsync(DEFAULTS.toast.stagger.DEFAULT + 100);
+
+    expect(showFn).toHaveBeenCalledOnce();
+    const toast = showFn.mock.calls[0][0];
+    expect(toast.title).toBe('Test Title');
+    expect(toast.variant).toBe('info');
+    expect(toast.message).toContain('[REDACTED]');
+    expect(toast.message).not.toContain('secret');
+  });
+
+  it('logs debug via recorder when available', async () => {
+    const mockLogDebug = vi.fn();
+    const recorder: DebugRecorder = { logDebug: mockLogDebug };
+    setDebugRecorder(recorder);
+    const showFn = vi.fn();
+    initGlobalToastQueue(showFn);
+
+    await handleDebugLog('2026-01-01T00:00:00.000Z', 'Debug Msg', {
+      key: 'value',
     });
 
-    it('returns undefined unchanged', () => {
-      expect(sanitizeData(undefined)).toBeUndefined();
+    expect(mockLogDebug).toHaveBeenCalledWith({
+      message: 'Debug Msg',
+      data: { key: 'value' },
     });
+  });
 
-    it('returns primitives unchanged', () => {
-      expect(sanitizeData(42)).toBe(42);
-      expect(sanitizeData('hello')).toBe('hello');
-      expect(sanitizeData(true)).toBe(true);
-    });
+  it('does not pass data to debug recorder when sanitized data is not an object', async () => {
+    const mockLogDebug = vi.fn();
+    const recorder: DebugRecorder = { logDebug: mockLogDebug };
+    setDebugRecorder(recorder);
+    const showFn = vi.fn();
+    initGlobalToastQueue(showFn);
 
-    it('redacts password field', () => {
-      const result = sanitizeData({ password: 'secret123', user: 'john' });
-      expect(result).toEqual({ password: '[REDACTED]', user: 'john' });
-    });
+    await handleDebugLog('2026-01-01T00:00:00.000Z', 'Plain', 'just a string');
 
-    it('redacts token field case-insensitively', () => {
-      const result = sanitizeData({ Token: 'abc', name: 'test' });
-      expect(result).toEqual({ Token: '[REDACTED]', name: 'test' });
+    expect(mockLogDebug).toHaveBeenCalledWith({
+      message: 'Plain',
+      data: undefined,
     });
+  });
 
-    it('redacts nested sensitive fields', () => {
-      const result = sanitizeData({
-        config: { apiKey: 'key123', timeout: 5000 },
-      });
-      expect(result).toEqual({
-        config: { apiKey: '[REDACTED]', timeout: 5000 },
-      });
-    });
+  it('survives when no debug recorder is set', async () => {
+    const showFn = vi.fn();
+    initGlobalToastQueue(showFn);
 
-    it('redacts sensitive fields in arrays', () => {
-      const result = sanitizeData([
-        { token: 'tok1', id: 1 },
-        { token: 'tok2', id: 2 },
-      ]);
-      expect(result).toEqual([
-        { token: '[REDACTED]', id: 1 },
-        { token: '[REDACTED]', id: 2 },
-      ]);
-    });
-
-    it('handles arrays of primitives', () => {
-      const result = sanitizeData([1, 2, 'three']);
-      expect(result).toEqual([1, 2, 'three']);
-    });
-
-    it('redacts all sensitive key variations', () => {
-      const result = sanitizeData({
-        secret: 'a',
-        api_key: 'b',
-        auth: 'c',
-        credentials: 'd',
-        authorization: 'e',
-        privateKey: 'f',
-        private_key: 'g',
-        accessToken: 'h',
-        access_token: 'i',
-      });
-      expect(result).toEqual({
-        secret: '[REDACTED]',
-        api_key: '[REDACTED]',
-        auth: '[REDACTED]',
-        credentials: '[REDACTED]',
-        authorization: '[REDACTED]',
-        privateKey: '[REDACTED]',
-        private_key: '[REDACTED]',
-        accessToken: '[REDACTED]',
-        access_token: '[REDACTED]',
-      });
-    });
-
-    it('handles empty object', () => {
-      expect(sanitizeData({})).toEqual({});
-    });
-
-    it('handles deeply nested objects', () => {
-      const result = sanitizeData({
-        a: { b: { password: 'deep', c: 'keep' } },
-      });
-      expect(result).toEqual({
-        a: { b: { password: '[REDACTED]', c: 'keep' } },
-      });
-    });
-
-    it('handles mixed arrays in objects', () => {
-      const result = sanitizeData({
-        items: [{ token: 'x' }, 42, 'str', { name: 'ok' }],
-      });
-      expect(result).toEqual({
-        items: [{ token: '[REDACTED]' }, 42, 'str', { name: 'ok' }],
-      });
-    });
+    await expect(
+      handleDebugLog('2026-01-01T00:00:00.000Z', 'No Recorder', {})
+    ).resolves.toBeUndefined();
   });
 });

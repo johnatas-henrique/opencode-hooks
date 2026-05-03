@@ -1,154 +1,116 @@
+import { describe, it, expect } from 'vitest';
+import { createUserConfig } from '../../helpers/create-config';
 import {
   createContext,
   createFactory,
   createEventResolver,
   createToolResolver,
 } from '.opencode/plugins/features/events/context';
-import type { UserEventsConfig } from '.opencode/plugins/types/config';
-import { EventType, EventHandler } from '.opencode/plugins/types/events';
+import type { EventHandler } from '.opencode/plugins/types/events';
+import type { ResolverFactory } from '.opencode/plugins/types/events';
 
-describe('context', () => {
-  const baseConfig: UserEventsConfig = {
-    enabled: true,
-    logDisabledEvents: false,
-    audit: {
-      enabled: true,
-      level: 'audit',
-      basePath: '/tmp/test',
-      maxSizeMB: 100,
-      maxAgeDays: 30,
-      logTruncationKB: 10,
-      maxFieldSize: 1024,
-      maxArrayItems: 10,
-      largeFields: [],
-    },
-    showPluginStatus: false,
-    pluginStatusDisplayMode: 'user-only',
-    scriptToasts: {
-      showOutput: false,
-      showError: false,
-      outputVariant: 'success',
-      errorVariant: 'error',
-      outputDuration: 3000,
-      errorDuration: 5000,
-      outputTitle: 'Output',
-      errorTitle: 'Error',
-    },
-    default: { scripts: [], runScripts: false },
-    loadClaudeHookSettings: { enabled: false },
-    events: {},
-    tools: {
-      [EventType.TOOL_EXECUTE_AFTER]: {},
-      [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {},
-      [EventType.TOOL_EXECUTE_BEFORE]: {},
-    },
-  };
-
-  describe('createContext', () => {
-    it('returns context with enabled getter', () => {
-      const ctx = createContext(baseConfig);
-      expect(ctx.enabled).toBe(true);
-    });
-
-    it('returns context with default getter', () => {
-      const ctx = createContext(baseConfig);
-      expect(ctx.default).toEqual({ scripts: [] });
-    });
-
-    it('returns context with scriptToasts getter', () => {
-      const ctx = createContext(baseConfig);
-      expect(ctx.scriptToasts).toEqual({ showError: false });
-    });
-
-    it('returns context with handlers getter', () => {
-      const ctx = createContext(baseConfig);
-      expect(ctx.handlers).toBeDefined();
-    });
-
-    it('uses provided eventHandlers when passed', () => {
-      const customHandlers: Record<string, EventHandler> = {
-        'test.handler': vi.fn() as unknown as EventHandler,
-      };
-      const ctx = createContext(baseConfig, customHandlers);
-      expect(ctx.handlers).toBe(customHandlers);
-    });
-
-    it('falls back to default handlers when not provided', () => {
-      const ctx = createContext(baseConfig);
-      expect(ctx.handlers).toBeDefined();
-      expect(typeof ctx.handlers).toBe('object');
-    });
-
-    it('returns empty claudeScripts when loadClaudeHookSettings disabled', () => {
-      const ctx = createContext(baseConfig);
-      expect(ctx.claudeScripts).toEqual({});
-    });
-
-    it('returns empty claudeUnsupported when loadClaudeHookSettings disabled', () => {
-      const ctx = createContext(baseConfig);
-      expect(ctx.claudeUnsupported).toEqual([]);
-    });
-
-    it('getEventConfig returns undefined for unknown event', () => {
-      const ctx = createContext(baseConfig);
-      const result = ctx.getEventConfig('unknown.event' as 'session.created');
-      expect(result).toBeUndefined();
-    });
-
-    it('getToolConfigs returns undefined for unknown tool event', () => {
-      const ctx = createContext(baseConfig);
-      const result = ctx.getToolConfigs('unknown' as 'tool.execute.before');
-      expect(result).toBeUndefined();
-    });
+describe('createContext', () => {
+  it('creates a ConfigResolverContext from UserEventsConfig', () => {
+    const userCfg = createUserConfig({ enabled: true });
+    const ctx = createContext(userCfg);
+    expect(ctx.enabled).toBe(true);
+    expect(ctx.default).toBeDefined();
+    expect(typeof ctx.getEventConfig).toBe('function');
+    expect(typeof ctx.getToolConfigs).toBe('function');
   });
 
-  describe('createFactory', () => {
-    it('creates factory with createEventResolver', () => {
-      const ctx = createContext(baseConfig);
-      const factory = createFactory(ctx);
-      expect(factory.createEventResolver).toBeDefined();
-      expect(typeof factory.createEventResolver).toBe('function');
+  it('delegates getEventConfig to userConfig.events', () => {
+    const userCfg = createUserConfig({
+      events: { 'session.created': { toast: true } },
     });
-
-    it('creates factory with createToolResolver', () => {
-      const ctx = createContext(baseConfig);
-      const factory = createFactory(ctx);
-      expect(factory.createToolResolver).toBeDefined();
-      expect(typeof factory.createToolResolver).toBe('function');
-    });
-
-    it('createEventResolver returns EventConfigResolver', () => {
-      const ctx = createContext(baseConfig);
-      const factory = createFactory(ctx);
-      const resolver = factory.createEventResolver(ctx);
-      expect(resolver).toBeDefined();
-      expect(resolver.resolve).toBeDefined();
-    });
-
-    it('createToolResolver returns ToolConfigResolver', () => {
-      const ctx = createContext(baseConfig);
-      const factory = createFactory(ctx);
-      const resolver = factory.createToolResolver(ctx);
-      expect(resolver).toBeDefined();
-      expect(resolver.resolve).toBeDefined();
-    });
+    const ctx = createContext(userCfg);
+    const cfg = ctx.getEventConfig('session.created') as Record<
+      string,
+      unknown
+    >;
+    expect(cfg?.toast).toBe(true);
   });
 
-  describe('createEventResolver', () => {
-    it('creates EventConfigResolver directly', () => {
-      const resolver = createEventResolver(baseConfig);
-      expect(resolver).toBeDefined();
-      expect(resolver.resolve).toBeDefined();
-      expect(typeof resolver.resolve).toBe('function');
-    });
+  it('delegates getToolConfigs to userConfig.tools', () => {
+    const userCfg = createUserConfig();
+    const ctx = createContext(userCfg);
+    const bashCfg = ctx.getToolConfigs('tool.execute.before') as Record<
+      string,
+      unknown
+    >;
+    expect(bashCfg).toBeDefined();
   });
 
-  describe('createToolResolver', () => {
-    it('creates ToolConfigResolver directly', () => {
-      const resolver = createToolResolver(baseConfig);
-      expect(resolver).toBeDefined();
-      expect(resolver.resolve).toBeDefined();
-      expect(typeof resolver.resolve).toBe('function');
+  it('returns empty claudeScripts by default', () => {
+    const userCfg = createUserConfig();
+    const ctx = createContext(userCfg);
+    expect(ctx.claudeScripts).toEqual({});
+    expect(ctx.claudeUnsupported).toEqual([]);
+  });
+
+  it('uses custom eventHandlers when provided', () => {
+    const customHandler: EventHandler = {
+      title: 'Custom',
+      variant: 'info',
+      duration: 3000,
+      defaultScript: 'custom.sh',
+      buildMessage: () => 'custom',
+    };
+    const userCfg = createUserConfig();
+    const ctx = createContext(userCfg, {
+      'session.created': customHandler,
     });
+    expect(ctx.handlers['session.created']).toBe(customHandler);
+  });
+});
+
+describe('createFactory', () => {
+  it('returns a ResolverFactory with both resolvers', () => {
+    const userCfg = createUserConfig();
+    const ctx = createContext(userCfg);
+    const factory = createFactory(ctx) as ResolverFactory;
+    expect(typeof factory.createEventResolver).toBe('function');
+    expect(typeof factory.createToolResolver).toBe('function');
+  });
+});
+
+describe('createEventResolver', () => {
+  it('returns an EventConfigResolver that resolves events', () => {
+    const userCfg = createUserConfig({
+      events: { 'session.created': { toast: true } },
+    });
+    const resolver = createEventResolver(userCfg);
+    const result = resolver.resolve('session.created');
+    expect(result.enabled).toBe(true);
+  });
+
+  it('returns undefined event config as default', () => {
+    const userCfg = createUserConfig();
+    const resolver = createEventResolver(userCfg);
+    const result = resolver.resolve('unknown.event');
+    expect(result.enabled).toBe(true);
+  });
+
+  it('resolves handler from config context', () => {
+    const userCfg = createUserConfig();
+    const resolver = createEventResolver(userCfg);
+    const result = resolver.resolve('session.created');
+    expect(result.enabled).toBe(true);
+  });
+});
+
+describe('createToolResolver', () => {
+  it('returns a ToolConfigResolver that resolves tool configs', () => {
+    const userCfg = createUserConfig();
+    const resolver = createToolResolver(userCfg);
+    const result = resolver.resolve('tool.execute.before', 'bash');
+    expect(result.enabled).toBe(true);
+  });
+
+  it('handles tool.execute.after event type', () => {
+    const userCfg = createUserConfig();
+    const resolver = createToolResolver(userCfg);
+    const result = resolver.resolve('tool.execute.after', 'bash');
+    expect(result).toBeDefined();
   });
 });

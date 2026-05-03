@@ -1,31 +1,10 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   waitForToastSilence,
   countToastsInLog,
 } from '.opencode/plugins/features/messages/toast-silence-detector';
 
-const createMockReadFile = (content: string | Error) =>
-  vi.fn().mockImplementation(async () => {
-    if (content instanceof Error) throw content;
-    return content;
-  });
-
-const runSilenceTest = async (errorContent: Error) => {
-  const mockReadFile = createMockReadFile(errorContent);
-  const { promise, cleanup } = waitForToastSilence(
-    '/fake/log.log',
-    { pollMs: 100 },
-    mockReadFile
-  );
-  await Promise.resolve();
-  vi.advanceTimersByTime(100);
-  await Promise.resolve();
-  await Promise.resolve();
-  await promise;
-  cleanup();
-};
-
-describe('toast-silence-detector', () => {
+describe('waitForToastSilence', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -34,79 +13,136 @@ describe('toast-silence-detector', () => {
     vi.useRealTimers();
   });
 
-  describe('waitForToastSilence', () => {
-    it('should resolve immediately when no toasts found', async () => {
-      const mockReadFile = createMockReadFile('no toasts here');
-      const { promise, cleanup } = waitForToastSilence(
-        '/fake/log.log',
-        { pollMs: 100, silenceMs: 500 },
-        mockReadFile
-      );
+  it('resolves immediately when no new toasts appear', async () => {
+    const readFileFn = vi
+      .fn()
+      .mockResolvedValue('some log content without toasts');
+    const { promise, cleanup } = waitForToastSilence(
+      '/fake/log.log',
+      { pollMs: 100, silenceMs: 200 },
+      readFileFn
+    );
 
-      await Promise.resolve();
-      expect(mockReadFile).toHaveBeenCalledTimes(1);
-      await promise;
-      cleanup();
-    });
+    await vi.advanceTimersByTimeAsync(100);
 
-    it('should schedule silenceTimer when toast count increases', async () => {
-      const mockReadFile = createSequenceReadFile([
-        'path=/tui/show-toast',
-        'path=/tui/show-toast path=/tui/show-toast',
-        'path=/tui/show-toast path=/tui/show-toast',
-      ]);
-
-      const { promise, cleanup } = waitForToastSilence(
-        '/fake/log.log',
-        { silenceMs: 500, pollMs: 100 },
-        mockReadFile
-      );
-
-      await Promise.resolve();
-      expect(mockReadFile).toHaveBeenCalledTimes(1);
-
-      vi.advanceTimersByTime(100);
-      await Promise.resolve();
-      expect(mockReadFile).toHaveBeenCalledTimes(2);
-
-      vi.advanceTimersByTime(500);
-      await Promise.resolve();
-      await promise;
-
-      cleanup();
-    });
-
-    it('should handle readFile error in catch block', async () => {
-      await runSilenceTest(new Error('File read error'));
-    });
-
-    it('should clear timers in catch block', async () => {
-      await runSilenceTest(new Error('Read error'));
-    });
+    await expect(promise).resolves.toBeUndefined();
+    cleanup();
+    expect(readFileFn).toHaveBeenCalledWith('/fake/log.log', 'utf-8');
   });
 
-  describe('countToastsInLog', () => {
-    it('should return correct count', async () => {
-      const mockReadFile = createMockReadFile(
-        'path=/tui/show-toast\npath=/tui/show-toast\npath=/tui/show-toast'
+  it('resolves after silence period when toasts stop increasing', async () => {
+    const logLines = Array.from(
+      { length: 3 },
+      (_, i) => `path=/tui/show-toast toast ${i}`
+    ).join('\n');
+
+    const readFileFn = vi
+      .fn()
+      .mockResolvedValueOnce(logLines)
+      .mockResolvedValueOnce(logLines);
+
+    const { promise, cleanup } = waitForToastSilence(
+      '/fake/log.log',
+      { pollMs: 100, silenceMs: 200 },
+      readFileFn
+    );
+
+    await vi.advanceTimersByTimeAsync(100);
+
+    await expect(promise).resolves.toBeUndefined();
+    cleanup();
+  });
+
+  it('resets silence timer when new toasts appear', async () => {
+    const readFileFn = vi
+      .fn()
+      .mockResolvedValueOnce('path=/tui/show-toast first')
+      .mockResolvedValueOnce(
+        'path=/tui/show-toast first\npath=/tui/show-toast second'
+      )
+      .mockResolvedValueOnce(
+        'path=/tui/show-toast first\npath=/tui/show-toast second'
       );
 
-      const count = await countToastsInLog('/fake/log.log', mockReadFile);
-      expect(count).toBe(3);
-    });
+    const { promise, cleanup } = waitForToastSilence(
+      '/fake/log.log',
+      { pollMs: 100, silenceMs: 200 },
+      readFileFn
+    );
 
-    it('should return 0 when no toasts', async () => {
-      const mockReadFile = createMockReadFile('no toasts here');
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(200);
 
-      const count = await countToastsInLog('/fake/log.log', mockReadFile);
-      expect(count).toBe(0);
-    });
+    await expect(promise).resolves.toBeUndefined();
+    cleanup();
+  });
 
-    it('should return 0 on file error', async () => {
-      const mockReadFile = createMockReadFile(new Error('Permission denied'));
+  it('resolves on readFile error', async () => {
+    const readFileFn = vi.fn().mockRejectedValue(new Error('read error'));
 
-      const count = await countToastsInLog('/fake/log.log', mockReadFile);
-      expect(count).toBe(0);
-    });
+    const { promise, cleanup } = waitForToastSilence(
+      '/fake/log.log',
+      { pollMs: 100, silenceMs: 200 },
+      readFileFn
+    );
+
+    await vi.advanceTimersByTimeAsync(100);
+
+    await expect(promise).resolves.toBeUndefined();
+    cleanup();
+  });
+
+  it('cleanup cancels pending timers', async () => {
+    const readFileFn = vi.fn().mockResolvedValue('path=/tui/show-toast first');
+    const { promise, cleanup } = waitForToastSilence(
+      '/fake/log.log',
+      { pollMs: 1000, silenceMs: 2000 },
+      readFileFn
+    );
+
+    cleanup();
+
+    await vi.advanceTimersByTimeAsync(5000);
+
+    const settled = await Promise.race([
+      promise.then(
+        () => 'resolved' as const,
+        () => 'rejected' as const
+      ),
+      Promise.resolve('pending' as const),
+    ]);
+
+    expect(settled).toBe('pending');
+  });
+});
+
+describe('countToastsInLog', () => {
+  it('returns count of toast patterns', async () => {
+    const readFileFn = vi
+      .fn()
+      .mockResolvedValue(
+        [
+          'path=/tui/show-toast first',
+          'something else',
+          'path=/tui/show-toast second',
+        ].join('\n')
+      );
+
+    const count = await countToastsInLog('/fake/log.log', readFileFn);
+    expect(count).toBe(2);
+  });
+
+  it('returns 0 when no toast patterns', async () => {
+    const readFileFn = vi.fn().mockResolvedValue('no toasts here');
+
+    const count = await countToastsInLog('/fake/log.log', readFileFn);
+    expect(count).toBe(0);
+  });
+
+  it('returns 0 on read error', async () => {
+    const readFileFn = vi.fn().mockRejectedValue(new Error('read error'));
+
+    const count = await countToastsInLog('/fake/log.log', readFileFn);
+    expect(count).toBe(0);
   });
 });

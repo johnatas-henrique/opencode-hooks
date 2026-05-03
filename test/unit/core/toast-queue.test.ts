@@ -1,113 +1,172 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { TuiToast } from '@opencode-ai/plugin/tui';
+
 import {
+  showToastStaggered,
   createToastQueue,
   initGlobalToastQueue,
   getGlobalToastQueue,
   useGlobalToastQueue,
   resetGlobalToastQueue,
 } from '.opencode/plugins/core/toast-queue';
-import type { TuiToast } from '@opencode-ai/plugin/tui';
 
-describe('toast-queue', () => {
-  let showFn: (toast: TuiToast) => void | Promise<void>;
-  let queue: ReturnType<typeof createToastQueue>;
-
+describe('showToastStaggered', () => {
   beforeEach(() => {
-    const mockFn = vi.fn().mockResolvedValue(undefined);
-    showFn = (toast: TuiToast) => mockFn(toast);
-    queue = createToastQueue(showFn, { staggerMs: 0, maxSize: 10 });
+    vi.useFakeTimers();
   });
 
-  it('creates queue with add method', () => {
-    expect(queue.add).toBeDefined();
-    expect(typeof queue.add).toBe('function');
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it('creates queue with addMultiple method', () => {
-    expect(queue.addMultiple).toBeDefined();
-    expect(typeof queue.addMultiple).toBe('function');
+  it('shows a toast with staggering', async () => {
+    const showFn = vi.fn();
+    const toast: TuiToast = {
+      title: 'Test',
+      message: 'Message',
+      variant: 'info',
+      duration: 50,
+    };
+
+    const promise = showToastStaggered(showFn, toast, { stagger: true });
+
+    await vi.advanceTimersByTimeAsync(500);
+
+    await promise;
+    expect(showFn).toHaveBeenCalledWith(toast);
   });
 
-  it('creates queue with clear method', () => {
-    expect(queue.clear).toBeDefined();
-    expect(typeof queue.clear).toBe('function');
+  it('shows a toast without staggering', async () => {
+    const showFn = vi.fn();
+    const toast: TuiToast = {
+      title: 'Test',
+      message: 'Message',
+      variant: 'info',
+      duration: 50,
+    };
+
+    const promise = showToastStaggered(showFn, toast, { stagger: false });
+
+    await vi.advanceTimersByTimeAsync(500);
+
+    await promise;
+    expect(showFn).toHaveBeenCalledWith(toast);
+  });
+});
+
+describe('createToastQueue', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
   });
 
-  it('creates queue with flush method', () => {
-    expect(queue.flush).toBeDefined();
-    expect(typeof queue.flush).toBe('function');
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it('add enqueues a toast', () => {
-    const toast: TuiToast = { title: 'Test', message: '' };
-    queue.add(toast);
+  it('creates a queue that can add and flush toasts', async () => {
+    const showFn = vi.fn();
+    const queue = createToastQueue(showFn, { staggerMs: 10, maxSize: 10 });
+
+    queue.add({ title: 'Test', message: 'Msg', variant: 'info', duration: 50 });
+
     expect(queue.pending).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(showFn).toHaveBeenCalledTimes(1);
   });
 
-  it('addMultiple enqueues multiple toasts', () => {
-    const toasts: TuiToast[] = [
-      { title: '1', message: '' },
-      { title: '2', message: '' },
-      { title: '3', message: '' },
-    ];
-    queue.addMultiple(toasts);
-    expect(queue.pending).toBe(3);
-  });
-
-  it('clear removes all pending toasts', () => {
-    queue.add({ title: '1', message: '' });
-    queue.add({ title: '2', message: '' });
+  it('supports addMultiple', () => {
+    const showFn = vi.fn();
+    const queue = createToastQueue(showFn);
+    queue.addMultiple([
+      { title: 'A', message: 'a', variant: 'info', duration: 50 },
+      { title: 'B', message: 'b', variant: 'info', duration: 50 },
+    ]);
     expect(queue.pending).toBe(2);
+  });
+
+  it('clear resets the queue', () => {
+    const showFn = vi.fn();
+    const queue = createToastQueue(showFn);
+    queue.add({ title: 'T', message: 'M', variant: 'info', duration: 50 });
     queue.clear();
     expect(queue.pending).toBe(0);
   });
+});
 
-  it('pending returns 0 initially', () => {
-    expect(queue.pending).toBe(0);
+describe('global toast queue', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    resetGlobalToastQueue();
   });
 
-  it('initGlobalToastQueue initializes global queue', () => {
-    resetGlobalToastQueue();
-    const result = initGlobalToastQueue(showFn);
-    expect(result.add).toBeDefined();
-    expect(result.flush).toBeDefined();
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it('getGlobalToastQueue returns existing queue when initialized', () => {
+  it('initGlobalToastQueue creates and returns a ToastQueue', () => {
+    const showFn = vi.fn();
+    const queue = initGlobalToastQueue(showFn);
+    expect(queue).toBeDefined();
+    expect(typeof queue.add).toBe('function');
+    expect(typeof queue.flush).toBe('function');
+  });
+
+  it('getGlobalToastQueue returns existing queue', () => {
+    const showFn = vi.fn();
+    const queue1 = initGlobalToastQueue(showFn);
+    const queue2 = getGlobalToastQueue();
+    expect(queue2).toBe(queue1);
+  });
+
+  it('getGlobalToastQueue creates queue if showFn provided and not initialized', () => {
     resetGlobalToastQueue();
+    const showFn = vi.fn();
+    const queue = getGlobalToastQueue(showFn);
+    expect(queue).toBeDefined();
+  });
+
+  it('getGlobalToastQueue throws if not initialized and no showFn', () => {
+    resetGlobalToastQueue();
+    expect(() => getGlobalToastQueue()).toThrow(
+      'ToastQueue not initialized. Call initGlobalToastQueue first.'
+    );
+  });
+
+  it('useGlobalToastQueue returns existing queue', () => {
+    const showFn = vi.fn();
     initGlobalToastQueue(showFn);
-    const result = getGlobalToastQueue();
-    expect(result).toBeDefined();
-    expect(result.add).toBeDefined();
+    const queue = useGlobalToastQueue();
+    expect(queue).toBeDefined();
   });
 
-  it('getGlobalToastQueue initializes when showFn provided', () => {
+  it('useGlobalToastQueue throws if not initialized', () => {
     resetGlobalToastQueue();
-    const result = getGlobalToastQueue(showFn);
-    expect(result).toBeDefined();
-    expect(result.add).toBeDefined();
+    expect(() => useGlobalToastQueue()).toThrow(
+      'ToastQueue not initialized. Call initGlobalToastQueue first.'
+    );
   });
 
-  it('getGlobalToastQueue throws when not initialized and no showFn', () => {
-    resetGlobalToastQueue();
-    expect(() => getGlobalToastQueue()).toThrow('ToastQueue not initialized');
-  });
-
-  it('useGlobalToastQueue returns queue when initialized', () => {
-    resetGlobalToastQueue();
+  it('resetGlobalToastQueue clears the global queue', () => {
+    const showFn = vi.fn();
     initGlobalToastQueue(showFn);
-    const result = useGlobalToastQueue();
-    expect(result).toBeDefined();
-  });
-
-  it('useGlobalToastQueue throws when not initialized', () => {
-    resetGlobalToastQueue();
-    expect(() => useGlobalToastQueue()).toThrow('ToastQueue not initialized');
-  });
-
-  it('resetGlobalToastQueue clears global queue', () => {
-    initGlobalToastQueue(showFn);
-    expect(useGlobalToastQueue()).toBeDefined();
     resetGlobalToastQueue();
     expect(() => useGlobalToastQueue()).toThrow();
+  });
+
+  it('global queue processes toasts', async () => {
+    const showFn = vi.fn();
+    const queue = initGlobalToastQueue(showFn);
+    queue.add({
+      title: 'Global',
+      message: 'Test',
+      variant: 'info',
+      duration: 50,
+    });
+
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(showFn).toHaveBeenCalledTimes(1);
   });
 });

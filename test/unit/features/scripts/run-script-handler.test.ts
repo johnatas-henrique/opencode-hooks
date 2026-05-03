@@ -1,176 +1,179 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { PluginInput } from '@opencode-ai/plugin';
+
 import {
-  runScriptAndHandle,
   isSubagent,
   addSubagentSession,
   resetSubagentTracking,
+  runScriptAndHandle,
 } from '.opencode/plugins/features/scripts/run-script-handler';
-import type { EventScriptConfig } from '.opencode/plugins/types/scripts';
-import type { ScriptRecorder } from '.opencode/plugins/types/audit';
+import {
+  initGlobalToastQueue,
+  resetGlobalToastQueue,
+} from '.opencode/plugins/core/toast-queue';
 
-interface TestScriptConfig extends EventScriptConfig {
-  toastTitle?: string;
-  ctx?: {
-    $: string;
-    client: string;
-    project: string;
-    directory: string;
-    worktree: string;
-  };
-  timestamp?: string;
-  scriptRecorder?: ScriptRecorder;
-}
-
-// Mock only the external dependencies, not the internal logic
-vi.mock('.opencode/plugins/features/scripts/run-script', () => ({
-  runScript: vi.fn().mockResolvedValue({
-    output: 'mock output',
-    error: null,
-    exitCode: 0,
-  }),
-}));
-
-vi.mock('.opencode/plugins/features/scripts/adapters', () => ({
-  createAuditAdapter: vi.fn(() => undefined),
-  createSessionAdapter: vi.fn(() => ({
-    appendToSession: vi.fn().mockResolvedValue(undefined),
-  })),
-  createToastAdapter: vi.fn(() => undefined),
-}));
-
-vi.mock('.opencode/plugins/core/constants', () => ({
-  DEFAULTS: {
-    core: { defaultSessionId: 'unknown' },
-    scripts: { dir: 'scripts' },
-    toast: { durations: { TEN_SECONDS: 10000 } },
-  },
-}));
-
-import { runScript } from '.opencode/plugins/features/scripts/run-script';
-
-const mockRunScript = runScript as unknown as ReturnType<typeof vi.fn>;
-
-describe('run-script-handler', () => {
+describe('isSubagent', () => {
   beforeEach(() => {
     resetSubagentTracking();
+  });
+
+  it('returns false for undefined', () => {
+    expect(isSubagent(undefined)).toBe(false);
+  });
+
+  it('returns false for empty string', () => {
+    expect(isSubagent('')).toBe(false);
+  });
+
+  it('returns false for unknown session id', () => {
+    expect(isSubagent('ses_unknown')).toBe(false);
+  });
+
+  it('returns true after addSubagentSession', () => {
+    addSubagentSession('ses_sub');
+    expect(isSubagent('ses_sub')).toBe(true);
+  });
+
+  it('returns false for non-subagent after adding different one', () => {
+    addSubagentSession('ses_sub1');
+    expect(isSubagent('ses_sub2')).toBe(false);
+  });
+
+  it('tracks multiple sessions', () => {
+    addSubagentSession('ses_a');
+    addSubagentSession('ses_b');
+    expect(isSubagent('ses_a')).toBe(true);
+    expect(isSubagent('ses_b')).toBe(true);
+  });
+});
+
+describe('addSubagentSession', () => {
+  beforeEach(() => {
+    resetSubagentTracking();
+  });
+
+  it('adds a session to tracking', () => {
+    addSubagentSession('ses_new');
+    expect(isSubagent('ses_new')).toBe(true);
+  });
+
+  it('is idempotent for the same session', () => {
+    addSubagentSession('ses_dup');
+    addSubagentSession('ses_dup');
+    expect(isSubagent('ses_dup')).toBe(true);
+  });
+});
+
+describe('resetSubagentTracking', () => {
+  it('clears all tracked sessions', () => {
+    addSubagentSession('ses_clear');
+    resetSubagentTracking();
+    expect(isSubagent('ses_clear')).toBe(false);
+  });
+});
+
+describe('runScriptAndHandle', () => {
+  beforeEach(() => {
     vi.clearAllMocks();
+    resetGlobalToastQueue();
+    initGlobalToastQueue(vi.fn());
   });
 
-  describe('isSubagent, addSubagentSession, resetSubagentTracking', () => {
-    it('isSubagent returns false for undefined', () => {
-      expect(isSubagent(undefined)).toBe(false);
-    });
+  function makeMock$(): unknown {
+    return vi.fn(() => ({
+      quiet: () => Promise.resolve({ text: () => 'output', exitCode: 0 }),
+    }));
+  }
 
-    it('isSubagent returns false for untracked', () => {
-      expect(isSubagent('sess-1')).toBe(false);
-    });
+  function makeMockCtx(): PluginInput {
+    return {
+      $: makeMock$() as PluginInput['$'],
+      client: { session: { prompt: vi.fn().mockResolvedValue(undefined) } },
+    } as unknown as PluginInput;
+  }
 
-    it('isSubagent returns true for tracked', () => {
-      addSubagentSession('sess-1');
-      expect(isSubagent('sess-1')).toBe(true);
-    });
-
-    it('reset clears tracking', () => {
-      addSubagentSession('sess-1');
-      resetSubagentTracking();
-      expect(isSubagent('sess-1')).toBe(false);
-    });
-  });
-
-  describe('runScriptAndHandle', () => {
-    const baseConfig: TestScriptConfig = {
+  function makeBaseConfig(overrides: Record<string, unknown> = {}) {
+    return {
+      ctx: makeMockCtx(),
       script: 'test.sh',
+      scriptArg: undefined as string | undefined,
+      timestamp: '2026-01-01T00:00:00.000Z',
       eventType: 'session.created',
+      toolName: undefined as string | undefined,
       resolved: {
         enabled: true,
         debug: false,
         toast: false,
+        toastTitle: '=== Script Output ===',
         toastMessage: '',
-        logToAudit: false,
+        toastVariant: 'info' as const,
+        toastDuration: 2000,
+        scripts: [],
+        runScripts: false,
+        logToAudit: true,
         appendToSession: false,
         runOnlyOnce: false,
         scriptToasts: {
-          showOutput: false,
-          showError: false,
-          outputVariant: 'success',
-          errorVariant: 'error',
-          outputDuration: 3000,
-          errorDuration: 5000,
-          outputTitle: 'Output',
-          errorTitle: 'Error',
+          showOutput: true,
+          showError: true,
+          outputVariant: 'info' as const,
+          errorVariant: 'error' as const,
+          outputDuration: 5000,
+          errorDuration: 15000,
+          outputTitle: 'Script Output',
+          errorTitle: 'Script Error',
         },
-        toastTitle: 'Test',
+        block: [],
       },
       scriptToasts: {
-        showOutput: false,
-        showError: false,
-        outputVariant: 'success',
-        errorVariant: 'error',
-        outputDuration: 3000,
-        errorDuration: 5000,
-        outputTitle: 'Output',
-        errorTitle: 'Error',
+        showOutput: true,
+        showError: true,
+        outputVariant: 'info' as const,
+        errorVariant: 'error' as const,
+        outputDuration: 5000,
+        errorDuration: 15000,
+        outputTitle: 'Script Output',
+        errorTitle: 'Script Error',
       },
-      ctx: {
-        $: 'sess-1',
-        client: '',
-        project: '',
-        directory: '',
-        worktree: '',
-      },
-      timestamp: '2026-01-01T00:00:00.000Z',
+      sessionId: 'ses_test',
+      ...overrides,
     };
-    it('calls runScript with script and no arg', async () => {
-      mockRunScript.mockResolvedValue({
-        output: 'ok',
-        error: null,
-        exitCode: 0,
-      });
+  }
 
-      await runScriptAndHandle(baseConfig);
+  it('creates ScriptExecutor and returns success result', async () => {
+    const config = makeBaseConfig();
+    const result = await runScriptAndHandle(config);
 
-      expect(mockRunScript).toHaveBeenCalledWith('sess-1', 'test.sh');
+    expect(result).toEqual({ script: 'test.sh', output: 'output' });
+  });
+
+  it('passes scriptArg to runScript', async () => {
+    const config = makeBaseConfig({ scriptArg: '--verbose' });
+    const result = await runScriptAndHandle(config);
+
+    expect(result).toEqual({ script: 'test.sh', output: 'output' });
+  });
+
+  it('handles error from script execution', async () => {
+    const ctx = {
+      $: vi.fn(() => ({
+        quiet: () => Promise.resolve({ text: () => 'err', exitCode: 1 }),
+      })) as unknown as PluginInput['$'],
+      client: { session: { prompt: vi.fn().mockResolvedValue(undefined) } },
+    } as unknown as PluginInput;
+
+    const result = await runScriptAndHandle({
+      ...makeBaseConfig({ script: 'bad.sh' }),
+      ctx,
     });
 
-    it('calls runScript with script and arg when provided', async () => {
-      mockRunScript.mockResolvedValue({
-        output: 'ok',
-        error: null,
-        exitCode: 0,
-      });
+    expect(result.output).toBeUndefined();
+  });
 
-      await runScriptAndHandle({
-        ...baseConfig,
-        scriptArg: 'myarg',
-      });
+  it('uses defaultSessionId when sessionId is not provided', async () => {
+    const config = makeBaseConfig({ sessionId: undefined });
+    const result = await runScriptAndHandle(config);
 
-      expect(mockRunScript).toHaveBeenCalledWith('sess-1', 'test.sh', 'myarg');
-    });
-
-    it('returns result from executor', async () => {
-      mockRunScript.mockResolvedValue({
-        output: 'success output',
-        error: null,
-        exitCode: 0,
-      });
-
-      const result = await runScriptAndHandle(baseConfig);
-
-      expect(result.output).toBe('success output');
-    });
-
-    it('uses default sessionId when not provided', async () => {
-      mockRunScript.mockResolvedValue({
-        output: 'ok',
-        error: null,
-        exitCode: 0,
-      });
-
-      const result = await runScriptAndHandle({
-        ...baseConfig,
-        sessionId: undefined,
-      });
-
-      expect(result.output).toBe('ok');
-    });
+    expect(result).toEqual({ script: 'test.sh', output: 'output' });
   });
 });

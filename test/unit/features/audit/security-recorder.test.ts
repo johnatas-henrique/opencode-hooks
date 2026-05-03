@@ -1,95 +1,100 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   createSecurityRecorder,
   getSecurityRecorder,
   setSecurityRecorder,
 } from '.opencode/plugins/features/audit/security-recorder';
-import type {
-  AuditLogger,
-  SecurityRecorder,
-} from '.opencode/plugins/types/audit';
 
-describe('security-recorder', () => {
-  let mockLogger: { writeLine: ReturnType<typeof vi.fn> };
-  let recorder: SecurityRecorder;
-
+describe('createSecurityRecorder', () => {
   beforeEach(() => {
-    mockLogger = { writeLine: vi.fn().mockResolvedValue(undefined) };
-    recorder = createSecurityRecorder(mockLogger as unknown as AuditLogger);
+    vi.clearAllMocks();
   });
 
-  it('creates recorder with logSecurity method', () => {
-    expect(recorder.logSecurity).toBeDefined();
-    expect(typeof recorder.logSecurity).toBe('function');
-  });
-
-  it('logSecurity writes security record', async () => {
-    await recorder.logSecurity({
-      sessionID: 'sess-1',
-      toolName: 'bash',
-      rule: 'no-rm-rf',
-      reason: 'Command blocked',
-      input: { command: 'rm -rf /' },
-    });
-
-    expect(mockLogger.writeLine).toHaveBeenCalledTimes(1);
-    const [fileType, record] = mockLogger.writeLine.mock.calls[0];
-    expect(fileType).toBe('security');
-    expect(record).toMatchObject({
-      event: 'block.security',
-      session: 'sess-1',
-      toolName: 'bash',
-      rule: 'no-rm-rf',
-      reason: 'Command blocked',
-    });
-    expect(record.ts).toBeDefined();
-    expect(record.input).toEqual({ command: 'rm -rf /' });
-  });
-
-  it('logSecurity handles missing optional fields', async () => {
-    await recorder.logSecurity({
-      sessionID: 'sess-2',
-      rule: 'test-rule',
-      reason: 'test reason',
-    });
-
-    const [, record] = mockLogger.writeLine.mock.calls[0];
-    expect(record).toMatchObject({
-      event: 'block.security',
-      session: 'sess-2',
-      rule: 'test-rule',
-      reason: 'test reason',
-    });
-    expect(record.toolName).toBeUndefined();
-    expect(record.input).toBeUndefined();
-  });
-
-  it('getSecurityRecorder returns undefined when not set', () => {
-    setSecurityRecorder(undefined as unknown as SecurityRecorder);
-    expect(getSecurityRecorder()).toBeUndefined();
-  });
-
-  it('setSecurityRecorder stores recorder globally', () => {
-    const testRecorder = {
-      logSecurity: vi.fn(),
-    } as unknown as SecurityRecorder;
-    setSecurityRecorder(testRecorder);
-    expect(getSecurityRecorder()).toBe(testRecorder);
-  });
-
-  it('getSecurityRecorder returns stored recorder', () => {
-    const testRecorder: SecurityRecorder = {
-      logSecurity: vi.fn(),
+  it('creates a record with event block.security', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const logger = {
+      writeLine: mockWriteLine,
+      cleanup: vi.fn().mockResolvedValue(undefined),
     };
-    setSecurityRecorder(testRecorder);
-    expect(getSecurityRecorder()).toBe(testRecorder);
+
+    const recorder = createSecurityRecorder(logger);
+    await recorder.logSecurity({
+      sessionID: 's1',
+      toolName: 'bash',
+      rule: 'no-curl',
+      reason: 'curl is blocked',
+      input: { url: 'http://evil.com' },
+    });
+
+    expect(mockWriteLine).toHaveBeenCalledOnce();
+    expect(mockWriteLine.mock.calls[0][0]).toBe('security');
+    const record = mockWriteLine.mock.calls[0][1] as Record<string, unknown>;
+    expect(record.event).toBe('block.security');
+    expect(record.session).toBe('s1');
+    expect(record.toolName).toBe('bash');
+    expect(record.rule).toBe('no-curl');
+    expect(record.reason).toBe('curl is blocked');
+    expect(record.input).toEqual({ url: 'http://evil.com' });
   });
 
-  it('setSecurityRecorder can clear by setting undefined', () => {
-    const testRecorder: SecurityRecorder = {
-      logSecurity: vi.fn(),
+  it('handles minimal input', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const logger = {
+      writeLine: mockWriteLine,
+      cleanup: vi.fn().mockResolvedValue(undefined),
     };
-    setSecurityRecorder(testRecorder);
-    setSecurityRecorder(undefined as unknown as SecurityRecorder);
-    expect(getSecurityRecorder()).toBeUndefined();
+
+    const recorder = createSecurityRecorder(logger);
+    await recorder.logSecurity({ rule: 'default-deny' });
+
+    expect(mockWriteLine).toHaveBeenCalledOnce();
+    const record = mockWriteLine.mock.calls[0][1] as Record<string, unknown>;
+    expect(record.rule).toBe('default-deny');
+    expect(record.event).toBe('block.security');
+  });
+
+  it('includes timestamp in record', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const logger = {
+      writeLine: mockWriteLine,
+      cleanup: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const recorder = createSecurityRecorder(logger);
+    await recorder.logSecurity({ rule: 'test', reason: 'test' });
+
+    const record = mockWriteLine.mock.calls[0][1] as Record<string, unknown>;
+    expect(record.ts).toEqual(expect.any(String));
+  });
+});
+
+describe('getSecurityRecorder / setSecurityRecorder', () => {
+  beforeEach(() => {
+    delete (globalThis as Record<string, unknown>).__opencode_security_recorder;
+  });
+
+  it('returns null before any set', () => {
+    expect(getSecurityRecorder()).toBeFalsy();
+  });
+
+  it('returns the recorder after set', () => {
+    const mockRecorder = { logSecurity: vi.fn() };
+    setSecurityRecorder(mockRecorder);
+    expect(getSecurityRecorder()).toBe(mockRecorder);
+  });
+
+  it('overwrites previous recorder on second set', () => {
+    const first = { logSecurity: vi.fn() };
+    const second = { logSecurity: vi.fn() };
+    setSecurityRecorder(first);
+    setSecurityRecorder(second);
+    expect(getSecurityRecorder()).toBe(second);
+  });
+
+  it('roundtrips with the same recorder', () => {
+    const recorder = { logSecurity: vi.fn() };
+    setSecurityRecorder(recorder);
+    const retrieved = getSecurityRecorder();
+    expect(retrieved).toBe(recorder);
   });
 });
