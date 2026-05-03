@@ -116,12 +116,6 @@ export type OpenCodeEventHandler<T extends OpenCodeEventType> = (input: {
   event: OpenCodeEventMap[T];
 }) => Promise<void>;
 
-export function createEventHandler<T extends OpenCodeEventType>(
-  handler: OpenCodeEventHandler<T>
-): OpenCodeEventHandler<T> {
-  return handler;
-}
-
 export type ToolExecuteAfterInput = {
   tool: string;
   sessionID: string;

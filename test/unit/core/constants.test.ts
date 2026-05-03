@@ -67,6 +67,5 @@ describe('DEFAULTS', () => {
     expect(disabled.scriptToasts.errorDuration).toBe(15000);
     expect(disabled.scriptToasts.outputTitle).toBe('Script Output');
     expect(disabled.scriptToasts.errorTitle).toBe('Script Error');
-    expect(disabled.block).toEqual([]);
   });
 });

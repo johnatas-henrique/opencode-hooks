@@ -1,4 +1,4 @@
-export const SENSITIVE_PATTERNS: Array<[RegExp, string]> = [
+const SENSITIVE_PATTERNS: Array<[RegExp, string]> = [
   [/(api[_-]?key)[=:]\s*["']?[\w-]+["']?/gi, '$1'],
   [/(token)[=:]\s*["']?[\w-]+["']?/gi, '$1'],
   [/(secret)[=:]\s*["']?[\w-]+["']?/gi, '$1'],

@@ -61,17 +61,3 @@ export function waitForToastSilence(
 
   return { promise, cleanup };
 }
-
-export async function countToastsInLog(
-  logFile: string,
-  readFileFn?: (path: string, encoding: string) => Promise<string>
-): Promise<number> {
-  const readFn = readFileFn ?? readFile;
-  try {
-    const content = await readFn(logFile, 'utf-8');
-    const matches = content.match(TOAST_PATTERN);
-    return matches ? matches.length : 0;
-  } catch {
-    return 0;
-  }
-}

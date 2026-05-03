@@ -3,10 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 const mockReadFileDefault = vi.hoisted(() => vi.fn().mockResolvedValue(''));
 vi.mock('fs/promises', () => ({ readFile: mockReadFileDefault }));
 
-import {
-  waitForToastSilence,
-  countToastsInLog,
-} from '.opencode/plugins/features/messages/toast-silence-detector';
+import { waitForToastSilence } from '.opencode/plugins/features/messages/toast-silence-detector';
 
 describe('waitForToastSilence', () => {
   beforeEach(() => {
@@ -117,41 +114,5 @@ describe('waitForToastSilence', () => {
     ]);
 
     expect(settled).toBe('pending');
-  });
-});
-
-describe('countToastsInLog', () => {
-  it('returns count of toast patterns', async () => {
-    const readFileFn = vi
-      .fn()
-      .mockResolvedValue(
-        [
-          'path=/tui/show-toast first',
-          'something else',
-          'path=/tui/show-toast second',
-        ].join('\n')
-      );
-
-    const count = await countToastsInLog('/fake/log.log', readFileFn);
-    expect(count).toBe(2);
-  });
-
-  it('returns 0 when no toast patterns', async () => {
-    const readFileFn = vi.fn().mockResolvedValue('no toasts here');
-
-    const count = await countToastsInLog('/fake/log.log', readFileFn);
-    expect(count).toBe(0);
-  });
-
-  it('returns 0 on read error', async () => {
-    const readFileFn = vi.fn().mockRejectedValue(new Error('read error'));
-
-    const count = await countToastsInLog('/fake/log.log', readFileFn);
-    expect(count).toBe(0);
-  });
-
-  it('uses default readFile when no readFileFn provided', async () => {
-    const count = await countToastsInLog('/fake/log.log');
-    expect(count).toBe(0);
   });
 });
