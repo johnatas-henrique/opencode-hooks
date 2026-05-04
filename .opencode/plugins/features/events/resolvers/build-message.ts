@@ -1,9 +1,10 @@
 import type { ToastOverride } from '.opencode/plugins/types/config';
+import type { EventInput } from '.opencode/plugins/types/core';
 
 export function buildToastMessage(
   toastCfg: ToastOverride | null,
   fallbackMessage: string,
-  input: Record<string, unknown>,
+  input: EventInput,
   output?: Record<string, unknown>
 ): string {
   if (toastCfg?.messageFn) {

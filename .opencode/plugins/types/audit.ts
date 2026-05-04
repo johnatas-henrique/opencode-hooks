@@ -1,3 +1,5 @@
+import type { EventInput } from '.opencode/plugins/types/core';
+
 export type AuditLogLevel = 'debug' | 'audit';
 
 export type AuditFileType =
@@ -73,8 +75,8 @@ export interface AuditRecord {
   duration?: number;
   error?: string;
   directory?: string;
-  input?: Record<string, unknown>; // Sanitized input data
-  output?: Record<string, unknown>; // Sanitized output data
+  input?: EventInput;
+  output?: EventInput;
   [key: string]: unknown;
 }
 
@@ -198,8 +200,8 @@ export interface EventRecorder {
     eventType: string,
     data: {
       sessionID?: string;
-      input?: Record<string, unknown>;
-      output?: Record<string, unknown>;
+      input?: EventInput;
+      output?: EventInput;
       tool?: string;
       context?: string;
     }

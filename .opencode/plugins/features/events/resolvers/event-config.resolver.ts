@@ -1,3 +1,4 @@
+import type { EventInput } from '.opencode/plugins/types/core';
 import type {
   EventHandler,
   ConfigResolverContext,
@@ -19,7 +20,7 @@ export class EventConfigResolverImpl implements EventConfigResolver {
 
   resolve(
     eventType: string,
-    input?: Record<string, unknown>,
+    input?: EventInput,
     output?: Record<string, unknown>
   ): ResolvedEventConfig {
     const builder = new ConfigBuilder(this.context, eventType, input, output);

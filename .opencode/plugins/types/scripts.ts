@@ -1,4 +1,5 @@
 import type { PluginInput } from '@opencode-ai/plugin';
+import type { EventInput } from '.opencode/plugins/types/core';
 import type {
   ResolvedEventConfig,
   ScriptToastsConfig,
@@ -38,7 +39,7 @@ export interface ScriptExecutionResult {
 export interface HookResult {
   action: 'allow' | 'block' | 'error';
   reason?: string;
-  updatedInput?: Record<string, unknown>;
+  updatedInput?: EventInput;
   additionalContext?: string;
   systemMessage?: string;
 }

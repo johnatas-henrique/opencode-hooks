@@ -1,6 +1,8 @@
+import type { EventInput } from '.opencode/plugins/types/core';
+
 export function normalizeInputForHandler(
   eventType: string,
-  input: Record<string, unknown>,
+  input: EventInput,
   output?: Record<string, unknown>
 ): Record<string, unknown> {
   if (eventType.startsWith('tool.execute.')) {
