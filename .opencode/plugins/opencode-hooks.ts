@@ -30,7 +30,7 @@ import {
   isSubagent,
 } from '.opencode/plugins/features/scripts/run-script-handler';
 import { appendToSession } from '.opencode/plugins/features/messages/append-to-session';
-import { EventType } from '.opencode/plugins/types/events';
+import { OpenCodeEvents } from '.opencode/plugins/types/core';
 import { userConfig } from '.opencode/plugins/config/settings';
 import { DEFAULTS } from '.opencode/plugins/core/constants';
 import {
@@ -331,7 +331,7 @@ export const OpencodeHooks: Plugin = async (
         event.properties as Record<string, unknown>
       );
 
-      if (event.type === EventType.SESSION_CREATED && info?.parentID) {
+      if (event.type === OpenCodeEvents.SESSION_CREATED && info?.parentID) {
         addSubagentSession(sessionId);
       }
 
@@ -384,7 +384,7 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    [EventType.TOOL_EXECUTE_AFTER]: async (
+    [OpenCodeEvents.TOOL_EXECUTE_AFTER]: async (
       input: ToolExecuteAfterInput,
       output: ToolExecuteAfterOutput
     ) => {
@@ -460,27 +460,27 @@ export const OpencodeHooks: Plugin = async (
       }
     },
 
-    [EventType.SHELL_ENV]: async (
+    [OpenCodeEvents.SHELL_ENV]: async (
       input: { cwd: string; sessionID?: string; callID?: string },
       output: { env: Record<string, string> }
     ) => {
-      const resolved = resolveEventConfig(EventType.SHELL_ENV, input);
+      const resolved = resolveEventConfig(OpenCodeEvents.SHELL_ENV, input);
 
       await executeHook({
         ctx,
-        eventType: EventType.SHELL_ENV,
+        eventType: OpenCodeEvents.SHELL_ENV,
         resolved,
         sessionId: input.sessionID!,
         input: input,
         output: output,
-        toolName: EventType.SHELL_ENV,
+        toolName: OpenCodeEvents.SHELL_ENV,
 
         eventRecorder,
         scriptRecorder,
       });
     },
 
-    [EventType.CHAT_MESSAGE]: async (
+    [OpenCodeEvents.CHAT_MESSAGE]: async (
       input: {
         sessionID: string;
         agent?: string;
@@ -490,11 +490,11 @@ export const OpencodeHooks: Plugin = async (
       },
       output: { message: Record<string, unknown>; parts: Part[] }
     ) => {
-      const resolved = resolveEventConfig(EventType.CHAT_MESSAGE, input);
+      const resolved = resolveEventConfig(OpenCodeEvents.CHAT_MESSAGE, input);
 
       await executeHook({
         ctx,
-        eventType: EventType.CHAT_MESSAGE,
+        eventType: OpenCodeEvents.CHAT_MESSAGE,
         resolved,
         sessionId: input.sessionID,
         input: input,
@@ -505,7 +505,7 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    [EventType.CHAT_PARAMS]: async (
+    [OpenCodeEvents.CHAT_PARAMS]: async (
       input: {
         sessionID: string;
         agent: string;
@@ -520,11 +520,11 @@ export const OpencodeHooks: Plugin = async (
         options: Record<string, unknown>;
       }
     ) => {
-      const resolved = resolveEventConfig(EventType.CHAT_PARAMS, input);
+      const resolved = resolveEventConfig(OpenCodeEvents.CHAT_PARAMS, input);
 
       await executeHook({
         ctx,
-        eventType: EventType.CHAT_PARAMS,
+        eventType: OpenCodeEvents.CHAT_PARAMS,
         resolved,
         sessionId: input.sessionID,
         input: input,
@@ -535,7 +535,7 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    [EventType.CHAT_HEADERS]: async (
+    [OpenCodeEvents.CHAT_HEADERS]: async (
       input: {
         sessionID: string;
         agent: string;
@@ -545,11 +545,11 @@ export const OpencodeHooks: Plugin = async (
       },
       output: { headers: Record<string, string> }
     ) => {
-      const resolved = resolveEventConfig(EventType.CHAT_HEADERS, input);
+      const resolved = resolveEventConfig(OpenCodeEvents.CHAT_HEADERS, input);
 
       await executeHook({
         ctx,
-        eventType: EventType.CHAT_HEADERS,
+        eventType: OpenCodeEvents.CHAT_HEADERS,
         resolved,
         sessionId: input.sessionID,
         input: input,
@@ -560,7 +560,7 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    [EventType.PERMISSION_ASK]: async (
+    [OpenCodeEvents.PERMISSION_ASK]: async (
       input: {
         sessionID: string;
         tool?: string;
@@ -573,11 +573,11 @@ export const OpencodeHooks: Plugin = async (
       },
       output: { status: 'ask' | 'deny' | 'allow' }
     ) => {
-      const resolved = resolveEventConfig(EventType.PERMISSION_ASK, input);
+      const resolved = resolveEventConfig(OpenCodeEvents.PERMISSION_ASK, input);
 
       await executeHook({
         ctx,
-        eventType: EventType.PERMISSION_ASK,
+        eventType: OpenCodeEvents.PERMISSION_ASK,
         resolved,
         sessionId: input.sessionID,
         input: input,
@@ -588,18 +588,18 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    [EventType.COMMAND_EXECUTE_BEFORE]: async (
+    [OpenCodeEvents.COMMAND_EXECUTE_BEFORE]: async (
       input: { command: string; sessionID: string; arguments: string },
       output: { parts: Part[] }
     ) => {
       const resolved = resolveEventConfig(
-        EventType.COMMAND_EXECUTE_BEFORE,
+        OpenCodeEvents.COMMAND_EXECUTE_BEFORE,
         input
       );
 
       await executeHook({
         ctx,
-        eventType: EventType.COMMAND_EXECUTE_BEFORE,
+        eventType: OpenCodeEvents.COMMAND_EXECUTE_BEFORE,
         resolved,
         sessionId: input.sessionID,
         input: input,
@@ -610,15 +610,18 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: async (input, output) => {
+    [OpenCodeEvents.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: async (
+      input,
+      output
+    ) => {
       const resolved = resolveEventConfig(
-        EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM,
+        OpenCodeEvents.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM,
         input
       );
 
       await executeHook({
         ctx,
-        eventType: EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM,
+        eventType: OpenCodeEvents.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM,
         resolved,
         sessionId: DEFAULTS.core.defaultSessionId,
         input,
@@ -629,12 +632,12 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    [EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: async (
+    [OpenCodeEvents.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: async (
       input: { sessionID?: string; model: Model },
       output: { system: string[] }
     ) => {
       const resolved = resolveEventConfig(
-        EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM,
+        OpenCodeEvents.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM,
         input
       );
 
@@ -651,18 +654,18 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    [EventType.EXPERIMENTAL_SESSION_COMPACTING]: async (
+    [OpenCodeEvents.EXPERIMENTAL_SESSION_COMPACTING]: async (
       input: { sessionID: string },
       output: { context: string[]; prompt?: string }
     ) => {
       const resolved = resolveEventConfig(
-        EventType.EXPERIMENTAL_SESSION_COMPACTING,
+        OpenCodeEvents.EXPERIMENTAL_SESSION_COMPACTING,
         input
       );
 
       await executeHook({
         ctx,
-        eventType: EventType.EXPERIMENTAL_SESSION_COMPACTING,
+        eventType: OpenCodeEvents.EXPERIMENTAL_SESSION_COMPACTING,
         resolved,
         sessionId: input.sessionID,
         input: input,
@@ -673,18 +676,18 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    [EventType.EXPERIMENTAL_TEXT_COMPLETE]: async (
+    [OpenCodeEvents.EXPERIMENTAL_TEXT_COMPLETE]: async (
       input: { sessionID: string; messageID: string; partID: string },
       output: { text: string }
     ) => {
       const resolved = resolveEventConfig(
-        EventType.EXPERIMENTAL_TEXT_COMPLETE,
+        OpenCodeEvents.EXPERIMENTAL_TEXT_COMPLETE,
         input
       );
 
       await executeHook({
         ctx,
-        eventType: EventType.EXPERIMENTAL_TEXT_COMPLETE,
+        eventType: OpenCodeEvents.EXPERIMENTAL_TEXT_COMPLETE,
         resolved,
         sessionId: input.sessionID,
         input: input,
@@ -695,11 +698,14 @@ export const OpencodeHooks: Plugin = async (
       });
     },
 
-    [EventType.TOOL_DEFINITION]: async (
+    [OpenCodeEvents.TOOL_DEFINITION]: async (
       input: { toolID: string },
       output: { description: string; parameters: Record<string, unknown> }
     ) => {
-      const resolved = resolveEventConfig(EventType.TOOL_DEFINITION, input);
+      const resolved = resolveEventConfig(
+        OpenCodeEvents.TOOL_DEFINITION,
+        input
+      );
 
       await executeHook({
         ctx,

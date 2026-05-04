@@ -74,11 +74,11 @@ export const toolHandlers: Record<string, EventHandler> = {
     allowedFields: ['path'],
   }),
 
-  'permission.ask': createHandler({
-    title: '====PERMISSION ASK====',
+  'permission.asked': createHandler({
+    title: '====PERMISSION ASKED====',
     variant: 'warning',
     duration: DEFAULTS.toast.durations.FIVE_SECONDS,
-    defaultScript: 'permission-ask.sh',
+    defaultScript: 'permission-asked.sh',
     buildMessage: buildKeysMessageSimple,
     allowedFields: ['sessionID', 'tool', 'type', 'pattern', 'title'],
   }),
