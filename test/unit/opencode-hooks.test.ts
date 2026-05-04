@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ResolvedEventConfig } from '.opencode/plugins/types/config';
 import type { Hooks } from '@opencode-ai/plugin';
-import type { Event, UserMessage } from '@opencode-ai/sdk';
+import type { Event, UserMessage, Model, Provider } from '@opencode-ai/sdk';
 import type { ChildProcess } from 'child_process';
 import { spawn } from 'child_process';
 import * as startupToastModule from '.opencode/plugins/features/messages/show-startup-toast';
@@ -878,9 +878,19 @@ describe('OpencodeHooks', () => {
       const input = {
         sessionID: 'ses_123',
         agent: 'test-agent',
-        model: { providerID: 'anthropic', modelID: 'claude-3' },
-        provider: { baseURL: 'https://api.anthropic.com' },
-        message: { role: 'user', content: 'hello' },
+        model: {
+          providerID: 'anthropic',
+          modelID: 'claude-3',
+        } as unknown as Model,
+        provider: {
+          source: 'custom' as const,
+          info: {} as Provider,
+          options: {},
+        },
+        message: {
+          role: 'user' as const,
+          content: 'hello',
+        } as unknown as UserMessage,
       };
       const output = { temperature: 0.7, topP: 0.9, topK: 50, options: {} };
 
@@ -897,9 +907,19 @@ describe('OpencodeHooks', () => {
       const input = {
         sessionID: 'ses_123',
         agent: 'test-agent',
-        model: { providerID: 'anthropic', modelID: 'claude-3' },
-        provider: { baseURL: 'https://api.anthropic.com' },
-        message: { role: 'user', content: 'hello' },
+        model: {
+          providerID: 'anthropic',
+          modelID: 'claude-3',
+        } as unknown as Model,
+        provider: {
+          source: 'custom' as const,
+          info: {} as Provider,
+          options: {},
+        },
+        message: {
+          role: 'user' as const,
+          content: 'hello',
+        } as unknown as UserMessage,
       };
       const output = { headers: { 'x-api-key': 'test' } };
 
@@ -918,6 +938,10 @@ describe('OpencodeHooks', () => {
         tool: 'bash',
         id: 'perm_1',
         type: 'tool',
+        messageID: '',
+        title: '',
+        metadata: {},
+        time: { created: Date.now() },
       };
       const output = { status: 'ask' as const };
 
@@ -969,7 +993,10 @@ describe('OpencodeHooks', () => {
 
       const input = {
         sessionID: 'ses_123',
-        model: { providerID: 'anthropic', modelID: 'claude-3' },
+        model: {
+          providerID: 'anthropic',
+          modelID: 'claude-3',
+        } as unknown as Model,
       };
       const output = { system: [] };
 

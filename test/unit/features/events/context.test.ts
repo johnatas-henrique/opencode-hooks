@@ -55,7 +55,16 @@ describe('createContext', () => {
 
   it('provides scriptToasts from config', () => {
     const userCfg = createUserConfig({
-      scriptToasts: { showOutput: false, showError: false },
+      scriptToasts: {
+        showOutput: false,
+        showError: false,
+        outputVariant: 'info',
+        errorVariant: 'error',
+        outputDuration: 5000,
+        errorDuration: 10000,
+        outputTitle: '',
+        errorTitle: '',
+      },
     });
     const ctx = createContext(userCfg);
     expect(ctx.scriptToasts.showOutput).toBe(false);

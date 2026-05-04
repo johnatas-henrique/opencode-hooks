@@ -8,7 +8,7 @@ describe('toolHandlers', () => {
     'tool.execute.after.subagent',
     'file.edited',
     'file.watcher.updated',
-    'permission.ask',
+    'permission.asked',
     'permission.updated',
     'permission.replied',
   ] as const;
@@ -85,7 +85,7 @@ describe('toolHandlers', () => {
 
   it('permission handlers have warning variant', () => {
     for (const key of [
-      'permission.ask',
+      'permission.asked',
       'permission.updated',
       'permission.replied',
     ] as const) {
@@ -95,8 +95,8 @@ describe('toolHandlers', () => {
     }
   });
 
-  it('permission.ask has allowedFields', () => {
-    const h = toolHandlers['permission.ask'];
+  it('permission.asked has allowedFields', () => {
+    const h = toolHandlers['permission.asked'];
     expect(h.allowedFields).toEqual([
       'sessionID',
       'tool',
