@@ -433,6 +433,24 @@ describe('createEventRecorder', () => {
     expect(mockWriteLine).not.toHaveBeenCalled();
   });
 
+  it('logEvent with input but no sessionID covers L317 ?? fallback', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig();
+    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
+
+    await recorder.logEvent('custom', { input: { key: 'val' } });
+    expect(mockWriteLine).toHaveBeenCalledOnce();
+  });
+
+  it('logEvent without input and without sessionID covers L318 ?? fallback', async () => {
+    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+    const config = makeConfig();
+    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
+
+    await recorder.logEvent('custom', {});
+    expect(mockWriteLine).toHaveBeenCalledOnce();
+  });
+
   it('appends context to logEvent records', async () => {
     const mockWriteLine = vi.fn().mockResolvedValue(undefined);
     const config = makeConfig();

@@ -36,7 +36,7 @@ export async function archiveFileIfNeeded(
   return true;
 }
 
-function createDefaultDeps(): AuditLoggerDependencies {
+export function createDefaultDeps(): AuditLoggerDependencies {
   return {
     appendFile,
     mkdir,

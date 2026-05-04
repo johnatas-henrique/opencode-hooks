@@ -80,7 +80,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       enabled: true,
       debug: getBooleanField(true, defaultCfg, 'debug', false),
       toast: getBooleanField(true, defaultCfg, 'toast', false),
-      toastTitle: handler?.title ?? '',
+      toastTitle: handler ? handler.title : '',
       toastMessage: handler
         ? this.tryBuildMessage(
             handler,
@@ -90,8 +90,10 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
             handler.allowedFields
           )
         : '',
-      toastVariant: handler?.variant ?? 'info',
-      toastDuration: handler?.duration ?? DEFAULTS.toast.durations.TWO_SECONDS,
+      toastVariant: handler ? handler.variant : 'info',
+      toastDuration: handler
+        ? handler.duration
+        : DEFAULTS.toast.durations.TWO_SECONDS,
       scripts,
       runScripts,
       logToAudit: getBooleanField(true, defaultCfg, 'logToAudit', true),
@@ -144,13 +146,21 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
         ? this.resolveBase(toolEventType, input)
         : this.getDefaultConfig(toolEventType, input);
 
-    const toastTitle = toolHandler?.title ?? eventHandler?.title ?? '';
-    const toastVariant =
-      toolHandler?.variant ?? eventHandler?.variant ?? 'info';
-    const toastDuration =
-      toolHandler?.duration ??
-      eventHandler?.duration ??
-      DEFAULTS.toast.durations.TWO_SECONDS;
+    const toastTitle = toolHandler
+      ? toolHandler.title
+      : eventHandler
+        ? eventHandler.title
+        : '';
+    const toastVariant = toolHandler
+      ? toolHandler.variant
+      : eventHandler
+        ? eventHandler.variant
+        : 'info';
+    const toastDuration = toolHandler
+      ? toolHandler.duration
+      : eventHandler
+        ? eventHandler.duration
+        : DEFAULTS.toast.durations.TWO_SECONDS;
     const toastMessage = toolHandler
       ? this.tryBuildMessage(
           toolHandler,
@@ -282,34 +292,20 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
     const userEventConfig = this.context.getEventConfig(eventType);
     const defaultCfg = this.context.default;
     const isDisabled = userEventConfig === false;
+    const cfg = userEventConfig ?? false;
     const { scripts } = resolveScripts(
-      userEventConfig ?? false,
+      cfg,
       handler?.defaultScript ?? this.getDefaultScript(eventType),
       []
     );
-    const toastCfg = resolveToastOverride(userEventConfig ?? false);
+    const toastCfg = resolveToastOverride(cfg);
 
     return {
       enabled: !isDisabled,
-      debug: getBooleanField(
-        userEventConfig ?? false,
-        defaultCfg,
-        'debug',
-        false
-      ),
-      toast: getBooleanField(
-        userEventConfig ?? false,
-        defaultCfg,
-        'toast',
-        false
-      ),
-      toastTitle: toastCfg?.title ?? handler?.title ?? '',
-      runScripts: getBooleanField(
-        userEventConfig ?? false,
-        defaultCfg,
-        'runScripts',
-        false
-      ),
+      debug: getBooleanField(cfg, defaultCfg, 'debug', false),
+      toast: getBooleanField(cfg, defaultCfg, 'toast', false),
+      toastTitle: toastCfg?.title ?? (handler ? handler.title : ''),
+      runScripts: getBooleanField(cfg, defaultCfg, 'runScripts', false),
       toastMessage: handler
         ? this.tryBuildMessage(
             handler,
@@ -319,30 +315,19 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
             handler.allowedFields
           )
         : '',
-      toastVariant: toastCfg?.variant ?? handler?.variant ?? 'info',
+      toastVariant: toastCfg?.variant ?? (handler ? handler.variant : 'info'),
       toastDuration:
         toastCfg?.duration ??
-        handler?.duration ??
-        DEFAULTS.toast.durations.TWO_SECONDS,
+        (handler ? handler.duration : DEFAULTS.toast.durations.TWO_SECONDS),
       scripts,
-      logToAudit: getBooleanField(
-        userEventConfig ?? false,
-        defaultCfg,
-        'logToAudit',
-        true
-      ),
+      logToAudit: getBooleanField(cfg, defaultCfg, 'logToAudit', true),
       appendToSession: getBooleanField(
-        userEventConfig ?? false,
+        cfg,
         defaultCfg,
         'appendToSession',
         false
       ),
-      runOnlyOnce: getBooleanField(
-        userEventConfig ?? false,
-        defaultCfg,
-        'runOnlyOnce',
-        false
-      ),
+      runOnlyOnce: getBooleanField(cfg, defaultCfg, 'runOnlyOnce', false),
       scriptToasts: this.context.scriptToasts,
       allowedFields: handler?.allowedFields,
     };

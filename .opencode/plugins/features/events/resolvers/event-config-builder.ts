@@ -82,12 +82,13 @@ export class ConfigBuilder {
       enabled: true,
       debug: getBooleanField(true, defaultCfg, 'debug', false),
       toast: getBooleanField(true, defaultCfg, 'toast', false),
-      toastTitle: this.handler?.title ?? '',
+      toastTitle: this.handler ? this.handler.title : '',
       runScripts: getBooleanField(true, defaultCfg, 'runScripts', false),
       toastMessage: this.handler ? this.tryBuildMessage(allowedFields) : '',
-      toastVariant: this.handler?.variant ?? 'info',
-      toastDuration:
-        this.handler?.duration ?? DEFAULTS.toast.durations.TWO_SECONDS,
+      toastVariant: this.handler ? this.handler.variant : 'info',
+      toastDuration: this.handler
+        ? this.handler.duration
+        : DEFAULTS.toast.durations.TWO_SECONDS,
       scripts: [],
       logToAudit: true,
       appendToSession: getBooleanField(
@@ -119,7 +120,7 @@ export class ConfigBuilder {
       enabled: true,
       debug: getBooleanField(this.userEventConfig!, defaultCfg, 'debug', false),
       toast: getBooleanField(this.userEventConfig!, defaultCfg, 'toast', false),
-      toastTitle: toastCfg?.title ?? this.handler?.title ?? '',
+      toastTitle: toastCfg?.title ?? (this.handler ? this.handler.title : ''),
       runScripts: getBooleanField(
         this.userEventConfig!,
         defaultCfg,
@@ -132,11 +133,13 @@ export class ConfigBuilder {
         this.input ?? {},
         this.output
       ),
-      toastVariant: toastCfg?.variant ?? this.handler?.variant ?? 'info',
+      toastVariant:
+        toastCfg?.variant ?? (this.handler ? this.handler.variant : 'info'),
       toastDuration:
         toastCfg?.duration ??
-        this.handler?.duration ??
-        DEFAULTS.toast.durations.TWO_SECONDS,
+        (this.handler
+          ? this.handler.duration
+          : DEFAULTS.toast.durations.TWO_SECONDS),
       scripts,
       logToAudit: userOverride?.logToAudit ?? defaultCfg.logToAudit ?? true,
       appendToSession: getBooleanField(

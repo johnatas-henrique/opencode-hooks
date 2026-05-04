@@ -454,6 +454,37 @@ describe('executeScript', () => {
     expect(result.exitCode).toBe(2);
   });
 
+  it('skips stdin building when passStdin is false', async () => {
+    const mockProc = {
+      stdout: { on: vi.fn() },
+      stderr: { on: vi.fn() },
+      stdin: { write: vi.fn(), end: vi.fn() },
+      on: vi.fn(),
+      unref: vi.fn(),
+    };
+    vi.mocked(mockSpawn.spawn).mockReturnValue(mockProc);
+
+    const entry: ScriptEntry = {
+      source: 'native',
+      path: 'test.sh',
+      passStdin: false,
+    };
+    const promise = executeScript(entry, 'tool.execute.before', '', {
+      sessionID: 's1',
+    });
+
+    const closeHandler = mockProc.on.mock.calls.find(
+      (c: unknown[]) => c[0] === 'close'
+    );
+    if (closeHandler) {
+      (closeHandler[1] as (code: number) => void)(0);
+    }
+
+    const result = await promise;
+    expect(result.script).toBe('test.sh');
+    expect(mockProc.stdin.write).not.toHaveBeenCalled();
+  });
+
   it('handles non-zero exit code', async () => {
     vi.mocked(spawn).mockReturnValueOnce(
       makeMockChildProcess({

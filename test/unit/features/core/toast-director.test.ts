@@ -1,8 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fromAny } from '@total-typescript/shoehorn';
-import { ToastDirectorImpl } from '.opencode/plugins/features/core/toast-director';
 import type { TuiToast } from '@opencode-ai/plugin/tui';
-import * as pluginIntegration from '.opencode/plugins/features/audit/plugin-integration';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+
+const mockLogError = vi.hoisted(() => vi.fn());
+
+vi.mock('.opencode/plugins/features/audit/plugin-integration', () => ({
+  getErrorRecorder: () => ({ logError: mockLogError }),
+}));
+
+import { ToastDirectorImpl } from '.opencode/plugins/features/core/toast-director';
 
 describe('ToastDirectorImpl', () => {
   let showFn: ReturnType<typeof vi.fn>;
@@ -194,11 +201,6 @@ describe('ToastDirectorImpl', () => {
   });
 
   it('records dropped toast via errorRecorder', async () => {
-    const mockLogError = vi.fn().mockResolvedValue(undefined);
-    vi.spyOn(pluginIntegration, 'getErrorRecorder').mockReturnValue({
-      logError: mockLogError,
-    } as never);
-
     const director = new ToastDirectorImpl(
       fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
       { maxSize: 1, staggerMs: 10 }
@@ -214,5 +216,45 @@ describe('ToastDirectorImpl', () => {
     );
 
     await vi.advanceTimersByTimeAsync(500);
+  });
+
+  it('handles re-entrant enqueue during processing', async () => {
+    const reentrantShowFn = vi.fn((t: TuiToast) => {
+      if (t.title === 'First') {
+        director.enqueue(createToast({ title: 'Re-entrant' }));
+      }
+    });
+    const director = new ToastDirectorImpl(
+      fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(
+        reentrantShowFn
+      ),
+      { staggerMs: 0 }
+    );
+    director.enqueue(createToast({ title: 'First' }));
+    director.enqueue(createToast({ title: 'Second' }));
+
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(reentrantShowFn).toHaveBeenCalledTimes(3);
+  });
+
+  it('uses default duration when toast has none', async () => {
+    const director = new ToastDirectorImpl(
+      fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
+      { staggerMs: 0 }
+    );
+
+    director.enqueue({
+      title: 'No Dur',
+      message: 'test',
+      variant: 'info' as const,
+    });
+
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(showFn).toHaveBeenCalledTimes(1);
+    expect(director.isProcessing).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(DEFAULTS.toast.durations.FIVE_SECONDS);
   });
 });
