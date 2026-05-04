@@ -1,5 +1,5 @@
 import { DEFAULTS } from '.opencode/plugins/core/constants';
-import { EventType } from '.opencode/plugins/types/events';
+import { OpenCodeEvents } from '.opencode/plugins/types/core';
 import type { UserEventsConfig } from '.opencode/plugins/types/config';
 
 export const userConfig: UserEventsConfig = {
@@ -58,8 +58,8 @@ export const userConfig: UserEventsConfig = {
   },
 
   events: {
-    [EventType.SERVER_CONNECTED]: { enabled: false },
-    [EventType.SERVER_INSTANCE_DISPOSED]: {
+    [OpenCodeEvents.SERVER_CONNECTED]: { enabled: false },
+    [OpenCodeEvents.SERVER_INSTANCE_DISPOSED]: {
       runScripts: true,
       scripts: [
         { source: 'native', path: 'mempalace-exit.sh' },
@@ -67,7 +67,7 @@ export const userConfig: UserEventsConfig = {
       ],
     },
 
-    [EventType.SESSION_CREATED]: {
+    [OpenCodeEvents.SESSION_CREATED]: {
       runScripts: true,
       runOnlyOnce: true,
       appendToSession: true,
@@ -76,66 +76,66 @@ export const userConfig: UserEventsConfig = {
         { source: 'native', path: 'session-created.sh' },
       ],
     },
-    [EventType.SESSION_COMPACTED]: { toast: true },
-    [EventType.SESSION_DELETED]: {
+    [OpenCodeEvents.SESSION_COMPACTED]: { toast: true },
+    [OpenCodeEvents.SESSION_DELETED]: {
       toast: true,
       runScripts: true,
       scripts: [{ source: 'native', path: 'mempalace-exit.sh' }],
     },
-    [EventType.SESSION_IDLE]: { toast: true },
-    [EventType.SESSION_DIFF]: { enabled: false },
-    [EventType.SESSION_ERROR]: { toast: true },
-    [EventType.SESSION_STATUS]: { enabled: false },
-    [EventType.SESSION_UPDATED]: { enabled: false },
-    [EventType.SESSION_UNKNOWN]: { toast: true },
+    [OpenCodeEvents.SESSION_IDLE]: { toast: true },
+    [OpenCodeEvents.SESSION_DIFF]: { enabled: false },
+    [OpenCodeEvents.SESSION_ERROR]: { toast: true },
+    [OpenCodeEvents.SESSION_STATUS]: { enabled: false },
+    [OpenCodeEvents.SESSION_UPDATED]: { enabled: false },
+    [OpenCodeEvents.SESSION_UNKNOWN]: { toast: true },
 
-    [EventType.MESSAGE_PART_DELTA]: { enabled: false },
-    [EventType.MESSAGE_PART_REMOVED]: { enabled: false },
-    [EventType.MESSAGE_PART_UPDATED]: { enabled: false },
-    [EventType.MESSAGE_REMOVED]: { enabled: false },
-    [EventType.MESSAGE_UPDATED]: { enabled: false },
+    [OpenCodeEvents.MESSAGE_PART_DELTA]: { enabled: false },
+    [OpenCodeEvents.MESSAGE_PART_REMOVED]: { enabled: false },
+    [OpenCodeEvents.MESSAGE_PART_UPDATED]: { enabled: false },
+    [OpenCodeEvents.MESSAGE_REMOVED]: { enabled: false },
+    [OpenCodeEvents.MESSAGE_UPDATED]: { enabled: false },
 
-    [EventType.FILE_EDITED]: { enabled: false },
-    [EventType.FILE_WATCHER_UPDATED]: { enabled: false },
+    [OpenCodeEvents.FILE_EDITED]: { enabled: false },
+    [OpenCodeEvents.FILE_WATCHER_UPDATED]: { enabled: false },
 
-    [EventType.PERMISSION_ASKED]: { enabled: false },
-    [EventType.PERMISSION_REPLIED]: { enabled: false },
+    [OpenCodeEvents.PERMISSION_ASKED]: { enabled: false },
+    [OpenCodeEvents.PERMISSION_REPLIED]: { enabled: false },
 
-    [EventType.COMMAND_EXECUTED]: { enabled: false },
+    [OpenCodeEvents.COMMAND_EXECUTED]: { enabled: false },
 
-    [EventType.LSP_CLIENT_DIAGNOSTICS]: { enabled: false },
-    [EventType.LSP_UPDATED]: { enabled: false },
+    [OpenCodeEvents.LSP_CLIENT_DIAGNOSTICS]: { enabled: false },
+    [OpenCodeEvents.LSP_UPDATED]: { enabled: false },
 
-    [EventType.INSTALLATION_UPDATED]: { toast: true },
+    [OpenCodeEvents.INSTALLATION_UPDATED]: { toast: true },
 
-    [EventType.TODO_UPDATED]: { enabled: false },
+    [OpenCodeEvents.TODO_UPDATED]: { enabled: false },
 
-    [EventType.SHELL_ENV]: { enabled: false },
+    [OpenCodeEvents.SHELL_ENV]: { enabled: false },
 
-    [EventType.EXPERIMENTAL_SESSION_COMPACTING]: {
+    [OpenCodeEvents.EXPERIMENTAL_SESSION_COMPACTING]: {
       toast: true,
       scripts: [{ source: 'native', path: 'mempalace-wake.sh' }],
     },
 
-    [EventType.CHAT_MESSAGE]: {
+    [OpenCodeEvents.CHAT_MESSAGE]: {
       runScripts: true,
       scripts: [{ source: 'native', path: 'mempalace-mine.sh' }],
     },
-    [EventType.CHAT_PARAMS]: { enabled: false },
-    [EventType.CHAT_HEADERS]: { enabled: false },
-    [EventType.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: { enabled: false },
-    [EventType.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: { enabled: false },
-    [EventType.EXPERIMENTAL_TEXT_COMPLETE]: { enabled: false },
-    [EventType.TOOL_DEFINITION]: { enabled: false },
+    [OpenCodeEvents.CHAT_PARAMS]: { enabled: false },
+    [OpenCodeEvents.CHAT_HEADERS]: { enabled: false },
+    [OpenCodeEvents.EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM]: { enabled: false },
+    [OpenCodeEvents.EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM]: { enabled: false },
+    [OpenCodeEvents.EXPERIMENTAL_TEXT_COMPLETE]: { enabled: false },
+    [OpenCodeEvents.TOOL_DEFINITION]: { enabled: false },
 
-    [EventType.TUI_PROMPT_APPEND]: { enabled: false },
-    [EventType.TUI_COMMAND_EXECUTE]: { enabled: false },
+    [OpenCodeEvents.TUI_PROMPT_APPEND]: { enabled: false },
+    [OpenCodeEvents.TUI_COMMAND_EXECUTE]: { enabled: false },
 
-    [EventType.TUI_TOAST_SHOW]: { enabled: false },
+    [OpenCodeEvents.TUI_TOAST_SHOW]: { enabled: false },
   },
 
   tools: {
-    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: {
+    [OpenCodeEvents.TOOL_EXECUTE_AFTER_SUBAGENT]: {
       task: {
         logToAudit: true,
         toast: true,
@@ -143,7 +143,7 @@ export const userConfig: UserEventsConfig = {
         scripts: [{ source: 'native', path: 'log-agent.sh' }],
       },
     },
-    [EventType.TOOL_EXECUTE_AFTER]: {
+    [OpenCodeEvents.TOOL_EXECUTE_AFTER]: {
       task: {},
       skill: {
         logToAudit: true,
@@ -151,13 +151,13 @@ export const userConfig: UserEventsConfig = {
         runScripts: true,
         scripts: [{ source: 'native', path: 'log-skill.sh' }],
       },
-      bash: { toast: true },
+      bash: {},
       write: {},
       edit: {},
       chat: {},
       read: {},
       glob: {},
-      grep: { toast: true },
+      grep: {},
       list: {},
       patch: {},
       webfetch: {},
@@ -178,7 +178,7 @@ export const userConfig: UserEventsConfig = {
       filesystem_get_file_info: {},
       gh_grep_searchGitHub: {},
     },
-    [EventType.TOOL_EXECUTE_BEFORE]: {
+    [OpenCodeEvents.TOOL_EXECUTE_BEFORE]: {
       task: {},
       skill: {},
       bash: {
