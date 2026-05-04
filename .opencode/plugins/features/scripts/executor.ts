@@ -139,7 +139,8 @@ export function parseHookOutput(
 export function buildClaudeStdin(
   eventType: string,
   toolName: string,
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  output?: Record<string, unknown>
 ): Record<string, unknown> {
   const claudeEventName = EVENT_NAME_MAP[eventType] || eventType;
 
@@ -153,7 +154,7 @@ export function buildClaudeStdin(
 
   if (toolName) {
     base.tool_name = toolName;
-    base.tool_input = input.args || {};
+    base.tool_input = output?.args ?? input.args ?? {};
     base.tool_use_id = input.callID;
   }
 
@@ -186,7 +187,7 @@ export function buildOpencodeStdin(
 
   if (toolName) {
     base.tool_name = toolName;
-    base.tool_input = input.args || {};
+    base.tool_input = output?.args ?? input.args ?? {};
     base.call_id = input.callID;
   }
 
@@ -239,7 +240,7 @@ export async function executeScript(
 
   let stdin: string | undefined;
   if (scriptEntry.source === 'claude') {
-    const stdinData = buildClaudeStdin(eventType, toolName, input);
+    const stdinData = buildClaudeStdin(eventType, toolName, input, output);
     stdin = JSON.stringify(stdinData);
   } else if (scriptEntry.source === 'native') {
     const passStdin = scriptEntry.passStdin !== false;
