@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { fromAny } from '@total-typescript/shoehorn';
 import {
   asScriptEntry,
   resolveScripts,
@@ -77,7 +78,7 @@ describe('resolveScripts', () => {
 
   it('returns fallthrough for unexpected cfg type', () => {
     const result = resolveScripts(
-      42 as unknown as EventConfig,
+      fromAny<EventConfig, number>(42),
       handlerDefault,
       baseScripts
     );

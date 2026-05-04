@@ -1,6 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { fromPartial } from '@total-typescript/shoehorn';
 import { appendToSession } from '.opencode/plugins/features/messages/append-to-session';
 import type { PluginInput } from '@opencode-ai/plugin';
+
+function makeCtx(mockPrompt: ReturnType<typeof vi.fn>): PluginInput {
+  return fromPartial<PluginInput>({
+    client: {
+      session: {
+        prompt: mockPrompt,
+      },
+    },
+  });
+}
 
 describe('appendToSession', () => {
   beforeEach(() => {
@@ -9,13 +20,7 @@ describe('appendToSession', () => {
 
   it('calls ctx.client.session.prompt with the given session id and text', async () => {
     const mockPrompt = vi.fn().mockResolvedValue(undefined);
-    const ctx = {
-      client: {
-        session: {
-          prompt: mockPrompt,
-        },
-      },
-    } as unknown as PluginInput;
+    const ctx = makeCtx(mockPrompt);
 
     await appendToSession(ctx, 'ses_abc123', 'Hello world');
 
@@ -31,13 +36,7 @@ describe('appendToSession', () => {
 
   it('does not truncate text under maxPromptLength', async () => {
     const mockPrompt = vi.fn().mockResolvedValue(undefined);
-    const ctx = {
-      client: {
-        session: {
-          prompt: mockPrompt,
-        },
-      },
-    } as unknown as PluginInput;
+    const ctx = makeCtx(mockPrompt);
 
     const text = 'a'.repeat(500);
     await appendToSession(ctx, 's1', text);
@@ -49,13 +48,7 @@ describe('appendToSession', () => {
 
   it('truncates text over maxPromptLength (10000)', async () => {
     const mockPrompt = vi.fn().mockResolvedValue(undefined);
-    const ctx = {
-      client: {
-        session: {
-          prompt: mockPrompt,
-        },
-      },
-    } as unknown as PluginInput;
+    const ctx = makeCtx(mockPrompt);
 
     const text = 'a'.repeat(15000);
     await appendToSession(ctx, 's1', text);
@@ -67,13 +60,7 @@ describe('appendToSession', () => {
 
   it('truncates exactly at maxPromptLength plus ellipsis', async () => {
     const mockPrompt = vi.fn().mockResolvedValue(undefined);
-    const ctx = {
-      client: {
-        session: {
-          prompt: mockPrompt,
-        },
-      },
-    } as unknown as PluginInput;
+    const ctx = makeCtx(mockPrompt);
 
     const text = 'a'.repeat(15000);
     await appendToSession(ctx, 's1', text);
@@ -86,13 +73,7 @@ describe('appendToSession', () => {
 
   it('passes the correct session id', async () => {
     const mockPrompt = vi.fn().mockResolvedValue(undefined);
-    const ctx = {
-      client: {
-        session: {
-          prompt: mockPrompt,
-        },
-      },
-    } as unknown as PluginInput;
+    const ctx = makeCtx(mockPrompt);
 
     await appendToSession(ctx, 'ses_xyz', 'test');
     expect(mockPrompt.mock.calls[0][0].path.id).toBe('ses_xyz');

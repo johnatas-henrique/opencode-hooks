@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { fromPartial } from '@total-typescript/shoehorn';
 import {
   resolveToastOverride,
   resolveToastEnabled,
@@ -30,20 +31,22 @@ describe('resolveToastOverride', () => {
 
   it('returns null when cfg is null', () => {
     expect(
-      resolveToastOverride(null as unknown as Record<string, unknown>)
+      resolveToastOverride(
+        null as unknown as Parameters<typeof resolveToastOverride>[0]
+      )
     ).toBeNull();
   });
 });
 
 describe('resolveToastEnabled', () => {
-  const defaultCfg: EventOverride = {
+  const defaultCfg = fromPartial<EventOverride>({
     debug: false,
     toast: { enabled: true },
     runScripts: false,
     runOnlyOnce: false,
     logToAudit: true,
     appendToSession: false,
-  };
+  });
 
   it('returns toast boolean from eventCfg object', () => {
     const eventCfg = { toast: true };
@@ -92,11 +95,15 @@ describe('resolveDefaultToast', () => {
   });
 
   it('returns false when defaultCfg.toast is falsy', () => {
-    expect(resolveDefaultToast({ toast: false } as EventOverride)).toBe(false);
+    expect(
+      resolveDefaultToast(fromPartial<EventOverride>({ toast: false }))
+    ).toBe(false);
   });
 
   it('returns true when defaultCfg.toast is true', () => {
-    expect(resolveDefaultToast({ toast: true } as EventOverride)).toBe(true);
+    expect(
+      resolveDefaultToast(fromPartial<EventOverride>({ toast: true }))
+    ).toBe(true);
   });
 
   it('returns toast.enabled when defaultCfg.toast is an object with enabled true', () => {

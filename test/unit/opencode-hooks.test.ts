@@ -4,6 +4,7 @@ import type { Hooks } from '@opencode-ai/plugin';
 import type { Event, UserMessage, Model, Provider } from '@opencode-ai/sdk';
 import type { ChildProcess } from 'child_process';
 import { spawn } from 'child_process';
+import { fromAny } from '@total-typescript/shoehorn';
 import * as startupToastModule from '.opencode/plugins/features/messages/show-startup-toast';
 
 const mockFsObj = vi.hoisted(() => ({
@@ -172,21 +173,20 @@ function setupCommonMocks(): void {
   mockFsObj.writeFileSync = vi.fn();
   mockFsObj.mkdirSync = vi.fn();
   mockFsObj.unlinkSync = vi.fn();
-  vi.mocked(spawn).mockImplementation(
-    () =>
-      ({
-        stdout: {
-          on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-            if (event === 'data') cb(Buffer.from(''));
-          }),
-        },
-        stderr: { on: vi.fn() },
-        stdin: { write: vi.fn(), end: vi.fn() },
-        on: vi.fn((event: string, cb: (code: number) => void) => {
-          if (event === 'close') cb(0);
+  vi.mocked(spawn).mockImplementation(() =>
+    fromAny<ChildProcess, unknown>({
+      stdout: {
+        on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+          if (event === 'data') cb(Buffer.from(''));
         }),
-        unref: vi.fn(),
-      }) as unknown as ChildProcess
+      },
+      stderr: { on: vi.fn() },
+      stdin: { write: vi.fn(), end: vi.fn() },
+      on: vi.fn((event: string, cb: (code: number) => void) => {
+        if (event === 'close') cb(0);
+      }),
+      unref: vi.fn(),
+    })
   );
 }
 
@@ -313,10 +313,10 @@ describe('OpencodeHooks', () => {
         .mockResolvedValue(undefined);
 
       await hooks.event!({
-        event: {
+        event: fromAny<Event, unknown>({
           type: 'unknown.test' as const,
           properties: {},
-        } as unknown as Event,
+        }),
       });
 
       expect(logEventSpy).toHaveBeenCalledWith('UNKNOWN_EVENT', {
@@ -627,21 +627,20 @@ describe('OpencodeHooks', () => {
     it('appends to session when appendToSession is enabled', async () => {
       // Override spawn to return output
       const { spawn } = await import('child_process');
-      vi.mocked(spawn).mockImplementation(
-        () =>
-          ({
-            stdout: {
-              on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-                if (event === 'data') cb(Buffer.from('session data'));
-              }),
-            },
-            stderr: { on: vi.fn() },
-            stdin: { write: vi.fn(), end: vi.fn() },
-            on: vi.fn((event: string, cb: (code: number) => void) => {
-              if (event === 'close') cb(0);
+      vi.mocked(spawn).mockImplementation(() =>
+        fromAny<ChildProcess, unknown>({
+          stdout: {
+            on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+              if (event === 'data') cb(Buffer.from('session data'));
             }),
-            unref: vi.fn(),
-          }) as unknown as ChildProcess
+          },
+          stderr: { on: vi.fn() },
+          stdin: { write: vi.fn(), end: vi.fn() },
+          on: vi.fn((event: string, cb: (code: number) => void) => {
+            if (event === 'close') cb(0);
+          }),
+          unref: vi.fn(),
+        })
       );
 
       const appendSpy = vi.spyOn(appendToSessionModule, 'appendToSession');
@@ -712,21 +711,20 @@ describe('OpencodeHooks', () => {
 
     it('manages stop hook state for session.idle', async () => {
       const { spawn } = await import('child_process');
-      vi.mocked(spawn).mockImplementation(
-        () =>
-          ({
-            stdout: {
-              on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-                if (event === 'data') cb(Buffer.from(''));
-              }),
-            },
-            stderr: { on: vi.fn() },
-            stdin: { write: vi.fn(), end: vi.fn() },
-            on: vi.fn((event: string, cb: (code: number) => void) => {
-              if (event === 'close') cb(2);
+      vi.mocked(spawn).mockImplementation(() =>
+        fromAny<ChildProcess, unknown>({
+          stdout: {
+            on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+              if (event === 'data') cb(Buffer.from(''));
             }),
-            unref: vi.fn(),
-          }) as unknown as ChildProcess
+          },
+          stderr: { on: vi.fn() },
+          stdin: { write: vi.fn(), end: vi.fn() },
+          on: vi.fn((event: string, cb: (code: number) => void) => {
+            if (event === 'close') cb(2);
+          }),
+          unref: vi.fn(),
+        })
       );
 
       const setStopSpy = vi.spyOn(executorModule, 'setStopHookState');
@@ -796,21 +794,20 @@ describe('OpencodeHooks', () => {
         .mockImplementation(() => {});
 
       const { spawn } = await import('child_process');
-      vi.mocked(spawn).mockImplementation(
-        () =>
-          ({
-            stdout: {
-              on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-                if (event === 'data') cb(Buffer.from('hello world'));
-              }),
-            },
-            stderr: { on: vi.fn() },
-            stdin: { write: vi.fn(), end: vi.fn() },
-            on: vi.fn((event: string, cb: (code: number) => void) => {
-              if (event === 'close') cb(0);
+      vi.mocked(spawn).mockImplementation(() =>
+        fromAny<ChildProcess, unknown>({
+          stdout: {
+            on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+              if (event === 'data') cb(Buffer.from('hello world'));
             }),
-            unref: vi.fn(),
-          }) as unknown as ChildProcess
+          },
+          stderr: { on: vi.fn() },
+          stdin: { write: vi.fn(), end: vi.fn() },
+          on: vi.fn((event: string, cb: (code: number) => void) => {
+            if (event === 'close') cb(0);
+          }),
+          unref: vi.fn(),
+        })
       );
 
       vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
@@ -878,19 +875,19 @@ describe('OpencodeHooks', () => {
       const input = {
         sessionID: 'ses_123',
         agent: 'test-agent',
-        model: {
+        model: fromAny<Model, unknown>({
           providerID: 'anthropic',
           modelID: 'claude-3',
-        } as unknown as Model,
+        }),
         provider: {
           source: 'custom' as const,
           info: {} as Provider,
           options: {},
         },
-        message: {
+        message: fromAny<UserMessage, unknown>({
           role: 'user' as const,
           content: 'hello',
-        } as unknown as UserMessage,
+        }),
       };
       const output = { temperature: 0.7, topP: 0.9, topK: 50, options: {} };
 
@@ -907,19 +904,19 @@ describe('OpencodeHooks', () => {
       const input = {
         sessionID: 'ses_123',
         agent: 'test-agent',
-        model: {
+        model: fromAny<Model, unknown>({
           providerID: 'anthropic',
           modelID: 'claude-3',
-        } as unknown as Model,
+        }),
         provider: {
           source: 'custom' as const,
           info: {} as Provider,
           options: {},
         },
-        message: {
+        message: fromAny<UserMessage, unknown>({
           role: 'user' as const,
           content: 'hello',
-        } as unknown as UserMessage,
+        }),
       };
       const output = { headers: { 'x-api-key': 'test' } };
 
@@ -993,10 +990,10 @@ describe('OpencodeHooks', () => {
 
       const input = {
         sessionID: 'ses_123',
-        model: {
+        model: fromAny<Model, unknown>({
           providerID: 'anthropic',
           modelID: 'claude-3',
-        } as unknown as Model,
+        }),
       };
       const output = { system: [] };
 

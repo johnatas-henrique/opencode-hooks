@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { fromAny, fromPartial } from '@total-typescript/shoehorn';
 import type { PluginInput } from '@opencode-ai/plugin';
 import {
   initGlobalToastQueue,
@@ -61,10 +62,10 @@ describe('createToastAdapter', () => {
 describe('createSessionAdapter', () => {
   it('creates appendToSession that delegates to appendToSession with ctx', async () => {
     const mockPrompt = vi.fn().mockResolvedValue(undefined);
-    const ctx = {
-      $: vi.fn(),
+    const ctx = fromPartial<PluginInput>({
+      $: fromAny<PluginInput['$'], ReturnType<typeof vi.fn>>(vi.fn()),
       client: { session: { prompt: mockPrompt } },
-    } as unknown as PluginInput;
+    });
 
     const adapter = createSessionAdapter({
       ctx,

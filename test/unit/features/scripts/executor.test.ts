@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { fromAny } from '@total-typescript/shoehorn';
 
 const mockFs = vi.hoisted(() => {
   const fn = () => vi.fn();
@@ -45,6 +46,21 @@ import {
 import type { ScriptEntry } from '.opencode/plugins/types/config';
 import type { ChildProcess } from 'child_process';
 import { spawn } from 'child_process';
+
+function makeMockChildProcess(
+  overrides: Record<string, unknown> = {}
+): ChildProcess {
+  return fromAny<ChildProcess, unknown>({
+    stdout: { on: vi.fn() },
+    stderr: { on: vi.fn() },
+    stdin: { write: vi.fn(), end: vi.fn() },
+    on: vi.fn((event: string, cb: (code: number | null) => void) => {
+      if (event === 'close') cb(0);
+    }),
+    unref: vi.fn(),
+    ...overrides,
+  });
+}
 
 describe('sanitizeArg', () => {
   it('replaces shell special chars with escaped versions', () => {
@@ -439,15 +455,13 @@ describe('executeScript', () => {
   });
 
   it('handles non-zero exit code', async () => {
-    vi.mocked(spawn).mockReturnValueOnce({
-      stdout: { on: vi.fn() },
-      stderr: { on: vi.fn() },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event: string, cb: (code: number | null) => void) => {
-        if (event === 'close') cb(1);
-      }),
-      unref: vi.fn(),
-    } as unknown as ChildProcess);
+    vi.mocked(spawn).mockReturnValueOnce(
+      makeMockChildProcess({
+        on: vi.fn((event: string, cb: (code: number | null) => void) => {
+          if (event === 'close') cb(1);
+        }),
+      })
+    );
 
     const result = await executeScript(
       { source: 'native', path: 'test.sh' },
@@ -460,15 +474,13 @@ describe('executeScript', () => {
   });
 
   it('handles null exit code (process terminated unexpectedly)', async () => {
-    vi.mocked(spawn).mockReturnValueOnce({
-      stdout: { on: vi.fn() },
-      stderr: { on: vi.fn() },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event: string, cb: (code: number | null) => void) => {
-        if (event === 'close') cb(null);
-      }),
-      unref: vi.fn(),
-    } as unknown as ChildProcess);
+    vi.mocked(spawn).mockReturnValueOnce(
+      makeMockChildProcess({
+        on: vi.fn((event: string, cb: (code: number | null) => void) => {
+          if (event === 'close') cb(null);
+        }),
+      })
+    );
 
     const result = await executeScript(
       { source: 'native', path: 'test.sh' },
@@ -487,19 +499,18 @@ describe('executeScript', () => {
         permissionDecisionReason: 'not allowed',
       },
     });
-    vi.mocked(spawn).mockReturnValueOnce({
-      stdout: {
-        on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-          if (event === 'data') cb(Buffer.from(stdoutData));
+    vi.mocked(spawn).mockReturnValueOnce(
+      makeMockChildProcess({
+        stdout: {
+          on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+            if (event === 'data') cb(Buffer.from(stdoutData));
+          }),
+        },
+        on: vi.fn((event: string, cb: (code: number | null) => void) => {
+          if (event === 'close') cb(0);
         }),
-      },
-      stderr: { on: vi.fn() },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event: string, cb: (code: number | null) => void) => {
-        if (event === 'close') cb(0);
-      }),
-      unref: vi.fn(),
-    } as unknown as ChildProcess);
+      })
+    );
 
     const result = await executeScript(
       { source: 'native', path: 'test.sh' },
@@ -516,19 +527,15 @@ describe('executeScript', () => {
       decision: 'block',
       reason: 'blocked by policy',
     });
-    vi.mocked(spawn).mockReturnValueOnce({
-      stdout: {
-        on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-          if (event === 'data') cb(Buffer.from(stdoutData));
-        }),
-      },
-      stderr: { on: vi.fn() },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event: string, cb: (code: number | null) => void) => {
-        if (event === 'close') cb(0);
-      }),
-      unref: vi.fn(),
-    } as unknown as ChildProcess);
+    vi.mocked(spawn).mockReturnValueOnce(
+      makeMockChildProcess({
+        stdout: {
+          on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+            if (event === 'data') cb(Buffer.from(stdoutData));
+          }),
+        },
+      })
+    );
 
     const result = await executeScript(
       { source: 'native', path: 'test.sh' },
@@ -545,19 +552,15 @@ describe('executeScript', () => {
       continue: false,
       stopReason: 'user requested stop',
     });
-    vi.mocked(spawn).mockReturnValueOnce({
-      stdout: {
-        on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-          if (event === 'data') cb(Buffer.from(stdoutData));
-        }),
-      },
-      stderr: { on: vi.fn() },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event: string, cb: (code: number | null) => void) => {
-        if (event === 'close') cb(0);
-      }),
-      unref: vi.fn(),
-    } as unknown as ChildProcess);
+    vi.mocked(spawn).mockReturnValueOnce(
+      makeMockChildProcess({
+        stdout: {
+          on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+            if (event === 'data') cb(Buffer.from(stdoutData));
+          }),
+        },
+      })
+    );
 
     const result = await executeScript(
       { source: 'native', path: 'test.sh' },
@@ -571,19 +574,18 @@ describe('executeScript', () => {
 
   it('parses JSON stdout with ok false', async () => {
     const stdoutData = JSON.stringify({ ok: false, reason: 'failed' });
-    vi.mocked(spawn).mockReturnValueOnce({
-      stdout: {
-        on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-          if (event === 'data') cb(Buffer.from(stdoutData));
+    vi.mocked(spawn).mockReturnValueOnce(
+      makeMockChildProcess({
+        stdout: {
+          on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+            if (event === 'data') cb(Buffer.from(stdoutData));
+          }),
+        },
+        on: vi.fn((event: string, cb: (code: number | null) => void) => {
+          if (event === 'close') cb(0);
         }),
-      },
-      stderr: { on: vi.fn() },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event: string, cb: (code: number | null) => void) => {
-        if (event === 'close') cb(0);
-      }),
-      unref: vi.fn(),
-    } as unknown as ChildProcess);
+      })
+    );
 
     const result = await executeScript(
       { source: 'native', path: 'test.sh' },
@@ -596,15 +598,13 @@ describe('executeScript', () => {
   });
 
   it('handles spawn error event', async () => {
-    vi.mocked(spawn).mockReturnValueOnce({
-      stdout: { on: vi.fn() },
-      stderr: { on: vi.fn() },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn((event: string, cb: (err: Error) => void) => {
-        if (event === 'error') cb(new Error('ENOENT'));
-      }),
-      unref: vi.fn(),
-    } as unknown as ChildProcess);
+    vi.mocked(spawn).mockReturnValueOnce(
+      makeMockChildProcess({
+        on: vi.fn((event: string, cb: (err: Error) => void) => {
+          if (event === 'error') cb(new Error('ENOENT'));
+        }),
+      })
+    );
 
     const result = await executeScript(
       { source: 'native', path: 'test.sh' },

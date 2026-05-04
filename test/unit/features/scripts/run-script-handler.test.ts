@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { PluginInput } from '@opencode-ai/plugin';
+import { fromAny, fromPartial } from '@total-typescript/shoehorn';
 
 import {
   isSubagent,
@@ -62,17 +63,19 @@ describe('runScriptAndHandle', () => {
     initGlobalToastQueue(vi.fn());
   });
 
-  function makeMock$(): unknown {
-    return vi.fn(() => ({
-      quiet: () => Promise.resolve({ text: () => 'output', exitCode: 0 }),
-    }));
+  function makeMock$(): PluginInput['$'] {
+    return fromAny<PluginInput['$'], ReturnType<typeof vi.fn>>(
+      vi.fn(() => ({
+        quiet: () => Promise.resolve({ text: () => 'output', exitCode: 0 }),
+      }))
+    );
   }
 
   function makeMockCtx(): PluginInput {
-    return {
-      $: makeMock$() as PluginInput['$'],
+    return fromPartial<PluginInput>({
+      $: makeMock$(),
       client: { session: { prompt: vi.fn().mockResolvedValue(undefined) } },
-    } as unknown as PluginInput;
+    });
   }
 
   function makeBaseConfig(overrides: Record<string, unknown> = {}) {
@@ -137,12 +140,14 @@ describe('runScriptAndHandle', () => {
   });
 
   it('handles error from script execution', async () => {
-    const ctx = {
-      $: vi.fn(() => ({
-        quiet: () => Promise.resolve({ text: () => 'err', exitCode: 1 }),
-      })) as unknown as PluginInput['$'],
+    const ctx = fromPartial<PluginInput>({
+      $: fromAny<PluginInput['$'], ReturnType<typeof vi.fn>>(
+        vi.fn(() => ({
+          quiet: () => Promise.resolve({ text: () => 'err', exitCode: 1 }),
+        }))
+      ),
       client: { session: { prompt: vi.fn().mockResolvedValue(undefined) } },
-    } as unknown as PluginInput;
+    });
 
     const result = await runScriptAndHandle({
       ...makeBaseConfig({ script: 'bad.sh' }),

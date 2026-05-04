@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { fromAny } from '@total-typescript/shoehorn';
 import { getBooleanField } from '.opencode/plugins/features/events/resolution/boolean-field';
 import type { EventOverride } from '.opencode/plugins/types/config';
 
@@ -74,7 +75,7 @@ describe('getBooleanField', () => {
 
   it('coerces truthy values to boolean', () => {
     const result = getBooleanField(
-      { enabled: true, runOnlyOnce: 1 as unknown as boolean },
+      { enabled: true, runOnlyOnce: fromAny<boolean, number>(1) },
       defaultCfg,
       'runOnlyOnce',
       false
@@ -90,7 +91,7 @@ describe('getBooleanField', () => {
   it('uses fallback when defaultCfg is null', () => {
     const result = getBooleanField(
       true,
-      null as unknown as EventOverride,
+      fromAny<EventOverride, null>(null),
       'debug',
       true
     );

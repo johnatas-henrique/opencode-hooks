@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { fromAny } from '@total-typescript/shoehorn';
 
 const mockFs = vi.hoisted(() => {
   const fn = () => vi.fn();
@@ -23,7 +24,7 @@ import {
 describe('mapClaudeHookToOpenCode', () => {
   it('maps PreToolUse to tool.execute.before', () => {
     const result = mapClaudeHookToOpenCode('PreToolUse', {
-      matcher: { app: 'bash' } as unknown as string,
+      matcher: fromAny<string, { app: 'bash' }>({ app: 'bash' }),
       hooks: [{ command: 'scripts/pre-hook.sh' }],
     });
     expect(result.openCodeEvent).toBe('tool.execute.before');
@@ -138,7 +139,7 @@ describe('mapClaudeHookToOpenCode', () => {
 
   it('extracts command path by stripping node prefix', () => {
     const result = mapClaudeHookToOpenCode('PreToolUse', {
-      matcher: { app: 'bash' } as unknown as string,
+      matcher: fromAny<string, { app: 'bash' }>({ app: 'bash' }),
       hooks: [{ command: 'node scripts/hook.js' }],
     });
     expect(result.scripts[0].path).toBe('scripts/hook.js');
@@ -153,7 +154,7 @@ describe('mapClaudeHookToOpenCode', () => {
 
   it('preserves async and timeout from hook config', () => {
     const result = mapClaudeHookToOpenCode('PreToolUse', {
-      matcher: { app: 'bash' } as unknown as string,
+      matcher: fromAny<string, { app: 'bash' }>({ app: 'bash' }),
       hooks: [{ command: 'sleep.sh', async: true, timeout: 30000 }],
     });
     expect(result.scripts[0].async).toBe(true);
