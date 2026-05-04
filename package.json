@@ -61,5 +61,8 @@
     "*.{js,ts,md,json}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "@total-typescript/shoehorn": "^0.1.2"
   }
 }
