@@ -185,4 +185,20 @@ describe('ToolConfigResolverImpl', () => {
     const result = resolver.resolve('tool.execute.before', 'bash');
     expect(result.toastMessage).toBe('');
   });
+
+  it('uses handler.defaultScript in getDefaultConfig when runScripts is true on default', () => {
+    const handler = createHandler({
+      defaultScript: 'custom-handler.sh',
+    });
+    const ctx = createContext({
+      handlers: { 'tool.execute.before': handler },
+      default: { runScripts: true },
+      getEventConfig: () => undefined,
+      getToolConfigs: () => ({ bash: {} }),
+    });
+    const resolver = new ToolConfigResolverImpl(ctx);
+    const result = resolver.resolve('tool.execute.before', 'bash');
+    expect(result.runScripts).toBe(true);
+    expect(result.scripts[0]?.path).toBe('custom-handler.sh');
+  });
 });

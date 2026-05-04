@@ -125,4 +125,44 @@ describe('handleDebugLog', () => {
       handleDebugLog('2026-01-01T00:00:00.000Z', 'No Recorder', {})
     ).resolves.toBeUndefined();
   });
+
+  it('logs debug data when debug recorder is set', async () => {
+    const mockLogDebug = vi.fn().mockResolvedValue(undefined);
+    (globalThis as Record<string, unknown>).__opencode_debug_recorder = {
+      logDebug: mockLogDebug,
+    };
+
+    const showFn = vi.fn();
+    initGlobalToastQueue(showFn);
+
+    await handleDebugLog('2026-01-01T00:00:00.000Z', 'Debug Title', {
+      key: 'value',
+    });
+
+    expect(mockLogDebug).toHaveBeenCalledWith({
+      message: 'Debug Title',
+      data: { key: 'value' },
+    });
+  });
+
+  it('logs debug data with string data and debug recorder', async () => {
+    const mockLogDebug = vi.fn().mockResolvedValue(undefined);
+    (globalThis as Record<string, unknown>).__opencode_debug_recorder = {
+      logDebug: mockLogDebug,
+    };
+
+    const showFn = vi.fn();
+    initGlobalToastQueue(showFn);
+
+    await handleDebugLog(
+      '2026-01-01T00:00:00.000Z',
+      'String Debug',
+      'raw-string'
+    );
+
+    expect(mockLogDebug).toHaveBeenCalledWith({
+      message: 'String Debug',
+      data: undefined,
+    });
+  });
 });

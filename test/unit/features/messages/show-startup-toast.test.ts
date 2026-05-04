@@ -71,6 +71,8 @@ vi.mock('fs', () => mockFs);
 vi.mock('.opencode/plugins/config/settings', () => mockSettings);
 
 import { showStartupToast } from '.opencode/plugins/features/messages/show-startup-toast';
+import * as showActivePluginsModule from '.opencode/plugins/features/messages/show-active-plugins';
+import * as pluginIntegration from '.opencode/plugins/features/audit/plugin-integration';
 import {
   initGlobalToastQueue,
   resetGlobalToastQueue,
@@ -262,6 +264,45 @@ describe('showStartupToast', () => {
     expect(addSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Loading plugin status...',
+      })
+    );
+  });
+
+  it('records error when showActivePluginsToast throws', async () => {
+    mockReadFile.mockResolvedValue('no toast patterns');
+    mockFs.existsSync.mockImplementation((path: string) => {
+      if (path === logDir()) return false;
+      return false;
+    });
+
+    const mockLogError = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(pluginIntegration, 'getErrorRecorder').mockReturnValue({
+      logError: mockLogError,
+    } as never);
+
+    vi.spyOn(
+      showActivePluginsModule,
+      'showActivePluginsToast'
+    ).mockRejectedValue(new Error('plugins failed'));
+
+    const showFn = vi.fn();
+    resetGlobalToastQueue();
+    initGlobalToastQueue(showFn);
+
+    const promise = showStartupToast({ getLogFile: () => '/fake/log.log' });
+
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(10000);
+    await vi.advanceTimersByTimeAsync(2500);
+
+    await promise;
+
+    await vi.advanceTimersByTimeAsync(300);
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(mockLogError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: 'showStartupToast',
       })
     );
   });

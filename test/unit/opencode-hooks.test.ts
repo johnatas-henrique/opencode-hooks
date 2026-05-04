@@ -6,6 +6,7 @@ import type { ChildProcess } from 'child_process';
 import { spawn } from 'child_process';
 import { fromAny } from '@total-typescript/shoehorn';
 import * as startupToastModule from '.opencode/plugins/features/messages/show-startup-toast';
+import * as debugModule from '.opencode/plugins/core/debug';
 
 const mockFsObj = vi.hoisted(() => ({
   existsSync: vi.fn<(path: string) => boolean>().mockReturnValue(true),
@@ -236,6 +237,12 @@ describe('OpencodeHooks initialization', () => {
     expect(secondHooks).toBeDefined();
     expect(showSpy).toHaveBeenCalledTimes(1);
   });
+
+  it('returns empty hooks when plugin is disabled', async () => {
+    mockSettings.userConfig.enabled = false;
+    const result = await OpencodeHooks(mockCtx as never);
+    expect(result).toEqual({});
+  });
 });
 
 describe('OpencodeHooks', () => {
@@ -339,8 +346,26 @@ describe('OpencodeHooks', () => {
         } as Event,
       });
 
-      // No toast or debug calls since execution stops early
       expect(hooks).toBeDefined();
+    });
+
+    it('calls handleDebugLog when resolved config has debug enabled', async () => {
+      const debugSpy = vi
+        .spyOn(debugModule, 'handleDebugLog')
+        .mockResolvedValue(undefined);
+
+      vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
+        createMockResolvedConfig({ debug: true })
+      );
+
+      await hooks.event!({
+        event: {
+          type: 'session.created',
+          properties: { info: { id: 'ses_123' } },
+        } as Event,
+      });
+
+      expect(debugSpy).toHaveBeenCalled();
     });
 
     it('shows toast when resolved config has toast enabled', async () => {
@@ -460,6 +485,52 @@ describe('OpencodeHooks', () => {
         input,
         output
       );
+    });
+
+    it('throws block error when script exits with code 2', async () => {
+      vi.mocked(spawn).mockImplementation(() =>
+        fromAny<ChildProcess, unknown>({
+          stdout: { on: vi.fn() },
+          stderr: {
+            on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+              if (event === 'data') cb(Buffer.from('Blocked by policy'));
+            }),
+          },
+          stdin: { write: vi.fn(), end: vi.fn() },
+          on: vi.fn((event: string, cb: (code: number) => void) => {
+            if (event === 'close') cb(2);
+          }),
+          unref: vi.fn(),
+        })
+      );
+
+      vi.spyOn(eventsModule, 'resolveToolConfig').mockReturnValue(
+        createMockResolvedConfig({
+          runScripts: true,
+          scripts: [{ source: 'native' as const, path: 'block.sh' }],
+          scriptToasts: {
+            showOutput: false,
+            showError: false,
+            outputVariant: 'info',
+            errorVariant: 'error',
+            outputDuration: 5000,
+            errorDuration: 15000,
+            outputTitle: 'Script Output',
+            errorTitle: 'Script Error',
+          },
+        })
+      );
+
+      const input = {
+        tool: 'bash',
+        sessionID: 'ses_123',
+        callID: 'call_1',
+        args: { command: 'ls' },
+      };
+
+      await expect(
+        hooks['tool.execute.before']!(input, {} as never)
+      ).rejects.toThrow('Blocked by policy');
     });
   });
 
@@ -625,7 +696,6 @@ describe('OpencodeHooks', () => {
     });
 
     it('appends to session when appendToSession is enabled', async () => {
-      // Override spawn to return output
       const { spawn } = await import('child_process');
       vi.mocked(spawn).mockImplementation(() =>
         fromAny<ChildProcess, unknown>({
@@ -707,6 +777,63 @@ describe('OpencodeHooks', () => {
       });
 
       expect(logScriptSpy).toHaveBeenCalled();
+    });
+
+    it('shows error toast when scripts fail and showError is true', async () => {
+      const addSpy = vi
+        .spyOn(useGlobalToastQueue(), 'add')
+        .mockImplementation(() => {});
+
+      vi.mocked(spawn).mockImplementation(() =>
+        fromAny<ChildProcess, unknown>({
+          stdout: { on: vi.fn() },
+          stderr: {
+            on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+              if (event === 'data') cb(Buffer.from('Script failed'));
+            }),
+          },
+          stdin: { write: vi.fn(), end: vi.fn() },
+          on: vi.fn((event: string, cb: (code: number) => void) => {
+            if (event === 'close') cb(1);
+          }),
+          unref: vi.fn(),
+        })
+      );
+
+      vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
+        createMockResolvedConfig({
+          toast: true,
+          toastTitle: '====ERROR====',
+          toastMessage: 'test',
+          toastVariant: 'error',
+          toastDuration: 15000,
+          runScripts: true,
+          scripts: [{ source: 'native' as const, path: 'fail.sh' }],
+          scriptToasts: {
+            showOutput: false,
+            showError: true,
+            outputVariant: 'warning',
+            errorVariant: 'error',
+            outputDuration: 5000,
+            errorDuration: 15000,
+            outputTitle: '- OUTPUT',
+            errorTitle: '- SCRIPT ERROR',
+          },
+        })
+      );
+
+      await hooks.event!({
+        event: {
+          type: 'session.created',
+          properties: { info: { id: 'ses_123' } },
+        } as Event,
+      });
+
+      expect(addSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: expect.stringContaining('SCRIPT ERROR'),
+        })
+      );
     });
 
     it('manages stop hook state for session.idle', async () => {

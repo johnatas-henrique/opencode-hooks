@@ -69,13 +69,15 @@ function debugLog(...args: unknown[]): void {
   }
 }
 
-function validateScriptsDirectory(): void {
-  let cwd: string;
+function getCwdSafe(): string {
   try {
-    cwd = process.cwd();
+    return process.cwd();
   } catch {
-    cwd = '/';
+    return '/';
   }
+}
+
+function validateScriptsDirectory(cwd: string = getCwdSafe()): void {
   const scriptsDir = path.join(cwd, DEFAULTS.scripts.dir);
   if (!fs.existsSync(scriptsDir) || !fs.statSync(scriptsDir).isDirectory()) {
     throw new Error(`Scripts directory not found: ${scriptsDir}`);
@@ -104,7 +106,6 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
   void params.eventRecorder;
   void params.ctx;
 
-  // Run-only-once check: skip if subagent and runOnlyOnce is true
   if (resolved.runOnlyOnce && isSubagent(rawSessionId)) {
     return;
   }
@@ -130,7 +131,6 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
   }
 
   if (params.eventRecorder) {
-    // Log ALL events with sanitized input/output for debug
     await params.eventRecorder.logEvent(eventType, {
       sessionID: sessionId,
       input: input,
@@ -150,7 +150,6 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     });
   }
 
-  // Stop hook state for session.idle events
   const stopHookActive =
     eventType === 'session.idle' && getStopHookActive(sessionId);
   const hookInput = { ...(input ?? {}), stopHookActive };
@@ -167,7 +166,6 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     })
   );
 
-  // Manage stop hook state after session.idle scripts
   if (eventType === 'session.idle') {
     const anyBlocked = results.some(
       (r) => r.exitCode === 2 || r.output?.includes('block')
@@ -179,7 +177,6 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     }
   }
 
-  // Cancel tool execution if any script reported a block
   if (
     eventType === 'tool.execute.before' ||
     eventType === 'command.execute.before'
@@ -218,7 +215,6 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     });
   }
 
-  // Log to plugin-scripts.json
   if (scriptRecorder) {
     for (const r of results) {
       await scriptRecorder.logScript(
@@ -237,7 +233,6 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     }
   }
 
-  // Error toast for failed scripts
   if (resolved.scriptToasts?.showError) {
     const failedScripts = results.filter((r) => r.exitCode !== 0 && r.output);
     if (failedScripts.length > 0) {
@@ -263,7 +258,6 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     }
   }
 
-  // Append to session for successful scripts
   if (resolved.appendToSession) {
     for (const r of successfulScripts) {
       if (r.output) {
@@ -300,7 +294,6 @@ export const OpencodeHooks: Plugin = async (
     return {};
   }
 
-  // Validate scripts directory exists at startup
   validateScriptsDirectory();
 
   await initAuditLogging(userConfig.audit);

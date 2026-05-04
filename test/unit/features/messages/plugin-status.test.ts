@@ -337,4 +337,42 @@ describe('formatPluginStatus', () => {
     expect(result).toContain('Incompatible:');
     expect(result).toContain('⚠ legacy');
   });
+
+  it('handles user-only mode with failed plugin but no error property', () => {
+    const failedNoError: PluginStatus = {
+      name: 'some-plugin',
+      status: 'failed',
+      source: 'user',
+    };
+    const result = formatPluginStatus([failedNoError], 'user-only');
+    expect(result).toContain('✗ some-plugin');
+  });
+
+  it('handles user-separated mode with all sections present', () => {
+    const result = formatPluginStatus(
+      [userActive, builtInActive, failed, incompatible],
+      'user-separated'
+    );
+    expect(result).toContain('Active (user):');
+    expect(result).toContain('Active (built-in):');
+    expect(result).toContain('Failed:');
+    expect(result).toContain('Incompatible:');
+  });
+
+  it('handles all-labeled mode with built-in failed plugin', () => {
+    const result = formatPluginStatus([builtInFailed], 'all-labeled');
+    expect(result).toContain('Failed:');
+    expect(result).toContain('✗ @opencode/legacy (oom) (built-in)');
+  });
+
+  it('handles all-labeled mode with built-in incompatible plugin', () => {
+    const builtInIncompatible: PluginStatus = {
+      name: '@opencode/legacy-builtin',
+      status: 'incompatible',
+      source: 'built-in',
+    };
+    const result = formatPluginStatus([builtInIncompatible], 'all-labeled');
+    expect(result).toContain('Incompatible:');
+    expect(result).toContain('⚠ @opencode/legacy-builtin (built-in)');
+  });
 });

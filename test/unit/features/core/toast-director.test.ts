@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fromAny } from '@total-typescript/shoehorn';
 import { ToastDirectorImpl } from '.opencode/plugins/features/core/toast-director';
 import type { TuiToast } from '@opencode-ai/plugin/tui';
+import * as pluginIntegration from '.opencode/plugins/features/audit/plugin-integration';
 
 describe('ToastDirectorImpl', () => {
   let showFn: ReturnType<typeof vi.fn>;
@@ -190,5 +191,28 @@ describe('ToastDirectorImpl', () => {
     await vi.advanceTimersByTimeAsync(200);
 
     expect(director.isProcessing).toBe(false);
+  });
+
+  it('records dropped toast via errorRecorder', async () => {
+    const mockLogError = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(pluginIntegration, 'getErrorRecorder').mockReturnValue({
+      logError: mockLogError,
+    } as never);
+
+    const director = new ToastDirectorImpl(
+      fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
+      { maxSize: 1, staggerMs: 10 }
+    );
+
+    director.enqueue(createToast({ title: 'First' }));
+    director.enqueue(createToast({ title: 'Second' }));
+
+    expect(mockLogError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'Toast dropped: First',
+      })
+    );
+
+    await vi.advanceTimersByTimeAsync(500);
   });
 });

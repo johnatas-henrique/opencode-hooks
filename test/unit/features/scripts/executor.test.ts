@@ -615,4 +615,40 @@ describe('executeScript', () => {
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Spawn failed');
   });
+
+  it('uses buildClaudeStdin for claude source scripts', async () => {
+    const mockProc = {
+      stdout: { on: vi.fn() },
+      stderr: { on: vi.fn() },
+      stdin: { write: vi.fn(), end: vi.fn() },
+      on: vi.fn(),
+      unref: vi.fn(),
+    };
+    vi.mocked(mockSpawn.spawn).mockReturnValue(mockProc);
+
+    const entry = { source: 'claude' as const, path: 'hooks.sh' };
+    const promise = executeScript(
+      entry,
+      'tool.execute.before',
+      'bash',
+      { sessionID: 's1', callID: 'c1' },
+      {}
+    );
+
+    const closeHandler = mockProc.on.mock.calls.find(
+      (c: unknown[]) => c[0] === 'close'
+    );
+    if (closeHandler) {
+      (closeHandler[1] as (code: number) => void)(0);
+    }
+
+    await promise;
+
+    expect(mockSpawn.spawn).toHaveBeenCalledWith(
+      expect.stringContaining('hooks.sh'),
+      [],
+      expect.objectContaining({ stdio: ['pipe', 'pipe', 'pipe'] })
+    );
+    expect(mockProc.stdin.write).toHaveBeenCalled();
+  });
 });

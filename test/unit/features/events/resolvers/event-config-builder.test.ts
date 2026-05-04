@@ -142,4 +142,20 @@ describe('ConfigBuilder', () => {
     const result = builder.resolve();
     expect(result.toastMessage).toBe('custom message');
   });
+
+  it('treats getEventConfig returning true as enabled and builds merged config', () => {
+    const handler = createHandler({
+      title: 'Test Event',
+      defaultScript: 'test.sh',
+      buildMessage: () => 'enabled message',
+    });
+    const ctx = createContext({
+      handlers: { 'session.created': handler },
+      getEventConfig: () => true,
+    });
+    const builder = new ConfigBuilder(ctx, 'session.created');
+    const result = builder.resolve();
+    expect(result.enabled).toBe(true);
+    expect(result.toastMessage).toBe('enabled message');
+  });
 });

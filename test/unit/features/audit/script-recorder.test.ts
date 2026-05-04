@@ -113,6 +113,14 @@ describe('createScriptRecord', () => {
     expect(record!.duration).toBeUndefined();
   });
 
+  it('handles undefined args in input', () => {
+    const input: ScriptInput = { script: 'test.sh' };
+    const result = { output: 'ok', error: null, exitCode: 0 };
+    const record = createScriptRecord(input, result, true, 10);
+    expect(record).not.toBeNull();
+    expect(record!.args).toEqual([]);
+  });
+
   it('truncates output for .sh scripts', () => {
     const input: ScriptInput = { script: 'test.sh', args: [] };
     const longOutput = 'x'.repeat(1024 * 20);
