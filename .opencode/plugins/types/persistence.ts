@@ -1,7 +1,3 @@
-import type { ToastCallback } from '.opencode/plugins/types/messages';
-
-export type { ToastCallback };
-
 export type PersistToastCallback = (params: {
   title: string;
   message: string;
