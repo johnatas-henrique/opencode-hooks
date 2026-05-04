@@ -41,6 +41,7 @@
     "@commitlint/config-conventional": "^20.5.0",
     "@eslint/js": "^10.0.1",
     "@opencode-ai/plugin": "^1.14.29",
+    "@total-typescript/shoehorn": "^0.1.2",
     "@types/node": "^25.6.0",
     "@vitest/coverage-v8": "^4.1.4",
     "eslint": "^10.2.1",
@@ -61,8 +62,5 @@
     "*.{js,ts,md,json}": [
       "prettier --write"
     ]
-  },
-  "dependencies": {
-    "@total-typescript/shoehorn": "^0.1.2"
   }
 }
