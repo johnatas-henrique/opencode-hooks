@@ -42,7 +42,7 @@ fi
 # Block reading sensitive files
 if [ "$TOOL_NAME" = "read" ] || [ "$TOOL_NAME" = "filesystem_read_file" ]; then
   if [ -n "$FILE_PATH" ]; then
-    if echo "$FILE_PATH" | grep -qE '(credentials\.json|/secrets/|\.ssh/)'; then
+    if echo "$FILE_PATH" | grep -qE '(\.env|credentials\.json|/secrets/|\.ssh/)'; then
       deny "Blocked access to sensitive file: $FILE_PATH"
     fi
   fi

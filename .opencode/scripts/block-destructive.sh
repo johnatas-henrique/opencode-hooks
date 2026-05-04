@@ -65,3 +65,4 @@ if echo "$COMMAND" | grep -qE '(^|[[:space:];&|])(cat|less|head|tail|more|source
 fi
 
 exit 0
+
