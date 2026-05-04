@@ -1,5 +1,6 @@
 import type { AuditConfig } from '.opencode/plugins/types/audit';
-import { EventType } from '.opencode/plugins/types/events';
+import { OpenCodeEvents } from '.opencode/plugins/types/core';
+import type { OpenCodeEventType } from '.opencode/plugins/types/core';
 
 export type EventVariant = 'success' | 'warning' | 'error' | 'info';
 
@@ -68,11 +69,11 @@ export interface UserEventsConfig {
   scriptToasts: ScriptToastsConfig;
   default: EventOverride;
   loadClaudeHookSettings: ClaudeHookSettings;
-  events: Partial<Record<EventType, EventConfig>>;
+  events: Partial<Record<OpenCodeEventType, EventConfig>>;
   tools: {
-    [EventType.TOOL_EXECUTE_AFTER]: Record<string, ToolConfig>;
-    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: Record<string, ToolConfig>;
-    [EventType.TOOL_EXECUTE_BEFORE]: Record<string, ToolOverride>;
+    [OpenCodeEvents.TOOL_EXECUTE_AFTER]: Record<string, ToolConfig>;
+    [OpenCodeEvents.TOOL_EXECUTE_AFTER_SUBAGENT]: Record<string, ToolConfig>;
+    [OpenCodeEvents.TOOL_EXECUTE_BEFORE]: Record<string, ToolOverride>;
   };
 }
 
