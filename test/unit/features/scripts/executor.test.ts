@@ -85,12 +85,12 @@ describe('validateScriptPath', () => {
     expect(validateScriptPath('../escape.sh')).toBe(false);
   });
 
-  it('rejects absolute unix paths', () => {
-    expect(validateScriptPath('/etc/passwd')).toBe(false);
+  it('allows absolute unix paths (from .claude/settings.json)', () => {
+    expect(validateScriptPath('/etc/passwd')).toBe(true);
   });
 
-  it('rejects tilde paths', () => {
-    expect(validateScriptPath('~/script.sh')).toBe(false);
+  it('allows tilde paths (from .claude/settings.json)', () => {
+    expect(validateScriptPath('~/script.sh')).toBe(true);
   });
 
   it('rejects windows absolute paths', () => {

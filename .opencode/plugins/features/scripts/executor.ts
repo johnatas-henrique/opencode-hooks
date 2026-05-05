@@ -14,7 +14,6 @@ export const sanitizeArg = (arg: string): string => {
 export const validateScriptPath = (scriptPath: string): boolean => {
   if (!scriptPath || typeof scriptPath !== 'string') return false;
   if (scriptPath.includes('..')) return false;
-  if (scriptPath.startsWith('/') || scriptPath.startsWith('~')) return false;
   if (/^[a-zA-Z]:\\/.test(scriptPath)) return false;
   if (scriptPath.includes('\\')) return false;
   return true;
@@ -34,6 +33,11 @@ const EVENT_NAME_MAP: Record<string, string> = {
 };
 
 export function resolveScriptPath(scriptPath: string): string {
+  // Paths absolutos (do .claude/settings.json) → usar direto
+  if (path.isAbsolute(scriptPath)) {
+    return scriptPath;
+  }
+  // Paths relativos (scripts nativos em ./scripts/) → resolver normalmente
   const scriptsDir = path.join(process.cwd(), DEFAULTS.scripts.dir);
   return path.join(scriptsDir, scriptPath);
 }

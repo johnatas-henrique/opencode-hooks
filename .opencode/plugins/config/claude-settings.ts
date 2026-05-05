@@ -51,16 +51,23 @@ function deepMerge(
   return result;
 }
 
-function extractCommandPath(command: string): string {
-  const trimmed = command.trim();
-  if (trimmed.startsWith('node ')) return trimmed.slice(5).trim();
-  if (trimmed.startsWith('bash ')) return trimmed.slice(5).trim();
+function extractCommandPath(command: string, projectDir: string = ''): string {
+  let trimmed = command.trim();
+  if (projectDir) {
+    trimmed = trimmed.replace(
+      /\$CLAUDE_PROJECT_DIR|\$\{CLAUDE_PROJECT_DIR\}/g,
+      projectDir
+    );
+  }
+  if (trimmed.startsWith('node ')) trimmed = trimmed.slice(5).trim();
+  if (trimmed.startsWith('bash ')) trimmed = trimmed.slice(5).trim();
   return trimmed;
 }
 
 export function mapClaudeHookToOpenCode(
   claudeEventName: string,
-  hookGroup: ClaudeHookGroup
+  hookGroup: ClaudeHookGroup,
+  projectDir: string = ''
 ): { openCodeEvent: string; scripts: ScriptEntry[]; unsupported: string[] } {
   const openCodeEvent = CLAUDE_EVENT_MAP[claudeEventName];
 
@@ -74,7 +81,7 @@ export function mapClaudeHookToOpenCode(
 
   const scripts: ScriptEntry[] = hookGroup.hooks.map((h) => ({
     source: 'claude' as const,
-    path: extractCommandPath(h.command),
+    path: extractCommandPath(h.command, projectDir),
     matcher: hookGroup.matcher,
     async: h.async,
     timeout: h.timeout,
@@ -112,7 +119,11 @@ export function loadClaudeSettings(projectDir: string): {
 
   for (const [claudeEventName, groups] of Object.entries(settings.hooks)) {
     for (const group of groups) {
-      const mapped = mapClaudeHookToOpenCode(claudeEventName, group);
+      const mapped = mapClaudeHookToOpenCode(
+        claudeEventName,
+        group,
+        projectDir
+      );
       allUnsupported.push(...mapped.unsupported);
       if (mapped.openCodeEvent) {
         if (!result[mapped.openCodeEvent]) {

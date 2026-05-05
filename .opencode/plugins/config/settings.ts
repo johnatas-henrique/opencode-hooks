@@ -9,7 +9,10 @@ export const userConfig: UserEventsConfig = {
   showPluginStatus: true,
   pluginStatusDisplayMode: 'user-only',
 
-  loadClaudeHookSettings: { enabled: false },
+  loadClaudeHookSettings: {
+    loadGlobalClaudeHooks: true,
+    loadLocalClaudeHooks: true,
+  },
 
   scriptToasts: {
     showOutput: true,
@@ -181,24 +184,9 @@ export const userConfig: UserEventsConfig = {
     [OpenCodeEvents.TOOL_EXECUTE_BEFORE]: {
       task: {},
       skill: {},
-      bash: {
-        runScripts: true,
-        toast: true,
-        scripts: [
-          { source: 'claude', path: 'block-destructive.sh' },
-          { source: 'claude', path: 'block-sensitive.sh' },
-        ],
-      },
-      write: {
-        runScripts: true,
-        toast: true,
-        scripts: [{ source: 'claude', path: 'block-sensitive.sh' }],
-      },
-      read: {
-        runScripts: true,
-        toast: true,
-        scripts: [{ source: 'claude', path: 'block-sensitive.sh' }],
-      },
+      bash: {},
+      write: {},
+      read: {},
       edit: {},
       chat: {},
       glob: {},
@@ -214,16 +202,8 @@ export const userConfig: UserEventsConfig = {
       'git.commit': {},
       'git.push': {},
       'git.pull': {},
-      filesystem_read_file: {
-        runScripts: true,
-        toast: true,
-        scripts: [{ source: 'claude', path: 'block-sensitive.sh' }],
-      },
-      filesystem_write_file: {
-        runScripts: true,
-        toast: true,
-        scripts: [{ source: 'claude', path: 'block-sensitive.sh' }],
-      },
+      filesystem_read_file: {},
+      filesystem_write_file: {},
       filesystem_list_directory: {},
       filesystem_search_files: {},
       filesystem_create_directory: {},
