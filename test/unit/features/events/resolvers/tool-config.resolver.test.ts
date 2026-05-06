@@ -70,9 +70,13 @@ describe('ToolConfigResolverImpl', () => {
       handlers: { 'tool.execute.before': handler },
       getToolConfigs: () => ({ bash: { runScripts: true } }),
       claudeScripts: {
-        'tool.execute.before': [
-          { source: 'claude', path: 'claude.sh', matcher: 'bash' },
-        ],
+        global: {},
+        local: {},
+        all: {
+          'tool.execute.before': [
+            { source: 'claude', path: 'claude.sh', matcher: 'bash' },
+          ],
+        },
       },
     });
     const resolver = new ToolConfigResolverImpl(ctx);
@@ -110,9 +114,13 @@ describe('ToolConfigResolverImpl', () => {
       getToolConfigs: () => ({ bash: {} }),
       default: { runScripts: true },
       claudeScripts: {
-        'tool.execute.before': [
-          { source: 'claude', path: 'claude.sh', matcher: 'bash' },
-        ],
+        global: {},
+        local: {},
+        all: {
+          'tool.execute.before': [
+            { source: 'claude', path: 'claude.sh', matcher: 'bash' },
+          ],
+        },
       },
     });
     const resolver = new ToolConfigResolverImpl(ctx);
@@ -128,7 +136,11 @@ describe('ToolConfigResolverImpl', () => {
     const ctx = createContext({
       getToolConfigs: () => ({ bash: {} }),
       default: { runScripts: true },
-      claudeScripts: { 'tool.execute.before': [] },
+      claudeScripts: {
+        global: {},
+        local: {},
+        all: { 'tool.execute.before': [] },
+      },
     });
     const resolver = new ToolConfigResolverImpl(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash');

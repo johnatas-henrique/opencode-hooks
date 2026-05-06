@@ -174,7 +174,7 @@ describe('loadClaudeSettings', () => {
     );
 
     const result = loadClaudeSettings('/test/project');
-    expect(result.hooks).toEqual({});
+    expect(result.all).toEqual({});
     expect(result.unsupported).toEqual([]);
   });
 
@@ -183,7 +183,7 @@ describe('loadClaudeSettings', () => {
     vi.mocked(mockFs.readFileSync).mockReturnValue(JSON.stringify({}));
 
     const result = loadClaudeSettings('/test/project');
-    expect(result.hooks).toEqual({});
+    expect(result.all).toEqual({});
     expect(result.unsupported).toEqual([]);
   });
 
@@ -194,7 +194,7 @@ describe('loadClaudeSettings', () => {
     );
 
     const result = loadClaudeSettings('/test/project');
-    expect(result.hooks).toEqual({});
+    expect(result.all).toEqual({});
   });
 
   it('merges hierarchy: user → project → local override', () => {
@@ -225,16 +225,16 @@ describe('loadClaudeSettings', () => {
       );
 
     const result = loadClaudeSettings('/test/project');
-    expect(result.hooks['tool.execute.before']).toHaveLength(1);
-    expect(result.hooks['tool.execute.before'][0].path).toBe('override.sh');
-    expect(result.hooks['tool.execute.after']).toHaveLength(1);
+    expect(result.all['tool.execute.before']).toHaveLength(1);
+    expect(result.all['tool.execute.before'][0].path).toBe('override.sh');
+    expect(result.all['tool.execute.after']).toHaveLength(1);
   });
 
   it('skips files that do not exist', () => {
     vi.mocked(mockFs.existsSync).mockReturnValue(false);
 
     const result = loadClaudeSettings('/test/project');
-    expect(result.hooks).toEqual({});
+    expect(result.all).toEqual({});
     expect(result.unsupported).toEqual([]);
   });
 
@@ -266,9 +266,9 @@ describe('loadClaudeSettings', () => {
       })
     );
     const result = loadClaudeSettings('/test/project');
-    expect(result.hooks['tool.execute.before']).toHaveLength(2);
-    expect(result.hooks['tool.execute.before'][0].path).toBe('first.sh');
-    expect(result.hooks['tool.execute.before'][1].path).toBe('second.sh');
+    expect(result.all['tool.execute.before']).toHaveLength(2);
+    expect(result.all['tool.execute.before'][0].path).toBe('first.sh');
+    expect(result.all['tool.execute.before'][1].path).toBe('second.sh');
   });
 
   it('parses hooks with valid matcher', () => {
@@ -289,11 +289,11 @@ describe('loadClaudeSettings', () => {
     );
 
     const result = loadClaudeSettings('/test/project');
-    expect(result.hooks['tool.execute.before']).toHaveLength(1);
-    expect(result.hooks['tool.execute.before'][0].matcher).toEqual({
+    expect(result.all['tool.execute.before']).toHaveLength(1);
+    expect(result.all['tool.execute.before'][0].matcher).toEqual({
       app: 'bash',
     });
-    expect(result.hooks['tool.execute.before'][0].async).toBe(true);
-    expect(result.hooks['tool.execute.before'][0].timeout).toBe(10000);
+    expect(result.all['tool.execute.before'][0].async).toBe(true);
+    expect(result.all['tool.execute.before'][0].timeout).toBe(10000);
   });
 });

@@ -26,7 +26,8 @@ export interface ScriptEntry {
 }
 
 export interface ClaudeHookSettings {
-  enabled: boolean;
+  loadGlobalClaudeHooks: boolean;
+  loadLocalClaudeHooks: boolean;
 }
 
 export interface EventOverride {

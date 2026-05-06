@@ -21,7 +21,10 @@ export function createUserConfig(
       outputTitle: 'Script Output',
       errorTitle: 'Script Error',
     },
-    loadClaudeHookSettings: { enabled: false },
+    loadClaudeHookSettings: {
+      loadGlobalClaudeHooks: false,
+      loadLocalClaudeHooks: false,
+    },
     default: {
       debug: false,
       toast: false,

@@ -86,7 +86,7 @@ describe('test-defaults', () => {
       expect(ctx.handlers).toEqual({});
       expect(ctx.getEventConfig).toBeDefined();
       expect(ctx.getToolConfigs).toBeDefined();
-      expect(ctx.claudeScripts).toEqual({});
+      expect(ctx.claudeScripts).toEqual({ global: {}, local: {}, all: {} });
       expect(ctx.claudeUnsupported).toEqual([]);
     });
 
@@ -132,9 +132,13 @@ describe('test-defaults', () => {
 
     it('handles custom claudeScripts', () => {
       const claudeScripts = {
-        pre_task: [
-          { source: 'native' as const, path: 'pre-task.sh', timeout: 5000 },
-        ],
+        global: {},
+        local: {},
+        all: {
+          pre_task: [
+            { source: 'native' as const, path: 'pre-task.sh', timeout: 5000 },
+          ],
+        },
       };
       const ctx = createDefaultContext({ claudeScripts });
       expect(ctx.claudeScripts).toEqual(claudeScripts);

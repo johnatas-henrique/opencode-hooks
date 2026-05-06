@@ -60,7 +60,7 @@ fi
 # Block .env file reads (credential exposure).
 # Match `.env` as a standalone token — NOT `.env.example`, `.environment`, etc.
 # After `.env` we require end-of-string, whitespace, or a shell metachar.
-if echo "$COMMAND" | grep -qE '(^|[[:space:];&|])(cat|less|head|tail|more|source|grep|sed|awk|bat)([[:space:]][^;&|>]*)?[[:space:]]([^[:space:];&|>]*/)?\.env([[:space:];&|>]|$)|echo.*\$\(.*([^[:space:];&|>]*/)?\.env([[:space:];&|>]|$)'; then
+if echo "$COMMAND" | grep -qE '(^|[[:space:];&|])(cat|less|head|tail|more|source|grep|sed|awk|bat|rtk)([[:space:]][^;&|>]*)?([^[:space:];&|>]*/)?\.env([[:space:];&|>]|$)|echo.*\$\(.*([^[:space:];&|>]*/)?\.env([[:space:];&|>]|$)'; then
   deny "Blocked .env file access. Credentials should not be read by the agent."
 fi
 

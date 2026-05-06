@@ -1,7 +1,5 @@
-import type {
-  UserEventsConfig,
-  ScriptEntry,
-} from '.opencode/plugins/types/config';
+import type { UserEventsConfig } from '.opencode/plugins/types/config';
+import type { EventInput } from '.opencode/plugins/types/core';
 import type {
   EventHandler,
   ConfigResolverContext,
@@ -17,14 +15,6 @@ export function createContext(
   userConfig: UserEventsConfig,
   eventHandlers?: Record<string, EventHandler>
 ): ConfigResolverContext {
-  let claudeScripts: Record<string, ScriptEntry[]> = {};
-  let claudeUnsupported: string[] = [];
-  if (userConfig.loadClaudeHookSettings.enabled) {
-    const result = loadClaudeSettings(process.cwd());
-    claudeScripts = result.hooks;
-    claudeUnsupported = result.unsupported;
-  }
-
   return {
     get enabled() {
       return userConfig.enabled;
@@ -38,16 +28,53 @@ export function createContext(
     get handlers() {
       return eventHandlers ?? handlers;
     },
+    getEventConfig: (eventType: string) =>
+      userConfig.events[eventType as keyof typeof userConfig.events],
+    getToolConfigs: (toolEventType: string) =>
+      userConfig.tools[toolEventType as keyof typeof userConfig.tools],
+    getProjectDir: (input?: EventInput) => {
+      const props = input?.properties as Record<string, unknown> | undefined;
+      if (props?.cwd && typeof props.cwd === 'string') {
+        return props.cwd;
+      }
+      try {
+        return process.cwd();
+      } catch {
+        return '/home/johnatas/projects/opencode-hooks';
+      }
+    },
+    getClaudeScripts: (projectDir: string) => {
+      const { loadGlobalClaudeHooks, loadLocalClaudeHooks } =
+        userConfig.loadClaudeHookSettings;
+      if (!loadGlobalClaudeHooks && !loadLocalClaudeHooks) {
+        return { global: {}, local: {}, all: {} };
+      }
+      const result = loadClaudeSettings(projectDir, {
+        loadGlobal: loadGlobalClaudeHooks,
+        loadLocal: loadLocalClaudeHooks,
+      });
+      return { global: result.global, local: result.local, all: result.all };
+    },
     get claudeScripts() {
-      return claudeScripts;
+      const { loadGlobalClaudeHooks, loadLocalClaudeHooks } =
+        userConfig.loadClaudeHookSettings;
+      if (!loadGlobalClaudeHooks && !loadLocalClaudeHooks) {
+        return { global: {}, local: {}, all: {} };
+      }
+      try {
+        const projectDir = process.cwd();
+        const result = loadClaudeSettings(projectDir, {
+          loadGlobal: loadGlobalClaudeHooks,
+          loadLocal: loadLocalClaudeHooks,
+        });
+        return { global: result.global, local: result.local, all: result.all };
+      } catch {
+        return { global: {}, local: {}, all: {} };
+      }
     },
     get claudeUnsupported() {
-      return claudeUnsupported;
+      return [];
     },
-    getEventConfig: (eventType) =>
-      userConfig.events[eventType as keyof typeof userConfig.events],
-    getToolConfigs: (toolEventType) =>
-      userConfig.tools[toolEventType as keyof typeof userConfig.tools],
   };
 }
 

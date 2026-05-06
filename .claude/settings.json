@@ -53,6 +53,17 @@
             "statusMessage": "Checking command safety..."
           }
         ]
+      },
+      {
+        "matcher": "Read|filesystem_read_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-sensitive.sh",
+            "timeout": 5,
+            "statusMessage": "Checking command safety..."
+          }
+        ]
       }
     ]
   }

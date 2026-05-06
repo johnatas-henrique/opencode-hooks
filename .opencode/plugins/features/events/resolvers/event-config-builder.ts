@@ -57,7 +57,7 @@ export class ConfigBuilder {
       config.scripts,
       this.eventType,
       undefined,
-      this.context.claudeScripts
+      this.context.claudeScripts.all
     );
     if (merged === config.scripts) return config;
     return { ...config, scripts: merged };

@@ -15,7 +15,11 @@ export interface CreateContextOptions {
   getToolConfigs?: (
     toolEventType: string
   ) => Record<string, unknown> | undefined;
-  claudeScripts?: Record<string, ScriptEntry[]>;
+  claudeScripts?: {
+    global: Record<string, ScriptEntry[]>;
+    local: Record<string, ScriptEntry[]>;
+    all: Record<string, ScriptEntry[]>;
+  };
   claudeUnsupported?: string[];
   scriptToasts?: {
     showOutput: boolean;
@@ -47,8 +51,19 @@ export function createContext(
       options.getToolConfigs?.(toolEventType) as
         | Record<string, ToolConfig>
         | undefined,
-    claudeScripts: options.claudeScripts ?? {},
+    claudeScripts: options.claudeScripts ?? {
+      global: {},
+      local: {},
+      all: {},
+    },
     claudeUnsupported: options.claudeUnsupported ?? [],
+    getProjectDir: () => '/tmp/test',
+    getClaudeScripts: () =>
+      options.claudeScripts ?? {
+        global: {},
+        local: {},
+        all: {},
+      },
     scriptToasts: options.scriptToasts ?? {
       showOutput: true,
       showError: true,

@@ -67,7 +67,7 @@ describe('userConfig', () => {
     expect(events['session.compacted']).toEqual({ toast: true });
     expect(events['session.diff']).toEqual({ enabled: false });
     expect(events['session.status']).toEqual({ enabled: false });
-    expect(events['session.idle']).toEqual({ toast: true });
+    expect(events['session.idle']).toEqual({ enabled: false });
     expect(events['session.error']).toEqual({ toast: true });
   });
 

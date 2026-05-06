@@ -49,7 +49,7 @@ describe('createContext', () => {
   it('returns empty claudeScripts by default', () => {
     const userCfg = createUserConfig();
     const ctx = createContext(userCfg);
-    expect(ctx.claudeScripts).toEqual({});
+    expect(ctx.claudeScripts).toEqual({ global: {}, local: {}, all: {} });
     expect(ctx.claudeUnsupported).toEqual([]);
   });
 
@@ -101,7 +101,10 @@ describe('createContext', () => {
       })
     );
     const userCfg = createUserConfig({
-      loadClaudeHookSettings: { enabled: true },
+      loadClaudeHookSettings: {
+        loadGlobalClaudeHooks: true,
+        loadLocalClaudeHooks: true,
+      },
     });
     const ctx = createContext(userCfg);
     expect(ctx.claudeScripts).not.toEqual({});

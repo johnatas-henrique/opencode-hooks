@@ -8,6 +8,7 @@ import type {
   ResolvedEventConfig,
   ScriptEntry,
 } from '.opencode/plugins/types/config';
+import type { EventInput } from '.opencode/plugins/types/core';
 
 export interface EventHandler {
   title: string;
@@ -28,7 +29,18 @@ export interface ConfigResolverContext {
   readonly getToolConfigs: (
     toolEventType: string
   ) => Record<string, ToolConfig> | undefined;
-  readonly claudeScripts: Record<string, ScriptEntry[]>;
+  readonly getProjectDir: (input?: EventInput) => string;
+  readonly getClaudeScripts: (projectDir: string) => {
+    global: Record<string, ScriptEntry[]>;
+    local: Record<string, ScriptEntry[]>;
+    all: Record<string, ScriptEntry[]>;
+  };
+  // Legacy properties for backward compatibility
+  readonly claudeScripts: {
+    global: Record<string, ScriptEntry[]>;
+    local: Record<string, ScriptEntry[]>;
+    all: Record<string, ScriptEntry[]>;
+  };
   readonly claudeUnsupported: string[];
 }
 

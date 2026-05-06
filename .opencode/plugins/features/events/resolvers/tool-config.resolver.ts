@@ -195,7 +195,8 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       return this.applyClaudeScripts(
         baseWithToolHandler,
         toolEventType,
-        toolName
+        toolName,
+        input
       );
     }
 
@@ -206,13 +207,15 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
         this.getDefaultScript(toolEventType),
       baseWithToolHandler.scripts
     );
-    const toastCfg = resolveToastOverride(toolConfig);
 
+    const toastCfg = resolveToastOverride(toolConfig);
+    const projectDir = this.context.getProjectDir(input);
+    const claudeScripts = this.context.getClaudeScripts(projectDir);
     const mergedScripts = mergeClaudeScripts(
       scripts,
       toolEventType,
       toolName,
-      this.context.claudeScripts
+      claudeScripts.all
     );
 
     return {
@@ -271,17 +274,24 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
   private applyClaudeScripts(
     config: ResolvedEventConfig,
     toolEventType: string,
-    toolName: string
+    toolName: string,
+    input?: Record<string, unknown>
   ): ResolvedEventConfig {
-    if (!config.runScripts) return config;
-    const merged = mergeClaudeScripts(
+    const projectDir = this.context.getProjectDir(input);
+    const claudeScripts = this.context.getClaudeScripts(projectDir);
+    const mergeResult = mergeClaudeScripts(
       config.scripts,
       toolEventType,
       toolName,
-      this.context.claudeScripts
+      claudeScripts.all
     );
-    if (merged === config.scripts) return config;
-    return { ...config, scripts: merged };
+
+    // Ativar runScripts se houver scripts externa
+    if (mergeResult.length > config.scripts.length && !config.runScripts) {
+      return { ...config, scripts: mergeResult, runScripts: true };
+    }
+    if (mergeResult === config.scripts) return config;
+    return { ...config, scripts: mergeResult };
   }
 
   private resolveBase(

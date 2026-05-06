@@ -47,6 +47,16 @@ import {
 import fs from 'fs';
 import path from 'path';
 
+const DEBUG_FILE = '/tmp/claude-hooks-debug.json';
+
+function writeDebug(info: Record<string, unknown>) {
+  try {
+    fs.appendFileSync(DEBUG_FILE, JSON.stringify(info, null, 2) + '\n');
+  } catch {
+    // ignore
+  }
+}
+
 function getDebugLogPath(): string {
   return path.join(
     process.cwd(),
@@ -166,6 +176,38 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     })
   );
 
+  writeDebug({
+    opencode_hooks_180: {
+      eventId: Date.now(),
+      line: 174,
+      resolvedConfig: {
+        enabled: resolved.enabled,
+        toast: resolved.toast,
+        toastTitle: resolved.toastTitle,
+        scriptToasts: resolved.scriptToasts,
+        debug: resolved.debug,
+        runScripts: resolved.runScripts,
+        scriptsCount: resolved.scripts.length,
+      },
+      eventType,
+      toolName,
+      sessionId,
+      results,
+    },
+  });
+
+  writeDebug({
+    opencode_hooks_210: {
+      eventId: Date.now(),
+      line: 186,
+      results: results.map((r) => ({
+        script: r.script,
+        exitCode: r.exitCode,
+        output: r.output?.substring(0, 100),
+      })),
+    },
+  });
+
   if (eventType === 'session.idle') {
     const anyBlocked = results.some(
       (r) => r.exitCode === 2 || r.output?.includes('block')
@@ -175,44 +217,6 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     } else if (stopHookActive) {
       clearStopHookState(sessionId);
     }
-  }
-
-  if (
-    eventType === 'tool.execute.before' ||
-    eventType === 'command.execute.before'
-  ) {
-    const blockedScript = results.find((r) => r.exitCode === 2);
-    if (blockedScript) {
-      throw new Error(blockedScript.output);
-    }
-  }
-
-  const successfulScripts = results
-    .filter(
-      (
-        result
-      ): result is { script: string; output: string; exitCode: number } =>
-        result.output !== undefined
-    )
-    .filter((result) => result.output.trim() !== '');
-
-  if (
-    resolved.toast &&
-    successfulScripts.length > 0 &&
-    resolved.scriptToasts?.showOutput
-  ) {
-    const outputTitle = resolved.toastTitle.replace(
-      /=+$/,
-      ` ${resolved.scriptToasts?.outputTitle}====`
-    );
-    useGlobalToastQueue().add({
-      title: outputTitle,
-      message: successfulScripts
-        .map((result) => `- ${result.script}:\n${result.output}`)
-        .join('\n\n'),
-      variant: resolved.scriptToasts.outputVariant,
-      duration: resolved.scriptToasts.outputDuration,
-    });
   }
 
   if (scriptRecorder) {
@@ -235,6 +239,19 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
 
   if (resolved.scriptToasts?.showError) {
     const failedScripts = results.filter((r) => r.exitCode !== 0 && r.output);
+    writeDebug({
+      opencode_hooks_288: {
+        eventId: Date.now(),
+        line: 288,
+        showError: resolved.scriptToasts?.showError,
+        failedScriptsCount: failedScripts.length,
+        failedScripts: failedScripts.map((r) => ({
+          script: r.script,
+          exitCode: r.exitCode,
+          output: r.output?.substring(0, 100),
+        })),
+      },
+    });
     if (failedScripts.length > 0) {
       const errorTitle = resolved.toastTitle.replace(
         /=+$/,
@@ -258,11 +275,44 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     }
   }
 
+  const successfulScripts = results.filter(
+    (result) => result.output.trim() !== ''
+  );
+
+  if (
+    resolved.toast &&
+    successfulScripts.length > 0 &&
+    resolved.scriptToasts?.showOutput
+  ) {
+    const outputTitle = resolved.toastTitle.replace(
+      /=+$/,
+      ` ${resolved.scriptToasts?.outputTitle}====`
+    );
+    useGlobalToastQueue().add({
+      title: outputTitle,
+      message: successfulScripts
+        .map((result) => `- ${result.script}:\n${result.output}`)
+        .join('\n\n'),
+      variant: resolved.scriptToasts.outputVariant,
+      duration: resolved.scriptToasts.outputDuration,
+    });
+  }
+
   if (resolved.appendToSession) {
     for (const r of successfulScripts) {
       if (r.output) {
         await appendToSession(params.ctx, sessionId, r.output);
       }
+    }
+  }
+
+  if (
+    eventType === 'tool.execute.before' ||
+    eventType === 'command.execute.before'
+  ) {
+    const blockedScript = results.find((r) => r.exitCode === 2);
+    if (blockedScript) {
+      throw new Error(blockedScript.output);
     }
   }
 }

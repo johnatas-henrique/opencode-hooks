@@ -50,12 +50,17 @@ export function mergeClaudeScripts(
 
   const filtered = toolName
     ? eventClaudeScripts.filter((s) => {
-        if (!s.matcher) return true;
-        try {
-          return new RegExp(s.matcher).test(toolName);
-        } catch {
-          return false;
-        }
+        const matchResult = s.matcher
+          ? (() => {
+              try {
+                return new RegExp(s.matcher, 'i').test(toolName);
+              } catch {
+                return false;
+              }
+            })()
+          : true;
+
+        return matchResult;
       })
     : eventClaudeScripts;
 

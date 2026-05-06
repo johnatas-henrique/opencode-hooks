@@ -44,7 +44,10 @@ export function createDefaultSettings(): Record<string, unknown> {
       logDisabledEvents: false,
       showPluginStatus: true,
       pluginStatusDisplayMode: 'user-only',
-      loadClaudeHookSettings: { enabled: false },
+      loadClaudeHookSettings: {
+        loadGlobalClaudeHooks: false,
+        loadLocalClaudeHooks: false,
+      },
       scriptToasts: {
         showOutput: true,
         showError: true,

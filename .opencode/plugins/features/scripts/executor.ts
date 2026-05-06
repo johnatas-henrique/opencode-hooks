@@ -86,7 +86,10 @@ export function parseHookOutput(
   exitCode: number
 ): HookResult {
   if (exitCode === 2) {
-    return { action: 'block', reason: stderr || 'Blocked by exit code 2' };
+    return {
+      action: 'block',
+      reason: stderr || stdout || 'Blocked by exit code 2',
+    };
   }
 
   if (exitCode !== 0) {
@@ -254,14 +257,9 @@ export async function executeScript(
     }
   }
 
-  const args =
-    scriptEntry.source === 'native'
-      ? (toolName ? [toolName] : [eventType]).map(sanitizeArg)
-      : [];
-
   return new Promise<{ script: string; output: string; exitCode: number }>(
     (resolve) => {
-      const proc = spawn(scriptPath, args, {
+      const proc = spawn(scriptPath, [], {
         stdio: stdin ? ['pipe', 'pipe', 'pipe'] : ['inherit', 'pipe', 'pipe'],
         env: { ...process.env, CLAUDE_PLUGIN_ROOT: process.cwd() },
       });
@@ -274,8 +272,12 @@ export async function executeScript(
       const outChunks: Buffer[] = [];
       const errChunks: Buffer[] = [];
 
-      proc.stdout!.on('data', (d: Buffer) => outChunks.push(d));
-      proc.stderr!.on('data', (d: Buffer) => errChunks.push(d));
+      proc.stdout!.on('data', (d: Buffer) => {
+        outChunks.push(d);
+      });
+      proc.stderr!.on('data', (d: Buffer) => {
+        errChunks.push(d);
+      });
 
       proc.on('close', (code) => {
         const stdout = Buffer.concat(outChunks).toString();
@@ -310,7 +312,7 @@ export async function executeScript(
           return;
         }
 
-        resolve({ script: scriptEntry.path, output: stdout, exitCode: 0 });
+        resolve({ script: scriptEntry.path, output: stdout, exitCode: code });
       });
 
       proc.on('error', (err) => {

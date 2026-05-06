@@ -81,11 +81,10 @@ export const userConfig: UserEventsConfig = {
     },
     [OpenCodeEvents.SESSION_COMPACTED]: { toast: true },
     [OpenCodeEvents.SESSION_DELETED]: {
-      toast: true,
       runScripts: true,
       scripts: [{ source: 'native', path: 'mempalace-exit.sh' }],
     },
-    [OpenCodeEvents.SESSION_IDLE]: { toast: true },
+    [OpenCodeEvents.SESSION_IDLE]: { enabled: false },
     [OpenCodeEvents.SESSION_DIFF]: { enabled: false },
     [OpenCodeEvents.SESSION_ERROR]: { toast: true },
     [OpenCodeEvents.SESSION_STATUS]: { enabled: false },
@@ -116,7 +115,7 @@ export const userConfig: UserEventsConfig = {
     [OpenCodeEvents.SHELL_ENV]: { enabled: false },
 
     [OpenCodeEvents.EXPERIMENTAL_SESSION_COMPACTING]: {
-      toast: true,
+      runScripts: true,
       scripts: [{ source: 'native', path: 'mempalace-wake.sh' }],
     },
 

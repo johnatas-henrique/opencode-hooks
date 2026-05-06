@@ -24,7 +24,7 @@ const CLAUDE_EVENT_MAP: Record<string, string> = {
   FileChanged: 'file.watcher.updated',
 };
 
-function deepMerge(
+function _deepMerge(
   a: Record<string, unknown>,
   b: Record<string, unknown>
 ): Record<string, unknown> {
@@ -40,7 +40,7 @@ function deepMerge(
       valA !== null &&
       !Array.isArray(valA)
     ) {
-      result[key] = deepMerge(
+      result[key] = _deepMerge(
         valA as Record<string, unknown>,
         valB as Record<string, unknown>
       );
@@ -49,6 +49,33 @@ function deepMerge(
     }
   }
   return result;
+}
+
+function mergeHooksStrategyA(
+  global: Record<string, ClaudeHookGroup[]> | undefined,
+  local: Record<string, ClaudeHookGroup[]> | undefined
+): Record<string, ClaudeHookGroup[]> {
+  const merged: Record<string, ClaudeHookGroup[]> = {};
+
+  const allKeys = new Set<string>();
+  if (global) {
+    for (const key of Object.keys(global)) allKeys.add(key);
+  }
+  if (local) {
+    for (const key of Object.keys(local)) allKeys.add(key);
+  }
+
+  for (const key of allKeys) {
+    const g = global?.[key];
+    const l = local?.[key];
+    if (l && l.length > 0) {
+      merged[key] = l;
+    } else if (g && g.length > 0) {
+      merged[key] = g;
+    }
+  }
+
+  return merged;
 }
 
 function extractCommandPath(command: string, projectDir: string = ''): string {
@@ -90,49 +117,105 @@ export function mapClaudeHookToOpenCode(
   return { openCodeEvent, scripts, unsupported: [] };
 }
 
-export function loadClaudeSettings(projectDir: string): {
-  hooks: Record<string, ScriptEntry[]>;
+export function loadClaudeSettings(
+  projectDir: string,
+  opts?: { loadGlobal?: boolean; loadLocal?: boolean }
+): {
+  global: Record<string, ScriptEntry[]>;
+  local: Record<string, ScriptEntry[]>;
+  all: Record<string, ScriptEntry[]>;
   unsupported: string[];
 } {
-  const hierarchy = [
-    path.join(os.homedir(), '.claude/settings.json'),
-    path.join(projectDir, '.claude/settings.json'),
-    path.join(projectDir, '.claude/settings.local.json'),
-  ];
+  const loadGlobal = opts?.loadGlobal ?? true;
+  const loadLocal = opts?.loadLocal ?? true;
 
-  let merged: Record<string, unknown> = {};
-  for (const file of hierarchy) {
-    if (fs.existsSync(file)) {
-      const content = fs.readFileSync(file, 'utf-8');
-      const settings = JSON.parse(content) as Record<string, unknown>;
-      merged = deepMerge(merged, settings);
-    }
+  // Estratégia A: global > local
+  // Hierarquia: global > local (priority 2 > priority 1)
+  const globalPath = path.join(os.homedir(), '.claude/settings.json');
+  const localPath = path.join(projectDir, '.claude/settings.json');
+  const localOverridePath = path.join(
+    projectDir,
+    '.claude/settings.local.json'
+  );
+
+  let globalHooks: Record<string, ClaudeHookGroup[]> | undefined;
+  let localHooks: Record<string, ClaudeHookGroup[]> | undefined;
+  let localOverrideHooks: Record<string, ClaudeHookGroup[]> | undefined;
+
+  if (loadGlobal && fs.existsSync(globalPath)) {
+    const globalSettings = JSON.parse(
+      fs.readFileSync(globalPath, 'utf-8')
+    ) as ClaudeSettings;
+    globalHooks = globalSettings.hooks;
   }
 
-  const settings = merged as ClaudeSettings;
-  if (!settings.hooks || settings.disableAllHooks) {
-    return { hooks: {}, unsupported: [] };
+  if (loadLocal && fs.existsSync(localPath)) {
+    const localSettings = JSON.parse(
+      fs.readFileSync(localPath, 'utf-8')
+    ) as ClaudeSettings;
+    localHooks = localSettings.hooks;
   }
 
-  const result: Record<string, ScriptEntry[]> = {};
-  const allUnsupported: string[] = [];
+  if (fs.existsSync(localOverridePath)) {
+    const overrideSettings = JSON.parse(
+      fs.readFileSync(localOverridePath, 'utf-8')
+    ) as ClaudeSettings;
+    localOverrideHooks = overrideSettings.hooks;
+  }
 
-  for (const [claudeEventName, groups] of Object.entries(settings.hooks)) {
+  // Mapear cada fonte separadamente
+  const globalScripts = mapAllHooksToOpenCode(globalHooks, projectDir);
+  const localScripts = mapAllHooksToOpenCode(localHooks, projectDir);
+
+  // Merge estratégia A: localOverride > local > global
+  const mergedHooks = mergeHooksStrategyA(
+    mergeHooksStrategyA(globalHooks, localHooks),
+    localOverrideHooks
+  );
+  const allScripts = mapAllHooksToOpenCode(mergedHooks, projectDir);
+
+  const unsupported: string[] = [];
+  for (const [claudeEventName, groups] of Object.entries(mergedHooks ?? {})) {
     for (const group of groups) {
       const mapped = mapClaudeHookToOpenCode(
         claudeEventName,
         group,
         projectDir
       );
-      allUnsupported.push(...mapped.unsupported);
-      if (mapped.openCodeEvent) {
-        if (!result[mapped.openCodeEvent]) {
-          result[mapped.openCodeEvent] = [];
-        }
-        result[mapped.openCodeEvent].push(...mapped.scripts);
+      unsupported.push(...mapped.unsupported);
+    }
+  }
+
+  return {
+    global: globalScripts,
+    local: localScripts,
+    all: allScripts,
+    unsupported,
+  };
+}
+
+function mapAllHooksToOpenCode(
+  hooks: Record<string, ClaudeHookGroup[]> | undefined,
+  projectDir: string
+): Record<string, ScriptEntry[]> {
+  if (!hooks) return {};
+  const result: Record<string, ScriptEntry[]> = {};
+
+  for (const [claudeEventName, groups] of Object.entries(hooks)) {
+    for (const group of groups) {
+      const mapped = mapClaudeHookToOpenCode(
+        claudeEventName,
+        group,
+        projectDir
+      );
+      if (mapped.openCodeEvent && mapped.scripts.length > 0) {
+        result[mapped.openCodeEvent] = [
+          ...(result[mapped.openCodeEvent] || []),
+          ...mapped.scripts,
+        ];
       }
     }
   }
 
-  return { hooks: result, unsupported: allUnsupported };
+  return result;
 }

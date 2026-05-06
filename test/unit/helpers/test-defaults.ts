@@ -61,8 +61,10 @@ export function createDefaultContext(
     handlers: {},
     getEventConfig: () => undefined,
     getToolConfigs: () => undefined,
-    claudeScripts: {},
+    claudeScripts: { global: {}, local: {}, all: {} },
     claudeUnsupported: [],
+    getProjectDir: () => '/tmp/test',
+    getClaudeScripts: () => ({ global: {}, local: {}, all: {} }),
     ...overrides,
   };
 }
