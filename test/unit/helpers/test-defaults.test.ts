@@ -32,7 +32,6 @@ describe('test-defaults', () => {
   describe('createDefaultEventOverride', () => {
     it('creates default event override', () => {
       const result = createDefaultEventOverride();
-      expect(result.debug).toBe(false);
       expect(result.toast).toBe(false);
       expect(result.runScripts).toBe(false);
       expect(result.runOnlyOnce).toBe(false);
@@ -86,17 +85,16 @@ describe('test-defaults', () => {
       expect(ctx.handlers).toEqual({});
       expect(ctx.getEventConfig).toBeDefined();
       expect(ctx.getToolConfigs).toBeDefined();
-      expect(ctx.claudeScripts).toEqual({ global: {}, local: {}, all: {} });
-      expect(ctx.claudeUnsupported).toEqual([]);
+      expect(ctx.getClaudeScripts('/test')).toEqual({});
     });
 
     it('allows overrides', () => {
       const ctx = createDefaultContext({
         enabled: false,
-        default: { debug: true },
+        default: { toast: true },
       });
       expect(ctx.enabled).toBe(false);
-      expect(ctx.default.debug).toBe(true);
+      expect(ctx.default.toast).toBe(true);
     });
 
     it('handles custom handlers', () => {
@@ -130,25 +128,18 @@ describe('test-defaults', () => {
       expect(result).toHaveProperty('bash');
     });
 
-    it('handles custom claudeScripts', () => {
-      const claudeScripts = {
-        global: {},
-        local: {},
-        all: {
-          pre_task: [
-            { source: 'native' as const, path: 'pre-task.sh', timeout: 5000 },
-          ],
-        },
-      };
-      const ctx = createDefaultContext({ claudeScripts });
-      expect(ctx.claudeScripts).toEqual(claudeScripts);
-    });
-
-    it('handles custom claudeUnsupported', () => {
-      const ctx = createDefaultContext({
-        claudeUnsupported: ['tool1', 'tool2'],
+    it('handles custom getClaudeScripts', () => {
+      const getClaudeScripts = (_projectDir: string) => ({
+        pre_task: [
+          { source: 'native' as const, path: 'pre-task.sh', timeout: 5000 },
+        ],
       });
-      expect(ctx.claudeUnsupported).toEqual(['tool1', 'tool2']);
+      const ctx = createDefaultContext({ getClaudeScripts });
+      expect(ctx.getClaudeScripts('/test')).toEqual({
+        pre_task: [
+          { source: 'native' as const, path: 'pre-task.sh', timeout: 5000 },
+        ],
+      });
     });
   });
 
@@ -162,7 +153,6 @@ describe('test-defaults', () => {
       const resolver = new MockEventResolver();
       const result = resolver.resolve();
       expect(result.enabled).toBe(true);
-      expect(result.debug).toBe(false);
       expect(result.toast).toBe(false);
       expect(result.toastTitle).toBe('');
       expect(result.toastMessage).toBe('');
@@ -194,7 +184,6 @@ describe('test-defaults', () => {
       const resolver = new MockToolResolver();
       const result = resolver.resolve();
       expect(result.enabled).toBe(true);
-      expect(result.debug).toBe(false);
       expect(result.toast).toBe(false);
       expect(result.toastTitle).toBe('');
       expect(result.toastMessage).toBe('');

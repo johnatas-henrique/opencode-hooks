@@ -20,7 +20,6 @@ export const MOCK_TIMESTAMP = '2026-01-01T00:00:00.000Z';
 
 export function createDefaultEventOverride(): EventOverride {
   return {
-    debug: false,
     toast: false,
     runScripts: false,
     runOnlyOnce: false,
@@ -61,10 +60,8 @@ export function createDefaultContext(
     handlers: {},
     getEventConfig: () => undefined,
     getToolConfigs: () => undefined,
-    claudeScripts: { global: {}, local: {}, all: {} },
-    claudeUnsupported: [],
     getProjectDir: () => '/tmp/test',
-    getClaudeScripts: () => ({ global: {}, local: {}, all: {} }),
+    getClaudeScripts: (_projectDir: string) => ({}),
     ...overrides,
   };
 }
@@ -73,7 +70,6 @@ export class MockEventResolver implements EventConfigResolver {
   resolve() {
     return {
       enabled: true,
-      debug: false,
       toast: false,
       toastTitle: '',
       toastMessage: '',
@@ -102,7 +98,6 @@ export class MockToolResolver implements ToolConfigResolver {
   resolve() {
     return {
       enabled: true,
-      debug: false,
       toast: false,
       toastTitle: '',
       toastMessage: '',

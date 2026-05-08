@@ -15,65 +15,35 @@ export function createContext(
   userConfig: UserEventsConfig,
   eventHandlers?: Record<string, EventHandler>
 ): ConfigResolverContext {
+  const { loadGlobalClaudeHooks, loadLocalClaudeHooks } =
+    userConfig.loadClaudeHookSettings;
+
   return {
-    get enabled() {
-      return userConfig.enabled;
-    },
-    get default() {
-      return userConfig.default;
-    },
-    get scriptToasts() {
-      return userConfig.scriptToasts;
-    },
-    get handlers() {
-      return eventHandlers ?? handlers;
-    },
+    enabled: userConfig.enabled,
+    default: userConfig.default,
+    scriptToasts: userConfig.scriptToasts,
+    handlers: eventHandlers ?? handlers,
+
     getEventConfig: (eventType: string) =>
       userConfig.events[eventType as keyof typeof userConfig.events],
     getToolConfigs: (toolEventType: string) =>
       userConfig.tools[toolEventType as keyof typeof userConfig.tools],
+
     getProjectDir: (input?: EventInput) => {
       const props = input?.properties as Record<string, unknown> | undefined;
-      if (props?.cwd && typeof props.cwd === 'string') {
-        return props.cwd;
-      }
-      try {
-        return process.cwd();
-      } catch {
-        return '/home/johnatas/projects/opencode-hooks';
-      }
+      if (props?.cwd && typeof props.cwd === 'string') return props.cwd;
+      // Let it throw if process.cwd() fails - no silent fallback
+      return process.cwd();
     },
+
+    // ONLY ONE method for Claude scripts
     getClaudeScripts: (projectDir: string) => {
-      const { loadGlobalClaudeHooks, loadLocalClaudeHooks } =
-        userConfig.loadClaudeHookSettings;
-      if (!loadGlobalClaudeHooks && !loadLocalClaudeHooks) {
-        return { global: {}, local: {}, all: {} };
-      }
-      const result = loadClaudeSettings(projectDir, {
+      if (!loadGlobalClaudeHooks && !loadLocalClaudeHooks) return {};
+      // No try-catch: plugin must break if error
+      return loadClaudeSettings(projectDir, {
         loadGlobal: loadGlobalClaudeHooks,
         loadLocal: loadLocalClaudeHooks,
       });
-      return { global: result.global, local: result.local, all: result.all };
-    },
-    get claudeScripts() {
-      const { loadGlobalClaudeHooks, loadLocalClaudeHooks } =
-        userConfig.loadClaudeHookSettings;
-      if (!loadGlobalClaudeHooks && !loadLocalClaudeHooks) {
-        return { global: {}, local: {}, all: {} };
-      }
-      try {
-        const projectDir = process.cwd();
-        const result = loadClaudeSettings(projectDir, {
-          loadGlobal: loadGlobalClaudeHooks,
-          loadLocal: loadLocalClaudeHooks,
-        });
-        return { global: result.global, local: result.local, all: result.all };
-      } catch {
-        return { global: {}, local: {}, all: {} };
-      }
-    },
-    get claudeUnsupported() {
-      return [];
     },
   };
 }

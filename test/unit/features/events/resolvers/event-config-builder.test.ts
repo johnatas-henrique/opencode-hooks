@@ -72,13 +72,9 @@ describe('ConfigBuilder', () => {
     const ctx = createContext({
       handlers: { 'session.created': createHandler() },
       getEventConfig: () => ({ runScripts: true }),
-      claudeScripts: {
-        global: {},
-        local: {},
-        all: {
-          'session.created': [{ source: 'claude', path: 'claude.sh' }],
-        },
-      },
+      getClaudeScripts: () => ({
+        'session.created': [{ source: 'claude', path: 'claude.sh' }],
+      }),
     });
     const builder = new ConfigBuilder(ctx, 'session.created');
     const result = builder.resolve();

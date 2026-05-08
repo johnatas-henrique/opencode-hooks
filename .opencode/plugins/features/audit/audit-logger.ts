@@ -52,16 +52,8 @@ export function createAuditLogger(options: AuditLoggerOptions): AuditLogger {
   const deps = { ...createDefaultDeps(), ...options.deps };
   const writeQueue = new Map<string, Promise<void>>();
 
-  const defaultFiles = {
-    events: 'plugin-events.json',
-    scripts: 'plugin-scripts.json',
-    errors: 'plugin-errors.json',
-    security: 'plugin-security.json',
-    debug: 'plugin-debug.json',
-  };
-
   function getFilePath(fileType: AuditFileType): string {
-    const configFiles = config.files || defaultFiles;
+    const configFiles = config.files;
     const fileName = configFiles[fileType as keyof typeof configFiles];
     return `${basePath}/${fileName}`;
   }

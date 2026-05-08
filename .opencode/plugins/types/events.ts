@@ -30,18 +30,9 @@ export interface ConfigResolverContext {
     toolEventType: string
   ) => Record<string, ToolConfig> | undefined;
   readonly getProjectDir: (input?: EventInput) => string;
-  readonly getClaudeScripts: (projectDir: string) => {
-    global: Record<string, ScriptEntry[]>;
-    local: Record<string, ScriptEntry[]>;
-    all: Record<string, ScriptEntry[]>;
-  };
-  // Legacy properties for backward compatibility
-  readonly claudeScripts: {
-    global: Record<string, ScriptEntry[]>;
-    local: Record<string, ScriptEntry[]>;
-    all: Record<string, ScriptEntry[]>;
-  };
-  readonly claudeUnsupported: string[];
+  readonly getClaudeScripts: (
+    projectDir: string
+  ) => Record<string, ScriptEntry[]>;
 }
 
 export interface ResolverFactory {

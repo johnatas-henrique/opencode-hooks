@@ -78,7 +78,6 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
 
     return {
       enabled: true,
-      debug: getBooleanField(true, defaultCfg, 'debug', false),
       toast: getBooleanField(true, defaultCfg, 'toast', false),
       toastTitle: handler ? handler.title : '',
       toastMessage: handler
@@ -132,7 +131,6 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
         logToAudit: false,
         appendToSession: false,
         runOnlyOnce: false,
-        debug: false,
         scriptToasts: this.context.scriptToasts,
       };
     }
@@ -215,7 +213,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       scripts,
       toolEventType,
       toolName,
-      claudeScripts.all
+      claudeScripts
     );
 
     return {
@@ -225,12 +223,6 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
         defaultCfg,
         'enabled',
         baseWithToolHandler.enabled
-      ),
-      debug: getBooleanField(
-        toolConfig,
-        defaultCfg,
-        'debug',
-        baseWithToolHandler.debug
       ),
       toast: getBooleanField(
         toolConfig,
@@ -283,7 +275,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       config.scripts,
       toolEventType,
       toolName,
-      claudeScripts.all
+      claudeScripts
     );
 
     // Ativar runScripts se houver scripts externa
@@ -312,7 +304,6 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
 
     return {
       enabled: !isDisabled,
-      debug: getBooleanField(cfg, defaultCfg, 'debug', false),
       toast: getBooleanField(cfg, defaultCfg, 'toast', false),
       toastTitle: toastCfg?.title ?? (handler ? handler.title : ''),
       runScripts: getBooleanField(cfg, defaultCfg, 'runScripts', false),

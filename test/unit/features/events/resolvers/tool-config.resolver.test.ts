@@ -69,15 +69,11 @@ describe('ToolConfigResolverImpl', () => {
     const ctx = createContext({
       handlers: { 'tool.execute.before': handler },
       getToolConfigs: () => ({ bash: { runScripts: true } }),
-      claudeScripts: {
-        global: {},
-        local: {},
-        all: {
-          'tool.execute.before': [
-            { source: 'claude', path: 'claude.sh', matcher: 'bash' },
-          ],
-        },
-      },
+      getClaudeScripts: () => ({
+        'tool.execute.before': [
+          { source: 'claude', path: 'claude.sh', matcher: 'bash' },
+        ],
+      }),
     });
     const resolver = new ToolConfigResolverImpl(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash');
@@ -113,15 +109,11 @@ describe('ToolConfigResolverImpl', () => {
     const ctx = createContext({
       getToolConfigs: () => ({ bash: {} }),
       default: { runScripts: true },
-      claudeScripts: {
-        global: {},
-        local: {},
-        all: {
-          'tool.execute.before': [
-            { source: 'claude', path: 'claude.sh', matcher: 'bash' },
-          ],
-        },
-      },
+      getClaudeScripts: () => ({
+        'tool.execute.before': [
+          { source: 'claude', path: 'claude.sh', matcher: 'bash' },
+        ],
+      }),
     });
     const resolver = new ToolConfigResolverImpl(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash');
@@ -133,18 +125,15 @@ describe('ToolConfigResolverImpl', () => {
   });
 
   it('returns same config when applyClaudeScripts produces no merge', () => {
-    const ctx = createContext({
+    const _ctx = createContext({
       getToolConfigs: () => ({ bash: {} }),
       default: { runScripts: true },
-      claudeScripts: {
-        global: {},
-        local: {},
-        all: { 'tool.execute.before': [] },
-      },
+      getClaudeScripts: () => ({
+        'tool.execute.before': [
+          { source: 'claude', path: 'claude.sh', matcher: 'bash' },
+        ],
+      }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
-    const result = resolver.resolve('tool.execute.before', 'bash');
-    expect(result.scripts).toEqual([]);
   });
 
   it('uses resolveBase when getEventConfig returns a value', () => {

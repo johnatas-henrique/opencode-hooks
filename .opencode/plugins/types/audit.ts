@@ -19,7 +19,7 @@ export interface AuditConfig {
   maxFieldSize: number;
   maxArrayItems: number;
   largeFields: string[];
-  files?: {
+  files: {
     events: string;
     scripts: string;
     errors: string;

@@ -26,7 +26,6 @@ export function createUserConfig(
       loadLocalClaudeHooks: false,
     },
     default: {
-      debug: false,
       toast: false,
       runScripts: false,
       runOnlyOnce: false,
@@ -51,6 +50,13 @@ export function createUserConfig(
         'result',
         'text',
       ],
+      files: {
+        events: 'plugin-events.json',
+        scripts: 'plugin-scripts.json',
+        errors: 'plugin-errors.json',
+        security: 'plugin-security.json',
+        debug: 'plugin-debug.json',
+      },
     },
     events: {},
     tools: {

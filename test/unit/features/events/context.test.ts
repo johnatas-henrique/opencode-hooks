@@ -46,11 +46,10 @@ describe('createContext', () => {
     expect(bashCfg).toBeDefined();
   });
 
-  it('returns empty claudeScripts by default', () => {
+  it('returns empty claude scripts by default', () => {
     const userCfg = createUserConfig();
     const ctx = createContext(userCfg);
-    expect(ctx.claudeScripts).toEqual({ global: {}, local: {}, all: {} });
-    expect(ctx.claudeUnsupported).toEqual([]);
+    expect(ctx.getClaudeScripts('/test')).toEqual({});
   });
 
   it('provides scriptToasts from config', () => {
@@ -107,8 +106,8 @@ describe('createContext', () => {
       },
     });
     const ctx = createContext(userCfg);
-    expect(ctx.claudeScripts).not.toEqual({});
-    expect(ctx.claudeUnsupported).toEqual([]);
+    const scripts = ctx.getClaudeScripts('/test');
+    expect(scripts).not.toEqual({});
   });
 });
 

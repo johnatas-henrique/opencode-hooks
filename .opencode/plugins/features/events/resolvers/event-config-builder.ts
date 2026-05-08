@@ -53,11 +53,13 @@ export class ConfigBuilder {
 
   private applyClaudeScripts(config: ResolvedEventConfig): ResolvedEventConfig {
     if (!config.runScripts) return config;
+    const projectDir = this.context.getProjectDir(this.input);
+    const claudeScripts = this.context.getClaudeScripts(projectDir);
     const merged = mergeClaudeScripts(
       config.scripts,
       this.eventType,
       undefined,
-      this.context.claudeScripts.all
+      claudeScripts
     );
     if (merged === config.scripts) return config;
     return { ...config, scripts: merged };
@@ -80,7 +82,6 @@ export class ConfigBuilder {
     const allowedFields = this.handler?.allowedFields;
     return {
       enabled: true,
-      debug: getBooleanField(true, defaultCfg, 'debug', false),
       toast: getBooleanField(true, defaultCfg, 'toast', false),
       toastTitle: this.handler ? this.handler.title : '',
       runScripts: getBooleanField(true, defaultCfg, 'runScripts', false),
@@ -118,7 +119,6 @@ export class ConfigBuilder {
 
     return {
       enabled: true,
-      debug: getBooleanField(this.userEventConfig!, defaultCfg, 'debug', false),
       toast: getBooleanField(this.userEventConfig!, defaultCfg, 'toast', false),
       toastTitle: toastCfg?.title ?? (this.handler ? this.handler.title : ''),
       runScripts: getBooleanField(
