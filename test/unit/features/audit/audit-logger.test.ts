@@ -20,22 +20,7 @@ import {
   archiveFileIfNeeded,
   createAuditLogger,
 } from '.opencode/plugins/features/audit/audit-logger';
-import type { AuditConfig } from '.opencode/plugins/types/audit';
-
-function makeConfig(overrides: Partial<AuditConfig> = {}): AuditConfig {
-  return {
-    enabled: true,
-    level: 'debug',
-    basePath: '/tmp/test-audit',
-    maxSizeMB: 1,
-    maxAgeDays: 30,
-    logTruncationKB: 10,
-    maxFieldSize: 1000,
-    maxArrayItems: 50,
-    largeFields: ['output', 'content'],
-    ...overrides,
-  };
-}
+import { makeAuditConfig as makeConfig } from '../../../helpers/audit-config';
 
 describe('archiveFileIfNeeded', () => {
   beforeEach(() => {

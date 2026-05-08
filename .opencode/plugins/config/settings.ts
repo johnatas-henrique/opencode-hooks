@@ -26,7 +26,6 @@ export const userConfig: UserEventsConfig = {
   },
 
   default: {
-    debug: false,
     toast: false,
     runScripts: false,
     runOnlyOnce: false,
@@ -183,11 +182,20 @@ export const userConfig: UserEventsConfig = {
     [OpenCodeEvents.TOOL_EXECUTE_BEFORE]: {
       task: {},
       skill: {},
-      bash: {},
-      write: {},
-      read: {},
-      edit: {},
+      bash: {
+        runScripts: true,
+        scripts: [{ source: 'native', path: 'type-native-no-verify.sh' }],
+      },
+      write: {
+        runScripts: true,
+        scripts: [{ source: 'claude', path: 'block-env-write.sh' }],
+      },
+      edit: {
+        runScripts: true,
+        scripts: [{ source: 'claude', path: 'block-env-write.sh' }],
+      },
       chat: {},
+      read: {},
       glob: {},
       grep: {},
       list: {},
@@ -198,7 +206,10 @@ export const userConfig: UserEventsConfig = {
       todowrite: {},
       todoread: {},
       question: {},
-      'git.commit': {},
+      'git.commit': {
+        runScripts: true,
+        scripts: [{ source: 'native', path: 'type-native-no-verify.sh' }],
+      },
       'git.push': {},
       'git.pull': {},
       filesystem_read_file: {},

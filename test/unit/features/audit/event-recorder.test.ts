@@ -10,26 +10,11 @@ import {
   createGenericEventRecord,
   createEventRecorder,
 } from '.opencode/plugins/features/audit/event-recorder';
-import type { AuditConfig } from '.opencode/plugins/types/audit';
 import type {
   ToolExecuteBeforeInput,
   ToolExecuteAfterInput,
 } from '.opencode/plugins/types/core';
-
-function makeConfig(overrides: Partial<AuditConfig> = {}): AuditConfig {
-  return {
-    enabled: true,
-    level: 'debug',
-    basePath: '/tmp/test',
-    maxSizeMB: 1,
-    maxAgeDays: 30,
-    logTruncationKB: 10,
-    maxFieldSize: 100,
-    maxArrayItems: 3,
-    largeFields: ['output', 'content'],
-    ...overrides,
-  };
-}
+import { makeAuditConfig as makeConfig } from '../../../helpers/audit-config';
 
 describe('shouldLogEvents', () => {
   it('returns true when enabled and level is debug', () => {

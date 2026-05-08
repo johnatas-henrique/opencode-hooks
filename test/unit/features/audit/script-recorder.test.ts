@@ -5,22 +5,8 @@ import {
   createScriptRecord,
   createScriptRecorder,
 } from '.opencode/plugins/features/audit/script-recorder';
-import type { AuditConfig, ScriptInput } from '.opencode/plugins/types/audit';
-
-function makeConfig(overrides: Partial<AuditConfig> = {}): AuditConfig {
-  return {
-    enabled: true,
-    level: 'debug',
-    basePath: '/tmp/test',
-    maxSizeMB: 1,
-    maxAgeDays: 30,
-    logTruncationKB: 10,
-    maxFieldSize: 100,
-    maxArrayItems: 50,
-    largeFields: ['output'],
-    ...overrides,
-  };
-}
+import type { ScriptInput } from '.opencode/plugins/types/audit';
+import { makeAuditConfig as makeConfig } from '../../../helpers/audit-config';
 
 describe('shouldLogScripts', () => {
   it('returns true when enabled', () => {
