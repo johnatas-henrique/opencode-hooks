@@ -48,7 +48,6 @@ describe('DEFAULTS', () => {
   it('has config.disabled with all fields set', () => {
     const disabled = DEFAULTS.config.disabled;
     expect(disabled.enabled).toBe(false);
-    expect(disabled.debug).toBe(false);
     expect(disabled.toast).toBe(false);
     expect(disabled.toastTitle).toBe('');
     expect(disabled.toastMessage).toBe('');

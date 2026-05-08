@@ -35,7 +35,6 @@ describe('userConfig', () => {
   });
 
   it('has default overrides', () => {
-    expect(userConfig.default.debug).toBe(false);
     expect(userConfig.default.toast).toBe(false);
     expect(userConfig.default.runScripts).toBe(false);
     expect(userConfig.default.runOnlyOnce).toBe(false);

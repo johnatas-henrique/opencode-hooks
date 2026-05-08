@@ -5,7 +5,6 @@ import type { EventOverride } from '.opencode/plugins/types/config';
 
 describe('getBooleanField', () => {
   const defaultCfg: EventOverride = {
-    debug: true,
     toast: true,
     runScripts: false,
     runOnlyOnce: false,
@@ -31,31 +30,6 @@ describe('getBooleanField', () => {
   it('delegates toast key to resolveDefaultToast with undefined defaultCfg', () => {
     const result = getBooleanField({ enabled: true }, undefined, 'toast', true);
     expect(result).toBe(false);
-  });
-
-  it('reads debug from eventCfg object', () => {
-    const result = getBooleanField(
-      { enabled: true, debug: true },
-      defaultCfg,
-      'debug',
-      false
-    );
-    expect(result).toBe(true);
-  });
-
-  it('reads debug from defaultCfg when eventCfg is boolean', () => {
-    const result = getBooleanField(true, defaultCfg, 'debug', false);
-    expect(result).toBe(true);
-  });
-
-  it('falls back to defaultCfg when eventCfg is object but key is undefined', () => {
-    const result = getBooleanField(
-      { enabled: true },
-      defaultCfg,
-      'debug',
-      false
-    );
-    expect(result).toBe(true);
   });
 
   it('uses fallback when eventCfg is boolean and defaultCfg has the key as false', () => {
@@ -88,11 +62,11 @@ describe('getBooleanField', () => {
     expect(result).toBe(false);
   });
 
-  it('uses fallback when defaultCfg is null', () => {
+  it('uses fallback when defaultCfg is null for appendToSession', () => {
     const result = getBooleanField(
       true,
       fromAny<EventOverride, null>(null),
-      'debug',
+      'appendToSession',
       true
     );
     expect(result).toBe(true);

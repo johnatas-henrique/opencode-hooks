@@ -32,7 +32,6 @@ export interface ClaudeHookSettings {
 
 export interface EventOverride {
   enabled?: boolean;
-  debug?: boolean;
   toast?: boolean | ToastOverride;
   scripts?: ScriptEntry[];
   runScripts?: boolean;
@@ -80,7 +79,6 @@ export interface UserEventsConfig {
 
 export interface ResolvedEventConfig {
   enabled: boolean;
-  debug: boolean;
   toast: boolean;
   toastTitle: string;
   toastMessage: string;
@@ -109,7 +107,6 @@ export interface FileTemplate {
 
 export interface ToolOverride {
   enabled?: boolean;
-  debug?: boolean;
   toast?: boolean | ToolOverride;
   scripts?: ScriptEntry[];
   runScripts?: boolean;

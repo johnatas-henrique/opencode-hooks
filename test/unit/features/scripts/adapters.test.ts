@@ -74,7 +74,6 @@ describe('createSessionAdapter', () => {
       eventType: 'session.created',
       resolved: {
         enabled: true,
-        debug: false,
         toast: false,
         toastTitle: '',
         toastMessage: '',

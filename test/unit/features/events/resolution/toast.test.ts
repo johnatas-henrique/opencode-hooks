@@ -40,7 +40,6 @@ describe('resolveToastOverride', () => {
 
 describe('resolveToastEnabled', () => {
   const defaultCfg = fromPartial<EventOverride>({
-    debug: false,
     toast: { enabled: true },
     runScripts: false,
     runOnlyOnce: false,
@@ -108,7 +107,6 @@ describe('resolveDefaultToast', () => {
 
   it('returns toast.enabled when defaultCfg.toast is an object with enabled true', () => {
     const result = resolveDefaultToast({
-      debug: false,
       toast: { enabled: true },
       runScripts: false,
       runOnlyOnce: false,
@@ -120,7 +118,6 @@ describe('resolveDefaultToast', () => {
 
   it('returns toast.enabled when defaultCfg.toast is an object with enabled false', () => {
     const result = resolveDefaultToast({
-      debug: false,
       toast: { enabled: false },
       runScripts: false,
       runOnlyOnce: false,
@@ -132,7 +129,6 @@ describe('resolveDefaultToast', () => {
 
   it('returns true when defaultCfg.toast is object without enabled', () => {
     const result = resolveDefaultToast({
-      debug: false,
       toast: { title: 'test' },
       runScripts: false,
       runOnlyOnce: false,

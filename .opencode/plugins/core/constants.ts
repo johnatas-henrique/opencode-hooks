@@ -47,7 +47,6 @@ export const DEFAULTS: DefaultsConfig = {
   config: {
     disabled: {
       enabled: false,
-      debug: false,
       toast: false,
       toastTitle: '',
       toastMessage: '',

@@ -6,7 +6,6 @@ import type { ChildProcess } from 'child_process';
 import { spawn } from 'child_process';
 import { fromAny } from '@total-typescript/shoehorn';
 import * as startupToastModule from '.opencode/plugins/features/messages/show-startup-toast';
-import * as debugModule from '.opencode/plugins/core/debug';
 
 const mockFsObj = vi.hoisted(() => ({
   existsSync: vi.fn<(path: string) => boolean>().mockReturnValue(true),
@@ -125,7 +124,6 @@ function createMockResolvedConfig(
 ): ResolvedEventConfig {
   return {
     enabled: true,
-    debug: false,
     toast: false,
     toastTitle: '',
     toastMessage: '',
@@ -347,25 +345,6 @@ describe('OpencodeHooks', () => {
       });
 
       expect(hooks).toBeDefined();
-    });
-
-    it('calls handleDebugLog when resolved config has debug enabled', async () => {
-      const debugSpy = vi
-        .spyOn(debugModule, 'handleDebugLog')
-        .mockResolvedValue(undefined);
-
-      vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
-        createMockResolvedConfig({ debug: true })
-      );
-
-      await hooks.event!({
-        event: {
-          type: 'session.created',
-          properties: { info: { id: 'ses_123' } },
-        } as Event,
-      });
-
-      expect(debugSpy).toHaveBeenCalled();
     });
 
     it('shows toast when resolved config has toast enabled', async () => {

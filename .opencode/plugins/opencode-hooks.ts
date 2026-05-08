@@ -23,7 +23,6 @@ import {
   resolveEventConfig,
   resolveToolConfig,
 } from '.opencode/plugins/features/events/events';
-import { handleDebugLog } from '.opencode/plugins/core/debug';
 import { getEventRecorder } from '.opencode/plugins/features/audit/plugin-integration';
 import {
   addSubagentSession,
@@ -47,35 +46,18 @@ import {
 import fs from 'fs';
 import path from 'path';
 
-const DEBUG_FILE = '/tmp/claude-hooks-debug.json';
+const DEBUG_FILE = path.join(
+  process.cwd(),
+  'production',
+  'session-logs',
+  'plugin-debug.json'
+);
 
 function writeDebug(info: Record<string, unknown>) {
   try {
     fs.appendFileSync(DEBUG_FILE, JSON.stringify(info, null, 2) + '\n');
   } catch {
     // ignore
-  }
-}
-
-function getDebugLogPath(): string {
-  return path.join(
-    process.cwd(),
-    'production',
-    'session-logs',
-    'audit-debug.log'
-  );
-}
-
-function debugLog(...args: unknown[]): void {
-  try {
-    const logPath = getDebugLogPath();
-    const timestamp = new Date().toISOString();
-    const message = args
-      .map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a)))
-      .join(' ');
-    fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
-  } catch {
-    // Silently ignore if we can't write to debug log
   }
 }
 
@@ -112,20 +94,11 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
     scriptRecorder,
   } = params;
   const sessionId = getNormalizedSessionId(rawSessionId);
-  const timestamp = new Date().toISOString();
   void params.eventRecorder;
   void params.ctx;
 
   if (resolved.runOnlyOnce && isSubagent(rawSessionId)) {
     return;
-  }
-
-  if (resolved.debug) {
-    await handleDebugLog(timestamp, `DEBUG ${eventType.toUpperCase()}`, {
-      input,
-      output,
-      resolved,
-    });
   }
 
   if (!resolved.enabled) {
@@ -185,7 +158,6 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
         toast: resolved.toast,
         toastTitle: resolved.toastTitle,
         scriptToasts: resolved.scriptToasts,
-        debug: resolved.debug,
         runScripts: resolved.runScripts,
         scriptsCount: resolved.scripts.length,
       },
@@ -239,19 +211,6 @@ async function executeHook(params: ExecuteHookParams): Promise<void> {
 
   if (resolved.scriptToasts?.showError) {
     const failedScripts = results.filter((r) => r.exitCode !== 0 && r.output);
-    writeDebug({
-      opencode_hooks_288: {
-        eventId: Date.now(),
-        line: 288,
-        showError: resolved.scriptToasts?.showError,
-        failedScriptsCount: failedScripts.length,
-        failedScripts: failedScripts.map((r) => ({
-          script: r.script,
-          exitCode: r.exitCode,
-          output: r.output?.substring(0, 100),
-        })),
-      },
-    });
     if (failedScripts.length > 0) {
       const errorTitle = resolved.toastTitle.replace(
         /=+$/,
@@ -392,13 +351,6 @@ export const OpencodeHooks: Plugin = async (
         eventRecorder,
         scriptRecorder,
       });
-
-      debugLog(
-        'Event handler: event.type =',
-        event.type,
-        ', sessionId =',
-        sessionId
-      );
     },
 
     'tool.execute.before': async (
