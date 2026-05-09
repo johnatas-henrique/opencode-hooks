@@ -7,8 +7,8 @@ import type {
   ToolConfigResolver,
   OnUnknownEventFn,
 } from '.opencode/plugins/types/events';
-import { EventConfigResolverImpl } from '.opencode/plugins/features/events/resolvers/event-config.resolver';
-import { ToolConfigResolverImpl } from '.opencode/plugins/features/events/resolvers/tool-config.resolver';
+import { DelegatingEventConfigResolver } from '.opencode/plugins/features/events/resolvers/event-config.resolver';
+import { DefaultToolConfigResolver } from '.opencode/plugins/features/events/resolvers/tool-config.resolver';
 import { handlers } from '.opencode/plugins/features/handlers';
 import { loadClaudeSettings } from '.opencode/plugins/config/claude-settings';
 
@@ -40,14 +40,11 @@ export function createContext(
     getProjectDir: (input?: EventInput) => {
       const props = input?.properties as Record<string, unknown> | undefined;
       if (props?.cwd && typeof props.cwd === 'string') return props.cwd;
-      // Let it throw if process.cwd() fails - no silent fallback
       return process.cwd();
     },
 
-    // ONLY ONE method for Claude scripts
     getClaudeScripts: (projectDir: string) => {
       if (!loadGlobalClaudeHooks && !loadLocalClaudeHooks) return {};
-      // No try-catch: plugin must break if error
       return loadClaudeSettings(projectDir, {
         loadGlobal: loadGlobalClaudeHooks,
         loadLocal: loadLocalClaudeHooks,
@@ -60,12 +57,12 @@ export function createEventResolver(
   userConfig: UserEventsConfig
 ): EventConfigResolver {
   const context = createContext(userConfig);
-  return new EventConfigResolverImpl(context);
+  return new DelegatingEventConfigResolver(context);
 }
 
 export function createToolResolver(
   userConfig: UserEventsConfig
 ): ToolConfigResolver {
   const context = createContext(userConfig);
-  return new ToolConfigResolverImpl(context);
+  return new DefaultToolConfigResolver(context);
 }

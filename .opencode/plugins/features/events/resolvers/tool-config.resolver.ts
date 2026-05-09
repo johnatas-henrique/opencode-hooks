@@ -6,21 +6,24 @@ import type {
 import type {
   ResolvedEventConfig,
   ToolConfig,
-  ScriptEntry,
 } from '.opencode/plugins/types/config';
-import { getBooleanField } from '.opencode/plugins/features/events/resolution/boolean-field';
 import {
   resolveScripts,
   asScriptEntry,
   mergeClaudeScripts,
 } from '.opencode/plugins/features/events/resolution/scripts';
 import { resolveToastOverride } from '.opencode/plugins/features/events/resolution/toast';
-import { DEFAULTS } from '.opencode/plugins/core/constants';
-import { normalizeInputForHandler } from '.opencode/plugins/features/events/resolvers/normalize-input';
+import { getBooleanField } from '.opencode/plugins/features/events/resolution/boolean-field';
 import { buildToastMessage } from '.opencode/plugins/features/events/resolvers/build-message';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import { DefaultConfigResolver } from '.opencode/plugins/features/events/resolvers/default-config-resolver';
 
-export class ToolConfigResolverImpl implements ToolConfigResolver {
-  constructor(private context: ConfigResolverContext) {}
+export class DefaultToolConfigResolver implements ToolConfigResolver {
+  private defaultResolver: DefaultConfigResolver;
+
+  constructor(private context: ConfigResolverContext) {
+    this.defaultResolver = new DefaultConfigResolver(context);
+  }
 
   private getToolHandler(
     toolName: string,
@@ -39,73 +42,10 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
     return this.context.handlers[eventType];
   }
 
-  private getDefaultScript(eventType: string): string {
-    return `${eventType.replace(/\./g, '-')}.sh`;
-  }
-
-  private tryBuildMessage(
-    handler: EventHandler,
-    eventType: string,
-    input: Record<string, unknown>,
-    output?: Record<string, unknown>,
-    allowedFields?: string[]
-  ): string {
-    try {
-      const normalized = normalizeInputForHandler(eventType, input, output);
-      return handler.buildMessage(normalized, allowedFields);
-    } catch {
-      return '';
-    }
-  }
-
   private isEmptyObject(obj: unknown): boolean {
     return (
       typeof obj === 'object' && obj !== null && Object.keys(obj).length === 0
     );
-  }
-
-  private getDefaultConfig(
-    toolEventType: string,
-    input?: Record<string, unknown>
-  ): ResolvedEventConfig {
-    const handler = this.getHandler(toolEventType);
-    const defaultCfg = this.context.default;
-    const runScripts = getBooleanField(true, defaultCfg, 'runScripts', false);
-    const scripts: ScriptEntry[] =
-      runScripts && handler?.defaultScript
-        ? [asScriptEntry(handler.defaultScript)]
-        : [];
-
-    return {
-      enabled: true,
-      toast: getBooleanField(true, defaultCfg, 'toast', false),
-      toastTitle: handler ? handler.title : '',
-      toastMessage: handler
-        ? this.tryBuildMessage(
-            handler,
-            toolEventType,
-            input ?? {},
-            undefined,
-            handler.allowedFields
-          )
-        : '',
-      toastVariant: handler ? handler.variant : 'info',
-      toastDuration: handler
-        ? handler.duration
-        : DEFAULTS.toast.durations.TWO_SECONDS,
-      scripts,
-      runScripts,
-      logToAudit: getBooleanField(true, defaultCfg, 'logToAudit', true),
-      appendToSession: getBooleanField(
-        true,
-        defaultCfg,
-        'appendToSession',
-        false
-      ),
-      runOnlyOnce: false,
-      scriptToasts: this.context.scriptToasts,
-      allowedFields: handler?.allowedFields,
-    };
   }
 
   resolve(
@@ -139,10 +79,38 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
     const toolHandler = this.getToolHandler(toolName, toolEventType);
     const eventHandler = toolHandler ?? this.getHandler(toolEventType);
 
-    const eventBase: ResolvedEventConfig =
-      this.context.getEventConfig(toolEventType) !== undefined
-        ? this.resolveBase(toolEventType, input)
-        : this.getDefaultConfig(toolEventType, input);
+    const userEventConfig = this.context.getEventConfig(toolEventType);
+    const hasUserEventCfg = userEventConfig !== undefined;
+
+    const eventBase: ResolvedEventConfig = hasUserEventCfg
+      ? userEventConfig === false
+        ? {
+            ...DEFAULTS.config.disabled,
+            scriptToasts: this.context.scriptToasts,
+          }
+        : this.defaultResolver.buildMerged(
+            userEventConfig,
+            eventHandler,
+            toolEventType,
+            defaultCfg,
+            input,
+            output
+          )
+      : (() => {
+          const base = this.defaultResolver.buildDefault(
+            eventHandler,
+            toolEventType,
+            defaultCfg,
+            input
+          );
+          if (base.runScripts && eventHandler?.defaultScript) {
+            return {
+              ...base,
+              scripts: [asScriptEntry(eventHandler.defaultScript)],
+            };
+          }
+          return base;
+        })();
 
     const toastTitle = toolHandler
       ? toolHandler.title
@@ -160,7 +128,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
         ? eventHandler.duration
         : DEFAULTS.toast.durations.TWO_SECONDS;
     const toastMessage = toolHandler
-      ? this.tryBuildMessage(
+      ? this.defaultResolver.tryBuildMessage(
           toolHandler,
           toolEventType,
           input ?? {},
@@ -168,7 +136,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
           toolHandler.allowedFields
         )
       : eventHandler
-        ? this.tryBuildMessage(
+        ? this.defaultResolver.tryBuildMessage(
             eventHandler,
             toolEventType,
             input ?? {},
@@ -190,11 +158,11 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
     };
 
     if (!toolConfig || this.isEmptyObject(toolConfig)) {
-      return this.applyClaudeScripts(
+      return this.defaultResolver.applyClaudeScripts(
         baseWithToolHandler,
         toolEventType,
-        toolName,
-        input
+        input,
+        toolName
       );
     }
 
@@ -202,7 +170,7 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
       toolConfig,
       baseWithToolHandler.scripts[0]?.path ??
         toolHandler?.defaultScript ??
-        this.getDefaultScript(toolEventType),
+        this.defaultResolver.getDefaultScript(toolEventType),
       baseWithToolHandler.scripts
     );
 
@@ -260,77 +228,6 @@ export class ToolConfigResolverImpl implements ToolConfigResolver {
         baseWithToolHandler.runOnlyOnce
       ),
       scriptToasts: this.context.scriptToasts,
-    };
-  }
-
-  private applyClaudeScripts(
-    config: ResolvedEventConfig,
-    toolEventType: string,
-    toolName: string,
-    input?: Record<string, unknown>
-  ): ResolvedEventConfig {
-    const projectDir = this.context.getProjectDir(input);
-    const claudeScripts = this.context.getClaudeScripts(projectDir);
-    const mergeResult = mergeClaudeScripts(
-      config.scripts,
-      toolEventType,
-      toolName,
-      claudeScripts
-    );
-
-    // Ativar runScripts se houver scripts externa
-    if (mergeResult.length > config.scripts.length && !config.runScripts) {
-      return { ...config, scripts: mergeResult, runScripts: true };
-    }
-    if (mergeResult === config.scripts) return config;
-    return { ...config, scripts: mergeResult };
-  }
-
-  private resolveBase(
-    eventType: string,
-    input?: Record<string, unknown>
-  ): ResolvedEventConfig {
-    const handler = this.getHandler(eventType);
-    const userEventConfig = this.context.getEventConfig(eventType);
-    const defaultCfg = this.context.default;
-    const isDisabled = userEventConfig === false;
-    const cfg = userEventConfig ?? false;
-    const { scripts } = resolveScripts(
-      cfg,
-      handler?.defaultScript ?? this.getDefaultScript(eventType),
-      []
-    );
-    const toastCfg = resolveToastOverride(cfg);
-
-    return {
-      enabled: !isDisabled,
-      toast: getBooleanField(cfg, defaultCfg, 'toast', false),
-      toastTitle: toastCfg?.title ?? (handler ? handler.title : ''),
-      runScripts: getBooleanField(cfg, defaultCfg, 'runScripts', false),
-      toastMessage: handler
-        ? this.tryBuildMessage(
-            handler,
-            eventType,
-            input ?? {},
-            undefined,
-            handler.allowedFields
-          )
-        : '',
-      toastVariant: toastCfg?.variant ?? (handler ? handler.variant : 'info'),
-      toastDuration:
-        toastCfg?.duration ??
-        (handler ? handler.duration : DEFAULTS.toast.durations.TWO_SECONDS),
-      scripts,
-      logToAudit: getBooleanField(cfg, defaultCfg, 'logToAudit', true),
-      appendToSession: getBooleanField(
-        cfg,
-        defaultCfg,
-        'appendToSession',
-        false
-      ),
-      runOnlyOnce: getBooleanField(cfg, defaultCfg, 'runOnlyOnce', false),
-      scriptToasts: this.context.scriptToasts,
-      allowedFields: handler?.allowedFields,
     };
   }
 }

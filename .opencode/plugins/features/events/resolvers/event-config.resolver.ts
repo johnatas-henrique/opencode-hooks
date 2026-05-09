@@ -7,7 +7,7 @@ import type {
 import type { ResolvedEventConfig } from '.opencode/plugins/types/config';
 import { ConfigBuilder } from '.opencode/plugins/features/events/resolvers/event-config-builder';
 
-export class EventConfigResolverImpl implements EventConfigResolver {
+export class DelegatingEventConfigResolver implements EventConfigResolver {
   constructor(private context: ConfigResolverContext) {}
 
   public getHandler(eventType: string): EventHandler | undefined {

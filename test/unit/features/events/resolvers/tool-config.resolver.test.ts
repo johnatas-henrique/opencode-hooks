@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { ToolConfigResolverImpl } from '.opencode/plugins/features/events/resolvers/tool-config.resolver';
+import { DefaultToolConfigResolver } from '.opencode/plugins/features/events/resolvers/tool-config.resolver';
 import { createContext } from '../../../helpers/create-context';
 import { createHandler } from '../../../helpers/create-handler';
 
-describe('ToolConfigResolverImpl', () => {
+describe('DefaultToolConfigResolver', () => {
   it('returns disabled config when toolConfig is false', () => {
     const ctx = createContext({
       getToolConfigs: () => ({ bash: false }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
+    const resolver = new DefaultToolConfigResolver(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash');
     expect(result.enabled).toBe(false);
     expect(result.toast).toBe(false);
@@ -20,7 +20,7 @@ describe('ToolConfigResolverImpl', () => {
     const ctx = createContext({
       getToolConfigs: () => ({ bash: {} }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
+    const resolver = new DefaultToolConfigResolver(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash');
     expect(result.enabled).toBe(true);
   });
@@ -34,7 +34,7 @@ describe('ToolConfigResolverImpl', () => {
       handlers: { 'tool.execute.before.bash': toolHandler },
       getToolConfigs: () => ({ bash: {} }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
+    const resolver = new DefaultToolConfigResolver(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash', {
       tool: 'bash',
     });
@@ -50,7 +50,7 @@ describe('ToolConfigResolverImpl', () => {
       handlers: { 'tool.execute.after.bash': toolHandler },
       getToolConfigs: () => ({ bash: {} }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
+    const resolver = new DefaultToolConfigResolver(ctx);
     const result = resolver.resolve('tool.execute.after', 'bash');
     expect(result.toastTitle).toBe('Bash After');
   });
@@ -59,7 +59,7 @@ describe('ToolConfigResolverImpl', () => {
     const ctx = createContext({
       getToolConfigs: () => ({ bash: {} }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
+    const resolver = new DefaultToolConfigResolver(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash');
     expect(result.toastTitle).toBe('');
   });
@@ -75,7 +75,7 @@ describe('ToolConfigResolverImpl', () => {
         ],
       }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
+    const resolver = new DefaultToolConfigResolver(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash');
     expect(result.scripts).toContainEqual({
       source: 'claude',
@@ -90,7 +90,7 @@ describe('ToolConfigResolverImpl', () => {
       handlers: { 'tool.execute.before': eventHandler },
       getToolConfigs: () => ({ bash: {} }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
+    const resolver = new DefaultToolConfigResolver(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash');
     expect(result.toastTitle).toBe('Tool Before');
   });
@@ -100,7 +100,7 @@ describe('ToolConfigResolverImpl', () => {
       handlers: {},
       getToolConfigs: () => ({ bash: {} }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
+    const resolver = new DefaultToolConfigResolver(ctx);
     const result = resolver.resolve('invalid.type', 'bash');
     expect(result.toastTitle).toBe('');
   });
@@ -115,7 +115,7 @@ describe('ToolConfigResolverImpl', () => {
         ],
       }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
+    const resolver = new DefaultToolConfigResolver(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash');
     expect(result.scripts).toContainEqual({
       source: 'claude',
@@ -143,7 +143,7 @@ describe('ToolConfigResolverImpl', () => {
       getEventConfig: () => ({ toast: true }),
       getToolConfigs: () => ({ bash: {} }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
+    const resolver = new DefaultToolConfigResolver(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash');
     expect(result.toast).toBe(true);
     expect(result.enabled).toBe(true);
@@ -154,7 +154,7 @@ describe('ToolConfigResolverImpl', () => {
       getEventConfig: () => false,
       getToolConfigs: () => ({ bash: {} }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
+    const resolver = new DefaultToolConfigResolver(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash');
     expect(result.enabled).toBe(false);
   });
@@ -166,7 +166,7 @@ describe('ToolConfigResolverImpl', () => {
       getEventConfig: () => ({ runScripts: true }),
       getToolConfigs: () => ({ bash: {} }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
+    const resolver = new DefaultToolConfigResolver(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash');
     expect(result.runScripts).toBe(true);
     expect(result.scripts[0]?.path).toBe('myscript.sh');
@@ -182,7 +182,7 @@ describe('ToolConfigResolverImpl', () => {
       handlers: { 'tool.execute.before': handler },
       getToolConfigs: () => ({ bash: {} }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
+    const resolver = new DefaultToolConfigResolver(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash');
     expect(result.toastMessage).toBe('');
   });
@@ -197,7 +197,7 @@ describe('ToolConfigResolverImpl', () => {
       getEventConfig: () => undefined,
       getToolConfigs: () => ({ bash: {} }),
     });
-    const resolver = new ToolConfigResolverImpl(ctx);
+    const resolver = new DefaultToolConfigResolver(ctx);
     const result = resolver.resolve('tool.execute.before', 'bash');
     expect(result.runScripts).toBe(true);
     expect(result.scripts[0]?.path).toBe('custom-handler.sh');
