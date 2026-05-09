@@ -5,6 +5,7 @@ export function createMockSettings() {
       logDisabledEvents: false,
       showPluginStatus: true,
       pluginStatusDisplayMode: 'user-only' as const,
+      toastQueue: { staggerMs: 300, maxSize: 50 },
       loadClaudeHookSettings: { enabled: false },
       scriptToasts: {
         showOutput: true,

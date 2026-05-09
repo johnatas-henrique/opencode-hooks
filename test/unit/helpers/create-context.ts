@@ -5,7 +5,6 @@ import type {
 import type { ToolConfig } from '.opencode/plugins/types/config';
 import type { EventOverride } from '.opencode/plugins/types/config';
 import type { ScriptEntry } from '.opencode/plugins/types/config';
-import { createDefaultEventOverride } from './test-defaults';
 
 export interface CreateContextOptions {
   enabled?: boolean;
@@ -32,7 +31,13 @@ export interface CreateContextOptions {
 export function createContext(
   options: CreateContextOptions = {}
 ): ConfigResolverContext {
-  const defaults = createDefaultEventOverride();
+  const defaults: EventOverride = {
+    toast: false,
+    runScripts: false,
+    runOnlyOnce: false,
+    logToAudit: true,
+    appendToSession: false,
+  };
   const provided = options.default ?? {};
 
   return {
