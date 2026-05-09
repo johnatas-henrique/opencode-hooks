@@ -65,37 +65,21 @@ describe('toolAfterHandlers', () => {
     'tool.execute.after.write': '====WRITE AFTER====',
   };
 
-  it('all handlers have unique tool-specific titles', () => {
-    for (const key of expectedKeys) {
-      expect(toolAfterHandlers[key].title).toBe(expectedTitles[key]);
-    }
-  });
-
-  it('most handlers are info variant', () => {
-    for (const key of expectedKeys) {
+  it.each(expectedKeys)(
+    'handler %s has correct title, variant, duration, and buildMessage',
+    (key) => {
+      const handler = toolAfterHandlers[key];
+      expect(handler.title).toBe(expectedTitles[key]);
       if (key === 'tool.execute.after.git-commit') {
-        expect(toolAfterHandlers[key].variant).toBe('success');
+        expect(handler.variant).toBe('success');
+        expect(handler.duration).toBe(10000);
       } else {
-        expect(toolAfterHandlers[key].variant).toBe('info');
+        expect(handler.variant).toBe('info');
+        expect(handler.duration).toBe(5000);
       }
+      expect(typeof handler.buildMessage).toBe('function');
     }
-  });
-
-  it('most handlers have FIVE_SECONDS duration, git-commit TEN_SECONDS', () => {
-    for (const key of expectedKeys) {
-      if (key === 'tool.execute.after.git-commit') {
-        expect(toolAfterHandlers[key].duration).toBe(10000);
-      } else {
-        expect(toolAfterHandlers[key].duration).toBe(5000);
-      }
-    }
-  });
-
-  it('all handlers use buildKeysMessage', () => {
-    for (const key of expectedKeys) {
-      expect(typeof toolAfterHandlers[key].buildMessage).toBe('function');
-    }
-  });
+  );
 
   it('bash and git-commit and skill use buildKeysMessage', () => {
     const expectedScripts: Record<string, string> = {

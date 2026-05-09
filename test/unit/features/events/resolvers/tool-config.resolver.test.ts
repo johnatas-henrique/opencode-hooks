@@ -10,7 +10,10 @@ function resolveToolConfig(
   toolName = 'bash',
   input?: Record<string, unknown>
 ) {
-  const ctx = createContext(overrides);
+  const ctx = createContext({
+    getToolConfigs: () => ({ bash: {} }),
+    ...overrides,
+  });
   const resolver = new DefaultToolConfigResolver(ctx);
   return resolver.resolve(eventType, toolName, input);
 }
@@ -24,9 +27,7 @@ describe('DefaultToolConfigResolver', () => {
   });
 
   it('returns default config for empty object toolConfig', () => {
-    const result = resolveToolConfig({
-      getToolConfigs: () => ({ bash: {} }),
-    });
+    const result = resolveToolConfig();
     expect(result.enabled).toBe(true);
   });
 
@@ -38,7 +39,6 @@ describe('DefaultToolConfigResolver', () => {
     const result = resolveToolConfig(
       {
         handlers: { 'tool.execute.before.bash': toolHandler },
-        getToolConfigs: () => ({ bash: {} }),
       },
       'tool.execute.before',
       'bash',
@@ -55,7 +55,6 @@ describe('DefaultToolConfigResolver', () => {
     const result = resolveToolConfig(
       {
         handlers: { 'tool.execute.after.bash': toolHandler },
-        getToolConfigs: () => ({ bash: {} }),
       },
       'tool.execute.after'
     );
@@ -63,9 +62,7 @@ describe('DefaultToolConfigResolver', () => {
   });
 
   it('returns empty toastTitle when no handler found', () => {
-    const result = resolveToolConfig({
-      getToolConfigs: () => ({ bash: {} }),
-    });
+    const result = resolveToolConfig();
     expect(result.toastTitle).toBe('');
   });
 
@@ -91,7 +88,6 @@ describe('DefaultToolConfigResolver', () => {
     const eventHandler = createHandler({ title: 'Tool Before' });
     const result = resolveToolConfig({
       handlers: { 'tool.execute.before': eventHandler },
-      getToolConfigs: () => ({ bash: {} }),
     });
     expect(result.toastTitle).toBe('Tool Before');
   });
@@ -100,7 +96,6 @@ describe('DefaultToolConfigResolver', () => {
     const result = resolveToolConfig(
       {
         handlers: {},
-        getToolConfigs: () => ({ bash: {} }),
       },
       'invalid.type'
     );
@@ -109,7 +104,6 @@ describe('DefaultToolConfigResolver', () => {
 
   it('applies claude scripts when toolConfig is empty and runScripts is true', () => {
     const result = resolveToolConfig({
-      getToolConfigs: () => ({ bash: {} }),
       default: { runScripts: true },
       getClaudeScripts: () => ({
         'tool.execute.before': [
@@ -124,24 +118,11 @@ describe('DefaultToolConfigResolver', () => {
     });
   });
 
-  it('returns same config when applyClaudeScripts produces no merge', () => {
-    const _ctx = createContext({
-      getToolConfigs: () => ({ bash: {} }),
-      default: { runScripts: true },
-      getClaudeScripts: () => ({
-        'tool.execute.before': [
-          { source: 'claude', path: 'claude.sh', matcher: 'bash' },
-        ],
-      }),
-    });
-  });
-
   it('uses resolveBase when getEventConfig returns a value', () => {
     const handler = createHandler({ title: 'Tool Event' });
     const result = resolveToolConfig({
       handlers: { 'tool.execute.before': handler },
       getEventConfig: () => ({ toast: true }),
-      getToolConfigs: () => ({ bash: {} }),
     });
     expect(result.toast).toBe(true);
     expect(result.enabled).toBe(true);
@@ -150,7 +131,6 @@ describe('DefaultToolConfigResolver', () => {
   it('uses resolveBase with disabled event config', () => {
     const result = resolveToolConfig({
       getEventConfig: () => false,
-      getToolConfigs: () => ({ bash: {} }),
     });
     expect(result.enabled).toBe(false);
   });
@@ -160,7 +140,6 @@ describe('DefaultToolConfigResolver', () => {
     const result = resolveToolConfig({
       handlers: { 'tool.execute.before': handler },
       getEventConfig: () => ({ runScripts: true }),
-      getToolConfigs: () => ({ bash: {} }),
     });
     expect(result.runScripts).toBe(true);
     expect(result.scripts[0]?.path).toBe('myscript.sh');
@@ -174,7 +153,6 @@ describe('DefaultToolConfigResolver', () => {
     });
     const result = resolveToolConfig({
       handlers: { 'tool.execute.before': handler },
-      getToolConfigs: () => ({ bash: {} }),
     });
     expect(result.toastMessage).toBe('');
   });
@@ -187,7 +165,6 @@ describe('DefaultToolConfigResolver', () => {
       handlers: { 'tool.execute.before': handler },
       default: { runScripts: true },
       getEventConfig: () => undefined,
-      getToolConfigs: () => ({ bash: {} }),
     });
     expect(result.runScripts).toBe(true);
     expect(result.scripts[0]?.path).toBe('custom-handler.sh');
