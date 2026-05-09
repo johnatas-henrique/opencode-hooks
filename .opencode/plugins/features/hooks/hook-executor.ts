@@ -172,7 +172,7 @@ export class HookExecutor {
     if (eventType !== SESSION_IDLE) return;
 
     const anyBlocked = results.some(
-      (r) => r.exitCode === 2 || (r.output ?? '').includes('block')
+      (r) => r.exitCode === 2 || r.output.includes('block')
     );
 
     if (anyBlocked) {
@@ -199,8 +199,8 @@ export class HookExecutor {
           sessionId,
         },
         {
-          output: r.output ?? '',
-          error: r.exitCode === 0 ? null : (r.output ?? null),
+          output: r.output,
+          error: r.exitCode === 0 ? null : r.output,
           exitCode: r.exitCode,
         }
       );
@@ -243,7 +243,7 @@ export class HookExecutor {
     results: ScriptResult[]
   ): void {
     const successfulScripts = results.filter(
-      (result) => (result.output ?? '').trim() !== ''
+      (result) => result.output.trim() !== ''
     );
 
     if (
@@ -262,7 +262,7 @@ export class HookExecutor {
     this.deps.toastQueue.add({
       title: outputTitle,
       message: successfulScripts
-        .map((result) => `- ${result.script}:\n${result.output ?? ''}`)
+        .map((result) => `- ${result.script}:\n${result.output}`)
         .join('\n\n'),
       variant: resolved.scriptToasts.outputVariant,
       duration: resolved.scriptToasts.outputDuration,
@@ -278,7 +278,7 @@ export class HookExecutor {
     if (!resolved.appendToSession) return;
 
     const successfulScripts = results.filter(
-      (result) => (result.output ?? '').trim() !== ''
+      (result) => result.output.trim() !== ''
     );
 
     for (const r of successfulScripts) {

@@ -102,7 +102,7 @@ export interface ResolvedEventConfig {
 export interface ScriptResult {
   script: string;
   exitCode: number;
-  output?: string;
+  output: string;
 }
 
 export interface FileTemplate {
