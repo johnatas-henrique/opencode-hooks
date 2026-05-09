@@ -4,17 +4,7 @@ import {
   buildKeysMessageSimple,
 } from '.opencode/plugins/features/message-formatter/build-keys-message';
 import type { EventHandler } from '.opencode/plugins/types/events';
-import type { HandlerConfig } from '.opencode/plugins/types/messages';
-
-const createHandler = (config: HandlerConfig): EventHandler => ({
-  title: config.title,
-  variant: config.variant,
-  duration: config.duration,
-  defaultScript: config.defaultScript,
-  buildMessage: config.buildMessage,
-  allowedFields: config.allowedFields,
-  defaultTemplate: config.defaultTemplate,
-});
+import { createHandler } from '.opencode/plugins/features/handlers/create-handler';
 
 export const toolHandlers: Record<string, EventHandler> = {
   'tool.execute.before': createHandler({

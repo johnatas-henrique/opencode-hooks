@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { formatTime } from '.opencode/plugins/features/message-formatter/format-time';
+import { formatTime } from '.opencode/plugins/features/message-formatter/formatters';
 
 describe('formatTime', () => {
   it('returns a locale time string', () => {

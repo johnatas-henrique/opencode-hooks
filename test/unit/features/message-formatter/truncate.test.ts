@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { truncate } from '.opencode/plugins/features/message-formatter/truncate';
+import { truncate } from '.opencode/plugins/features/message-formatter/formatters';
 
 describe('truncate', () => {
   it('returns the string unchanged if within maxLength (default 1000)', () => {

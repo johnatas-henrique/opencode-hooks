@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatValue } from '.opencode/plugins/features/message-formatter/format-value';
+import { formatValue } from '.opencode/plugins/features/message-formatter/formatters';
 
 describe('formatValue', () => {
   it('returns "unknown" for null', () => {

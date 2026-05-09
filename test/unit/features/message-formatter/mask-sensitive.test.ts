@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { maskSensitive } from '.opencode/plugins/features/message-formatter/mask-sensitive';
+import { maskSensitive } from '.opencode/plugins/features/message-formatter/formatters';
 
 describe('maskSensitive', () => {
   it('does not modify a string without sensitive patterns', () => {

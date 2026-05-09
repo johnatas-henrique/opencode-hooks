@@ -1,6 +1,8 @@
-import { formatValue } from '.opencode/plugins/features/message-formatter/format-value';
+import {
+  formatValue,
+  formatTime,
+} from '.opencode/plugins/features/message-formatter/formatters';
 import { getValueByPath } from '.opencode/plugins/features/message-formatter/get-value-by-path';
-import { formatTime } from '.opencode/plugins/features/message-formatter/format-time';
 import type { BuildKeysEvent } from '.opencode/plugins/types/messages';
 
 export function buildKeysMessage(

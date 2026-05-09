@@ -3,7 +3,21 @@ import { join } from 'path';
 import { homedir } from 'os';
 import { DEFAULTS } from '.opencode/plugins/core/constants';
 import type { PluginStatusDisplayMode } from '.opencode/plugins/types/config';
-import type { PluginStatus, PluginEntry } from '.opencode/plugins/types/plugin';
+export interface PluginStatus {
+  name: string;
+  status: 'active' | 'failed' | 'incompatible';
+  error?: string;
+  source?: 'built-in' | 'user';
+}
+
+export interface PluginEntry {
+  level: string;
+  message: string;
+  name?: string;
+  path?: string;
+  pkg?: string;
+  error?: string;
+}
 
 const LINE_REGEX = /^(INFO|WARN|ERROR|DEBUG)\s+\S+\s+\+\d+ms\s+(.+)$/;
 const TAG_REGEX = /^(\w+)=(.+)$/;

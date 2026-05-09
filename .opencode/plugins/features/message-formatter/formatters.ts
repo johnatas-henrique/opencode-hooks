@@ -1,3 +1,5 @@
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+
 const SENSITIVE_PATTERNS: Array<[RegExp, string]> = [
   [/(api[_-]?key)[=:]\s*["']?[\w-]+["']?/gi, '$1'],
   [/(token)[=:]\s*["']?[\w-]+["']?/gi, '$1'],
@@ -17,4 +19,26 @@ export function maskSensitive(
     result = result.replace(pattern, `${group}: [REDACTED]`);
   }
   return result;
+}
+
+export function truncate(
+  str: string,
+  maxLength: number = DEFAULTS.core.maxToastLength
+): string {
+  if (str.length > maxLength) {
+    return str.slice(0, maxLength) + '...';
+  }
+  return str;
+}
+
+export function formatValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return 'unknown';
+  }
+  const str = JSON.stringify(value);
+  return truncate(maskSensitive(str));
+}
+
+export function formatTime(): string {
+  return new Date().toLocaleTimeString();
 }

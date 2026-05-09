@@ -14,7 +14,7 @@ import {
   getPluginStatus,
   formatPluginStatus,
 } from '.opencode/plugins/features/messages/plugin-status';
-import type { PluginStatus } from '.opencode/plugins/types/plugin';
+import type { PluginStatus } from '.opencode/plugins/features/messages/plugin-status';
 
 describe('parseLogLine', () => {
   it('parses valid plugin log line', () => {
