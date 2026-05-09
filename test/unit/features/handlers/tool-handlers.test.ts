@@ -1,5 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { toolHandlers } from '.opencode/plugins/features/handlers/tool-handlers';
+import { expectHandlerProps } from '../../helpers/handler-assertions';
+
+function assertBaseHandler(
+  h: {
+    title: string;
+    variant: string;
+    duration: number;
+    defaultScript: string;
+  },
+  expected: { title: string; defaultScript: string }
+) {
+  expect(h.title).toBe(expected.title);
+  expect(h.variant).toBe('info');
+  expect(h.duration).toBe(5000);
+  expect(h.defaultScript).toBe(expected.defaultScript);
+}
 
 describe('toolHandlers', () => {
   const expectedKeys = [
@@ -21,23 +37,15 @@ describe('toolHandlers', () => {
   });
 
   it('each handler has required properties', () => {
-    for (const key of expectedKeys) {
-      const handler = toolHandlers[key];
-      expect(handler).toHaveProperty('title');
-      expect(handler).toHaveProperty('variant');
-      expect(handler).toHaveProperty('duration');
-      expect(handler).toHaveProperty('defaultScript');
-      expect(handler).toHaveProperty('buildMessage');
-      expect(typeof handler.buildMessage).toBe('function');
-    }
+    expectHandlerProps(toolHandlers, expectedKeys);
   });
 
   it('tool.execute.before uses buildKeysMessage and has allowedFields', () => {
     const h = toolHandlers['tool.execute.before'];
-    expect(h.title).toBe('====TOOL EXECUTE BEFORE====');
-    expect(h.variant).toBe('info');
-    expect(h.duration).toBe(5000);
-    expect(h.defaultScript).toBe('tool-execute-before.sh');
+    assertBaseHandler(h, {
+      title: '====TOOL EXECUTE BEFORE====',
+      defaultScript: 'tool-execute-before.sh',
+    });
     expect(h.allowedFields).toEqual([
       'tool',
       'args.command',
@@ -48,10 +56,10 @@ describe('toolHandlers', () => {
 
   it('tool.execute.after uses buildKeysMessage with allowedFields and defaultTemplate', () => {
     const h = toolHandlers['tool.execute.after'];
-    expect(h.title).toBe('====TOOL EXECUTE AFTER====');
-    expect(h.variant).toBe('info');
-    expect(h.duration).toBe(5000);
-    expect(h.defaultScript).toBe('tool-execute-after.sh');
+    assertBaseHandler(h, {
+      title: '====TOOL EXECUTE AFTER====',
+      defaultScript: 'tool-execute-after.sh',
+    });
     expect(h.allowedFields).toEqual([
       'tool',
       'output.title',
@@ -65,10 +73,10 @@ describe('toolHandlers', () => {
 
   it('tool.execute.after.subagent uses buildKeysMessage with subagentType', () => {
     const h = toolHandlers['tool.execute.after.subagent'];
-    expect(h.title).toBe('====TOOL EXECUTE AFTER====');
-    expect(h.variant).toBe('info');
-    expect(h.duration).toBe(5000);
-    expect(h.defaultScript).toBe('tool-execute-after.subagent.sh');
+    assertBaseHandler(h, {
+      title: '====TOOL EXECUTE AFTER====',
+      defaultScript: 'tool-execute-after.subagent.sh',
+    });
     expect(h.allowedFields).toEqual(['tool', 'subagentType', 'output.title']);
     expect(h.defaultTemplate).toBe(
       '[{timestamp}] Subagent: {input.subagentType}'

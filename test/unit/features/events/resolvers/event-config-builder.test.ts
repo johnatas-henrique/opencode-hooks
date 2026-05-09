@@ -2,16 +2,18 @@ import { describe, it, expect } from 'vitest';
 import { ConfigBuilder } from '.opencode/plugins/features/events/resolvers/event-config-builder';
 import { createContext } from '../../../helpers/create-context';
 import { createHandler } from '../../../helpers/create-handler';
+import { expectDefaults } from '../../../helpers/config-assertions';
+
+function buildConfig(overrides?: Parameters<typeof createContext>[0]) {
+  const ctx = createContext(overrides);
+  const builder = new ConfigBuilder(ctx, 'session.created');
+  return builder.resolve();
+}
 
 describe('ConfigBuilder', () => {
   it('returns disabled config when context.enabled is false', () => {
-    const ctx = createContext({ enabled: false });
-    const builder = new ConfigBuilder(ctx, 'session.created');
-    const result = builder.resolve();
-    expect(result.enabled).toBe(false);
-    expect(result.toast).toBe(false);
-    expect(result.scripts).toEqual([]);
-    expect(result.runScripts).toBe(false);
+    const result = buildConfig({ enabled: false });
+    expectDefaults(result);
   });
 
   it('builds default config when no user event config exists', () => {
@@ -22,12 +24,10 @@ describe('ConfigBuilder', () => {
       defaultScript: 'test-event.sh',
       buildMessage: () => 'message',
     });
-    const ctx = createContext({
+    const result = buildConfig({
       handlers: { 'session.created': handler },
       getEventConfig: () => undefined,
     });
-    const builder = new ConfigBuilder(ctx, 'session.created');
-    const result = builder.resolve();
     expect(result.enabled).toBe(true);
     expect(result.toastTitle).toBe('Test Event');
     expect(result.toastVariant).toBe('info');
@@ -39,45 +39,37 @@ describe('ConfigBuilder', () => {
       title: 'Test Event',
       buildMessage: () => 'hi',
     });
-    const ctx = createContext({
+    const result = buildConfig({
       handlers: { 'session.created': handler },
       getEventConfig: () => ({ toast: true, runScripts: true }),
     });
-    const builder = new ConfigBuilder(ctx, 'session.created');
-    const result = builder.resolve();
     expect(result.toast).toBe(true);
     expect(result.runScripts).toBe(true);
   });
 
   it('returns disabled config when event is disabled', () => {
-    const ctx = createContext({
+    const result = buildConfig({
       getEventConfig: () => ({ enabled: false }),
     });
-    const builder = new ConfigBuilder(ctx, 'session.created');
-    const result = builder.resolve();
     expect(result.enabled).toBe(false);
     expect(result.toast).toBe(false);
   });
 
   it('returns disabled config when eventConfig is boolean false', () => {
-    const ctx = createContext({
+    const result = buildConfig({
       getEventConfig: () => false,
     });
-    const builder = new ConfigBuilder(ctx, 'session.created');
-    const result = builder.resolve();
     expect(result.enabled).toBe(false);
   });
 
   it('includes claude scripts when runScripts is true', () => {
-    const ctx = createContext({
+    const result = buildConfig({
       handlers: { 'session.created': createHandler() },
       getEventConfig: () => ({ runScripts: true }),
       getClaudeScripts: () => ({
         'session.created': [{ source: 'claude', path: 'claude.sh' }],
       }),
     });
-    const builder = new ConfigBuilder(ctx, 'session.created');
-    const result = builder.resolve();
     expect(result.runScripts).toBe(true);
     expect(result.scripts).toContainEqual({
       source: 'claude',
@@ -86,31 +78,25 @@ describe('ConfigBuilder', () => {
   });
 
   it('returns empty toastTitle when no handler found', () => {
-    const ctx = createContext({ getEventConfig: () => undefined });
-    const builder = new ConfigBuilder(ctx, 'session.created');
-    const result = builder.resolve();
+    const result = buildConfig({ getEventConfig: () => undefined });
     expect(result.toastTitle).toBe('');
   });
 
   it('uses allowedFields from user override', () => {
     const handler = createHandler({ allowedFields: ['default'] });
-    const ctx = createContext({
+    const result = buildConfig({
       handlers: { 'session.created': handler },
       getEventConfig: () => ({ allowedFields: ['override'], enabled: true }),
     });
-    const builder = new ConfigBuilder(ctx, 'session.created');
-    const result = builder.resolve();
     expect(result.allowedFields).toEqual(['override']);
   });
 
   it('calls getDefaultScript when handler has no defaultScript', () => {
     const handler = createHandler({ defaultScript: undefined });
-    const ctx = createContext({
+    const result = buildConfig({
       handlers: { 'session.created': handler },
       getEventConfig: () => ({ runScripts: true }),
     });
-    const builder = new ConfigBuilder(ctx, 'session.created');
-    const result = builder.resolve();
     expect(result.scripts[0]?.path).toBe('session-created.sh');
   });
 
@@ -120,12 +106,10 @@ describe('ConfigBuilder', () => {
         throw new Error('boom');
       },
     });
-    const ctx = createContext({
+    const result = buildConfig({
       handlers: { 'session.created': handler },
       getEventConfig: () => ({ toast: true }),
     });
-    const builder = new ConfigBuilder(ctx, 'session.created');
-    const result = builder.resolve();
     expect(result.toastMessage).toBe('');
   });
 
@@ -134,12 +118,10 @@ describe('ConfigBuilder', () => {
       defaultScript: 'custom.sh',
       buildMessage: () => 'custom message',
     });
-    const ctx = createContext({
+    const result = buildConfig({
       handlers: { 'session.created': handler },
       getEventConfig: () => undefined,
     });
-    const builder = new ConfigBuilder(ctx, 'session.created');
-    const result = builder.resolve();
     expect(result.toastMessage).toBe('custom message');
   });
 
@@ -149,12 +131,10 @@ describe('ConfigBuilder', () => {
       defaultScript: 'test.sh',
       buildMessage: () => 'enabled message',
     });
-    const ctx = createContext({
+    const result = buildConfig({
       handlers: { 'session.created': handler },
       getEventConfig: () => true,
     });
-    const builder = new ConfigBuilder(ctx, 'session.created');
-    const result = builder.resolve();
     expect(result.enabled).toBe(true);
     expect(result.toastMessage).toBe('enabled message');
   });

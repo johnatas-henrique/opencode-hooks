@@ -4,6 +4,7 @@ import { homedir } from 'os';
 
 const mockReadFile = vi.hoisted(() => vi.fn());
 
+// fallow-ignore-next-line code-duplication
 const mockFs = vi.hoisted(() => ({
   existsSync: vi.fn(),
   readdirSync: vi.fn(),
@@ -14,6 +15,7 @@ vi.mock('fs/promises', () => ({
   readFile: mockReadFile,
 }));
 
+// fallow-ignore-next-line code-duplication
 const mockSettings = vi.hoisted(() => ({
   userConfig: {
     enabled: true,
@@ -78,9 +80,38 @@ import {
   resetGlobalToastQueue,
   useGlobalToastQueue,
 } from '.opencode/plugins/core/toast-queue';
+import { mockLogFile } from './test-utils';
 
 function logDir(): string {
   return join(homedir(), '.local', 'share', 'opencode', 'log');
+}
+
+async function runShowStartupToast(
+  preTimings: number[],
+  postTimings: number[] = [300, 1000]
+): Promise<ReturnType<typeof vi.fn>> {
+  const showFn = vi.fn();
+  resetGlobalToastQueue();
+  initGlobalToastQueue(showFn, () => {}, 300, 50);
+  const promise = showStartupToast({ getLogFile: () => '/fake/log.log' });
+
+  for (const ms of preTimings) {
+    await vi.advanceTimersByTimeAsync(ms);
+  }
+
+  await promise;
+
+  for (const ms of postTimings) {
+    await vi.advanceTimersByTimeAsync(ms);
+  }
+
+  return showFn;
+}
+
+function assertPluginStatusToastShown(showFn: ReturnType<typeof vi.fn>): void {
+  expect(showFn).toHaveBeenCalledWith(
+    expect.objectContaining({ title: 'Plugin Status' })
+  );
 }
 
 describe('showStartupToast', () => {
@@ -117,112 +148,43 @@ describe('showStartupToast', () => {
 
   it('waits for toast silence then shows active plugins toast', async () => {
     mockReadFile.mockResolvedValue('no toast pattern in this log');
-    mockFs.existsSync.mockImplementation((path: string) => {
-      if (path === logDir()) return true;
-      if (path === join(logDir(), 'dev.log')) return true;
-      return false;
-    });
-    mockFs.readdirSync.mockImplementation((path: string) => {
-      if (path === logDir()) return ['dev.log'];
-      return [];
-    });
-    mockFs.readFileSync.mockImplementation((path: string) => {
-      if (path === join(logDir(), 'dev.log'))
-        return 'INFO ... service=plugin name=test loading\n';
-      return '';
-    });
+    mockLogFile(
+      mockFs,
+      logDir(),
+      'INFO ... service=plugin name=test loading\n'
+    );
 
-    const showFn = vi.fn();
-    resetGlobalToastQueue();
-    initGlobalToastQueue(showFn, () => {}, 300, 50);
-
-    const promise = showStartupToast({ getLogFile: () => '/fake/log.log' });
-
-    await vi.advanceTimersByTimeAsync(100);
-    await vi.advanceTimersByTimeAsync(500);
-    await vi.advanceTimersByTimeAsync(2000);
-    await vi.advanceTimersByTimeAsync(2500);
-
-    await promise;
-
-    await vi.advanceTimersByTimeAsync(300);
-    await vi.advanceTimersByTimeAsync(2000);
+    const showFn = await runShowStartupToast(
+      [100, 500, 2000, 2500],
+      [300, 2000]
+    );
 
     expect(mockReadFile).toHaveBeenCalled();
     expect(mockFs.existsSync).toHaveBeenCalled();
-    expect(showFn).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Plugin Status' })
-    );
+    assertPluginStatusToastShown(showFn);
   });
 
   it('handles timeout (TEN_SECONDS) when silence never resolves', async () => {
-    mockFs.existsSync.mockImplementation((path: string) => {
-      if (path === logDir()) return true;
-      if (path === join(logDir(), 'dev.log')) return true;
-      return false;
-    });
-    mockFs.readdirSync.mockImplementation((path: string) => {
-      if (path === logDir()) return ['dev.log'];
-      return [];
-    });
-    mockFs.readFileSync.mockImplementation((path: string) => {
-      if (path === join(logDir(), 'dev.log')) return '';
-      return '';
-    });
+    mockLogFile(mockFs, logDir(), '');
 
     mockReadFile.mockImplementation(() => {
       return new Promise<string>(() => {});
     });
 
-    const showFn = vi.fn();
-    resetGlobalToastQueue();
-    initGlobalToastQueue(showFn, () => {}, 300, 50);
+    const showFn = await runShowStartupToast([10000, 2500]);
 
-    const promise = showStartupToast({ getLogFile: () => '/fake/log.log' });
-
-    await vi.advanceTimersByTimeAsync(10000);
-    await vi.advanceTimersByTimeAsync(2500);
-
-    await promise;
-
-    await vi.advanceTimersByTimeAsync(300);
-    await vi.advanceTimersByTimeAsync(1000);
-
-    expect(showFn).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Plugin Status' })
-    );
+    assertPluginStatusToastShown(showFn);
   });
 
   it('handles error from showActivePluginsToast gracefully', async () => {
     mockReadFile.mockResolvedValue('no toast patterns');
-    mockFs.existsSync.mockImplementation((path: string) => {
-      if (path === logDir()) return false;
-      return false;
-    });
+    mockFs.existsSync.mockReturnValue(false);
     mockFs.readdirSync.mockReturnValue([]);
     mockFs.readFileSync.mockReturnValue('');
 
-    const showFn = vi.fn();
-    resetGlobalToastQueue();
-    initGlobalToastQueue(showFn, () => {}, 300, 50);
+    const showFn = await runShowStartupToast([100, 500, 10000, 2500]);
 
-    const promise = showStartupToast({ getLogFile: () => '/fake/log.log' });
-
-    await vi.advanceTimersByTimeAsync(100);
-    await vi.advanceTimersByTimeAsync(500);
-    await vi.advanceTimersByTimeAsync(10000);
-    await vi.advanceTimersByTimeAsync(2500);
-
-    await promise;
-
-    await vi.advanceTimersByTimeAsync(300);
-    await vi.advanceTimersByTimeAsync(1000);
-
-    expect(showFn).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'Plugin Status',
-      })
-    );
+    assertPluginStatusToastShown(showFn);
   });
 
   it('skips error recording when getErrorRecorder returns null', async () => {
@@ -232,26 +194,9 @@ describe('showStartupToast', () => {
       return false;
     });
 
-    const showFn = vi.fn();
-    resetGlobalToastQueue();
-    initGlobalToastQueue(showFn, () => {}, 300, 50);
+    const showFn = await runShowStartupToast([100, 10000, 2500]);
 
-    const promise = showStartupToast({ getLogFile: () => '/fake/log.log' });
-
-    await vi.advanceTimersByTimeAsync(100);
-    await vi.advanceTimersByTimeAsync(10000);
-    await vi.advanceTimersByTimeAsync(2500);
-
-    await promise;
-
-    await vi.advanceTimersByTimeAsync(300);
-    await vi.advanceTimersByTimeAsync(1000);
-
-    expect(showFn).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'Plugin Status',
-      })
-    );
+    assertPluginStatusToastShown(showFn);
   });
 
   it('uses default getLogFile when no option provided', async () => {
@@ -285,20 +230,7 @@ describe('showStartupToast', () => {
       'showActivePluginsToast'
     ).mockRejectedValue(new Error('plugins failed'));
 
-    const showFn = vi.fn();
-    resetGlobalToastQueue();
-    initGlobalToastQueue(showFn, () => {}, 300, 50);
-
-    const promise = showStartupToast({ getLogFile: () => '/fake/log.log' });
-
-    await vi.advanceTimersByTimeAsync(100);
-    await vi.advanceTimersByTimeAsync(10000);
-    await vi.advanceTimersByTimeAsync(2500);
-
-    await promise;
-
-    await vi.advanceTimersByTimeAsync(300);
-    await vi.advanceTimersByTimeAsync(1000);
+    await runShowStartupToast([100, 10000, 2500]);
 
     expect(mockLogError).toHaveBeenCalledWith(
       expect.objectContaining({

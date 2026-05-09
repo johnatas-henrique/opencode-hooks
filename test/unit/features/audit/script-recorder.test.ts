@@ -107,18 +107,21 @@ describe('createScriptRecord', () => {
     expect(record!.args).toEqual([]);
   });
 
-  it('truncates output for .sh scripts', () => {
-    const input: ScriptInput = { script: 'test.sh', args: [] };
+  function makeLongResult(script: string) {
+    const input: ScriptInput = { script, args: [] };
     const longOutput = 'x'.repeat(1024 * 20);
     const result = { output: longOutput, error: null, exitCode: 0 };
+    return { input, result, longOutput };
+  }
+
+  it('truncates output for .sh scripts', () => {
+    const { input, result, longOutput } = makeLongResult('test.sh');
     const record = createScriptRecord(input, result, true, 1);
     expect(record!.output!.length).toBeLessThan(longOutput.length);
   });
 
   it('does not truncate output for non-.sh scripts', () => {
-    const input: ScriptInput = { script: 'test.js', args: [] };
-    const longOutput = 'x'.repeat(1024 * 20);
-    const result = { output: longOutput, error: null, exitCode: 0 };
+    const { input, result, longOutput } = makeLongResult('test.js');
     const record = createScriptRecord(input, result, true, 1);
     expect(record!.output!.length).toBe(longOutput.length);
   });
@@ -150,10 +153,17 @@ describe('createScriptRecorder', () => {
     vi.clearAllMocks();
   });
 
-  it('calls writeLine on logScript', async () => {
+  function makeRecorderWithWriteLine(
+    configOverrides: Record<string, unknown> = {}
+  ) {
     const mockWriteLine = vi.fn().mockResolvedValue(undefined);
-    const config = makeConfig();
+    const config = makeConfig(configOverrides);
     const recorder = createScriptRecorder(config, { writeLine: mockWriteLine });
+    return { recorder, mockWriteLine, config };
+  }
+
+  it('calls writeLine on logScript', async () => {
+    const { recorder, mockWriteLine } = makeRecorderWithWriteLine();
 
     const input: ScriptInput = { script: 'test.sh', args: [] };
     await recorder.logScript(input, { output: 'ok', error: null, exitCode: 0 });
@@ -163,9 +173,9 @@ describe('createScriptRecorder', () => {
   });
 
   it('does not call writeLine when disabled', async () => {
-    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
-    const config = makeConfig({ enabled: false });
-    const recorder = createScriptRecorder(config, { writeLine: mockWriteLine });
+    const { recorder, mockWriteLine } = makeRecorderWithWriteLine({
+      enabled: false,
+    });
 
     const input: ScriptInput = { script: 'test.sh', args: [] };
     await recorder.logScript(input, { output: 'ok', error: null, exitCode: 0 });

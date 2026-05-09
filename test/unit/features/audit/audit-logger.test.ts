@@ -74,20 +74,20 @@ describe('createAuditLogger', () => {
     vi.clearAllMocks();
   });
 
-  it('does not write when config.enabled is false', async () => {
-    const config = makeConfig({ enabled: false });
+  async function assertDoesNotWrite(configOverrides: Record<string, unknown>) {
+    const config = makeConfig(configOverrides);
     const logger = createAuditLogger({ basePath: '/tmp', config });
     await logger.writeLine('events', { test: true });
 
     expect(mockFs.appendFile).not.toHaveBeenCalled();
+  }
+
+  it('does not write when config.enabled is false', async () => {
+    await assertDoesNotWrite({ enabled: false });
   });
 
   it('skips events when level is audit', async () => {
-    const config = makeConfig({ level: 'audit' });
-    const logger = createAuditLogger({ basePath: '/tmp', config });
-    await logger.writeLine('events', { test: true });
-
-    expect(mockFs.appendFile).not.toHaveBeenCalled();
+    await assertDoesNotWrite({ level: 'audit' });
   });
 
   it('writes events when level is debug', async () => {

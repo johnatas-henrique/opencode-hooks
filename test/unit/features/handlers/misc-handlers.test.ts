@@ -11,6 +11,30 @@ import {
   otherHandlers,
 } from '.opencode/plugins/features/handlers/misc-handlers';
 
+function assertToastConfig(
+  result: { title: string; variant: string; duration: number },
+  expected: { title: string; variant: string; duration: number }
+) {
+  expect(result.title).toBe(expected.title);
+  expect(result.variant).toBe(expected.variant);
+  expect(result.duration).toBe(expected.duration);
+}
+
+function assertAllInfoHandlers(
+  handlers: Record<
+    string,
+    { variant: string; duration: number; buildMessage: unknown }
+  >,
+  keys: readonly string[]
+) {
+  for (const key of keys) {
+    const h = handlers[key];
+    expect(h.variant).toBe('info');
+    expect(h.duration).toBe(5000);
+    expect(typeof h.buildMessage).toBe('function');
+  }
+}
+
 describe('chatHandlers', () => {
   const keys = ['chat.headers', 'chat.message', 'chat.params'] as const;
 
@@ -22,12 +46,7 @@ describe('chatHandlers', () => {
   });
 
   it('all are info variant with FIVE_SECONDS and buildKeysMessageSimple', () => {
-    for (const key of keys) {
-      const h = chatHandlers[key];
-      expect(h.variant).toBe('info');
-      expect(h.duration).toBe(5000);
-      expect(typeof h.buildMessage).toBe('function');
-    }
+    assertAllInfoHandlers(chatHandlers, keys);
   });
 });
 
@@ -66,17 +85,21 @@ describe('serverHandlers', () => {
 
   it('server.connected is success with TEN_SECONDS', () => {
     const h = serverHandlers['server.connected'];
-    expect(h.title).toBe('====SERVER CONNECTED====');
-    expect(h.variant).toBe('success');
-    expect(h.duration).toBe(10000);
+    assertToastConfig(h, {
+      title: '====SERVER CONNECTED====',
+      variant: 'success',
+      duration: 10000,
+    });
     expect(h.defaultScript).toBe('server-connected.sh');
   });
 
   it('server.instance.disposed is info with FIVE_SECONDS', () => {
     const h = serverHandlers['server.instance.disposed'];
-    expect(h.title).toBe('====SERVER DISPOSED====');
-    expect(h.variant).toBe('info');
-    expect(h.duration).toBe(5000);
+    assertToastConfig(h, {
+      title: '====SERVER DISPOSED====',
+      variant: 'info',
+      duration: 5000,
+    });
     expect(h.defaultScript).toBe('server-instance-disposed.sh');
   });
 });
@@ -86,9 +109,11 @@ describe('shellHandlers', () => {
     expect(shellHandlers).toHaveProperty('shell.env');
     expect(Object.keys(shellHandlers).length).toBe(1);
     const h = shellHandlers['shell.env'];
-    expect(h.title).toBe('====SHELL ENV====');
-    expect(h.variant).toBe('info');
-    expect(h.duration).toBe(5000);
+    assertToastConfig(h, {
+      title: '====SHELL ENV====',
+      variant: 'info',
+      duration: 5000,
+    });
     expect(h.defaultScript).toBe('shell-env.sh');
   });
 });
@@ -98,9 +123,11 @@ describe('todoHandlers', () => {
     expect(todoHandlers).toHaveProperty('todo.updated');
     expect(Object.keys(todoHandlers).length).toBe(1);
     const h = todoHandlers['todo.updated'];
-    expect(h.title).toBe('====TODO UPDATED====');
-    expect(h.variant).toBe('info');
-    expect(h.duration).toBe(5000);
+    assertToastConfig(h, {
+      title: '====TODO UPDATED====',
+      variant: 'info',
+      duration: 5000,
+    });
     expect(h.defaultScript).toBe('todo-updated.sh');
   });
 });
@@ -120,12 +147,7 @@ describe('tuiHandlers', () => {
   });
 
   it('all are info variant with FIVE_SECONDS', () => {
-    for (const key of keys) {
-      const h = tuiHandlers[key];
-      expect(h.variant).toBe('info');
-      expect(h.duration).toBe(5000);
-      expect(typeof h.buildMessage).toBe('function');
-    }
+    assertAllInfoHandlers(tuiHandlers, keys);
   });
 });
 
@@ -140,12 +162,7 @@ describe('lspHandlers', () => {
   });
 
   it('all are info variant with FIVE_SECONDS', () => {
-    for (const key of keys) {
-      const h = lspHandlers[key];
-      expect(h.variant).toBe('info');
-      expect(h.duration).toBe(5000);
-      expect(typeof h.buildMessage).toBe('function');
-    }
+    assertAllInfoHandlers(lspHandlers, keys);
   });
 });
 
@@ -165,12 +182,7 @@ describe('experimentalHandlers', () => {
   });
 
   it('all are info variant with FIVE_SECONDS', () => {
-    for (const key of keys) {
-      const h = experimentalHandlers[key];
-      expect(h.variant).toBe('info');
-      expect(h.duration).toBe(5000);
-      expect(typeof h.buildMessage).toBe('function');
-    }
+    assertAllInfoHandlers(experimentalHandlers, keys);
   });
 });
 

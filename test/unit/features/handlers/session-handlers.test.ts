@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { sessionHandlers } from '.opencode/plugins/features/handlers/session-handlers';
+import { expectHandlerProps } from '../../helpers/handler-assertions';
 
 describe('sessionHandlers', () => {
   const expectedKeys = [
@@ -22,15 +23,7 @@ describe('sessionHandlers', () => {
   });
 
   it('each handler has required properties', () => {
-    for (const key of expectedKeys) {
-      const handler = sessionHandlers[key];
-      expect(handler).toHaveProperty('title');
-      expect(handler).toHaveProperty('variant');
-      expect(handler).toHaveProperty('duration');
-      expect(handler).toHaveProperty('defaultScript');
-      expect(handler).toHaveProperty('buildMessage');
-      expect(typeof handler.buildMessage).toBe('function');
-    }
+    expectHandlerProps(sessionHandlers, expectedKeys);
   });
 
   it('session.created has correct title, variant, and allowedFields', () => {

@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { join } from 'path';
 import { homedir } from 'os';
 
+// fallow-ignore-next-line code-duplication
 const mockFs = vi.hoisted(() => ({
   existsSync: vi.fn(),
   readdirSync: vi.fn(),
   readFileSync: vi.fn(),
 }));
 
+// fallow-ignore-next-line code-duplication
 const mockSettings = vi.hoisted(() => ({
   userConfig: {
     enabled: true,
@@ -66,6 +68,7 @@ vi.mock('.opencode/plugins/config/settings', () => mockSettings);
 
 import { showActivePluginsToast } from '.opencode/plugins/features/messages/show-active-plugins';
 import type { ToastQueue } from '.opencode/plugins/types/toast';
+import { mockLogFile } from './test-utils';
 
 function logDir(): string {
   const home = homedir();
@@ -106,19 +109,7 @@ describe('showActivePluginsToast', () => {
   });
 
   it('calls getPluginStatus and formatPluginStatus and adds toast', async () => {
-    mockFs.existsSync.mockImplementation((path: string) => {
-      if (path === logDir()) return true;
-      if (path === join(logDir(), 'dev.log')) return true;
-      return false;
-    });
-    mockFs.readdirSync.mockImplementation((path: string) => {
-      if (path === logDir()) return ['dev.log'];
-      return [];
-    });
-    mockFs.readFileSync.mockImplementation((path: string) => {
-      if (path === join(logDir(), 'dev.log')) return `${activeLogLine}\n`;
-      return '';
-    });
+    mockLogFile(mockFs, logDir(), `${activeLogLine}\n`);
 
     const queue = makeMockQueue();
     await showActivePluginsToast(queue);
@@ -135,19 +126,7 @@ describe('showActivePluginsToast', () => {
   });
 
   it('uses warning variant when there are issues', async () => {
-    mockFs.existsSync.mockImplementation((path: string) => {
-      if (path === logDir()) return true;
-      if (path === join(logDir(), 'dev.log')) return true;
-      return false;
-    });
-    mockFs.readdirSync.mockImplementation((path: string) => {
-      if (path === logDir()) return ['dev.log'];
-      return [];
-    });
-    mockFs.readFileSync.mockImplementation((path: string) => {
-      if (path === join(logDir(), 'dev.log')) return `${failedLogLine}\n`;
-      return '';
-    });
+    mockLogFile(mockFs, logDir(), `${failedLogLine}\n`);
 
     const queue = makeMockQueue();
     await showActivePluginsToast(queue);
@@ -161,19 +140,7 @@ describe('showActivePluginsToast', () => {
   });
 
   it('accepts custom duration option', async () => {
-    mockFs.existsSync.mockImplementation((path: string) => {
-      if (path === logDir()) return true;
-      if (path === join(logDir(), 'dev.log')) return true;
-      return false;
-    });
-    mockFs.readdirSync.mockImplementation((path: string) => {
-      if (path === logDir()) return ['dev.log'];
-      return [];
-    });
-    mockFs.readFileSync.mockImplementation((path: string) => {
-      if (path === join(logDir(), 'dev.log')) return '';
-      return '';
-    });
+    mockLogFile(mockFs, logDir(), '');
 
     const queue = makeMockQueue();
     await showActivePluginsToast(queue, { duration: 3000 });
@@ -184,19 +151,7 @@ describe('showActivePluginsToast', () => {
   });
 
   it('uses warning variant for incompatible status', async () => {
-    mockFs.existsSync.mockImplementation((path: string) => {
-      if (path === logDir()) return true;
-      if (path === join(logDir(), 'dev.log')) return true;
-      return false;
-    });
-    mockFs.readdirSync.mockImplementation((path: string) => {
-      if (path === logDir()) return ['dev.log'];
-      return [];
-    });
-    mockFs.readFileSync.mockImplementation((path: string) => {
-      if (path === join(logDir(), 'dev.log')) return `${incompatibleLogLine}\n`;
-      return '';
-    });
+    mockLogFile(mockFs, logDir(), `${incompatibleLogLine}\n`);
 
     const queue = makeMockQueue();
     await showActivePluginsToast(queue);

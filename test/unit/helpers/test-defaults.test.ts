@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { ResolvedEventConfig } from '.opencode/plugins/types/config';
 import {
   MOCK_TITLE,
   MOCK_VARIANT,
@@ -14,6 +15,21 @@ import {
   MockEventResolver,
   MockToolResolver,
 } from '../helpers/test-defaults';
+
+function assertResolveDefaults(result: ResolvedEventConfig): void {
+  expect(result.enabled).toBe(true);
+  expect(result.toast).toBe(false);
+  expect(result.toastTitle).toBe('');
+  expect(result.toastMessage).toBe('');
+  expect(result.toastVariant).toBe('info');
+  expect(result.toastDuration).toBe(2000);
+  expect(result.scripts).toEqual([]);
+  expect(result.runScripts).toBe(false);
+  expect(result.logToAudit).toBe(true);
+  expect(result.appendToSession).toBe(false);
+  expect(result.runOnlyOnce).toBe(false);
+  expect(result.scriptToasts).toBeDefined();
+}
 
 describe('test-defaults', () => {
   describe('constants', () => {
@@ -152,18 +168,7 @@ describe('test-defaults', () => {
     it('resolve returns default config', () => {
       const resolver = new MockEventResolver();
       const result = resolver.resolve();
-      expect(result.enabled).toBe(true);
-      expect(result.toast).toBe(false);
-      expect(result.toastTitle).toBe('');
-      expect(result.toastMessage).toBe('');
-      expect(result.toastVariant).toBe('info');
-      expect(result.toastDuration).toBe(2000);
-      expect(result.scripts).toEqual([]);
-      expect(result.runScripts).toBe(false);
-      expect(result.logToAudit).toBe(true);
-      expect(result.appendToSession).toBe(false);
-      expect(result.runOnlyOnce).toBe(false);
-      expect(result.scriptToasts).toBeDefined();
+      assertResolveDefaults(result);
     });
 
     it('resolve returns consistent results', () => {
@@ -183,18 +188,7 @@ describe('test-defaults', () => {
     it('resolve returns default config', () => {
       const resolver = new MockToolResolver();
       const result = resolver.resolve();
-      expect(result.enabled).toBe(true);
-      expect(result.toast).toBe(false);
-      expect(result.toastTitle).toBe('');
-      expect(result.toastMessage).toBe('');
-      expect(result.toastVariant).toBe('info');
-      expect(result.toastDuration).toBe(2000);
-      expect(result.scripts).toEqual([]);
-      expect(result.runScripts).toBe(false);
-      expect(result.logToAudit).toBe(true);
-      expect(result.appendToSession).toBe(false);
-      expect(result.runOnlyOnce).toBe(false);
-      expect(result.scriptToasts).toBeDefined();
+      assertResolveDefaults(result);
     });
 
     it('resolve returns consistent results', () => {

@@ -94,6 +94,7 @@ vi.mock('fs/promises', () => ({
   rename: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('child_process', () => ({
+  // fallow-ignore-next-line code-duplication
   spawn: vi.fn(() => ({
     stdout: {
       on: vi.fn((event: string, cb: (d: Buffer) => void) => {
@@ -161,8 +162,8 @@ function createMockResolvedConfig(
     logToAudit: true,
     appendToSession: false,
     scriptToasts: {
-      showOutput: true,
-      showError: true,
+      showOutput: false,
+      showError: false,
       outputVariant: 'info',
       errorVariant: 'error',
       outputDuration: 5000,
@@ -184,6 +185,7 @@ const mockCtx = {
 function setupCommonMocks(): void {
   mockSettings.userConfig.enabled = true;
   mockSettings.userConfig.logDisabledEvents = false;
+  // fallow-ignore-next-line code-duplication
   mockFsObj.existsSync.mockImplementation((path: string) => {
     if (path.includes('.opencode/scripts')) return true;
     return false;
@@ -198,6 +200,7 @@ function setupCommonMocks(): void {
   mockFsObj.writeFileSync = vi.fn();
   mockFsObj.mkdirSync = vi.fn();
   mockFsObj.unlinkSync = vi.fn();
+  // fallow-ignore-next-line code-duplication
   vi.mocked(spawn).mockImplementation(() =>
     fromAny<ChildProcess, unknown>({
       stdout: {
@@ -226,6 +229,32 @@ function setupHooks(): Promise<Hooks> {
   };
   setupCommonMocks();
   return OpencodeHooks(mockCtx as never);
+}
+
+// Helpers
+
+function createEventInput(
+  eventType = 'session.created',
+  sessionId = 'ses_123'
+) {
+  return {
+    event: {
+      type: eventType,
+      properties: { info: { id: sessionId } },
+    } as Event,
+  };
+}
+
+function mockResolveEventConfig(overrides?: Partial<ResolvedEventConfig>) {
+  return vi
+    .spyOn(eventsModule, 'resolveEventConfig')
+    .mockReturnValue(createMockResolvedConfig(overrides ?? { enabled: false }));
+}
+
+function mockResolveToolConfig(overrides?: Partial<ResolvedEventConfig>) {
+  return vi
+    .spyOn(eventsModule, 'resolveToolConfig')
+    .mockReturnValue(createMockResolvedConfig(overrides ?? { enabled: false }));
 }
 
 let hooks: Hooks;
@@ -308,12 +337,7 @@ describe('OpencodeHooks', () => {
     it('calls resolveEventConfig with event type and properties', async () => {
       const resolveSpy = vi.spyOn(eventsModule, 'resolveEventConfig');
 
-      await hooks.event!({
-        event: {
-          type: 'session.created',
-          properties: { info: { id: 'ses_123' } },
-        } as Event,
-      });
+      await hooks.event!(createEventInput());
 
       expect(resolveSpy).toHaveBeenCalledWith('session.created', {
         info: { id: 'ses_123' },
@@ -359,16 +383,9 @@ describe('OpencodeHooks', () => {
     it('stops execution when runOnlyOnce and isSubagent', async () => {
       addSubagentSession('ses_sub');
 
-      vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
-        createMockResolvedConfig({ runOnlyOnce: true })
-      );
+      mockResolveEventConfig({ runOnlyOnce: true });
 
-      await hooks.event!({
-        event: {
-          type: 'session.created',
-          properties: { info: { id: 'ses_sub' } },
-        } as Event,
-      });
+      await hooks.event!(createEventInput('session.created', 'ses_sub'));
 
       expect(hooks).toBeDefined();
     });
@@ -378,23 +395,16 @@ describe('OpencodeHooks', () => {
         .spyOn(useGlobalToastQueue(), 'add')
         .mockImplementation(() => {});
 
-      vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
-        createMockResolvedConfig({
-          toast: true,
-          toastTitle: 'Test Toast',
-          toastMessage: 'Test message',
-          toastVariant: 'info',
-          toastDuration: 5000,
-          scripts: [],
-        })
-      );
-
-      await hooks.event!({
-        event: {
-          type: 'session.created',
-          properties: { info: { id: 'ses_123' } },
-        } as Event,
+      mockResolveEventConfig({
+        toast: true,
+        toastTitle: 'Test Toast',
+        toastMessage: 'Test message',
+        toastVariant: 'info',
+        toastDuration: 5000,
+        scripts: [],
       });
+
+      await hooks.event!(createEventInput());
 
       expect(addSpy).toHaveBeenCalled();
     });
@@ -405,16 +415,9 @@ describe('OpencodeHooks', () => {
         .spyOn(pluginIntegration.getEventRecorder()!, 'logEvent')
         .mockResolvedValue(undefined);
 
-      vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
-        createMockResolvedConfig({ enabled: false })
-      );
+      mockResolveEventConfig();
 
-      await hooks.event!({
-        event: {
-          type: 'session.created',
-          properties: { info: { id: 'ses_123' } },
-        } as Event,
-      });
+      await hooks.event!(createEventInput());
 
       expect(logEventSpy).toHaveBeenCalledWith('EVENT_DISABLED', {
         sessionID: 'ses_123',
@@ -423,39 +426,23 @@ describe('OpencodeHooks', () => {
     });
 
     it('does not call getEventRecorder when logDisabledEvents is false', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveEventConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveEventConfig();
 
-      await hooks.event!({
-        event: {
-          type: 'session.created',
-          properties: { info: { id: 'ses_123' } },
-        } as Event,
-      });
+      await hooks.event!(createEventInput());
 
       expect(resolveSpy).toHaveBeenCalled();
     });
 
     it('extracts sessionId from info.id for session events', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveEventConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveEventConfig();
 
-      await hooks.event!({
-        event: {
-          type: 'session.created',
-          properties: { info: { id: 'ses_custom' } },
-        } as Event,
-      });
+      await hooks.event!(createEventInput('session.created', 'ses_custom'));
 
       expect(resolveSpy).toHaveBeenCalled();
     });
 
     it('falls back to default sessionId when none provided', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveEventConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveEventConfig();
 
       await hooks.event!({
         event: {
@@ -470,9 +457,7 @@ describe('OpencodeHooks', () => {
 
   describe('tool.execute.before handler', () => {
     it('calls resolveToolConfig with tool name and args', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveToolConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveToolConfig();
 
       const input = {
         tool: 'bash',
@@ -499,22 +484,10 @@ describe('OpencodeHooks', () => {
         exitCode: 2,
       });
 
-      vi.spyOn(eventsModule, 'resolveToolConfig').mockReturnValue(
-        createMockResolvedConfig({
-          runScripts: true,
-          scripts: [{ source: 'native' as const, path: 'block.sh' }],
-          scriptToasts: {
-            showOutput: false,
-            showError: false,
-            outputVariant: 'info',
-            errorVariant: 'error',
-            outputDuration: 5000,
-            errorDuration: 15000,
-            outputTitle: 'Script Output',
-            errorTitle: 'Script Error',
-          },
-        })
-      );
+      mockResolveToolConfig({
+        runScripts: true,
+        scripts: [{ source: 'native' as const, path: 'block.sh' }],
+      });
 
       const input = {
         tool: 'bash',
@@ -531,9 +504,7 @@ describe('OpencodeHooks', () => {
 
   describe('tool.execute.after handler', () => {
     it('resolves as subagent when task tool has subagent_type', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveToolConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveToolConfig();
 
       await hooks['tool.execute.after']!(
         {
@@ -554,9 +525,7 @@ describe('OpencodeHooks', () => {
     });
 
     it('resolves as regular after handler for non-task tools', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveToolConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveToolConfig();
 
       await hooks['tool.execute.after']!(
         {
@@ -577,9 +546,7 @@ describe('OpencodeHooks', () => {
     });
 
     it('sets skillType for skill tool', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveToolConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveToolConfig();
 
       await hooks['tool.execute.after']!(
         {
@@ -602,9 +569,7 @@ describe('OpencodeHooks', () => {
 
   describe('shell.env handler', () => {
     it('calls resolveEventConfig', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveEventConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveEventConfig();
 
       await hooks['shell.env']!(
         { cwd: '/test', sessionID: 'ses_123' },
@@ -620,9 +585,7 @@ describe('OpencodeHooks', () => {
 
   describe('chat.message handler', () => {
     it('calls resolveEventConfig', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveEventConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveEventConfig();
 
       await hooks['chat.message']!(
         {
@@ -667,29 +630,12 @@ describe('OpencodeHooks', () => {
     });
 
     it('executes scripts from resolved config', async () => {
-      vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
-        createMockResolvedConfig({
-          runScripts: true,
-          scripts: [{ source: 'native' as const, path: 'test.sh' }],
-          scriptToasts: {
-            showOutput: false,
-            showError: false,
-            outputVariant: 'info',
-            errorVariant: 'error',
-            outputDuration: 5000,
-            errorDuration: 15000,
-            outputTitle: 'Script Output',
-            errorTitle: 'Script Error',
-          },
-        })
-      );
-
-      await hooks.event!({
-        event: {
-          type: 'session.created',
-          properties: { info: { id: 'ses_123' } },
-        } as Event,
+      mockResolveEventConfig({
+        runScripts: true,
+        scripts: [{ source: 'native' as const, path: 'test.sh' }],
       });
+
+      await hooks.event!(createEventInput());
 
       expect(mockExecutor.executeScript).toHaveBeenCalledWith(
         { source: 'native', path: 'test.sh' },
@@ -707,30 +653,13 @@ describe('OpencodeHooks', () => {
         exitCode: 0,
       });
 
-      vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
-        createMockResolvedConfig({
-          runScripts: true,
-          appendToSession: true,
-          scripts: [{ source: 'native' as const, path: 'test.sh' }],
-          scriptToasts: {
-            showOutput: false,
-            showError: false,
-            outputVariant: 'info',
-            errorVariant: 'error',
-            outputDuration: 5000,
-            errorDuration: 15000,
-            outputTitle: 'Script Output',
-            errorTitle: 'Script Error',
-          },
-        })
-      );
-
-      await hooks.event!({
-        event: {
-          type: 'session.created',
-          properties: { info: { id: 'ses_123' } },
-        } as Event,
+      mockResolveEventConfig({
+        runScripts: true,
+        appendToSession: true,
+        scripts: [{ source: 'native' as const, path: 'test.sh' }],
       });
+
+      await hooks.event!(createEventInput());
 
       expect(mockAppendToSession.appendToSession).toHaveBeenCalledWith(
         mockCtx,
@@ -744,29 +673,12 @@ describe('OpencodeHooks', () => {
         .spyOn(pluginIntegration.getScriptRecorder()!, 'logScript')
         .mockResolvedValue(undefined);
 
-      vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
-        createMockResolvedConfig({
-          runScripts: true,
-          scripts: [{ source: 'native' as const, path: 'test.sh' }],
-          scriptToasts: {
-            showOutput: false,
-            showError: false,
-            outputVariant: 'info',
-            errorVariant: 'error',
-            outputDuration: 5000,
-            errorDuration: 15000,
-            outputTitle: 'Script Output',
-            errorTitle: 'Script Error',
-          },
-        })
-      );
-
-      await hooks.event!({
-        event: {
-          type: 'session.created',
-          properties: { info: { id: 'ses_123' } },
-        } as Event,
+      mockResolveEventConfig({
+        runScripts: true,
+        scripts: [{ source: 'native' as const, path: 'test.sh' }],
       });
+
+      await hooks.event!(createEventInput());
 
       expect(logScriptSpy).toHaveBeenCalled();
     });
@@ -782,34 +694,27 @@ describe('OpencodeHooks', () => {
         exitCode: 1,
       });
 
-      vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
-        createMockResolvedConfig({
-          toast: true,
-          toastTitle: '====ERROR====',
-          toastMessage: 'test',
-          toastVariant: 'error',
-          toastDuration: 15000,
-          runScripts: true,
-          scripts: [{ source: 'native' as const, path: 'fail.sh' }],
-          scriptToasts: {
-            showOutput: false,
-            showError: true,
-            outputVariant: 'warning',
-            errorVariant: 'error',
-            outputDuration: 5000,
-            errorDuration: 15000,
-            outputTitle: '- OUTPUT',
-            errorTitle: '- SCRIPT ERROR',
-          },
-        })
-      );
-
-      await hooks.event!({
-        event: {
-          type: 'session.created',
-          properties: { info: { id: 'ses_123' } },
-        } as Event,
+      mockResolveEventConfig({
+        toast: true,
+        toastTitle: '====ERROR====',
+        toastMessage: 'test',
+        toastVariant: 'error',
+        toastDuration: 15000,
+        runScripts: true,
+        scripts: [{ source: 'native' as const, path: 'fail.sh' }],
+        scriptToasts: {
+          showOutput: false,
+          showError: true,
+          outputVariant: 'warning',
+          errorVariant: 'error',
+          outputDuration: 5000,
+          errorDuration: 15000,
+          outputTitle: '- OUTPUT',
+          errorTitle: '- SCRIPT ERROR',
+        },
       });
+
+      await hooks.event!(createEventInput());
 
       expect(addSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -826,22 +731,10 @@ describe('OpencodeHooks', () => {
       });
       mockExecutor.getStopHookActive.mockReturnValue(false);
 
-      vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
-        createMockResolvedConfig({
-          runScripts: true,
-          scripts: [{ source: 'native' as const, path: 'idle.sh' }],
-          scriptToasts: {
-            showOutput: false,
-            showError: false,
-            outputVariant: 'info',
-            errorVariant: 'error',
-            outputDuration: 5000,
-            errorDuration: 15000,
-            outputTitle: 'Script Output',
-            errorTitle: 'Script Error',
-          },
-        })
-      );
+      mockResolveEventConfig({
+        runScripts: true,
+        scripts: [{ source: 'native' as const, path: 'idle.sh' }],
+      });
 
       await hooks.event!({
         event: {
@@ -856,22 +749,10 @@ describe('OpencodeHooks', () => {
     it('clears stop hook state when idle scripts no longer block', async () => {
       mockExecutor.getStopHookActive.mockReturnValue(true);
 
-      vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
-        createMockResolvedConfig({
-          runScripts: true,
-          scripts: [{ source: 'native' as const, path: 'idle.sh' }],
-          scriptToasts: {
-            showOutput: false,
-            showError: false,
-            outputVariant: 'info',
-            errorVariant: 'error',
-            outputDuration: 5000,
-            errorDuration: 15000,
-            outputTitle: 'Script Output',
-            errorTitle: 'Script Error',
-          },
-        })
-      );
+      mockResolveEventConfig({
+        runScripts: true,
+        scripts: [{ source: 'native' as const, path: 'idle.sh' }],
+      });
 
       await hooks.event!({
         event: {
@@ -894,34 +775,27 @@ describe('OpencodeHooks', () => {
         exitCode: 0,
       });
 
-      vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
-        createMockResolvedConfig({
-          toast: true,
-          toastTitle: '====TOAST====',
-          toastMessage: 'test',
-          toastVariant: 'info',
-          toastDuration: 5000,
-          runScripts: true,
-          scripts: [{ source: 'native' as const, path: 'test.sh' }],
-          scriptToasts: {
-            showOutput: true,
-            showError: false,
-            outputVariant: 'warning',
-            errorVariant: 'error',
-            outputDuration: 5000,
-            errorDuration: 15000,
-            outputTitle: '- SCRIPTS OUTPUT',
-            errorTitle: '- SCRIPT ERROR',
-          },
-        })
-      );
-
-      await hooks.event!({
-        event: {
-          type: 'session.created',
-          properties: { info: { id: 'ses_123' } },
-        } as Event,
+      mockResolveEventConfig({
+        toast: true,
+        toastTitle: '====TOAST====',
+        toastMessage: 'test',
+        toastVariant: 'info',
+        toastDuration: 5000,
+        runScripts: true,
+        scripts: [{ source: 'native' as const, path: 'test.sh' }],
+        scriptToasts: {
+          showOutput: true,
+          showError: false,
+          outputVariant: 'warning',
+          errorVariant: 'error',
+          outputDuration: 5000,
+          errorDuration: 15000,
+          outputTitle: '- SCRIPTS OUTPUT',
+          errorTitle: '- SCRIPT ERROR',
+        },
       });
+
+      await hooks.event!(createEventInput());
 
       expect(addSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -950,29 +824,30 @@ describe('OpencodeHooks', () => {
     });
   });
 
+  function createChatInput() {
+    return {
+      sessionID: 'ses_123',
+      agent: 'test-agent',
+      model: fromAny<Model, unknown>({
+        providerID: 'anthropic',
+        modelID: 'claude-3',
+      }),
+      provider: {
+        source: 'custom' as const,
+        info: {} as Provider,
+        options: {},
+      },
+      message: fromAny<UserMessage, unknown>({
+        role: 'user' as const,
+        content: 'hello',
+      }),
+    };
+  }
+
   describe('remaining event handlers', () => {
     it('calls resolveEventConfig for chat.params', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveEventConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
-
-      const input = {
-        sessionID: 'ses_123',
-        agent: 'test-agent',
-        model: fromAny<Model, unknown>({
-          providerID: 'anthropic',
-          modelID: 'claude-3',
-        }),
-        provider: {
-          source: 'custom' as const,
-          info: {} as Provider,
-          options: {},
-        },
-        message: fromAny<UserMessage, unknown>({
-          role: 'user' as const,
-          content: 'hello',
-        }),
-      };
+      const resolveSpy = mockResolveEventConfig();
+      const input = createChatInput();
       const output = { temperature: 0.7, topP: 0.9, topK: 50, options: {} };
 
       await hooks['chat.params']!(input, output as never);
@@ -981,27 +856,8 @@ describe('OpencodeHooks', () => {
     });
 
     it('calls resolveEventConfig for chat.headers', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveEventConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
-
-      const input = {
-        sessionID: 'ses_123',
-        agent: 'test-agent',
-        model: fromAny<Model, unknown>({
-          providerID: 'anthropic',
-          modelID: 'claude-3',
-        }),
-        provider: {
-          source: 'custom' as const,
-          info: {} as Provider,
-          options: {},
-        },
-        message: fromAny<UserMessage, unknown>({
-          role: 'user' as const,
-          content: 'hello',
-        }),
-      };
+      const resolveSpy = mockResolveEventConfig();
+      const input = createChatInput();
       const output = { headers: { 'x-api-key': 'test' } };
 
       await hooks['chat.headers']!(input, output as never);
@@ -1010,9 +866,7 @@ describe('OpencodeHooks', () => {
     });
 
     it('calls resolveEventConfig for permission.ask', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveEventConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveEventConfig();
 
       const input = {
         sessionID: 'ses_123',
@@ -1032,9 +886,7 @@ describe('OpencodeHooks', () => {
     });
 
     it('calls resolveEventConfig for command.execute.before', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveEventConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveEventConfig();
 
       const input = {
         command: '/help',
@@ -1049,9 +901,7 @@ describe('OpencodeHooks', () => {
     });
 
     it('calls resolveEventConfig for experimental.chat.messages.transform', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveEventConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveEventConfig();
 
       const input = { messages: [] };
       const output = { messages: [] };
@@ -1068,9 +918,7 @@ describe('OpencodeHooks', () => {
     });
 
     it('calls resolveEventConfig for experimental.chat.system.transform', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveEventConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveEventConfig();
 
       const input = {
         sessionID: 'ses_123',
@@ -1093,9 +941,7 @@ describe('OpencodeHooks', () => {
     });
 
     it('calls resolveEventConfig for experimental.session.compacting', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveEventConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveEventConfig();
 
       const input = { sessionID: 'ses_123' };
       const output = { context: [] };
@@ -1109,9 +955,7 @@ describe('OpencodeHooks', () => {
     });
 
     it('calls resolveEventConfig for experimental.text.complete', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveEventConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveEventConfig();
 
       const input = {
         sessionID: 'ses_123',
@@ -1129,9 +973,7 @@ describe('OpencodeHooks', () => {
     });
 
     it('calls resolveEventConfig for tool.definition', async () => {
-      const resolveSpy = vi
-        .spyOn(eventsModule, 'resolveEventConfig')
-        .mockReturnValue(createMockResolvedConfig({ enabled: false }));
+      const resolveSpy = mockResolveEventConfig();
 
       const input = { toolID: 'bash' };
       const output = { description: 'Run shell commands', parameters: {} };

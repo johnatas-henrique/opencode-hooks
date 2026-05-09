@@ -8,6 +8,29 @@ const mockFs = vi.hoisted(() => ({
 
 vi.mock('fs', () => mockFs);
 
+interface MockFsOptions {
+  exists?: boolean;
+  readdir?: string[];
+  readFile?: string;
+  readFileImpl?: () => never;
+}
+
+function setupMockFs(options: MockFsOptions = {}): void {
+  vi.clearAllMocks();
+  if (options.exists !== undefined) {
+    vi.mocked(mockFs.existsSync).mockReturnValue(options.exists);
+  }
+  if (options.readdir !== undefined) {
+    vi.mocked(mockFs.readdirSync).mockReturnValue(options.readdir);
+  }
+  if (options.readFile !== undefined) {
+    vi.mocked(mockFs.readFileSync).mockReturnValue(options.readFile);
+  }
+  if (options.readFileImpl !== undefined) {
+    vi.mocked(mockFs.readFileSync).mockImplementation(options.readFileImpl);
+  }
+}
+
 import {
   getLatestLogFile,
   parseLogLine,
@@ -73,32 +96,27 @@ describe('parseLogLine', () => {
 });
 
 describe('getPluginStatus', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it('returns empty array when log directory does not exist', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(false);
+    setupMockFs({ exists: false });
     const result = getPluginStatus();
     expect(result).toEqual([]);
   });
 
   it('returns empty array when no log files', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(true);
-    vi.mocked(mockFs.readdirSync).mockReturnValue([]);
+    setupMockFs({ exists: true, readdir: [] });
     const result = getPluginStatus();
     expect(result).toEqual([]);
   });
 
   it('parses log file and returns plugin statuses', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(true);
-    vi.mocked(mockFs.readdirSync).mockReturnValue(['plugin-2026-01-15.log']);
-    vi.mocked(mockFs.readFileSync).mockReturnValue(
-      [
+    setupMockFs({
+      exists: true,
+      readdir: ['plugin-2026-01-15.log'],
+      readFile: [
         'INFO 2026-01-15T14:30:00.000Z +0ms service=plugin name=my-plugin loading loaded',
         'INFO 2026-01-15T14:30:01.000Z +0ms service=plugin name=other-plugin loading loaded',
-      ].join('\n')
-    );
+      ].join('\n'),
+    });
 
     const result = getPluginStatus();
     expect(result).toHaveLength(2);
@@ -110,14 +128,14 @@ describe('getPluginStatus', () => {
   });
 
   it('marks ERROR entries as failed', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(true);
-    vi.mocked(mockFs.readdirSync).mockReturnValue(['plugin-2026-01-15.log']);
-    vi.mocked(mockFs.readFileSync).mockReturnValue(
-      [
+    setupMockFs({
+      exists: true,
+      readdir: ['plugin-2026-01-15.log'],
+      readFile: [
         'INFO 2026-01-15T14:30:00.000Z +0ms service=plugin name=good-plugin loading loaded',
         'ERROR 2026-01-15T14:30:01.000Z +0ms service=plugin name=bad-plugin error=timeout Failed',
-      ].join('\n')
-    );
+      ].join('\n'),
+    });
 
     const result = getPluginStatus();
     expect(result).toHaveLength(2);
@@ -128,13 +146,13 @@ describe('getPluginStatus', () => {
   });
 
   it('marks WARN incompatible entries', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(true);
-    vi.mocked(mockFs.readdirSync).mockReturnValue(['plugin-2026-01-15.log']);
-    vi.mocked(mockFs.readFileSync).mockReturnValue(
-      [
+    setupMockFs({
+      exists: true,
+      readdir: ['plugin-2026-01-15.log'],
+      readFile: [
         'WARN 2026-01-15T14:30:00.000Z +0ms service=plugin name=legacy incompatible version',
-      ].join('\n')
-    );
+      ].join('\n'),
+    });
 
     const result = getPluginStatus();
     expect(result).toHaveLength(1);
@@ -143,13 +161,13 @@ describe('getPluginStatus', () => {
   });
 
   it('marks internal plugin entries as built-in', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(true);
-    vi.mocked(mockFs.readdirSync).mockReturnValue(['plugin-2026-01-15.log']);
-    vi.mocked(mockFs.readFileSync).mockReturnValue(
-      [
+    setupMockFs({
+      exists: true,
+      readdir: ['plugin-2026-01-15.log'],
+      readFile: [
         'INFO 2026-01-15T14:30:00.000Z +0ms service=plugin name=@opencode/internal loading internal plugin',
-      ].join('\n')
-    );
+      ].join('\n'),
+    });
 
     const result = getPluginStatus();
     expect(result).toHaveLength(1);
@@ -157,13 +175,13 @@ describe('getPluginStatus', () => {
   });
 
   it('uses path when name is missing', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(true);
-    vi.mocked(mockFs.readdirSync).mockReturnValue(['plugin-2026-01-15.log']);
-    vi.mocked(mockFs.readFileSync).mockReturnValue(
-      [
+    setupMockFs({
+      exists: true,
+      readdir: ['plugin-2026-01-15.log'],
+      readFile: [
         'INFO 2026-01-15T14:30:00.000Z +0ms service=plugin path=/custom/path loading loaded',
-      ].join('\n')
-    );
+      ].join('\n'),
+    });
 
     const result = getPluginStatus();
     expect(result).toHaveLength(1);
@@ -171,10 +189,12 @@ describe('getPluginStatus', () => {
   });
 
   it('returns empty array on readFile error', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(true);
-    vi.mocked(mockFs.readdirSync).mockReturnValue(['plugin-2026-01-15.log']);
-    vi.mocked(mockFs.readFileSync).mockImplementation(() => {
-      throw new Error('permission denied');
+    setupMockFs({
+      exists: true,
+      readdir: ['plugin-2026-01-15.log'],
+      readFileImpl: () => {
+        throw new Error('permission denied');
+      },
     });
 
     const result = getPluginStatus();
@@ -182,14 +202,14 @@ describe('getPluginStatus', () => {
   });
 
   it('deduplicates by name, keeping latest status', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(true);
-    vi.mocked(mockFs.readdirSync).mockReturnValue(['plugin-2026-01-15.log']);
-    vi.mocked(mockFs.readFileSync).mockReturnValue(
-      [
+    setupMockFs({
+      exists: true,
+      readdir: ['plugin-2026-01-15.log'],
+      readFile: [
         'INFO 2026-01-15T14:30:00.000Z +0ms service=plugin name=my-plugin loading loaded',
         'ERROR 2026-01-15T14:30:01.000Z +0ms service=plugin name=my-plugin error=crash Failed',
-      ].join('\n')
-    );
+      ].join('\n'),
+    });
 
     const result = getPluginStatus();
     expect(result).toHaveLength(1);
@@ -199,7 +219,6 @@ describe('getPluginStatus', () => {
 
 describe('getLatestLogFile', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     vi.stubEnv('XDG_DATA_HOME', '/fake/xdg');
   });
 
@@ -208,34 +227,31 @@ describe('getLatestLogFile', () => {
   });
 
   it('returns null if log directory does not exist', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(false);
+    setupMockFs({ exists: false });
     const result = getLatestLogFile();
     expect(result).toBeNull();
   });
 
   it('returns null if no .log files', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(true);
-    vi.mocked(mockFs.readdirSync).mockReturnValue(['readme.txt']);
+    setupMockFs({ exists: true, readdir: ['readme.txt'] });
     const result = getLatestLogFile();
     expect(result).toBeNull();
   });
 
   it('returns path to latest log file', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(true);
-    vi.mocked(mockFs.readdirSync).mockReturnValue([
-      'plugin-2026-01-15.log',
-      'plugin-2026-01-14.log',
-    ]);
+    setupMockFs({
+      exists: true,
+      readdir: ['plugin-2026-01-15.log', 'plugin-2026-01-14.log'],
+    });
     const result = getLatestLogFile();
     expect(result).toMatch(/plugin-2026-01-15\.log$/);
   });
 
   it('sorts dev.log last', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(true);
-    vi.mocked(mockFs.readdirSync).mockReturnValue([
-      'dev.log',
-      'plugin-2026-01-15.log',
-    ]);
+    setupMockFs({
+      exists: true,
+      readdir: ['dev.log', 'plugin-2026-01-15.log'],
+    });
     const result = getLatestLogFile();
     expect(result).toMatch(/plugin-2026-01-15\.log$/);
   });

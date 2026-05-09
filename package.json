@@ -41,6 +41,7 @@
     "@commitlint/config-conventional": "^20.5.0",
     "@eslint/js": "^10.0.1",
     "@opencode-ai/plugin": "^1.14.29",
+    "@opencode-ai/sdk": "^1.14.41",
     "@total-typescript/shoehorn": "^0.1.2",
     "@types/node": "^25.6.0",
     "@vitest/coverage-v8": "^4.1.4",

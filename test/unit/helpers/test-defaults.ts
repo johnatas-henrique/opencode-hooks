@@ -67,58 +67,40 @@ export function createDefaultContext(
   };
 }
 
+function createDefaultResolvedConfig() {
+  return {
+    enabled: true,
+    toast: false,
+    toastTitle: '',
+    toastMessage: '',
+    toastVariant: 'info' as EventVariant,
+    toastDuration: 2000,
+    scripts: [],
+    runScripts: false,
+    logToAudit: true,
+    appendToSession: false,
+    runOnlyOnce: false,
+    scriptToasts: {
+      showOutput: true,
+      showError: true,
+      outputVariant: 'info' as EventVariant,
+      errorVariant: 'error' as EventVariant,
+      outputDuration: 5000,
+      errorDuration: 15000,
+      outputTitle: 'Script Output',
+      errorTitle: 'Script Error',
+    },
+  };
+}
+
 export class MockEventResolver implements EventConfigResolver {
   resolve() {
-    return {
-      enabled: true,
-      toast: false,
-      toastTitle: '',
-      toastMessage: '',
-      toastVariant: 'info' as EventVariant,
-      toastDuration: 2000,
-      scripts: [],
-      runScripts: false,
-      logToAudit: true,
-      appendToSession: false,
-      runOnlyOnce: false,
-      scriptToasts: {
-        showOutput: true,
-        showError: true,
-        outputVariant: 'info' as EventVariant,
-        errorVariant: 'error' as EventVariant,
-        outputDuration: 5000,
-        errorDuration: 15000,
-        outputTitle: 'Script Output',
-        errorTitle: 'Script Error',
-      },
-    };
+    return createDefaultResolvedConfig();
   }
 }
 
 export class MockToolResolver implements ToolConfigResolver {
   resolve() {
-    return {
-      enabled: true,
-      toast: false,
-      toastTitle: '',
-      toastMessage: '',
-      toastVariant: 'info' as EventVariant,
-      toastDuration: 2000,
-      scripts: [],
-      runScripts: false,
-      logToAudit: true,
-      appendToSession: false,
-      runOnlyOnce: false,
-      scriptToasts: {
-        showOutput: true,
-        showError: true,
-        outputVariant: 'info' as EventVariant,
-        errorVariant: 'error' as EventVariant,
-        outputDuration: 5000,
-        errorDuration: 15000,
-        outputTitle: 'Script Output',
-        errorTitle: 'Script Error',
-      },
-    };
+    return createDefaultResolvedConfig();
   }
 }

@@ -329,6 +329,29 @@ describe('createGenericEventRecord', () => {
   });
 });
 
+async function createRecorderAndExecuteAfter(
+  configOverride?: Parameters<typeof makeConfig>[0]
+) {
+  const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+  const config = makeConfig(configOverride);
+  const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
+  await recorder.logToolExecuteAfter(
+    { tool: 'bash', sessionID: 's1', callID: 'c1', args: {} },
+    { title: 't', output: 'o', metadata: { exit: 0 } }
+  );
+  return mockWriteLine;
+}
+
+async function createRecorderAndLogEvent(
+  configOverride?: Parameters<typeof makeConfig>[0]
+) {
+  const mockWriteLine = vi.fn().mockResolvedValue(undefined);
+  const config = makeConfig(configOverride);
+  const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
+  await recorder.logEvent('custom', { sessionID: 's1' });
+  return mockWriteLine;
+}
+
 describe('createEventRecorder', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -349,14 +372,7 @@ describe('createEventRecorder', () => {
   });
 
   it('calls writeLine on logToolExecuteAfter', async () => {
-    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
-    const config = makeConfig();
-    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
-
-    await recorder.logToolExecuteAfter(
-      { tool: 'bash', sessionID: 's1', callID: 'c1', args: {} },
-      { title: 't', output: 'o', metadata: { exit: 0 } }
-    );
+    const mockWriteLine = await createRecorderAndExecuteAfter();
     expect(mockWriteLine).toHaveBeenCalledOnce();
   });
 
@@ -370,11 +386,7 @@ describe('createEventRecorder', () => {
   });
 
   it('calls writeLine on logEvent', async () => {
-    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
-    const config = makeConfig();
-    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
-
-    await recorder.logEvent('custom', { sessionID: 's1' });
+    const mockWriteLine = await createRecorderAndLogEvent();
     expect(mockWriteLine).toHaveBeenCalledOnce();
   });
 
@@ -392,13 +404,9 @@ describe('createEventRecorder', () => {
   });
 
   it('does not write when config level is audit [logToolExecuteAfter]', async () => {
-    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
-    const config = makeConfig({ level: 'audit' });
-    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
-    await recorder.logToolExecuteAfter(
-      { tool: 'bash', sessionID: 's1', callID: 'c1', args: {} },
-      { title: 't', output: 'o', metadata: { exit: 0 } }
-    );
+    const mockWriteLine = await createRecorderAndExecuteAfter({
+      level: 'audit',
+    });
     expect(mockWriteLine).not.toHaveBeenCalled();
   });
 
@@ -411,10 +419,7 @@ describe('createEventRecorder', () => {
   });
 
   it('does not write when config level is audit [logEvent]', async () => {
-    const mockWriteLine = vi.fn().mockResolvedValue(undefined);
-    const config = makeConfig({ level: 'audit' });
-    const recorder = createEventRecorder(config, { writeLine: mockWriteLine });
-    await recorder.logEvent('custom', { sessionID: 's1' });
+    const mockWriteLine = await createRecorderAndLogEvent({ level: 'audit' });
     expect(mockWriteLine).not.toHaveBeenCalled();
   });
 

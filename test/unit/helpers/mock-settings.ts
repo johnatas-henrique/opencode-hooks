@@ -1,0 +1,54 @@
+export function createMockSettings() {
+  return {
+    userConfig: {
+      enabled: true,
+      logDisabledEvents: false,
+      showPluginStatus: true,
+      pluginStatusDisplayMode: 'user-only' as const,
+      loadClaudeHookSettings: { enabled: false },
+      scriptToasts: {
+        showOutput: true,
+        showError: true,
+        outputVariant: 'info' as const,
+        errorVariant: 'error' as const,
+        outputDuration: 5000,
+        errorDuration: 15000,
+        outputTitle: 'Script Output',
+        errorTitle: 'Script Error',
+      },
+      default: {
+        debug: false,
+        toast: false,
+        runScripts: false,
+        runOnlyOnce: false,
+        logToAudit: true,
+        appendToSession: false,
+      },
+      audit: {
+        enabled: true,
+        level: 'debug' as const,
+        basePath: '/tmp/test-audit',
+        maxSizeMB: 1,
+        maxAgeDays: 30,
+        logTruncationKB: 10,
+        maxFieldSize: 1000,
+        maxArrayItems: 50,
+        largeFields: [
+          'patch',
+          'diff',
+          'content',
+          'snapshot',
+          'output',
+          'result',
+          'text',
+        ],
+      },
+      events: {},
+      tools: {
+        'tool.execute.after': {},
+        'tool.execute.after.subagent': {},
+        'tool.execute.before': {},
+      },
+    },
+  };
+}

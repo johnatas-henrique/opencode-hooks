@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-// import { fromAny } from '@total-typescript/shoehorn';
 
-// Mock fs
+// fallow-ignore-next-line code-duplication
 const mockFs = vi.hoisted(() => {
   const fn = () => vi.fn();
   return {

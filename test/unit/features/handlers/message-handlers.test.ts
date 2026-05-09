@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { messageHandlers } from '.opencode/plugins/features/handlers/message-handlers';
+import { expectHandlerProps } from '../../helpers/handler-assertions';
 
 describe('messageHandlers', () => {
   const expectedKeys = [
@@ -17,16 +18,8 @@ describe('messageHandlers', () => {
     expect(Object.keys(messageHandlers).length).toBe(expectedKeys.length);
   });
 
-  it('each handler has required properties and uses buildKeysMessageSimple', () => {
-    for (const key of expectedKeys) {
-      const handler = messageHandlers[key];
-      expect(handler).toHaveProperty('title');
-      expect(handler).toHaveProperty('variant');
-      expect(handler).toHaveProperty('duration');
-      expect(handler).toHaveProperty('defaultScript');
-      expect(handler).toHaveProperty('buildMessage');
-      expect(typeof handler.buildMessage).toBe('function');
-    }
+  it('each handler has required properties', () => {
+    expectHandlerProps(messageHandlers, expectedKeys);
   });
 
   it('message.part.removed is warning variant', () => {

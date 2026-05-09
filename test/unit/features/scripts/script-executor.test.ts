@@ -45,6 +45,24 @@ function makeEventContext(): {
   };
 }
 
+function makeExecutor(overrides: Partial<ScriptExecutorDeps> = {}) {
+  const deps = makeDeps(overrides);
+  return { deps, executor: new ScriptExecutor(deps) };
+}
+
+async function runExecutorFail(script: string = 'test.sh', arg?: string) {
+  const { deps, executor } = makeExecutor({
+    executeScript: vi
+      .fn()
+      .mockResolvedValue({ output: 'fail', error: 'err', exitCode: 1 }),
+  });
+  const ctx = makeEventContext();
+  ctx.eventType = 'tool.execute.before';
+  ctx.toolName = 'bash';
+  await executor.execute(script, arg, {}, ctx);
+  return { deps };
+}
+
 describe('ScriptExecutor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -52,8 +70,7 @@ describe('ScriptExecutor', () => {
 
   describe('execute', () => {
     it('returns success with output on exit code 0', async () => {
-      const deps = makeDeps();
-      const executor = new ScriptExecutor(deps);
+      const { executor } = makeExecutor();
       const result = await executor.execute(
         'test.sh',
         undefined,
@@ -64,22 +81,21 @@ describe('ScriptExecutor', () => {
     });
 
     it('passes arg to executeScript', async () => {
-      const deps = makeDeps();
-      const executor = new ScriptExecutor(deps);
+      const { deps, executor } = makeExecutor();
       await executor.execute('test.sh', '--verbose', {}, makeEventContext());
       expect(deps.executeScript).toHaveBeenCalledWith('test.sh', '--verbose');
     });
 
     it('calls executeScript without arg when arg is undefined', async () => {
-      const deps = makeDeps();
-      const executor = new ScriptExecutor(deps);
+      const { deps, executor } = makeExecutor();
       await executor.execute('test.sh', undefined, {}, makeEventContext());
       expect(deps.executeScript).toHaveBeenCalledWith('test.sh');
     });
 
     it('returns runOnlyOnce early when isSubagent returns true', async () => {
-      const deps = makeDeps({ isSubagent: vi.fn().mockReturnValue(true) });
-      const executor = new ScriptExecutor(deps);
+      const { deps, executor } = makeExecutor({
+        isSubagent: vi.fn().mockReturnValue(true),
+      });
       const result = await executor.execute(
         'test.sh',
         undefined,
@@ -91,8 +107,9 @@ describe('ScriptExecutor', () => {
     });
 
     it('does not gate when runOnlyOnce is false', async () => {
-      const deps = makeDeps({ isSubagent: vi.fn().mockReturnValue(true) });
-      const executor = new ScriptExecutor(deps);
+      const { deps, executor } = makeExecutor({
+        isSubagent: vi.fn().mockReturnValue(true),
+      });
       await executor.execute(
         'test.sh',
         undefined,
@@ -103,12 +120,11 @@ describe('ScriptExecutor', () => {
     });
 
     it('audits on error and shows toast', async () => {
-      const deps = makeDeps({
+      const { deps, executor } = makeExecutor({
         executeScript: vi
           .fn()
           .mockResolvedValue({ output: 'failed', error: 'boom', exitCode: 1 }),
       });
-      const executor = new ScriptExecutor(deps);
       const ctx = makeEventContext();
       await executor.execute('test.sh', undefined, {}, ctx);
 
@@ -117,12 +133,11 @@ describe('ScriptExecutor', () => {
     });
 
     it('respects suppressToast on error', async () => {
-      const deps = makeDeps({
+      const { deps, executor } = makeExecutor({
         executeScript: vi
           .fn()
           .mockResolvedValue({ output: 'failed', error: 'boom', exitCode: 1 }),
       });
-      const executor = new ScriptExecutor(deps);
       await executor.execute(
         'test.sh',
         undefined,
@@ -134,12 +149,11 @@ describe('ScriptExecutor', () => {
     });
 
     it('does not show toast when showError is false', async () => {
-      const deps = makeDeps({
+      const { deps, executor } = makeExecutor({
         executeScript: vi
           .fn()
           .mockResolvedValue({ output: 'failed', error: 'boom', exitCode: 1 }),
       });
-      const executor = new ScriptExecutor(deps);
       const ctx = makeEventContext();
       ctx.scriptToasts.showError = false;
       await executor.execute('test.sh', undefined, {}, ctx);
@@ -148,20 +162,17 @@ describe('ScriptExecutor', () => {
     });
 
     it('does not call audit on error when audit is not set', async () => {
-      const deps = makeDeps({
+      const { executor } = makeExecutor({
         audit: undefined,
         executeScript: vi
           .fn()
           .mockResolvedValue({ output: 'failed', error: 'boom', exitCode: 1 }),
       });
-      const executor = new ScriptExecutor(deps);
       await executor.execute('test.sh', undefined, {}, makeEventContext());
-      // no error thrown despite missing audit
     });
 
     it('skips audit on success when skipAudit is true', async () => {
-      const deps = makeDeps();
-      const executor = new ScriptExecutor(deps);
+      const { deps, executor } = makeExecutor();
       await executor.execute(
         'test.sh',
         undefined,
@@ -173,8 +184,7 @@ describe('ScriptExecutor', () => {
     });
 
     it('skips session append when skipSession is true', async () => {
-      const deps = makeDeps();
-      const executor = new ScriptExecutor(deps);
+      const { deps, executor } = makeExecutor();
       await executor.execute(
         'test.sh',
         undefined,
@@ -186,8 +196,7 @@ describe('ScriptExecutor', () => {
     });
 
     it('appends to session on success', async () => {
-      const deps = makeDeps();
-      const executor = new ScriptExecutor(deps);
+      const { deps, executor } = makeExecutor();
       await executor.execute('test.sh', undefined, {}, makeEventContext());
 
       expect(deps.session.appendToSession).toHaveBeenCalledWith(
@@ -197,28 +206,18 @@ describe('ScriptExecutor', () => {
     });
 
     it('does not append to session when output is empty', async () => {
-      const deps = makeDeps({
+      const { deps, executor } = makeExecutor({
         executeScript: vi
           .fn()
           .mockResolvedValue({ output: '', error: null, exitCode: 0 }),
       });
-      const executor = new ScriptExecutor(deps);
       await executor.execute('test.sh', undefined, {}, makeEventContext());
 
       expect(deps.session.appendToSession).not.toHaveBeenCalled();
     });
 
     it('uses toolName in toast event info for tool events', async () => {
-      const deps = makeDeps({
-        executeScript: vi
-          .fn()
-          .mockResolvedValue({ output: 'fail', error: 'err', exitCode: 1 }),
-      });
-      const executor = new ScriptExecutor(deps);
-      const ctx = makeEventContext();
-      ctx.eventType = 'tool.execute.before';
-      ctx.toolName = 'bash';
-      await executor.execute('test.sh', undefined, {}, ctx);
+      const { deps } = await runExecutorFail();
 
       expect(deps.toast!.showToast).toHaveBeenCalledWith(
         expect.any(String),
@@ -229,12 +228,11 @@ describe('ScriptExecutor', () => {
     });
 
     it('uses eventType in toast info when no toolName', async () => {
-      const deps = makeDeps({
+      const { deps, executor } = makeExecutor({
         executeScript: vi
           .fn()
           .mockResolvedValue({ output: 'fail', error: 'err', exitCode: 1 }),
       });
-      const executor = new ScriptExecutor(deps);
       const ctx = makeEventContext();
       ctx.eventType = 'session.created';
       await executor.execute('test.sh', undefined, {}, ctx);
@@ -248,16 +246,7 @@ describe('ScriptExecutor', () => {
     });
 
     it('creates scriptData with args when arg is provided on error', async () => {
-      const deps = makeDeps({
-        executeScript: vi
-          .fn()
-          .mockResolvedValue({ output: 'fail', error: 'err', exitCode: 1 }),
-      });
-      const executor = new ScriptExecutor(deps);
-      const ctx = makeEventContext();
-      ctx.eventType = 'tool.execute.before';
-      ctx.toolName = 'bash';
-      await executor.execute('test.sh', 'bash', {}, ctx);
+      const { deps } = await runExecutorFail('test.sh', 'bash');
 
       expect(deps.audit!.logScript).toHaveBeenCalledWith(
         expect.objectContaining({ args: ['bash'] }),

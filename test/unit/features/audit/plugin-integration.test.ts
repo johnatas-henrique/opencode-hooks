@@ -72,13 +72,18 @@ describe('plugin-integration', () => {
     });
   });
 
+  async function initWithMocks() {
+    vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
+    vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
+
+    const config = makeConfig();
+    await initAuditLogging(config);
+    return { config };
+  }
+
   describe('event recorder interaction', () => {
     it('event recorder writes to audit logger', async () => {
-      vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
-      vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
-
-      const config = makeConfig();
-      await initAuditLogging(config);
+      await initWithMocks();
 
       const recorder = getEventRecorder()!;
       await recorder.logToolExecuteBefore({
@@ -93,11 +98,7 @@ describe('plugin-integration', () => {
 
   describe('script recorder interaction', () => {
     it('script recorder writes to audit logger', async () => {
-      vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
-      vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
-
-      const config = makeConfig();
-      await initAuditLogging(config);
+      await initWithMocks();
 
       const recorder = getScriptRecorder()!;
       await recorder.logScript(
@@ -111,11 +112,7 @@ describe('plugin-integration', () => {
 
   describe('error recorder interaction', () => {
     it('error recorder writes to audit logger', async () => {
-      vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
-      vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
-
-      const config = makeConfig();
-      await initAuditLogging(config);
+      await initWithMocks();
 
       const recorder = getErrorRecorder()!;
       await recorder.logError({ message: 'test error' });
