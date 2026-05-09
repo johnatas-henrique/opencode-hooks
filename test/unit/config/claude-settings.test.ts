@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// fallow-ignore-next-line code-duplication
 const mockFs = vi.hoisted(() => {
   const fn = () => vi.fn();
   return {
@@ -16,7 +15,6 @@ const mockFs = vi.hoisted(() => {
 });
 vi.mock('fs', () => ({ default: mockFs }));
 
-// Mock os
 vi.mock('os', () => ({
   default: {
     homedir: vi.fn(() => '/test/home'),

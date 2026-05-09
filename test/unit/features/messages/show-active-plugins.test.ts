@@ -2,14 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { join } from 'path';
 import { homedir } from 'os';
 
-// fallow-ignore-next-line code-duplication
 const mockFs = vi.hoisted(() => ({
   existsSync: vi.fn(),
   readdirSync: vi.fn(),
   readFileSync: vi.fn(),
 }));
 
-// fallow-ignore-next-line code-duplication
 const mockSettings = vi.hoisted(() => ({
   userConfig: {
     enabled: true,

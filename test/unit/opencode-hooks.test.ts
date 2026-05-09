@@ -94,7 +94,6 @@ vi.mock('fs/promises', () => ({
   rename: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('child_process', () => ({
-  // fallow-ignore-next-line code-duplication
   spawn: vi.fn(() => ({
     stdout: {
       on: vi.fn((event: string, cb: (d: Buffer) => void) => {
@@ -185,7 +184,6 @@ const mockCtx = {
 function setupCommonMocks(): void {
   mockSettings.userConfig.enabled = true;
   mockSettings.userConfig.logDisabledEvents = false;
-  // fallow-ignore-next-line code-duplication
   mockFsObj.existsSync.mockImplementation((path: string) => {
     if (path.includes('.opencode/scripts')) return true;
     return false;
@@ -200,7 +198,6 @@ function setupCommonMocks(): void {
   mockFsObj.writeFileSync = vi.fn();
   mockFsObj.mkdirSync = vi.fn();
   mockFsObj.unlinkSync = vi.fn();
-  // fallow-ignore-next-line code-duplication
   vi.mocked(spawn).mockImplementation(() =>
     fromAny<ChildProcess, unknown>({
       stdout: {
@@ -230,8 +227,6 @@ function setupHooks(): Promise<Hooks> {
   setupCommonMocks();
   return OpencodeHooks(mockCtx as never);
 }
-
-// Helpers
 
 function createEventInput(
   eventType = 'session.created',

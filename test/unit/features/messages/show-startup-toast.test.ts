@@ -4,7 +4,6 @@ import { homedir } from 'os';
 
 const mockReadFile = vi.hoisted(() => vi.fn());
 
-// fallow-ignore-next-line code-duplication
 const mockFs = vi.hoisted(() => ({
   existsSync: vi.fn(),
   readdirSync: vi.fn(),
@@ -15,7 +14,6 @@ vi.mock('fs/promises', () => ({
   readFile: mockReadFile,
 }));
 
-// fallow-ignore-next-line code-duplication
 const mockSettings = vi.hoisted(() => ({
   userConfig: {
     enabled: true,
