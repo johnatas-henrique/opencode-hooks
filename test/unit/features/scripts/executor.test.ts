@@ -62,6 +62,73 @@ function makeMockChildProcess(
   });
 }
 
+async function runExecuteScript(
+  entry: Partial<ScriptEntry> = {},
+  options: {
+    eventType?: string;
+    toolName?: string;
+    context?: Record<string, unknown>;
+    mockOverrides?: Record<string, unknown>;
+    closeCode?: number | null;
+  } = {}
+) {
+  const {
+    eventType = 'tool.execute.before',
+    toolName = 'bash',
+    context = { sessionID: 's1' },
+    mockOverrides = {},
+    closeCode = 0,
+  } = options;
+
+  const mockProc = {
+    stdout: { on: vi.fn() },
+    stderr: { on: vi.fn() },
+    stdin: { write: vi.fn(), end: vi.fn() },
+    on: vi.fn(),
+    unref: vi.fn(),
+    ...mockOverrides,
+  };
+  vi.mocked(mockSpawn.spawn).mockReturnValue(mockProc);
+
+  const fullEntry: ScriptEntry = {
+    source: 'native',
+    path: 'test.sh',
+    ...entry,
+  };
+  const promise = executeScript(fullEntry, eventType, toolName, context);
+
+  const closeHandler = mockProc.on.mock.calls.find(
+    (c: unknown[]) => c[0] === 'close'
+  );
+  if (closeHandler) {
+    (closeHandler[1] as (code: number | null) => void)(closeCode);
+  }
+
+  return { result: await promise, mockProc };
+}
+
+function runExecute(entry: Partial<ScriptEntry> = {}) {
+  return executeScript(
+    { source: 'native', path: 'test.sh', ...entry },
+    'session.created',
+    '',
+    { sessionID: 's1' }
+  );
+}
+
+async function runWithStdout(stdoutData: string) {
+  vi.mocked(spawn).mockReturnValueOnce(
+    makeMockChildProcess({
+      stdout: {
+        on: vi.fn((event: string, cb: (d: Buffer) => void) => {
+          if (event === 'data') cb(Buffer.from(stdoutData));
+        }),
+      },
+    })
+  );
+  return await runExecute();
+}
+
 describe('sanitizeArg', () => {
   it('replaces shell special chars with escaped versions', () => {
     expect(sanitizeArg('normal')).toBe('normal');
@@ -399,88 +466,32 @@ describe('executeScript', () => {
   });
 
   it('spawns a process for sync scripts', async () => {
-    const mockProc = {
-      stdout: { on: vi.fn() },
-      stderr: { on: vi.fn() },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn(),
-      unref: vi.fn(),
-    };
-    vi.mocked(mockSpawn.spawn).mockReturnValue(mockProc);
-
-    const entry: ScriptEntry = { source: 'native', path: 'valid.sh' };
-    const promise = executeScript(entry, 'tool.execute.before', 'bash', {
-      sessionID: 's1',
-    });
-
-    const closeHandler = mockProc.on.mock.calls.find(
-      (c: unknown[]) => c[0] === 'close'
-    );
-    if (closeHandler) {
-      (closeHandler[1] as (code: number) => void)(0);
-    }
-
-    const result = await promise;
+    const { result } = await runExecuteScript({ path: 'valid.sh' });
     expect(result.script).toBe('valid.sh');
   });
 
   it('resolves with block output when exit code is 2', async () => {
-    const mockProc = {
-      stdout: { on: vi.fn() },
-      stderr: {
-        on: vi.fn(function (event: string, cb: (d: Buffer) => void) {
-          if (event === 'data') cb(Buffer.from('Denied'));
-        }),
-      },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn(),
-      unref: vi.fn(),
-    };
-    vi.mocked(mockSpawn.spawn).mockReturnValue(mockProc);
-
-    const entry: ScriptEntry = { source: 'native', path: 'block.sh' };
-    const promise = executeScript(entry, 'tool.execute.before', 'bash', {
-      sessionID: 's1',
-    });
-
-    const closeHandler = mockProc.on.mock.calls.find(
-      (c: unknown[]) => c[0] === 'close'
+    const { result } = await runExecuteScript(
+      { path: 'block.sh' },
+      {
+        closeCode: 2,
+        mockOverrides: {
+          stderr: {
+            on: vi.fn(function (event: string, cb: (d: Buffer) => void) {
+              if (event === 'data') cb(Buffer.from('Denied'));
+            }),
+          },
+        },
+      }
     );
-    if (closeHandler) {
-      (closeHandler[1] as (code: number) => void)(2);
-    }
-
-    const result = await promise;
     expect(result.exitCode).toBe(2);
   });
 
   it('skips stdin building when passStdin is false', async () => {
-    const mockProc = {
-      stdout: { on: vi.fn() },
-      stderr: { on: vi.fn() },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn(),
-      unref: vi.fn(),
-    };
-    vi.mocked(mockSpawn.spawn).mockReturnValue(mockProc);
-
-    const entry: ScriptEntry = {
-      source: 'native',
-      path: 'test.sh',
-      passStdin: false,
-    };
-    const promise = executeScript(entry, 'tool.execute.before', '', {
-      sessionID: 's1',
-    });
-
-    const closeHandler = mockProc.on.mock.calls.find(
-      (c: unknown[]) => c[0] === 'close'
+    const { result, mockProc } = await runExecuteScript(
+      { passStdin: false },
+      { toolName: '' }
     );
-    if (closeHandler) {
-      (closeHandler[1] as (code: number) => void)(0);
-    }
-
-    const result = await promise;
     expect(result.script).toBe('test.sh');
     expect(mockProc.stdin.write).not.toHaveBeenCalled();
   });
@@ -494,12 +505,7 @@ describe('executeScript', () => {
       })
     );
 
-    const result = await executeScript(
-      { source: 'native', path: 'test.sh' },
-      'session.created',
-      '',
-      { sessionID: 's1' }
-    );
+    const result = await runExecute();
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Exit code 1');
   });
@@ -513,12 +519,7 @@ describe('executeScript', () => {
       })
     );
 
-    const result = await executeScript(
-      { source: 'native', path: 'test.sh' },
-      'session.created',
-      '',
-      { sessionID: 's1' }
-    );
+    const result = await runExecute();
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('terminated unexpectedly');
   });
@@ -530,25 +531,7 @@ describe('executeScript', () => {
         permissionDecisionReason: 'not allowed',
       },
     });
-    vi.mocked(spawn).mockReturnValueOnce(
-      makeMockChildProcess({
-        stdout: {
-          on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-            if (event === 'data') cb(Buffer.from(stdoutData));
-          }),
-        },
-        on: vi.fn((event: string, cb: (code: number | null) => void) => {
-          if (event === 'close') cb(0);
-        }),
-      })
-    );
-
-    const result = await executeScript(
-      { source: 'native', path: 'test.sh' },
-      'session.created',
-      '',
-      { sessionID: 's1' }
-    );
+    const result = await runWithStdout(stdoutData);
     expect(result.exitCode).toBe(2);
     expect(result.output).toBe('not allowed');
   });
@@ -558,22 +541,7 @@ describe('executeScript', () => {
       decision: 'block',
       reason: 'blocked by policy',
     });
-    vi.mocked(spawn).mockReturnValueOnce(
-      makeMockChildProcess({
-        stdout: {
-          on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-            if (event === 'data') cb(Buffer.from(stdoutData));
-          }),
-        },
-      })
-    );
-
-    const result = await executeScript(
-      { source: 'native', path: 'test.sh' },
-      'session.created',
-      '',
-      { sessionID: 's1' }
-    );
+    const result = await runWithStdout(stdoutData);
     expect(result.exitCode).toBe(2);
     expect(result.output).toContain('blocked by policy');
   });
@@ -583,47 +551,14 @@ describe('executeScript', () => {
       continue: false,
       stopReason: 'user requested stop',
     });
-    vi.mocked(spawn).mockReturnValueOnce(
-      makeMockChildProcess({
-        stdout: {
-          on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-            if (event === 'data') cb(Buffer.from(stdoutData));
-          }),
-        },
-      })
-    );
-
-    const result = await executeScript(
-      { source: 'native', path: 'test.sh' },
-      'session.created',
-      '',
-      { sessionID: 's1' }
-    );
+    const result = await runWithStdout(stdoutData);
     expect(result.exitCode).toBe(2);
     expect(result.output).toContain('user requested stop');
   });
 
   it('parses JSON stdout with ok false', async () => {
     const stdoutData = JSON.stringify({ ok: false, reason: 'failed' });
-    vi.mocked(spawn).mockReturnValueOnce(
-      makeMockChildProcess({
-        stdout: {
-          on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-            if (event === 'data') cb(Buffer.from(stdoutData));
-          }),
-        },
-        on: vi.fn((event: string, cb: (code: number | null) => void) => {
-          if (event === 'close') cb(0);
-        }),
-      })
-    );
-
-    const result = await executeScript(
-      { source: 'native', path: 'test.sh' },
-      'session.created',
-      '',
-      { sessionID: 's1' }
-    );
+    const result = await runWithStdout(stdoutData);
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('failed');
   });
@@ -637,43 +572,16 @@ describe('executeScript', () => {
       })
     );
 
-    const result = await executeScript(
-      { source: 'native', path: 'test.sh' },
-      'session.created',
-      '',
-      { sessionID: 's1' }
-    );
+    const result = await runExecute();
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Spawn failed');
   });
 
   it('uses buildClaudeStdin for claude source scripts', async () => {
-    const mockProc = {
-      stdout: { on: vi.fn() },
-      stderr: { on: vi.fn() },
-      stdin: { write: vi.fn(), end: vi.fn() },
-      on: vi.fn(),
-      unref: vi.fn(),
-    };
-    vi.mocked(mockSpawn.spawn).mockReturnValue(mockProc);
-
-    const entry = { source: 'claude' as const, path: 'hooks.sh' };
-    const promise = executeScript(
-      entry,
-      'tool.execute.before',
-      'bash',
-      { sessionID: 's1', callID: 'c1' },
-      {}
+    const { mockProc } = await runExecuteScript(
+      { source: 'claude', path: 'hooks.sh' },
+      { context: { sessionID: 's1', callID: 'c1' } }
     );
-
-    const closeHandler = mockProc.on.mock.calls.find(
-      (c: unknown[]) => c[0] === 'close'
-    );
-    if (closeHandler) {
-      (closeHandler[1] as (code: number) => void)(0);
-    }
-
-    await promise;
 
     expect(mockSpawn.spawn).toHaveBeenCalledWith(
       expect.stringContaining('hooks.sh'),

@@ -1,9 +1,40 @@
 import { describe, it, expect, vi } from 'vitest';
+import { fromAny } from '@total-typescript/shoehorn';
 
 const mockReadFileDefault = vi.hoisted(() => vi.fn().mockResolvedValue(''));
 vi.mock('fs/promises', () => ({ readFile: mockReadFileDefault }));
 
 import { waitForToastSilence } from '.opencode/plugins/features/messages/toast-silence-detector';
+
+interface DetectorResult {
+  promise: Promise<void>;
+  cleanup: () => void;
+  readFileFn: ReturnType<typeof vi.fn>;
+}
+
+function setupDetector(
+  readFileFn: ReturnType<typeof vi.fn>,
+  opts: { pollMs: number; silenceMs: number } = { pollMs: 100, silenceMs: 200 }
+): DetectorResult {
+  const { promise, cleanup } = waitForToastSilence(
+    '/fake/log.log',
+    opts,
+    fromAny<
+      ((path: string, encoding: string) => Promise<string>) | undefined,
+      ReturnType<typeof vi.fn>
+    >(readFileFn)
+  );
+  return { promise, cleanup, readFileFn };
+}
+
+async function runDetector(
+  readFileFn: ReturnType<typeof vi.fn>,
+  advanceMs: number = 100
+): Promise<DetectorResult> {
+  const result = setupDetector(readFileFn);
+  await vi.advanceTimersByTimeAsync(advanceMs);
+  return result;
+}
 
 describe('waitForToastSilence', () => {
   beforeEach(() => {
@@ -18,17 +49,15 @@ describe('waitForToastSilence', () => {
     const readFileFn = vi
       .fn()
       .mockResolvedValue('some log content without toasts');
-    const { promise, cleanup } = waitForToastSilence(
-      '/fake/log.log',
-      { pollMs: 100, silenceMs: 200 },
-      readFileFn
-    );
-
-    await vi.advanceTimersByTimeAsync(100);
+    const {
+      promise,
+      cleanup,
+      readFileFn: mockFn,
+    } = await runDetector(readFileFn);
 
     await expect(promise).resolves.toBeUndefined();
     cleanup();
-    expect(readFileFn).toHaveBeenCalledWith('/fake/log.log', 'utf-8');
+    expect(mockFn).toHaveBeenCalledWith('/fake/log.log', 'utf-8');
   });
 
   it('resolves after silence period when toasts stop increasing', async () => {
@@ -42,14 +71,7 @@ describe('waitForToastSilence', () => {
       .mockResolvedValueOnce(logLines)
       .mockResolvedValueOnce(logLines);
 
-    const { promise, cleanup } = waitForToastSilence(
-      '/fake/log.log',
-      { pollMs: 100, silenceMs: 200 },
-      readFileFn
-    );
-
-    await vi.advanceTimersByTimeAsync(100);
-
+    const { promise, cleanup } = await runDetector(readFileFn);
     await expect(promise).resolves.toBeUndefined();
     cleanup();
   });
@@ -68,7 +90,10 @@ describe('waitForToastSilence', () => {
     const { promise, cleanup } = waitForToastSilence(
       '/fake/log.log',
       { pollMs: 100, silenceMs: 200 },
-      readFileFn
+      fromAny<
+        ((path: string, encoding: string) => Promise<string>) | undefined,
+        ReturnType<typeof vi.fn>
+      >(readFileFn)
     );
 
     await vi.advanceTimersByTimeAsync(100);
@@ -80,15 +105,7 @@ describe('waitForToastSilence', () => {
 
   it('resolves on readFile error', async () => {
     const readFileFn = vi.fn().mockRejectedValue(new Error('read error'));
-
-    const { promise, cleanup } = waitForToastSilence(
-      '/fake/log.log',
-      { pollMs: 100, silenceMs: 200 },
-      readFileFn
-    );
-
-    await vi.advanceTimersByTimeAsync(100);
-
+    const { promise, cleanup } = await runDetector(readFileFn);
     await expect(promise).resolves.toBeUndefined();
     cleanup();
   });
@@ -98,7 +115,10 @@ describe('waitForToastSilence', () => {
     const { promise, cleanup } = waitForToastSilence(
       '/fake/log.log',
       { pollMs: 1000, silenceMs: 2000 },
-      readFileFn
+      fromAny<
+        ((path: string, encoding: string) => Promise<string>) | undefined,
+        ReturnType<typeof vi.fn>
+      >(readFileFn)
     );
 
     cleanup();
