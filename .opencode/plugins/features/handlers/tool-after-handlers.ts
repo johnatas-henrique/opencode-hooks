@@ -3,230 +3,181 @@ import { buildKeysMessage } from '.opencode/plugins/features/message-formatter/b
 import type { EventHandler } from '.opencode/plugins/types/events';
 import { createHandler } from '.opencode/plugins/features/handlers/create-handler';
 
-export const toolAfterHandlers: Record<string, EventHandler> = {
-  'tool.execute.after.bash': createHandler({
+interface AfterToolConfig {
+  tool: string;
+  title: string;
+  defaultScript: string;
+  allowedFields: string[];
+  variant?: 'info' | 'success';
+  duration?: number;
+  defaultTemplate?: string;
+}
+
+const AFTER_TOOLS: AfterToolConfig[] = [
+  {
+    tool: 'bash',
     title: '====BASH AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.bash.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'output.title', 'metadata.exit'],
-  }),
-
-  'tool.execute.after.codesearch': createHandler({
+  },
+  {
+    tool: 'codesearch',
     title: '====CODE SEARCH AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.codesearch.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool'],
-  }),
-
-  'tool.execute.after.edit': createHandler({
+  },
+  {
+    tool: 'edit',
     title: '====EDIT AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.edit.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.path'],
-  }),
-
-  'tool.execute.after.filesystem_create_directory': createHandler({
+  },
+  {
+    tool: 'filesystem_create_directory',
     title: '====FS MKDIR AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.filesystem_create_directory.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.path'],
-  }),
-
-  'tool.execute.after.filesystem_get_file_info': createHandler({
+  },
+  {
+    tool: 'filesystem_get_file_info',
     title: '====FS STAT AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.filesystem_get_file_info.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.path'],
-  }),
-
-  'tool.execute.after.filesystem_list_directory': createHandler({
+  },
+  {
+    tool: 'filesystem_list_directory',
     title: '====FS LS AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.filesystem_list_directory.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.path'],
-  }),
-
-  'tool.execute.after.filesystem_move_file': createHandler({
+  },
+  {
+    tool: 'filesystem_move_file',
     title: '====FS MV AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.filesystem_move_file.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.source', 'args.destination'],
-  }),
-
-  'tool.execute.after.filesystem_read_file': createHandler({
+  },
+  {
+    tool: 'filesystem_read_file',
     title: '====FS READ AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.filesystem_read_file.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.path'],
-  }),
-
-  'tool.execute.after.filesystem_search_files': createHandler({
+  },
+  {
+    tool: 'filesystem_search_files',
     title: '====FS FIND AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.filesystem_search_files.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.pattern'],
-  }),
-
-  'tool.execute.after.filesystem_write_file': createHandler({
+  },
+  {
+    tool: 'filesystem_write_file',
     title: '====FS WRITE AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.filesystem_write_file.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.path'],
-  }),
-
-  'tool.execute.after.gh_grep_searchGitHub': createHandler({
+  },
+  {
+    tool: 'gh_grep_searchGitHub',
     title: '====GH SEARCH AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.github_search_code.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool'],
-  }),
-
-  'tool.execute.after.git-commit': createHandler({
+  },
+  {
+    tool: 'git-commit',
     title: '====GIT COMMIT AFTER====',
+    defaultScript: 'tool-execute-after.git-commit.sh',
+    allowedFields: ['tool', 'output.title', 'metadata.exit'],
     variant: 'success',
     duration: DEFAULTS.toast.durations.TEN_SECONDS,
-    defaultScript: 'tool-execute-after.git-commit.sh',
-    buildMessage: buildKeysMessage,
-    allowedFields: ['tool', 'output.title', 'metadata.exit'],
     defaultTemplate: '[{timestamp}] Git commit: {output.title}',
-  }),
-
-  'tool.execute.after.glob': createHandler({
+  },
+  {
+    tool: 'glob',
     title: '====GLOB AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.glob.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.pattern'],
-  }),
-
-  'tool.execute.after.grep': createHandler({
+  },
+  {
+    tool: 'grep',
     title: '====GREP AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.grep.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.pattern'],
-  }),
-
-  'tool.execute.after.list': createHandler({
+  },
+  {
+    tool: 'list',
     title: '====LIST AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.list.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool'],
-  }),
-
-  'tool.execute.after.patch': createHandler({
+  },
+  {
+    tool: 'patch',
     title: '====PATCH AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.patch.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.path'],
-  }),
-
-  'tool.execute.after.question': createHandler({
+  },
+  {
+    tool: 'question',
     title: '====QUESTION AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.question.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool'],
-  }),
-
-  'tool.execute.after.read': createHandler({
+  },
+  {
+    tool: 'read',
     title: '====READ AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.read.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.filePath'],
-  }),
-
-  'tool.execute.after.skill': createHandler({
+  },
+  {
+    tool: 'skill',
     title: '====SKILL AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.skill.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'output.title'],
-  }),
-
-  'tool.execute.after.task': createHandler({
+  },
+  {
+    tool: 'task',
     title: '====TASK AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.task.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool'],
-  }),
-
-  'tool.execute.after.todoread': createHandler({
+  },
+  {
+    tool: 'todoread',
     title: '====TODO READ AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.todoread.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool'],
-  }),
-
-  'tool.execute.after.todowrite': createHandler({
+  },
+  {
+    tool: 'todowrite',
     title: '====TODO WRITE AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.todowrite.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool'],
-  }),
-
-  'tool.execute.after.webfetch': createHandler({
+  },
+  {
+    tool: 'webfetch',
     title: '====WEB FETCH AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.webfetch.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.url'],
-  }),
-
-  'tool.execute.after.websearch': createHandler({
+  },
+  {
+    tool: 'websearch',
     title: '====WEB SEARCH AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.websearch.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.query'],
-  }),
-
-  'tool.execute.after.write': createHandler({
+  },
+  {
+    tool: 'write',
     title: '====WRITE AFTER====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
     defaultScript: 'tool-execute-after.write.sh',
-    buildMessage: buildKeysMessage,
     allowedFields: ['tool', 'args.filePath'],
-  }),
-};
+  },
+];
+
+export const toolAfterHandlers: Record<string, EventHandler> = {};
+for (const cfg of AFTER_TOOLS) {
+  toolAfterHandlers[`tool.execute.after.${cfg.tool}`] = createHandler({
+    title: cfg.title,
+    variant: cfg.variant ?? 'info',
+    duration: cfg.duration ?? DEFAULTS.toast.durations.FIVE_SECONDS,
+    defaultScript: cfg.defaultScript,
+    buildMessage: buildKeysMessage,
+    allowedFields: cfg.allowedFields,
+    ...(cfg.defaultTemplate ? { defaultTemplate: cfg.defaultTemplate } : {}),
+  });
+}

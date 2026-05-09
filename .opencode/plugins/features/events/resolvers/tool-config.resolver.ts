@@ -48,6 +48,84 @@ export class DefaultToolConfigResolver implements ToolConfigResolver {
     );
   }
 
+  private resolveToolOverrides(
+    toolHandler: EventHandler | undefined,
+    eventHandler: EventHandler | undefined,
+    toolEventType: string,
+    input: Record<string, unknown> | undefined,
+    output: Record<string, unknown> | undefined
+  ): {
+    toastTitle: string;
+    toastVariant: string;
+    toastDuration: number;
+    toastMessage: string;
+  } {
+    return {
+      toastTitle: toolHandler
+        ? toolHandler.title
+        : eventHandler
+          ? eventHandler.title
+          : '',
+      toastVariant: toolHandler
+        ? toolHandler.variant
+        : eventHandler
+          ? eventHandler.variant
+          : 'info',
+      toastDuration: toolHandler
+        ? toolHandler.duration
+        : eventHandler
+          ? eventHandler.duration
+          : DEFAULTS.toast.durations.TWO_SECONDS,
+      toastMessage: toolHandler
+        ? this.defaultResolver.tryBuildMessage(
+            toolHandler,
+            toolEventType,
+            input ?? {},
+            output,
+            toolHandler.allowedFields
+          )
+        : eventHandler
+          ? this.defaultResolver.tryBuildMessage(
+              eventHandler,
+              toolEventType,
+              input ?? {},
+              output,
+              eventHandler.allowedFields
+            )
+          : '',
+    };
+  }
+
+  private resolveBooleanFields(
+    toolConfig: ToolConfig,
+    defaultCfg: Record<string, unknown> | undefined,
+    base: ResolvedEventConfig
+  ): Partial<ResolvedEventConfig> {
+    return {
+      enabled: getBooleanField(toolConfig, defaultCfg, 'enabled', base.enabled),
+      toast: getBooleanField(toolConfig, defaultCfg, 'toast', base.toast),
+      runScripts: getBooleanField(
+        toolConfig,
+        defaultCfg,
+        'runScripts',
+        base.runScripts
+      ),
+      logToAudit: getBooleanField(toolConfig, defaultCfg, 'logToAudit', true),
+      appendToSession: getBooleanField(
+        toolConfig,
+        defaultCfg,
+        'appendToSession',
+        base.appendToSession
+      ),
+      runOnlyOnce: getBooleanField(
+        toolConfig,
+        defaultCfg,
+        'runOnlyOnce',
+        base.runOnlyOnce
+      ),
+    };
+  }
+
   resolve(
     toolEventType: string,
     toolName: string,
@@ -112,45 +190,17 @@ export class DefaultToolConfigResolver implements ToolConfigResolver {
           return base;
         })();
 
-    const toastTitle = toolHandler
-      ? toolHandler.title
-      : eventHandler
-        ? eventHandler.title
-        : '';
-    const toastVariant = toolHandler
-      ? toolHandler.variant
-      : eventHandler
-        ? eventHandler.variant
-        : 'info';
-    const toastDuration = toolHandler
-      ? toolHandler.duration
-      : eventHandler
-        ? eventHandler.duration
-        : DEFAULTS.toast.durations.TWO_SECONDS;
-    const toastMessage = toolHandler
-      ? this.defaultResolver.tryBuildMessage(
-          toolHandler,
-          toolEventType,
-          input ?? {},
-          output,
-          toolHandler.allowedFields
-        )
-      : eventHandler
-        ? this.defaultResolver.tryBuildMessage(
-            eventHandler,
-            toolEventType,
-            input ?? {},
-            output,
-            eventHandler.allowedFields
-          )
-        : '';
+    const toastOverrides = this.resolveToolOverrides(
+      toolHandler,
+      eventHandler,
+      toolEventType,
+      input,
+      output
+    );
 
     const baseWithToolHandler: ResolvedEventConfig = {
       ...eventBase,
-      toastTitle,
-      toastMessage,
-      toastVariant,
-      toastDuration,
+      ...toastOverrides,
       scripts:
         eventBase.runScripts && toolHandler?.defaultScript
           ? [asScriptEntry(toolHandler.defaultScript)]
@@ -186,25 +236,8 @@ export class DefaultToolConfigResolver implements ToolConfigResolver {
 
     return {
       ...baseWithToolHandler,
-      enabled: getBooleanField(
-        toolConfig,
-        defaultCfg,
-        'enabled',
-        baseWithToolHandler.enabled
-      ),
-      toast: getBooleanField(
-        toolConfig,
-        defaultCfg,
-        'toast',
-        baseWithToolHandler.toast
-      ),
+      ...this.resolveBooleanFields(toolConfig, defaultCfg, baseWithToolHandler),
       toastTitle: toastCfg?.title ?? baseWithToolHandler.toastTitle,
-      runScripts: getBooleanField(
-        toolConfig,
-        defaultCfg,
-        'runScripts',
-        baseWithToolHandler.runScripts
-      ),
       toastMessage: buildToastMessage(
         toastCfg,
         baseWithToolHandler.toastMessage,
@@ -214,19 +247,6 @@ export class DefaultToolConfigResolver implements ToolConfigResolver {
       toastVariant: toastCfg?.variant ?? baseWithToolHandler.toastVariant,
       toastDuration: toastCfg?.duration ?? baseWithToolHandler.toastDuration,
       scripts: mergedScripts,
-      logToAudit: getBooleanField(toolConfig, defaultCfg, 'logToAudit', true),
-      appendToSession: getBooleanField(
-        toolConfig,
-        defaultCfg,
-        'appendToSession',
-        baseWithToolHandler.appendToSession
-      ),
-      runOnlyOnce: getBooleanField(
-        toolConfig,
-        defaultCfg,
-        'runOnlyOnce',
-        baseWithToolHandler.runOnlyOnce
-      ),
       scriptToasts: this.context.scriptToasts,
     };
   }

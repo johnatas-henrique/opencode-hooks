@@ -59,48 +59,95 @@ export class HookExecutor {
     } = event;
     const sessionId = getNormalizedSessionId(rawSessionId);
 
-    if (resolved.runOnlyOnce && this.deps.isSubagent(rawSessionId)) {
-      return;
-    }
+    if (this.shouldSkipRunOnlyOnce(event, rawSessionId)) return;
 
     if (!resolved.enabled) {
-      const shouldSkip =
-        typeof this.deps.logDisabledEvents === 'function'
-          ? !this.deps.logDisabledEvents()
-          : !this.deps.logDisabledEvents;
-      if (shouldSkip) {
-        return;
-      }
-      await this.deps.eventRecorder?.logEvent('EVENT_DISABLED', {
-        sessionID: sessionId,
-        context: eventType,
-      });
+      await this.handleDisabledEvent(eventType, sessionId);
       return;
     }
 
-    if (this.deps.eventRecorder) {
-      await this.deps.eventRecorder.logEvent(eventType, {
-        sessionID: sessionId,
-        input: input,
-        output: output,
-        tool: toolName,
-      });
-    }
+    await this.recordEvent(eventType, sessionId, input, output, toolName);
+    this.showMainToast(resolved);
+    const results = await this.executeScripts(
+      eventType,
+      resolved,
+      input,
+      output,
+      toolName,
+      sessionId
+    );
+    this.handleStopHookState(eventType, results, sessionId);
+    await this.recordScriptResults(results, toolName, eventType, sessionId);
+    this.showErrorToast(resolved, results, eventType, toolName);
+    this.showOutputToast(resolved, results);
+    await this.appendToSession(event, resolved, results, sessionId);
+    this.checkBlockedExecution(eventType, results);
+  }
 
-    if (resolved.toast) {
-      this.deps.toastQueue.add({
-        title: resolved.toastTitle,
-        message: resolved.toastMessage!.trim().replace(/^\s+/gm, ''),
-        variant: resolved.toastVariant,
-        duration: resolved.toastDuration,
-      });
-    }
+  private shouldSkipRunOnlyOnce(
+    event: HookEvent,
+    rawSessionId: string
+  ): boolean {
+    return event.resolved.runOnlyOnce && this.deps.isSubagent(rawSessionId);
+  }
 
+  private async handleDisabledEvent(
+    eventType: string,
+    sessionId: string
+  ): Promise<void> {
+    const shouldSkip =
+      typeof this.deps.logDisabledEvents === 'function'
+        ? !this.deps.logDisabledEvents()
+        : !this.deps.logDisabledEvents;
+    if (shouldSkip) return;
+
+    await this.deps.eventRecorder?.logEvent('EVENT_DISABLED', {
+      sessionID: sessionId,
+      context: eventType,
+    });
+  }
+
+  private async recordEvent(
+    eventType: string,
+    sessionId: string,
+    input: Record<string, unknown> | undefined,
+    output: Record<string, unknown> | undefined,
+    toolName: string | undefined
+  ): Promise<void> {
+    if (!this.deps.eventRecorder) return;
+
+    await this.deps.eventRecorder.logEvent(eventType, {
+      sessionID: sessionId,
+      input,
+      output,
+      tool: toolName,
+    });
+  }
+
+  private showMainToast(resolved: ResolvedEventConfig): void {
+    if (!resolved.toast) return;
+
+    this.deps.toastQueue.add({
+      title: resolved.toastTitle,
+      message: resolved.toastMessage!.trim().replace(/^\s+/gm, ''),
+      variant: resolved.toastVariant,
+      duration: resolved.toastDuration,
+    });
+  }
+
+  private async executeScripts(
+    eventType: string,
+    resolved: ResolvedEventConfig,
+    input: Record<string, unknown> | undefined,
+    output: Record<string, unknown> | undefined,
+    toolName: string | undefined,
+    sessionId: string
+  ): Promise<ScriptResult[]> {
     const stopHookActive =
       eventType === SESSION_IDLE && this.deps.stopHook.isActive(sessionId);
     const hookInput = { ...(input ?? {}), stopHookActive };
 
-    const results = await Promise.all(
+    return Promise.all(
       resolved.scripts.map(async (script) => {
         return this.deps.executeScript(
           script,
@@ -111,100 +158,146 @@ export class HookExecutor {
         );
       })
     );
+  }
 
-    if (eventType === SESSION_IDLE) {
-      const anyBlocked = results.some(
-        (r) => r.exitCode === 2 || r.output.includes('block')
+  private handleStopHookState(
+    eventType: string,
+    results: ScriptResult[],
+    sessionId: string
+  ): void {
+    if (eventType !== SESSION_IDLE) return;
+
+    const anyBlocked = results.some(
+      (r) => r.exitCode === 2 || r.output.includes('block')
+    );
+
+    if (anyBlocked) {
+      this.deps.stopHook.setState(sessionId);
+    } else {
+      this.deps.stopHook.clearState(sessionId);
+    }
+  }
+
+  private async recordScriptResults(
+    results: ScriptResult[],
+    toolName: string | undefined,
+    eventType: string,
+    sessionId: string
+  ): Promise<void> {
+    if (!this.deps.scriptRecorder) return;
+
+    for (const r of results) {
+      await this.deps.scriptRecorder.logScript(
+        {
+          script: r.script,
+          args: toolName ? [toolName] : [eventType],
+          startTime: Date.now(),
+          sessionId,
+        },
+        {
+          output: r.output,
+          error: r.exitCode === 0 ? null : r.output,
+          exitCode: r.exitCode,
+        }
       );
-      if (anyBlocked) {
-        this.deps.stopHook.setState(sessionId);
-      } else if (stopHookActive) {
-        this.deps.stopHook.clearState(sessionId);
-      }
     }
+  }
 
-    if (this.deps.scriptRecorder) {
-      for (const r of results) {
-        await this.deps.scriptRecorder.logScript(
-          {
-            script: r.script,
-            args: toolName ? [toolName] : [eventType],
-            startTime: Date.now(),
-            sessionId,
-          },
-          {
-            output: r.output,
-            error: r.exitCode === 0 ? null : r.output,
-            exitCode: r.exitCode,
-          }
-        );
-      }
-    }
+  private showErrorToast(
+    resolved: ResolvedEventConfig,
+    results: ScriptResult[],
+    eventType: string,
+    toolName: string | undefined
+  ): void {
+    if (!resolved.scriptToasts?.showError) return;
 
-    if (resolved.scriptToasts?.showError) {
-      const failedScripts = results.filter((r) => r.exitCode !== 0 && r.output);
-      if (failedScripts.length > 0) {
-        const errorTitle = resolved.toastTitle.replace(
-          /=+$/,
-          ` ${resolved.scriptToasts.errorTitle}====`
-        );
-        const eventInfo =
-          eventType.startsWith('tool.execute.') && toolName
-            ? toolName
-            : eventType;
-        this.deps.toastQueue.add({
-          title: errorTitle,
-          message: failedScripts
-            .map(
-              (r) =>
-                `Event: ${eventInfo}\nScript: ${r.script}\nError: ${r.output}\nExit Code: ${r.exitCode}\nCheck settings.ts`
-            )
-            .join('\n\n'),
-          variant: resolved.scriptToasts.errorVariant,
-          duration: resolved.scriptToasts.errorDuration,
-        });
-      }
-    }
+    const failedScripts = results.filter((r) => r.exitCode !== 0 && r.output);
+    if (failedScripts.length === 0) return;
 
+    const errorTitle = resolved.toastTitle.replace(
+      /=+$/,
+      ` ${resolved.scriptToasts.errorTitle}====`
+    );
+    const eventInfo =
+      eventType.startsWith('tool.execute.') && toolName ? toolName : eventType;
+
+    this.deps.toastQueue.add({
+      title: errorTitle,
+      message: failedScripts
+        .map(
+          (r) =>
+            `Event: ${eventInfo}\nScript: ${r.script}\nError: ${r.output}\nExit Code: ${r.exitCode}\nCheck settings.ts`
+        )
+        .join('\n\n'),
+      variant: resolved.scriptToasts.errorVariant,
+      duration: resolved.scriptToasts.errorDuration,
+    });
+  }
+
+  private showOutputToast(
+    resolved: ResolvedEventConfig,
+    results: ScriptResult[]
+  ): void {
     const successfulScripts = results.filter(
       (result) => result.output.trim() !== ''
     );
 
     if (
-      resolved.toast &&
-      successfulScripts.length > 0 &&
-      resolved.scriptToasts?.showOutput
+      !resolved.toast ||
+      successfulScripts.length === 0 ||
+      !resolved.scriptToasts?.showOutput
     ) {
-      const outputTitle = resolved.toastTitle.replace(
-        /=+$/,
-        ` ${resolved.scriptToasts.outputTitle}====`
-      );
-      this.deps.toastQueue.add({
-        title: outputTitle,
-        message: successfulScripts
-          .map((result) => `- ${result.script}:\n${result.output}`)
-          .join('\n\n'),
-        variant: resolved.scriptToasts.outputVariant,
-        duration: resolved.scriptToasts.outputDuration,
-      });
+      return;
     }
 
-    if (resolved.appendToSession) {
-      for (const r of successfulScripts) {
-        if (r.output) {
-          await this.deps.appendToSession(event.ctx, sessionId, r.output);
-        }
+    const outputTitle = resolved.toastTitle.replace(
+      /=+$/,
+      ` ${resolved.scriptToasts.outputTitle}====`
+    );
+
+    this.deps.toastQueue.add({
+      title: outputTitle,
+      message: successfulScripts
+        .map((result) => `- ${result.script}:\n${result.output}`)
+        .join('\n\n'),
+      variant: resolved.scriptToasts.outputVariant,
+      duration: resolved.scriptToasts.outputDuration,
+    });
+  }
+
+  private async appendToSession(
+    event: HookEvent,
+    resolved: ResolvedEventConfig,
+    results: ScriptResult[],
+    sessionId: string
+  ): Promise<void> {
+    if (!resolved.appendToSession) return;
+
+    const successfulScripts = results.filter(
+      (result) => result.output.trim() !== ''
+    );
+
+    for (const r of successfulScripts) {
+      if (r.output) {
+        await this.deps.appendToSession(event.ctx, sessionId, r.output);
       }
     }
+  }
 
+  private checkBlockedExecution(
+    eventType: string,
+    results: ScriptResult[]
+  ): void {
     if (
-      eventType === TOOL_EXECUTE_BEFORE ||
-      eventType === COMMAND_EXECUTE_BEFORE
+      eventType !== TOOL_EXECUTE_BEFORE &&
+      eventType !== COMMAND_EXECUTE_BEFORE
     ) {
-      const blockedScript = results.find((r) => r.exitCode === 2);
-      if (blockedScript) {
-        throw new Error(blockedScript.output);
-      }
+      return;
+    }
+
+    const blockedScript = results.find((r) => r.exitCode === 2);
+    if (blockedScript) {
+      throw new Error(blockedScript.output);
     }
   }
 }
