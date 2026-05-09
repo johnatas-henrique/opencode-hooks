@@ -27,7 +27,7 @@ vi.mock('os', () => ({
 import {
   mapClaudeHookToOpenCode,
   loadClaudeSettings,
-} from '.opencode/plugins/config/claude-settings';
+} from '.opencode/plugins/features/adapters/claude-settings';
 
 describe('mapClaudeHookToOpenCode', () => {
   it('maps PreToolUse to tool.execute.before', () => {

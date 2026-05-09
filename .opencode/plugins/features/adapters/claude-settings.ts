@@ -25,33 +25,6 @@ const CLAUDE_EVENT_MAP: Record<string, string> = {
   FileChanged: 'file.watcher.updated',
 };
 
-function _deepMerge(
-  a: Record<string, unknown>,
-  b: Record<string, unknown>
-): Record<string, unknown> {
-  const result: Record<string, unknown> = { ...a };
-  for (const key of Object.keys(b)) {
-    const valA = a[key];
-    const valB = b[key];
-    if (
-      typeof valB === 'object' &&
-      valB !== null &&
-      !Array.isArray(valB) &&
-      typeof valA === 'object' &&
-      valA !== null &&
-      !Array.isArray(valA)
-    ) {
-      result[key] = _deepMerge(
-        valA as Record<string, unknown>,
-        valB as Record<string, unknown>
-      );
-    } else {
-      result[key] = valB;
-    }
-  }
-  return result;
-}
-
 function mergeGlobalAndLocalScripts(
   global: Record<string, ClaudeHookGroup[]>,
   local: Record<string, ClaudeHookGroup[]>
@@ -67,10 +40,8 @@ function mergeGlobalAndLocalScripts(
     const globalGroups = global[key] || [];
     const localGroups = local[key] || [];
 
-    // Map: matcher -> group of hooks
     const groupMap = new Map<string, ClaudeHookGroup>();
 
-    // 1. Add all global groups
     for (const group of globalGroups) {
       if (!group.matcher) continue;
       groupMap.set(group.matcher, {
@@ -79,30 +50,25 @@ function mergeGlobalAndLocalScripts(
       });
     }
 
-    // 2. Merge local groups
     for (const localGroup of localGroups) {
       if (!localGroup.matcher) continue;
       const existing = groupMap.get(localGroup.matcher);
 
       if (existing) {
-        // SAME matcher: merge hooks (local overrides by command)
         const hookMap = new Map<string, ClaudeHook>();
 
-        // Add global hooks
         for (const hook of existing.hooks) {
           if (!hook.command) continue;
           hookMap.set(hook.command, hook);
         }
 
-        // Add/replace with local hooks
         for (const hook of localGroup.hooks) {
           if (!hook.command) continue;
-          hookMap.set(hook.command, hook); // Local wins if duplicated
+          hookMap.set(hook.command, hook);
         }
 
         existing.hooks = Array.from(hookMap.values());
       } else {
-        // NEW matcher: add entire local group
         groupMap.set(localGroup.matcher, {
           matcher: localGroup.matcher,
           hooks: [...localGroup.hooks],
@@ -124,7 +90,6 @@ function extractCommandPath(command: string, projectDir: string = ''): string {
       projectDir
     );
   }
-  // Expand ~ to home directory
   if (trimmed.startsWith('~/')) {
     trimmed = path.join(os.homedir(), trimmed.slice(2));
   }
@@ -164,6 +129,7 @@ export function mapClaudeHookToOpenCode(
 
   return { openCodeEvent, scripts };
 }
+
 export function loadClaudeSettings(
   projectDir: string,
   opts?: { loadGlobal?: boolean; loadLocal?: boolean }

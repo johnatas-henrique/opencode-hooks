@@ -10,7 +10,7 @@ import type {
 import { DelegatingEventConfigResolver } from '.opencode/plugins/features/events/resolvers/event-config.resolver';
 import { DefaultToolConfigResolver } from '.opencode/plugins/features/events/resolvers/tool-config.resolver';
 import { handlers } from '.opencode/plugins/features/handlers';
-import { loadClaudeSettings } from '.opencode/plugins/config/claude-settings';
+import { loadClaudeSettings } from '.opencode/plugins/features/adapters/claude-settings';
 
 let onUnknownEvent: OnUnknownEventFn = () => {};
 
