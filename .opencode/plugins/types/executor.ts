@@ -1,31 +1,11 @@
-import type { EventVariant } from '.opencode/plugins/types/config';
-import type { ScriptRunResult } from '.opencode/plugins/types/scripts';
 import type { PluginInput } from '@opencode-ai/plugin';
-import type {
-  ResolvedEventConfig,
-  ScriptToastsConfig,
-} from '.opencode/plugins/types/config';
+import type { ResolvedEventConfig } from '.opencode/plugins/types/config';
 import type { ScriptRecorder } from '.opencode/plugins/types/audit';
 import type { EventRecorder } from '.opencode/plugins/types/audit';
-
-export interface ScriptRunnerDeps {
-  ctx: PluginInput;
-  sessionId: string;
-  eventType: string;
-  resolved: ResolvedEventConfig;
-  scriptToasts: ScriptToastsConfig;
-  scriptRecorder?: ScriptRecorder;
-  toolName?: string;
-  timestamp?: string;
-}
-
-export interface ScriptExecutorDeps {
-  executeScript: (script: string, arg?: string) => Promise<ScriptRunResult>;
-  audit?: ScriptAuditLogger;
-  session: SessionAppender;
-  toast?: ToastNotifier;
-  isSubagent: (sessionId: string) => boolean;
-}
+import type { ToastQueue } from '.opencode/plugins/types/toast';
+import type { ScriptEntry } from '.opencode/plugins/types/config';
+import type { EventVariant } from '.opencode/plugins/types/config';
+import type { ScriptRunResult } from '.opencode/plugins/types/scripts';
 
 export interface ScriptAuditLogger {
   logScript(
@@ -66,7 +46,28 @@ export interface ScriptResultForAudit {
   exitCode: number;
 }
 
-export interface ExecuteHookParams {
+export interface ScriptExecutorDeps {
+  executeScript: (script: string, arg?: string) => Promise<ScriptRunResult>;
+  audit?: ScriptAuditLogger;
+  session: SessionAppender;
+  toast?: ToastNotifier;
+  isSubagent: (sessionId: string) => boolean;
+}
+
+export interface ScriptRunnerDeps {
+  ctx: PluginInput;
+  sessionId: string;
+  eventType: string;
+  resolved: ResolvedEventConfig;
+  scriptToasts: ScriptToastsConfig;
+  scriptRecorder?: ScriptRecorder;
+  toolName?: string;
+  timestamp?: string;
+}
+
+import type { ScriptToastsConfig } from '.opencode/plugins/types/config';
+
+export interface HookEvent {
   ctx: PluginInput;
   eventType: string;
   resolved: ResolvedEventConfig;
@@ -74,8 +75,33 @@ export interface ExecuteHookParams {
   input?: Record<string, unknown>;
   output?: Record<string, unknown>;
   toolName?: string;
-  scriptArg?: string;
-  eventRecorder?: EventRecorder | undefined;
+}
+
+export interface StopHookAPI {
+  isActive(sessionId: string): boolean;
+  setState(sessionId: string): void;
+  clearState(sessionId: string): void;
+}
+
+export type ExecuteScriptFn = (
+  script: ScriptEntry,
+  eventType: string,
+  toolName: string,
+  input: Record<string, unknown>,
+  output?: Record<string, unknown>
+) => Promise<{ script: string; output: string; exitCode: number }>;
+
+export interface HookExecutorDeps {
+  executeScript: ExecuteScriptFn;
+  isSubagent: (sessionId: string) => boolean;
+  appendToSession: (
+    ctx: PluginInput,
+    sessionId: string,
+    text: string
+  ) => Promise<void>;
+  stopHook: StopHookAPI;
+  toastQueue: ToastQueue;
+  eventRecorder?: EventRecorder;
   scriptRecorder?: ScriptRecorder;
-  showToast?: boolean;
+  logDisabledEvents: (() => boolean) | boolean;
 }

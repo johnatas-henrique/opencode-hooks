@@ -108,11 +108,35 @@ vi.mock('child_process', () => ({
 }));
 vi.mock('.opencode/plugins/config/settings', () => mockSettings);
 
+const mockExecutor = vi.hoisted(() => ({
+  sanitizeArg: vi.fn((arg: string) => arg),
+  validateScriptPath: vi.fn().mockReturnValue(true),
+  resolveScriptPath: vi.fn((p: string) => p),
+  getStopHookStateFile: vi.fn(),
+  getStopHookActive: vi.fn().mockReturnValue(false),
+  setStopHookState: vi.fn(),
+  clearStopHookState: vi.fn(),
+  parseHookOutput: vi.fn(),
+  buildClaudeStdin: vi.fn(),
+  buildOpencodeStdin: vi.fn(),
+  executeScript: vi
+    .fn()
+    .mockResolvedValue({ script: '', output: '', exitCode: 0 }),
+}));
+
+const mockAppendToSession = vi.hoisted(() => ({
+  appendToSession: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('.opencode/plugins/features/scripts/executor', () => mockExecutor);
+vi.mock(
+  '.opencode/plugins/features/messages/append-to-session',
+  () => mockAppendToSession
+);
+
 import * as eventsModule from '.opencode/plugins/features/events/events';
 import * as pluginIntegration from '.opencode/plugins/features/audit/plugin-integration';
-import * as appendToSessionModule from '.opencode/plugins/features/messages/append-to-session';
 import { addSubagentSession } from '.opencode/plugins/features/scripts/run-script-handler';
-import * as executorModule from '.opencode/plugins/features/scripts/executor';
 import {
   resetGlobalToastQueue,
   useGlobalToastQueue,
@@ -467,21 +491,11 @@ describe('OpencodeHooks', () => {
     });
 
     it('throws block error when script exits with code 2', async () => {
-      vi.mocked(spawn).mockImplementation(() =>
-        fromAny<ChildProcess, unknown>({
-          stdout: { on: vi.fn() },
-          stderr: {
-            on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-              if (event === 'data') cb(Buffer.from('Blocked by policy'));
-            }),
-          },
-          stdin: { write: vi.fn(), end: vi.fn() },
-          on: vi.fn((event: string, cb: (code: number) => void) => {
-            if (event === 'close') cb(2);
-          }),
-          unref: vi.fn(),
-        })
-      );
+      mockExecutor.executeScript.mockResolvedValue({
+        script: 'block.sh',
+        output: 'Blocked by policy',
+        exitCode: 2,
+      });
 
       vi.spyOn(eventsModule, 'resolveToolConfig').mockReturnValue(
         createMockResolvedConfig({
@@ -636,11 +650,21 @@ describe('OpencodeHooks', () => {
         size: 0,
       });
       mockFsObj.readdirSync.mockReturnValue([]);
+      mockExecutor.executeScript.mockReset();
+      mockExecutor.executeScript.mockResolvedValue({
+        script: '',
+        output: '',
+        exitCode: 0,
+      });
+      mockExecutor.getStopHookActive.mockReset();
+      mockExecutor.getStopHookActive.mockReturnValue(false);
+      mockExecutor.setStopHookState.mockReset();
+      mockExecutor.clearStopHookState.mockReset();
+      mockAppendToSession.appendToSession.mockReset();
+      mockAppendToSession.appendToSession.mockResolvedValue(undefined);
     });
 
     it('executes scripts from resolved config', async () => {
-      const executeSpy = vi.spyOn(executorModule, 'executeScript');
-
       vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
         createMockResolvedConfig({
           runScripts: true,
@@ -665,7 +689,7 @@ describe('OpencodeHooks', () => {
         } as Event,
       });
 
-      expect(executeSpy).toHaveBeenCalledWith(
+      expect(mockExecutor.executeScript).toHaveBeenCalledWith(
         { source: 'native', path: 'test.sh' },
         'session.created',
         '',
@@ -675,24 +699,11 @@ describe('OpencodeHooks', () => {
     });
 
     it('appends to session when appendToSession is enabled', async () => {
-      const { spawn } = await import('child_process');
-      vi.mocked(spawn).mockImplementation(() =>
-        fromAny<ChildProcess, unknown>({
-          stdout: {
-            on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-              if (event === 'data') cb(Buffer.from('session data'));
-            }),
-          },
-          stderr: { on: vi.fn() },
-          stdin: { write: vi.fn(), end: vi.fn() },
-          on: vi.fn((event: string, cb: (code: number) => void) => {
-            if (event === 'close') cb(0);
-          }),
-          unref: vi.fn(),
-        })
-      );
-
-      const appendSpy = vi.spyOn(appendToSessionModule, 'appendToSession');
+      mockExecutor.executeScript.mockResolvedValue({
+        script: 'test.sh',
+        output: 'session data',
+        exitCode: 0,
+      });
 
       vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
         createMockResolvedConfig({
@@ -719,7 +730,7 @@ describe('OpencodeHooks', () => {
         } as Event,
       });
 
-      expect(appendSpy).toHaveBeenCalledWith(
+      expect(mockAppendToSession.appendToSession).toHaveBeenCalledWith(
         mockCtx,
         'ses_123',
         'session data'
@@ -763,21 +774,11 @@ describe('OpencodeHooks', () => {
         .spyOn(useGlobalToastQueue(), 'add')
         .mockImplementation(() => {});
 
-      vi.mocked(spawn).mockImplementation(() =>
-        fromAny<ChildProcess, unknown>({
-          stdout: { on: vi.fn() },
-          stderr: {
-            on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-              if (event === 'data') cb(Buffer.from('Script failed'));
-            }),
-          },
-          stdin: { write: vi.fn(), end: vi.fn() },
-          on: vi.fn((event: string, cb: (code: number) => void) => {
-            if (event === 'close') cb(1);
-          }),
-          unref: vi.fn(),
-        })
-      );
+      mockExecutor.executeScript.mockResolvedValue({
+        script: 'fail.sh',
+        output: 'Script failed',
+        exitCode: 1,
+      });
 
       vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
         createMockResolvedConfig({
@@ -816,25 +817,12 @@ describe('OpencodeHooks', () => {
     });
 
     it('manages stop hook state for session.idle', async () => {
-      const { spawn } = await import('child_process');
-      vi.mocked(spawn).mockImplementation(() =>
-        fromAny<ChildProcess, unknown>({
-          stdout: {
-            on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-              if (event === 'data') cb(Buffer.from(''));
-            }),
-          },
-          stderr: { on: vi.fn() },
-          stdin: { write: vi.fn(), end: vi.fn() },
-          on: vi.fn((event: string, cb: (code: number) => void) => {
-            if (event === 'close') cb(2);
-          }),
-          unref: vi.fn(),
-        })
-      );
-
-      const setStopSpy = vi.spyOn(executorModule, 'setStopHookState');
-      vi.spyOn(executorModule, 'getStopHookActive').mockReturnValue(false);
+      mockExecutor.executeScript.mockResolvedValue({
+        script: 'idle.sh',
+        output: 'blocked',
+        exitCode: 2,
+      });
+      mockExecutor.getStopHookActive.mockReturnValue(false);
 
       vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
         createMockResolvedConfig({
@@ -860,12 +848,11 @@ describe('OpencodeHooks', () => {
         } as Event,
       });
 
-      expect(setStopSpy).toHaveBeenCalledWith('ses_123');
+      expect(mockExecutor.setStopHookState).toHaveBeenCalledWith('ses_123');
     });
 
     it('clears stop hook state when idle scripts no longer block', async () => {
-      const clearSpy = vi.spyOn(executorModule, 'clearStopHookState');
-      vi.spyOn(executorModule, 'getStopHookActive').mockReturnValue(true);
+      mockExecutor.getStopHookActive.mockReturnValue(true);
 
       vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
         createMockResolvedConfig({
@@ -891,7 +878,7 @@ describe('OpencodeHooks', () => {
         } as Event,
       });
 
-      expect(clearSpy).toHaveBeenCalledWith('ses_123');
+      expect(mockExecutor.clearStopHookState).toHaveBeenCalledWith('ses_123');
     });
 
     it('shows script output toast when configured', async () => {
@@ -899,22 +886,11 @@ describe('OpencodeHooks', () => {
         .spyOn(useGlobalToastQueue(), 'add')
         .mockImplementation(() => {});
 
-      const { spawn } = await import('child_process');
-      vi.mocked(spawn).mockImplementation(() =>
-        fromAny<ChildProcess, unknown>({
-          stdout: {
-            on: vi.fn((event: string, cb: (d: Buffer) => void) => {
-              if (event === 'data') cb(Buffer.from('hello world'));
-            }),
-          },
-          stderr: { on: vi.fn() },
-          stdin: { write: vi.fn(), end: vi.fn() },
-          on: vi.fn((event: string, cb: (code: number) => void) => {
-            if (event === 'close') cb(0);
-          }),
-          unref: vi.fn(),
-        })
-      );
+      mockExecutor.executeScript.mockResolvedValue({
+        script: 'test.sh',
+        output: 'hello world',
+        exitCode: 0,
+      });
 
       vi.spyOn(eventsModule, 'resolveEventConfig').mockReturnValue(
         createMockResolvedConfig({
