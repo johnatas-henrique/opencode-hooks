@@ -29,7 +29,7 @@ import {
   getEventRecorder,
   getErrorRecorder,
 } from '.opencode/plugins/features/audit/plugin-integration';
-import { setOnUnknownEvent } from '.opencode/plugins/features/events/events';
+import { setOnUnknownEvent } from '.opencode/plugins/features/events/context';
 import { createHookExecutor } from '.opencode/plugins/features/hooks/hook-executor';
 import fs from 'fs';
 import path from 'path';

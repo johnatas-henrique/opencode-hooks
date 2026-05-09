@@ -4,12 +4,9 @@ import path from 'path';
 import type { ScriptEntry } from '.opencode/plugins/types/config';
 import { DEFAULTS } from '.opencode/plugins/core/constants';
 import type { HookResult } from '.opencode/plugins/types/scripts';
+import { sanitizeArg } from '.opencode/plugins/features/scripts/utils';
 
-const shellSpecialChars = /[;&|`$(){}[\]<>\\!#*?"'\n\r]/g;
-
-export const sanitizeArg = (arg: string): string => {
-  return arg.replace(shellSpecialChars, '\\$&');
-};
+export { sanitizeArg };
 
 export const validateScriptPath = (scriptPath: string): boolean => {
   if (!scriptPath || typeof scriptPath !== 'string') return false;

@@ -129,16 +129,15 @@ function isSensitiveField(key: string): boolean {
   return SENSITIVE_FIELDS.some((sensitive) => lowerKey.includes(sensitive));
 }
 
-let globalTruncationKB: number;
-
-function sanitizeAndTruncate(
+export function sanitizeAndTruncate(
   data: Record<string, unknown>,
   largeFields: string[],
   maxFieldSize: number,
-  maxArrayItems: number
+  maxArrayItems: number,
+  logTruncationKB: number
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
-  const maxBytes = Math.floor(globalTruncationKB * 1024);
+  const maxBytes = Math.floor(logTruncationKB * 1024);
 
   for (const [key, value] of Object.entries(data)) {
     // Truncate known-large fields to logTruncationKB limit
@@ -169,7 +168,8 @@ function sanitizeAndTruncate(
         value as Record<string, unknown>,
         largeFields,
         maxFieldSize,
-        maxArrayItems
+        maxArrayItems,
+        logTruncationKB
       );
       continue;
     }
@@ -184,7 +184,8 @@ function sanitizeAndTruncate(
                 item as Record<string, unknown>,
                 largeFields,
                 maxFieldSize,
-                maxArrayItems
+                maxArrayItems,
+                logTruncationKB
               )
             : item
         );
@@ -209,7 +210,8 @@ export function createGenericEventRecord(
   shouldLogResult: boolean,
   largeFields: string[],
   maxFieldSize: number,
-  maxArrayItems: number
+  maxArrayItems: number,
+  logTruncationKB: number
 ): AuditRecord | null {
   if (!shouldLogResult) {
     return null;
@@ -246,7 +248,8 @@ export function createGenericEventRecord(
       input,
       largeFields,
       maxFieldSize,
-      maxArrayItems
+      maxArrayItems,
+      logTruncationKB
     );
   }
 
@@ -256,7 +259,8 @@ export function createGenericEventRecord(
       output,
       largeFields,
       maxFieldSize,
-      maxArrayItems
+      maxArrayItems,
+      logTruncationKB
     );
   }
 
@@ -271,7 +275,6 @@ export function createEventRecorder(
   const maxFieldSize = config.maxFieldSize;
   const maxArrayItems = config.maxArrayItems;
   const largeFields = config.largeFields;
-  globalTruncationKB = config.logTruncationKB;
 
   async function logToolExecuteBefore(
     input: ToolExecuteBeforeInput
@@ -325,7 +328,8 @@ export function createEventRecorder(
       canLog,
       largeFields,
       maxFieldSize,
-      maxArrayItems
+      maxArrayItems,
+      config.logTruncationKB
     );
     if (record !== null) {
       if (data.context) {

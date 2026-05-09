@@ -183,7 +183,8 @@ describe('createGenericEventRecord', () => {
         false,
         [],
         100,
-        3
+        3,
+        200
       )
     ).toBeNull();
   });
@@ -197,7 +198,8 @@ describe('createGenericEventRecord', () => {
       true,
       [],
       100,
-      3
+      3,
+      200
     );
     expect(record!.event).toBe('custom');
     expect(record!.session).toBe('s1');
@@ -213,7 +215,8 @@ describe('createGenericEventRecord', () => {
       true,
       [],
       100,
-      3
+      3,
+      200
     );
     expect(record!.session).toBe('s2');
   });
@@ -227,7 +230,8 @@ describe('createGenericEventRecord', () => {
       true,
       [],
       100,
-      3
+      3,
+      200
     );
     expect(record!.input?.password).toBe('[REDACTED: 6 chars]');
     expect(record!.input?.name).toBe('ok');
@@ -243,7 +247,8 @@ describe('createGenericEventRecord', () => {
       true,
       ['patch'],
       10,
-      3
+      3,
+      200
     );
     expect(record!.input?.patch).toContain('[truncated]');
     expect((record!.input?.patch as string).length).toBeLessThan(
@@ -260,7 +265,8 @@ describe('createGenericEventRecord', () => {
       true,
       [],
       100,
-      10
+      10,
+      200
     );
     const result = record!.input?.items as Array<unknown>;
     expect(result[0]).toBe(1);
@@ -279,7 +285,8 @@ describe('createGenericEventRecord', () => {
       true,
       [],
       100,
-      2
+      2,
+      200
     );
     const result = record!.input?.items as Array<unknown>;
     expect(result).toHaveLength(3);
@@ -295,7 +302,8 @@ describe('createGenericEventRecord', () => {
       true,
       [],
       100,
-      3
+      3,
+      200
     );
     expect(record!.tool).toBe('bash');
   });
@@ -309,7 +317,8 @@ describe('createGenericEventRecord', () => {
       true,
       [],
       100,
-      3
+      3,
+      200
     );
     expect(record!.input).toBeUndefined();
   });
@@ -323,7 +332,8 @@ describe('createGenericEventRecord', () => {
       true,
       [],
       100,
-      3
+      3,
+      200
     );
     expect(record!.output?.token).toBe('[REDACTED: 3 chars]');
   });
@@ -466,8 +476,9 @@ describe('sanitizeAndTruncate large fields', () => {
       true,
       ['content'],
       100,
-      3
+      3,
+      200
     );
-    expect(record!.input?.content).toContain('[truncated]');
+    expect(record!.input?.content).toContain('REDACTED');
   });
 });

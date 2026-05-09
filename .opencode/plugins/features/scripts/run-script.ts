@@ -1,12 +1,9 @@
 import { PluginInput } from '@opencode-ai/plugin';
 import { DEFAULTS } from '.opencode/plugins/core/constants';
 import type { ScriptRunResult } from '.opencode/plugins/types/scripts';
+import { sanitizeArg } from '.opencode/plugins/features/scripts/utils';
 
-const shellSpecialChars = /[;&|`$(){}[\]<>\\!#*?"'\n\r]/g;
-
-const sanitizeArg = (arg: string): string => {
-  return arg.replace(shellSpecialChars, '\\$&');
-};
+export { sanitizeArg };
 
 const validateScriptPath = (scriptPath: string): boolean => {
   if (!scriptPath || typeof scriptPath !== 'string') return false;

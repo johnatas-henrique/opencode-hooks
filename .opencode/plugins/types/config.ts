@@ -138,3 +138,25 @@ export interface ClaudeSettings {
   hooks?: Record<string, ClaudeHookGroup[]>;
   disableAllHooks?: boolean;
 }
+
+export interface ScriptConstantsConfig {
+  dir: string;
+}
+
+export interface CoreConstantsConfig {
+  defaultSessionId: 'unknown';
+  maxPromptLength: 10000;
+  maxToastLength: 1000;
+  tool: {
+    TASK: 'task';
+    SUBAGENT_TYPE_ARG: 'subagent_type';
+  };
+}
+
+export interface AuditFileNamesConfig {
+  events: 'plugin-events.json';
+  scripts: 'plugin-scripts.json';
+  errors: 'plugin-errors.json';
+  security: 'plugin-security.json';
+  debug: 'plugin-debug.json';
+}

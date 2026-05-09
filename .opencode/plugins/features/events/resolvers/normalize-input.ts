@@ -9,19 +9,13 @@ export function normalizeInputForHandler(
     return { input, output };
   }
 
-  if (eventType === 'shell.env') {
-    return { properties: input, output };
-  }
-
-  if (eventType.startsWith('chat.') || eventType.startsWith('experimental.')) {
-    return { properties: input, output };
-  }
-
-  if (eventType.startsWith('permission.')) {
-    return { properties: input, output };
-  }
-
-  if (eventType === 'command.execute.before') {
+  if (
+    eventType === 'shell.env' ||
+    eventType.startsWith('chat.') ||
+    eventType.startsWith('experimental.') ||
+    eventType.startsWith('permission.') ||
+    eventType === 'command.execute.before'
+  ) {
     return { properties: input, output };
   }
 
