@@ -4,6 +4,8 @@ import type {
   ToolConfigResolver,
 } from '.opencode/plugins/types/events';
 import type {
+  EventOverride,
+  EventVariant,
   ResolvedEventConfig,
   ToolConfig,
 } from '.opencode/plugins/types/config';
@@ -56,7 +58,7 @@ export class DefaultToolConfigResolver implements ToolConfigResolver {
     output: Record<string, unknown> | undefined
   ): {
     toastTitle: string;
-    toastVariant: string;
+    toastVariant: EventVariant;
     toastDuration: number;
     toastMessage: string;
   } {
@@ -98,7 +100,7 @@ export class DefaultToolConfigResolver implements ToolConfigResolver {
 
   private resolveBooleanFields(
     toolConfig: ToolConfig,
-    defaultCfg: Record<string, unknown> | undefined,
+    defaultCfg: EventOverride | undefined,
     base: ResolvedEventConfig
   ): Partial<ResolvedEventConfig> {
     return {
