@@ -1,68 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { join } from 'path';
 import { homedir } from 'os';
+import { createMockSettings } from '../../helpers/mock-settings';
 
-const mockFs = vi.hoisted(() => ({
-  existsSync: vi.fn(),
-  readdirSync: vi.fn(),
-  readFileSync: vi.fn(),
-}));
+vi.mock('fs', async () => {
+  const { createSyncMockFs } = await import('../../helpers/mock-fs');
+  const mockFs = createSyncMockFs();
+  return { ...mockFs, default: mockFs };
+});
+vi.mock('.opencode/plugins/config/settings', () => createMockSettings());
 
-const mockSettings = vi.hoisted(() => ({
-  userConfig: {
-    enabled: true,
-    logDisabledEvents: false,
-    showPluginStatus: true,
-    pluginStatusDisplayMode: 'user-only' as const,
-    loadClaudeHookSettings: { enabled: false },
-    scriptToasts: {
-      showOutput: true,
-      showError: true,
-      outputVariant: 'info' as const,
-      errorVariant: 'error' as const,
-      outputDuration: 5000,
-      errorDuration: 15000,
-      outputTitle: 'Script Output',
-      errorTitle: 'Script Error',
-    },
-    default: {
-      debug: false,
-      toast: false,
-      runScripts: false,
-      runOnlyOnce: false,
-      logToAudit: true,
-      appendToSession: false,
-    },
-    audit: {
-      enabled: true,
-      level: 'debug' as const,
-      basePath: '/tmp/test-audit',
-      maxSizeMB: 1,
-      maxAgeDays: 30,
-      logTruncationKB: 10,
-      maxFieldSize: 1000,
-      maxArrayItems: 50,
-      largeFields: [
-        'patch',
-        'diff',
-        'content',
-        'snapshot',
-        'output',
-        'result',
-        'text',
-      ],
-    },
-    events: {},
-    tools: {
-      'tool.execute.after': {},
-      'tool.execute.after.subagent': {},
-      'tool.execute.before': {},
-    },
-  },
-}));
-
-vi.mock('fs', () => mockFs);
-vi.mock('.opencode/plugins/config/settings', () => mockSettings);
+import fs from 'fs';
+import * as settingsModule from '.opencode/plugins/config/settings';
 
 import { showActivePluginsToast } from '.opencode/plugins/features/messages/show-active-plugins';
 import type { ToastQueue } from '.opencode/plugins/types/toast';
@@ -93,12 +42,12 @@ function makeMockQueue(): ToastQueue {
 describe('showActivePluginsToast', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSettings.userConfig.showPluginStatus = true;
-    mockSettings.userConfig.pluginStatusDisplayMode = 'user-only';
+    vi.mocked(settingsModule).userConfig.showPluginStatus = true;
+    vi.mocked(settingsModule).userConfig.pluginStatusDisplayMode = 'user-only';
   });
 
   it('returns early when showPluginStatus is false', async () => {
-    mockSettings.userConfig.showPluginStatus = false;
+    vi.mocked(settingsModule).userConfig.showPluginStatus = false;
     const queue = makeMockQueue();
 
     await showActivePluginsToast(queue);
@@ -107,7 +56,7 @@ describe('showActivePluginsToast', () => {
   });
 
   it('calls getPluginStatus and formatPluginStatus and adds toast', async () => {
-    mockLogFile(mockFs, logDir(), `${activeLogLine}\n`);
+    mockLogFile(vi.mocked(fs), logDir(), `${activeLogLine}\n`);
 
     const queue = makeMockQueue();
     await showActivePluginsToast(queue);
@@ -124,7 +73,7 @@ describe('showActivePluginsToast', () => {
   });
 
   it('uses warning variant when there are issues', async () => {
-    mockLogFile(mockFs, logDir(), `${failedLogLine}\n`);
+    mockLogFile(vi.mocked(fs), logDir(), `${failedLogLine}\n`);
 
     const queue = makeMockQueue();
     await showActivePluginsToast(queue);
@@ -138,7 +87,7 @@ describe('showActivePluginsToast', () => {
   });
 
   it('accepts custom duration option', async () => {
-    mockLogFile(mockFs, logDir(), '');
+    mockLogFile(vi.mocked(fs), logDir(), '');
 
     const queue = makeMockQueue();
     await showActivePluginsToast(queue, { duration: 3000 });
@@ -149,7 +98,7 @@ describe('showActivePluginsToast', () => {
   });
 
   it('uses warning variant for incompatible status', async () => {
-    mockLogFile(mockFs, logDir(), `${incompatibleLogLine}\n`);
+    mockLogFile(vi.mocked(fs), logDir(), `${incompatibleLogLine}\n`);
 
     const queue = makeMockQueue();
     await showActivePluginsToast(queue);

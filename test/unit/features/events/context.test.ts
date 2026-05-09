@@ -1,10 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
+import { createSyncMockFs } from '../../helpers/mock-fs';
 
-const mockFs = vi.hoisted(() => ({
-  existsSync: vi.fn(),
-  readFileSync: vi.fn(),
-}));
-vi.mock('fs', () => ({ default: mockFs }));
+vi.mock('fs', () => ({ default: createSyncMockFs() }));
+
+import fs from 'fs';
 
 import { createUserConfig } from '../../helpers/create-config';
 import {
@@ -86,8 +85,8 @@ describe('createContext', () => {
   });
 
   it('loads claude settings when loadClaudeHookSettings is enabled', () => {
-    mockFs.existsSync.mockReturnValue(true);
-    mockFs.readFileSync.mockReturnValue(
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(
       JSON.stringify({
         hooks: {
           PreToolUse: [

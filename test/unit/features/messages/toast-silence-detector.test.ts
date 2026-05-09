@@ -1,8 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { fromAny } from '@total-typescript/shoehorn';
 
-const mockReadFileDefault = vi.hoisted(() => vi.fn().mockResolvedValue(''));
-vi.mock('fs/promises', () => ({ readFile: mockReadFileDefault }));
+vi.mock('fs/promises', () => ({ readFile: vi.fn().mockResolvedValue('') }));
 
 import { waitForToastSilence } from '.opencode/plugins/features/messages/toast-silence-detector';
 

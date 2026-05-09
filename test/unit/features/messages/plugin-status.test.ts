@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 
-const mockFs = vi.hoisted(() => ({
-  existsSync: vi.fn(),
-  readdirSync: vi.fn(),
-  readFileSync: vi.fn(),
-}));
+vi.mock('fs', async () => {
+  const { createSyncMockFs } = await import('../../helpers/mock-fs');
+  const mockFs = createSyncMockFs();
+  return { ...mockFs, default: mockFs };
+});
 
-vi.mock('fs', () => mockFs);
+import fs from 'fs';
 
 interface MockFsOptions {
   exists?: boolean;
@@ -18,16 +18,16 @@ interface MockFsOptions {
 function setupMockFs(options: MockFsOptions = {}): void {
   vi.clearAllMocks();
   if (options.exists !== undefined) {
-    vi.mocked(mockFs.existsSync).mockReturnValue(options.exists);
+    vi.mocked(fs.existsSync).mockReturnValue(options.exists);
   }
   if (options.readdir !== undefined) {
-    vi.mocked(mockFs.readdirSync).mockReturnValue(options.readdir);
+    vi.mocked(fs.readdirSync).mockReturnValue(options.readdir as never);
   }
   if (options.readFile !== undefined) {
-    vi.mocked(mockFs.readFileSync).mockReturnValue(options.readFile);
+    vi.mocked(fs.readFileSync).mockReturnValue(options.readFile);
   }
   if (options.readFileImpl !== undefined) {
-    vi.mocked(mockFs.readFileSync).mockImplementation(options.readFileImpl);
+    vi.mocked(fs.readFileSync).mockImplementation(options.readFileImpl);
   }
 }
 

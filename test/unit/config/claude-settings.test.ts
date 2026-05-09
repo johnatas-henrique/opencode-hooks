@@ -1,19 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createSyncMockFs } from '../helpers/mock-fs';
 
-const mockFs = vi.hoisted(() => {
-  const fn = () => vi.fn();
-  return {
-    existsSync: fn(),
-    readFileSync: fn(),
-    readdirSync: fn(),
-    writeFileSync: fn(),
-    mkdirSync: fn(),
-    unlinkSync: fn(),
-    statSync: fn(),
-    appendFileSync: fn(),
-  };
-});
-vi.mock('fs', () => ({ default: mockFs }));
+vi.mock('fs', () => ({ default: createSyncMockFs() }));
 
 vi.mock('os', () => ({
   default: {
@@ -21,6 +9,7 @@ vi.mock('os', () => ({
   },
 }));
 
+import fs from 'fs';
 import {
   mapClaudeHookToOpenCode,
   loadClaudeSettings,
@@ -54,8 +43,8 @@ describe('loadClaudeSettings', () => {
   });
 
   it('returns empty hooks when hooks is missing', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(true);
-    vi.mocked(mockFs.readFileSync).mockReturnValue(JSON.stringify({}));
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({}));
     const result = loadClaudeSettings('/test/project');
     expect(result).toEqual({});
   });
@@ -64,12 +53,12 @@ describe('loadClaudeSettings', () => {
     const globalPath = '/test/home/.claude/settings.json';
     const localPath = '/test/project/.claude/settings.json';
 
-    vi.mocked(mockFs.existsSync).mockImplementation((p) => {
+    vi.mocked(fs.existsSync).mockImplementation((p) => {
       const s = p.toString();
       return s === globalPath || s === localPath;
     });
 
-    vi.mocked(mockFs.readFileSync).mockImplementation((p) => {
+    vi.mocked(fs.readFileSync).mockImplementation((p) => {
       if (p.toString() === globalPath) {
         return JSON.stringify({
           hooks: {
@@ -96,7 +85,7 @@ describe('loadClaudeSettings', () => {
   });
 
   it('returns empty when no files exist', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(false);
+    vi.mocked(fs.existsSync).mockReturnValue(false);
     const result = loadClaudeSettings('/test/project');
     expect(result).toEqual({});
   });

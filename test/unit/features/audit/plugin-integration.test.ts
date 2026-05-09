@@ -1,18 +1,14 @@
+// fallow-ignore-file code-duplication
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockFs = vi.hoisted(() => {
-  const asyncFn = () => vi.fn().mockResolvedValue(undefined);
-  return {
-    appendFile: asyncFn(),
-    mkdir: asyncFn(),
-    readdir: vi.fn().mockResolvedValue([] as string[]),
-    rename: asyncFn(),
-    stat: vi.fn().mockResolvedValue({ size: 0, mtimeMs: 0 }),
-    unlink: asyncFn(),
-    readFile: vi.fn().mockResolvedValue(''),
-  };
+vi.mock('fs/promises', async () => {
+  const { createFsPromisesMock } =
+    await import('../../helpers/mock-fs-promises');
+  const mock = createFsPromisesMock();
+  return { ...mock, default: mock };
 });
-vi.mock('fs/promises', () => mockFs);
+
+import fsPromises from 'fs/promises';
 
 import {
   initAuditLogging,
@@ -32,8 +28,8 @@ describe('plugin-integration', () => {
   describe('initAuditLogging', () => {
     it('initializes and returns a promise', async () => {
       const config = makeConfig();
-      vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
-      vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
+      vi.mocked(fsPromises.mkdir).mockResolvedValue(undefined);
+      vi.mocked(fsPromises.appendFile).mockResolvedValue(undefined);
 
       const promise = initAuditLogging(config);
       expect(promise).toBeInstanceOf(Promise);
@@ -42,8 +38,8 @@ describe('plugin-integration', () => {
 
     it('returns the same singleton on second call', async () => {
       const config = makeConfig();
-      vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
-      vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
+      vi.mocked(fsPromises.mkdir).mockResolvedValue(undefined);
+      vi.mocked(fsPromises.appendFile).mockResolvedValue(undefined);
 
       const first = initAuditLogging(config);
       const second = initAuditLogging(config);
@@ -61,8 +57,8 @@ describe('plugin-integration', () => {
 
     it('returns instances after init', async () => {
       const config = makeConfig();
-      vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
-      vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
+      vi.mocked(fsPromises.mkdir).mockResolvedValue(undefined);
+      vi.mocked(fsPromises.appendFile).mockResolvedValue(undefined);
 
       await initAuditLogging(config);
 
@@ -73,8 +69,8 @@ describe('plugin-integration', () => {
   });
 
   async function initWithMocks() {
-    vi.mocked(mockFs.mkdir).mockResolvedValue(undefined);
-    vi.mocked(mockFs.appendFile).mockResolvedValue(undefined);
+    vi.mocked(fsPromises.mkdir).mockResolvedValue(undefined);
+    vi.mocked(fsPromises.appendFile).mockResolvedValue(undefined);
 
     const config = makeConfig();
     await initAuditLogging(config);
@@ -92,7 +88,7 @@ describe('plugin-integration', () => {
         callID: 'c1',
       });
 
-      expect(mockFs.appendFile).toHaveBeenCalled();
+      expect(vi.mocked(fsPromises.appendFile)).toHaveBeenCalled();
     });
   });
 
@@ -106,7 +102,7 @@ describe('plugin-integration', () => {
         { output: 'ok', error: null, exitCode: 0 }
       );
 
-      expect(mockFs.appendFile).toHaveBeenCalled();
+      expect(vi.mocked(fsPromises.appendFile)).toHaveBeenCalled();
     });
   });
 
@@ -117,7 +113,7 @@ describe('plugin-integration', () => {
       const recorder = getErrorRecorder()!;
       await recorder.logError({ message: 'test error' });
 
-      expect(mockFs.appendFile).toHaveBeenCalled();
+      expect(vi.mocked(fsPromises.appendFile)).toHaveBeenCalled();
     });
   });
 });

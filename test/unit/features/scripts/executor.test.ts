@@ -1,34 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fromAny } from '@total-typescript/shoehorn';
+import { createSyncMockFs } from '../../helpers/mock-fs';
+import { createSpawnMock } from '../../helpers/mock-child-process';
 
-const mockFs = vi.hoisted(() => {
-  const fn = () => vi.fn();
-  return {
-    existsSync: fn(),
-    readFileSync: fn(),
-    readdirSync: fn(),
-    writeFileSync: fn(),
-    mkdirSync: fn(),
-    unlinkSync: fn(),
-    statSync: fn(),
-    appendFileSync: fn(),
-  };
-});
-vi.mock('fs', () => ({ default: mockFs }));
+vi.mock('fs', () => ({ default: createSyncMockFs() }));
+vi.mock('child_process', () => createSpawnMock());
 
-const mockSpawn = vi.hoisted(() => {
-  const procFn = () => vi.fn();
-  return {
-    spawn: vi.fn(() => ({
-      stdout: { on: procFn() },
-      stderr: { on: procFn() },
-      stdin: { write: procFn(), end: procFn() },
-      on: procFn(),
-      unref: procFn(),
-    })),
-  };
-});
-vi.mock('child_process', () => mockSpawn);
+import fs from 'fs';
 
 import {
   sanitizeArg,
@@ -88,7 +66,9 @@ async function runExecuteScript(
     unref: vi.fn(),
     ...mockOverrides,
   };
-  vi.mocked(mockSpawn.spawn).mockReturnValue(mockProc);
+  vi.mocked(spawn).mockReturnValue(
+    fromAny<ChildProcess, Record<string, unknown>>(mockProc)
+  );
 
   const fullEntry: ScriptEntry = {
     source: 'native',
@@ -200,17 +180,17 @@ describe('getStopHookActive', () => {
   });
 
   it('returns true when state file exists', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.existsSync).mockReturnValue(true);
     expect(getStopHookActive('ses_1')).toBe(true);
   });
 
   it('returns false when state file does not exist', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(false);
+    vi.mocked(fs.existsSync).mockReturnValue(false);
     expect(getStopHookActive('ses_1')).toBe(false);
   });
 
   it('returns false when existsSync throws', () => {
-    vi.mocked(mockFs.existsSync).mockImplementation(() => {
+    vi.mocked(fs.existsSync).mockImplementation(() => {
       throw new Error('permission');
     });
     expect(getStopHookActive('ses_1')).toBe(false);
@@ -223,19 +203,19 @@ describe('setStopHookState', () => {
   });
 
   it('creates directory and writes state file', () => {
-    vi.mocked(mockFs.mkdirSync).mockReturnValue(undefined);
-    vi.mocked(mockFs.writeFileSync).mockReturnValue(undefined);
+    vi.mocked(fs.mkdirSync).mockReturnValue(undefined);
+    vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
 
     setStopHookState('ses_1');
-    expect(mockFs.mkdirSync).toHaveBeenCalled();
-    expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+    expect(fs.mkdirSync).toHaveBeenCalled();
+    expect(fs.writeFileSync).toHaveBeenCalledWith(
       expect.stringContaining('ses_1_stop_flag'),
       'true'
     );
   });
 
   it('silently handles errors', () => {
-    vi.mocked(mockFs.mkdirSync).mockImplementation(() => {
+    vi.mocked(fs.mkdirSync).mockImplementation(() => {
       throw new Error('permission');
     });
     expect(() => setStopHookState('ses_1')).not.toThrow();
@@ -248,20 +228,20 @@ describe('clearStopHookState', () => {
   });
 
   it('removes state file when it exists', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(true);
-    vi.mocked(mockFs.unlinkSync).mockReturnValue(undefined);
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.unlinkSync).mockReturnValue(undefined);
 
     clearStopHookState('ses_1');
-    expect(mockFs.unlinkSync).toHaveBeenCalledWith(
+    expect(fs.unlinkSync).toHaveBeenCalledWith(
       expect.stringContaining('ses_1_stop_flag')
     );
   });
 
   it('does not call unlink when file does not exist', () => {
-    vi.mocked(mockFs.existsSync).mockReturnValue(false);
+    vi.mocked(fs.existsSync).mockReturnValue(false);
 
     clearStopHookState('ses_1');
-    expect(mockFs.unlinkSync).not.toHaveBeenCalled();
+    expect(fs.unlinkSync).not.toHaveBeenCalled();
   });
 });
 
@@ -583,7 +563,7 @@ describe('executeScript', () => {
       { context: { sessionID: 's1', callID: 'c1' } }
     );
 
-    expect(mockSpawn.spawn).toHaveBeenCalledWith(
+    expect(spawn).toHaveBeenCalledWith(
       expect.stringContaining('hooks.sh'),
       [],
       expect.objectContaining({ stdio: ['pipe', 'pipe', 'pipe'] })

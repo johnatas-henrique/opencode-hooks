@@ -2,73 +2,21 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { join } from 'path';
 import { homedir } from 'os';
 
-const mockReadFile = vi.hoisted(() => vi.fn());
+vi.mock('fs/promises', () => ({ readFile: vi.fn() }));
 
-const mockFs = vi.hoisted(() => ({
-  existsSync: vi.fn(),
-  readdirSync: vi.fn(),
-  readFileSync: vi.fn(),
-}));
+vi.mock('fs', async () => {
+  const { createSyncMockFs } = await import('../../helpers/mock-fs');
+  const mockFs = createSyncMockFs();
+  return { ...mockFs, default: mockFs };
+});
 
-vi.mock('fs/promises', () => ({
-  readFile: mockReadFile,
-}));
+vi.mock('.opencode/plugins/config/settings', async () => {
+  const { createMockSettings } = await import('../../helpers/mock-settings');
+  return createMockSettings();
+});
 
-const mockSettings = vi.hoisted(() => ({
-  userConfig: {
-    enabled: true,
-    logDisabledEvents: false,
-    showPluginStatus: true,
-    pluginStatusDisplayMode: 'user-only' as const,
-    loadClaudeHookSettings: { enabled: false },
-    scriptToasts: {
-      showOutput: true,
-      showError: true,
-      outputVariant: 'info' as const,
-      errorVariant: 'error' as const,
-      outputDuration: 5000,
-      errorDuration: 15000,
-      outputTitle: 'Script Output',
-      errorTitle: 'Script Error',
-    },
-    default: {
-      debug: false,
-      toast: false,
-      runScripts: false,
-      runOnlyOnce: false,
-      logToAudit: true,
-      appendToSession: false,
-    },
-    audit: {
-      enabled: true,
-      level: 'debug' as const,
-      basePath: '/tmp/test-audit',
-      maxSizeMB: 1,
-      maxAgeDays: 30,
-      logTruncationKB: 10,
-      maxFieldSize: 1000,
-      maxArrayItems: 50,
-      largeFields: [
-        'patch',
-        'diff',
-        'content',
-        'snapshot',
-        'output',
-        'result',
-        'text',
-      ],
-    },
-    events: {},
-    tools: {
-      'tool.execute.after': {},
-      'tool.execute.after.subagent': {},
-      'tool.execute.before': {},
-    },
-  },
-}));
-
-vi.mock('fs', () => mockFs);
-vi.mock('.opencode/plugins/config/settings', () => mockSettings);
+import * as fsPromises from 'fs/promises';
+import * as fs from 'fs';
 
 import { showStartupToast } from '.opencode/plugins/features/messages/show-startup-toast';
 import * as showActivePluginsModule from '.opencode/plugins/features/messages/show-active-plugins';
@@ -112,16 +60,24 @@ function assertPluginStatusToastShown(showFn: ReturnType<typeof vi.fn>): void {
   );
 }
 
+function setupPatternFileMock(): void {
+  vi.mocked(fsPromises.readFile).mockResolvedValue('no toast patterns');
+  vi.mocked(fs.existsSync).mockImplementation(((path: string) => {
+    if (path === logDir()) return false;
+    return false;
+  }) as (...args: unknown[]) => boolean);
+}
+
 describe('showStartupToast', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetGlobalToastQueue();
     vi.useFakeTimers();
     initGlobalToastQueue(vi.fn(), () => {}, 300, 50);
-    mockFs.existsSync.mockReturnValue(false);
-    mockFs.readdirSync.mockReturnValue([]);
-    mockFs.readFileSync.mockReturnValue('');
-    mockReadFile.mockResolvedValue('some no-toast content');
+    vi.mocked(fs.existsSync).mockReturnValue(false);
+    vi.mocked(fs.readdirSync).mockReturnValue([]);
+    vi.mocked(fs.readFileSync).mockReturnValue('');
+    vi.mocked(fsPromises.readFile).mockResolvedValue('some no-toast content');
   });
 
   afterEach(() => {
@@ -145,9 +101,11 @@ describe('showStartupToast', () => {
   });
 
   it('waits for toast silence then shows active plugins toast', async () => {
-    mockReadFile.mockResolvedValue('no toast pattern in this log');
+    vi.mocked(fsPromises.readFile).mockResolvedValue(
+      'no toast pattern in this log'
+    );
     mockLogFile(
-      mockFs,
+      vi.mocked(fs),
       logDir(),
       'INFO ... service=plugin name=test loading\n'
     );
@@ -157,15 +115,15 @@ describe('showStartupToast', () => {
       [300, 2000]
     );
 
-    expect(mockReadFile).toHaveBeenCalled();
-    expect(mockFs.existsSync).toHaveBeenCalled();
+    expect(vi.mocked(fsPromises.readFile)).toHaveBeenCalled();
+    expect(vi.mocked(fs.existsSync)).toHaveBeenCalled();
     assertPluginStatusToastShown(showFn);
   });
 
   it('handles timeout (TEN_SECONDS) when silence never resolves', async () => {
-    mockLogFile(mockFs, logDir(), '');
+    mockLogFile(vi.mocked(fs), logDir(), '');
 
-    mockReadFile.mockImplementation(() => {
+    vi.mocked(fsPromises.readFile).mockImplementation(() => {
       return new Promise<string>(() => {});
     });
 
@@ -175,10 +133,10 @@ describe('showStartupToast', () => {
   });
 
   it('handles error from showActivePluginsToast gracefully', async () => {
-    mockReadFile.mockResolvedValue('no toast patterns');
-    mockFs.existsSync.mockReturnValue(false);
-    mockFs.readdirSync.mockReturnValue([]);
-    mockFs.readFileSync.mockReturnValue('');
+    vi.mocked(fsPromises.readFile).mockResolvedValue('no toast patterns');
+    vi.mocked(fs.existsSync).mockReturnValue(false);
+    vi.mocked(fs.readdirSync).mockReturnValue([]);
+    vi.mocked(fs.readFileSync).mockReturnValue('');
 
     const showFn = await runShowStartupToast([100, 500, 10000, 2500]);
 
@@ -186,11 +144,7 @@ describe('showStartupToast', () => {
   });
 
   it('skips error recording when getErrorRecorder returns null', async () => {
-    mockReadFile.mockResolvedValue('no toast patterns');
-    mockFs.existsSync.mockImplementation((path: string) => {
-      if (path === logDir()) return false;
-      return false;
-    });
+    setupPatternFileMock();
 
     const showFn = await runShowStartupToast([100, 10000, 2500]);
 
@@ -199,7 +153,7 @@ describe('showStartupToast', () => {
 
   it('uses default getLogFile when no option provided', async () => {
     const addSpy = vi.spyOn(useGlobalToastQueue(), 'add');
-    mockFs.existsSync.mockReturnValue(false);
+    vi.mocked(fs.existsSync).mockReturnValue(false);
 
     const promise = showStartupToast();
     await promise;
@@ -212,11 +166,7 @@ describe('showStartupToast', () => {
   });
 
   it('records error when showActivePluginsToast throws', async () => {
-    mockReadFile.mockResolvedValue('no toast patterns');
-    mockFs.existsSync.mockImplementation((path: string) => {
-      if (path === logDir()) return false;
-      return false;
-    });
+    setupPatternFileMock();
 
     const mockLogError = vi.fn().mockResolvedValue(undefined);
     vi.spyOn(pluginIntegration, 'getErrorRecorder').mockReturnValue({
