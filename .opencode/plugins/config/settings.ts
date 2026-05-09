@@ -9,6 +9,11 @@ export const userConfig: UserEventsConfig = {
   showPluginStatus: true,
   pluginStatusDisplayMode: 'user-only',
 
+  toastQueue: {
+    staggerMs: DEFAULTS.toast.stagger.DEFAULT,
+    maxSize: 50,
+  },
+
   loadClaudeHookSettings: {
     loadGlobalClaudeHooks: true,
     loadLocalClaudeHooks: true,

@@ -60,7 +60,7 @@ describe('runScriptAndHandle', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetGlobalToastQueue();
-    initGlobalToastQueue(vi.fn());
+    initGlobalToastQueue(vi.fn(), () => {}, 300, 50);
   });
 
   function makeMock$(): PluginInput['$'] {

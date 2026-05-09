@@ -20,7 +20,7 @@ describe('createToastAdapter', () => {
 
   it('calls useGlobalToastQueue().add with provided params', async () => {
     const showFn = vi.fn();
-    initGlobalToastQueue(showFn);
+    initGlobalToastQueue(showFn, () => {}, 300, 50);
     vi.useFakeTimers();
 
     const adapter = createToastAdapter();
@@ -40,7 +40,7 @@ describe('createToastAdapter', () => {
 
   it('passes any variant and duration correctly', async () => {
     const showFn = vi.fn();
-    initGlobalToastQueue(showFn);
+    initGlobalToastQueue(showFn, () => {}, 300, 50);
     vi.useFakeTimers();
 
     const adapter = createToastAdapter();

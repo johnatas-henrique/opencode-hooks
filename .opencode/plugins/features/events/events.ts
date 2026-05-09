@@ -4,7 +4,10 @@ import type { EventInput } from '.opencode/plugins/types/core';
 import {
   createEventResolver,
   createToolResolver,
+  setOnUnknownEvent,
 } from '.opencode/plugins/features/events/context';
+
+export { setOnUnknownEvent };
 
 const eventResolver = createEventResolver(userConfig);
 const toolResolver = createToolResolver(userConfig);

@@ -88,7 +88,7 @@ describe('showStartupToast', () => {
     vi.clearAllMocks();
     resetGlobalToastQueue();
     vi.useFakeTimers();
-    initGlobalToastQueue(vi.fn());
+    initGlobalToastQueue(vi.fn(), () => {}, 300, 50);
     mockFs.existsSync.mockReturnValue(false);
     mockFs.readdirSync.mockReturnValue([]);
     mockFs.readFileSync.mockReturnValue('');
@@ -134,7 +134,7 @@ describe('showStartupToast', () => {
 
     const showFn = vi.fn();
     resetGlobalToastQueue();
-    initGlobalToastQueue(showFn);
+    initGlobalToastQueue(showFn, () => {}, 300, 50);
 
     const promise = showStartupToast({ getLogFile: () => '/fake/log.log' });
 
@@ -176,7 +176,7 @@ describe('showStartupToast', () => {
 
     const showFn = vi.fn();
     resetGlobalToastQueue();
-    initGlobalToastQueue(showFn);
+    initGlobalToastQueue(showFn, () => {}, 300, 50);
 
     const promise = showStartupToast({ getLogFile: () => '/fake/log.log' });
 
@@ -204,7 +204,7 @@ describe('showStartupToast', () => {
 
     const showFn = vi.fn();
     resetGlobalToastQueue();
-    initGlobalToastQueue(showFn);
+    initGlobalToastQueue(showFn, () => {}, 300, 50);
 
     const promise = showStartupToast({ getLogFile: () => '/fake/log.log' });
 
@@ -234,7 +234,7 @@ describe('showStartupToast', () => {
 
     const showFn = vi.fn();
     resetGlobalToastQueue();
-    initGlobalToastQueue(showFn);
+    initGlobalToastQueue(showFn, () => {}, 300, 50);
 
     const promise = showStartupToast({ getLogFile: () => '/fake/log.log' });
 
@@ -287,7 +287,7 @@ describe('showStartupToast', () => {
 
     const showFn = vi.fn();
     resetGlobalToastQueue();
-    initGlobalToastQueue(showFn);
+    initGlobalToastQueue(showFn, () => {}, 300, 50);
 
     const promise = showStartupToast({ getLogFile: () => '/fake/log.log' });
 

@@ -27,7 +27,9 @@ import { DEFAULTS } from '.opencode/plugins/core/constants';
 import {
   initAuditLogging,
   getEventRecorder,
+  getErrorRecorder,
 } from '.opencode/plugins/features/audit/plugin-integration';
+import { setOnUnknownEvent } from '.opencode/plugins/features/events/events';
 import { createHookExecutor } from '.opencode/plugins/features/hooks/hook-executor';
 import fs from 'fs';
 import path from 'path';
@@ -54,16 +56,29 @@ export const OpencodeHooks: Plugin = async (
 ): Promise<Hooks> => {
   const { client } = ctx;
 
-  initGlobalToastQueue((toast) => {
-    client.tui.showToast({
-      body: {
-        title: toast.title,
-        message: toast.message,
-        variant: toast.variant!,
-        duration: toast.duration,
-      },
-    });
-  });
+  initGlobalToastQueue(
+    (toast) => {
+      client.tui.showToast({
+        body: {
+          title: toast.title,
+          message: toast.message,
+          variant: toast.variant!,
+          duration: toast.duration,
+        },
+      });
+    },
+    (dropped) => {
+      const recorder = getErrorRecorder();
+      if (recorder?.logError) {
+        recorder.logError({
+          message: `Toast dropped: ${dropped.title || '(no title)'}`,
+          context: JSON.stringify(dropped),
+        });
+      }
+    },
+    userConfig.toastQueue.staggerMs,
+    userConfig.toastQueue.maxSize
+  );
 
   if (!hasShownToast) {
     hasShownToast = true;
@@ -77,6 +92,13 @@ export const OpencodeHooks: Plugin = async (
   validateScriptsDirectory();
 
   await initAuditLogging(userConfig.audit);
+
+  setOnUnknownEvent(async (input) => {
+    const rec = getEventRecorder();
+    if (rec) {
+      await rec.logEvent('UNKNOWN_EVENT_IN_RESOLVE', input.context);
+    }
+  });
 
   const executor = createHookExecutor();
 

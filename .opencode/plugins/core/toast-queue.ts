@@ -1,17 +1,20 @@
 import type { TuiToast } from '@opencode-ai/plugin/tui';
-import { DEFAULTS } from '.opencode/plugins/core/constants';
 import type { ToastQueue } from '.opencode/plugins/types/toast';
 import { ToastDirectorImpl } from '.opencode/plugins/features/core/toast-director';
 
 let globalToastQueue: ToastQueue | null = null;
 
 export function initGlobalToastQueue(
-  showFn: (toast: TuiToast) => void | Promise<void>
+  showFn: (toast: TuiToast) => void | Promise<void>,
+  onToastDropped: (dropped: TuiToast) => void,
+  staggerMs: number,
+  maxSize: number
 ): ToastQueue {
-  const director = new ToastDirectorImpl(showFn, {
-    staggerMs: DEFAULTS.toast.stagger.DEFAULT,
-    maxSize: 50,
-  });
+  const director = new ToastDirectorImpl(
+    showFn,
+    { staggerMs, maxSize },
+    onToastDropped
+  );
 
   globalToastQueue = {
     add: (t) => director.enqueue(t),

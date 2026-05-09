@@ -3,20 +3,16 @@ import { fromAny } from '@total-typescript/shoehorn';
 import type { TuiToast } from '@opencode-ai/plugin/tui';
 import { DEFAULTS } from '.opencode/plugins/core/constants';
 
-const mockLogError = vi.hoisted(() => vi.fn());
-
-vi.mock('.opencode/plugins/features/audit/plugin-integration', () => ({
-  getErrorRecorder: () => ({ logError: mockLogError }),
-}));
-
 import { ToastDirectorImpl } from '.opencode/plugins/features/core/toast-director';
 
 describe('ToastDirectorImpl', () => {
   let showFn: ReturnType<typeof vi.fn>;
+  let onToastDropped: (toast: TuiToast) => void;
 
   beforeEach(() => {
     vi.useFakeTimers();
     showFn = vi.fn();
+    onToastDropped = vi.fn() as (toast: TuiToast) => void;
   });
 
   afterEach(() => {
@@ -36,7 +32,8 @@ describe('ToastDirectorImpl', () => {
   it('enqueues and processes a toast', async () => {
     const director = new ToastDirectorImpl(
       fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
-      { staggerMs: 10 }
+      { staggerMs: 10 },
+      onToastDropped
     );
     director.enqueue(createToast());
 
@@ -52,7 +49,8 @@ describe('ToastDirectorImpl', () => {
   it('enforces maxSize by dropping oldest', async () => {
     const director = new ToastDirectorImpl(
       fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
-      { maxSize: 2 }
+      { maxSize: 2 },
+      onToastDropped
     );
     director.enqueue(createToast({ title: 'First' }));
     director.enqueue(createToast({ title: 'Second' }));
@@ -64,7 +62,8 @@ describe('ToastDirectorImpl', () => {
   it('respects maxSize=0 and does not enqueue', () => {
     const director = new ToastDirectorImpl(
       fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
-      { maxSize: 0 }
+      { maxSize: 0 },
+      onToastDropped
     );
     director.enqueue(createToast());
     expect(director.pending).toBe(0);
@@ -73,7 +72,8 @@ describe('ToastDirectorImpl', () => {
   it('prioritizes error toasts at the front', async () => {
     const director = new ToastDirectorImpl(
       fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
-      { staggerMs: 10 }
+      { staggerMs: 10 },
+      onToastDropped
     );
     director.enqueue(createToast({ title: 'Info', variant: 'info' }));
     director.enqueue(createToast({ title: 'Error', variant: 'error' }));
@@ -88,7 +88,8 @@ describe('ToastDirectorImpl', () => {
   it('flush waits for all toasts to be processed', async () => {
     const director = new ToastDirectorImpl(
       fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
-      { staggerMs: 10 }
+      { staggerMs: 10 },
+      onToastDropped
     );
     director.enqueue(createToast({ duration: 50 }));
     director.enqueue(createToast({ duration: 50 }));
@@ -108,7 +109,9 @@ describe('ToastDirectorImpl', () => {
 
   it('flush returns immediately when idle and queue empty', async () => {
     const director = new ToastDirectorImpl(
-      fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn)
+      fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
+      {},
+      onToastDropped
     );
     await director.flush();
     expect(director.pending).toBe(0);
@@ -117,7 +120,8 @@ describe('ToastDirectorImpl', () => {
   it('clear empties the queue and cancels timers', () => {
     const director = new ToastDirectorImpl(
       fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
-      { staggerMs: 100 }
+      { staggerMs: 100 },
+      onToastDropped
     );
     director.enqueue(createToast());
     director.enqueue(createToast());
@@ -131,7 +135,8 @@ describe('ToastDirectorImpl', () => {
   it('shutdown flushes then clears', async () => {
     const director = new ToastDirectorImpl(
       fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
-      { staggerMs: 10 }
+      { staggerMs: 10 },
+      onToastDropped
     );
     director.enqueue(createToast({ duration: 50 }));
 
@@ -148,7 +153,11 @@ describe('ToastDirectorImpl', () => {
     const failFn = fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(
       vi.fn().mockRejectedValue(new Error('show failed'))
     );
-    const director = new ToastDirectorImpl(failFn, { staggerMs: 10 });
+    const director = new ToastDirectorImpl(
+      failFn,
+      { staggerMs: 10 },
+      onToastDropped
+    );
     director.enqueue(createToast());
     director.enqueue(createToast());
 
@@ -161,7 +170,8 @@ describe('ToastDirectorImpl', () => {
   it('processes toasts with stagger timing', async () => {
     const director = new ToastDirectorImpl(
       fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
-      { staggerMs: 50 }
+      { staggerMs: 50 },
+      onToastDropped
     );
     director.enqueue(createToast({ duration: 30 }));
     director.enqueue(createToast({ duration: 30 }));
@@ -175,7 +185,9 @@ describe('ToastDirectorImpl', () => {
 
   it('returns pending count', () => {
     const director = new ToastDirectorImpl(
-      fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn)
+      fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
+      {},
+      onToastDropped
     );
     expect(director.pending).toBe(0);
     director.enqueue(createToast());
@@ -187,7 +199,8 @@ describe('ToastDirectorImpl', () => {
   it('returns isProcessing state', async () => {
     const director = new ToastDirectorImpl(
       fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
-      { staggerMs: 10 }
+      { staggerMs: 10 },
+      onToastDropped
     );
     expect(director.isProcessing).toBe(false);
 
@@ -200,19 +213,18 @@ describe('ToastDirectorImpl', () => {
     expect(director.isProcessing).toBe(false);
   });
 
-  it('records dropped toast via errorRecorder', async () => {
+  it('calls onToastDropped when queue overflows', async () => {
     const director = new ToastDirectorImpl(
       fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
-      { maxSize: 1, staggerMs: 10 }
+      { maxSize: 1, staggerMs: 10 },
+      onToastDropped
     );
 
     director.enqueue(createToast({ title: 'First' }));
     director.enqueue(createToast({ title: 'Second' }));
 
-    expect(mockLogError).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: 'Toast dropped: First',
-      })
+    expect(onToastDropped).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'First' })
     );
 
     await vi.advanceTimersByTimeAsync(500);
@@ -228,7 +240,8 @@ describe('ToastDirectorImpl', () => {
       fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(
         reentrantShowFn
       ),
-      { staggerMs: 0 }
+      { staggerMs: 0 },
+      onToastDropped
     );
     director.enqueue(createToast({ title: 'First' }));
     director.enqueue(createToast({ title: 'Second' }));
@@ -241,7 +254,8 @@ describe('ToastDirectorImpl', () => {
   it('uses default duration when toast has none', async () => {
     const director = new ToastDirectorImpl(
       fromAny<(toast: TuiToast) => void, ReturnType<typeof vi.fn>>(showFn),
-      { staggerMs: 0 }
+      { staggerMs: 0 },
+      onToastDropped
     );
 
     director.enqueue({

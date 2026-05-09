@@ -16,37 +16,37 @@ describe('toast-queue', () => {
 
   describe('initGlobalToastQueue', () => {
     it('returns queue with add method', () => {
-      const queue = initGlobalToastQueue(vi.fn());
+      const queue = initGlobalToastQueue(vi.fn(), () => {}, 300, 50);
       expect(queue.add).toBeDefined();
       expect(typeof queue.add).toBe('function');
     });
 
     it('returns queue with addMultiple method', () => {
-      const queue = initGlobalToastQueue(vi.fn());
+      const queue = initGlobalToastQueue(vi.fn(), () => {}, 300, 50);
       expect(queue.addMultiple).toBeDefined();
       expect(typeof queue.addMultiple).toBe('function');
     });
 
     it('returns queue with clear method', () => {
-      const queue = initGlobalToastQueue(vi.fn());
+      const queue = initGlobalToastQueue(vi.fn(), () => {}, 300, 50);
       expect(queue.clear).toBeDefined();
       expect(typeof queue.clear).toBe('function');
     });
 
     it('returns queue with flush method', () => {
-      const queue = initGlobalToastQueue(vi.fn());
+      const queue = initGlobalToastQueue(vi.fn(), () => {}, 300, 50);
       expect(queue.flush).toBeDefined();
       expect(typeof queue.flush).toBe('function');
     });
 
     it('returns queue with pending getter', () => {
-      const queue = initGlobalToastQueue(vi.fn());
+      const queue = initGlobalToastQueue(vi.fn(), () => {}, 300, 50);
       expect(queue.pending).toBeDefined();
     });
 
     it('addMultiple adds multiple toasts', async () => {
       const showFn = vi.fn();
-      const queue = initGlobalToastQueue(showFn);
+      const queue = initGlobalToastQueue(showFn, () => {}, 300, 50);
       queue.addMultiple([
         {
           title: 'Toast 1',
@@ -65,7 +65,7 @@ describe('toast-queue', () => {
     });
 
     it('clear removes all toasts', () => {
-      const queue = initGlobalToastQueue(vi.fn());
+      const queue = initGlobalToastQueue(vi.fn(), () => {}, 300, 50);
       queue.add({
         title: 'Test',
         message: 'Test',
@@ -76,7 +76,7 @@ describe('toast-queue', () => {
     });
 
     it('flush waits for processing', async () => {
-      const queue = initGlobalToastQueue(vi.fn());
+      const queue = initGlobalToastQueue(vi.fn(), () => {}, 300, 50);
       await queue.flush();
     });
   });
@@ -87,7 +87,7 @@ describe('toast-queue', () => {
     });
 
     it('returns queue when initialized', () => {
-      const queue = initGlobalToastQueue(vi.fn());
+      const queue = initGlobalToastQueue(vi.fn(), () => {}, 300, 50);
       const result = useGlobalToastQueue();
       expect(result).toBe(queue);
     });
@@ -99,15 +99,15 @@ describe('toast-queue', () => {
 
   describe('resetGlobalToastQueue', () => {
     it('clears the global queue', () => {
-      initGlobalToastQueue(vi.fn());
+      initGlobalToastQueue(vi.fn(), () => {}, 300, 50);
       resetGlobalToastQueue();
       expect(() => useGlobalToastQueue()).toThrow();
     });
 
     it('allows re-initialization after reset', () => {
-      const queue1 = initGlobalToastQueue(vi.fn());
+      const queue1 = initGlobalToastQueue(vi.fn(), () => {}, 300, 50);
       resetGlobalToastQueue();
-      const queue2 = initGlobalToastQueue(vi.fn());
+      const queue2 = initGlobalToastQueue(vi.fn(), () => {}, 300, 50);
       expect(queue1).not.toBe(queue2);
     });
   });

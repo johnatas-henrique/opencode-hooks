@@ -21,6 +21,10 @@ export function createUserConfig(
       outputTitle: 'Script Output',
       errorTitle: 'Script Error',
     },
+    toastQueue: {
+      staggerMs: 300,
+      maxSize: 50,
+    },
     loadClaudeHookSettings: {
       loadGlobalClaudeHooks: false,
       loadLocalClaudeHooks: false,

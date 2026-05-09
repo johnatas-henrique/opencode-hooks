@@ -58,6 +58,7 @@ export function createDefaultContext(
       errorTitle: 'Script Error',
     },
     handlers: {},
+    onUnknownEvent: () => {},
     getEventConfig: () => undefined,
     getToolConfigs: () => undefined,
     getProjectDir: () => '/tmp/test',

@@ -39,6 +39,7 @@ export function createContext(
     enabled: options.enabled ?? true,
     default: { ...defaults, ...provided },
     handlers: options.handlers ?? {},
+    onUnknownEvent: () => {},
     getEventConfig: (eventType: string) =>
       options.getEventConfig?.(eventType) as
         | Record<string, unknown>

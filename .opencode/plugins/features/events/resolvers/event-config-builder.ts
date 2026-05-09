@@ -17,7 +17,6 @@ import { resolveToastOverride } from '.opencode/plugins/features/events/resoluti
 import { getBooleanField } from '.opencode/plugins/features/events/resolution/boolean-field';
 import { normalizeInputForHandler } from '.opencode/plugins/features/events/resolvers/normalize-input';
 import { buildToastMessage } from '.opencode/plugins/features/events/resolvers/build-message';
-import { getEventRecorder } from '.opencode/plugins/features/audit/plugin-integration';
 
 export class ConfigBuilder {
   private handler?: EventHandler;
@@ -66,17 +65,11 @@ export class ConfigBuilder {
   }
 
   private buildDefault(defaultCfg: EventOverride): ResolvedEventConfig {
-    const hasHandler = !!this.handler;
-    if (!hasHandler) {
-      const eventRecorder = getEventRecorder();
-      if (eventRecorder) {
-        eventRecorder
-          .logEvent('UNKNOWN_EVENT_IN_RESOLVE', {
-            context: 'builder',
-            input: { eventType: this.eventType },
-          })
-          .catch(() => {});
-      }
+    if (!this.handler) {
+      this.context.onUnknownEvent({
+        eventType: this.eventType,
+        context: { input: { eventType: this.eventType } },
+      });
     }
 
     const allowedFields = this.handler?.allowedFields;

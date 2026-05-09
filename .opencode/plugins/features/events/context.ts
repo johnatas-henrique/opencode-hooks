@@ -5,11 +5,18 @@ import type {
   ConfigResolverContext,
   EventConfigResolver,
   ToolConfigResolver,
+  OnUnknownEventFn,
 } from '.opencode/plugins/types/events';
 import { EventConfigResolverImpl } from '.opencode/plugins/features/events/resolvers/event-config.resolver';
 import { ToolConfigResolverImpl } from '.opencode/plugins/features/events/resolvers/tool-config.resolver';
 import { handlers } from '.opencode/plugins/features/handlers';
 import { loadClaudeSettings } from '.opencode/plugins/config/claude-settings';
+
+let onUnknownEvent: OnUnknownEventFn = () => {};
+
+export function setOnUnknownEvent(fn: OnUnknownEventFn): void {
+  onUnknownEvent = fn;
+}
 
 export function createContext(
   userConfig: UserEventsConfig,
@@ -23,6 +30,7 @@ export function createContext(
     default: userConfig.default,
     scriptToasts: userConfig.scriptToasts,
     handlers: eventHandlers ?? handlers,
+    onUnknownEvent,
 
     getEventConfig: (eventType: string) =>
       userConfig.events[eventType as keyof typeof userConfig.events],

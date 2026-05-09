@@ -49,6 +49,11 @@ export type PluginStatusDisplayMode =
   | 'user-separated'
   | 'all-labeled';
 
+export interface ToastQueueConfig {
+  staggerMs: number;
+  maxSize: number;
+}
+
 export interface ScriptToastsConfig {
   showOutput: boolean;
   showError: boolean;
@@ -69,6 +74,7 @@ export interface UserEventsConfig {
   scriptToasts: ScriptToastsConfig;
   default: EventOverride;
   loadClaudeHookSettings: ClaudeHookSettings;
+  toastQueue: ToastQueueConfig;
   events: Partial<Record<OpenCodeEventType, EventConfig>>;
   tools: {
     [OpenCodeEvents.TOOL_EXECUTE_AFTER]: Record<string, ToolConfig>;
