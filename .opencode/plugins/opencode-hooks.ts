@@ -51,6 +51,48 @@ function validateScriptsDirectory(cwd: string = getCwdSafe()): void {
 
 let hasShownToast = false;
 
+function dumpToolExecuteAfter(
+  input: ToolExecuteAfterInput,
+  output: ToolExecuteAfterOutput
+): void {
+  try {
+    const dir = path.join(getCwdSafe(), 'production', 'debug');
+    fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, `tool-execute-after-${Date.now()}.json`);
+    fs.writeFileSync(
+      file,
+      JSON.stringify(
+        { input, output, timestamp: new Date().toISOString() },
+        null,
+        2
+      )
+    );
+  } catch {
+    // best-effort debug dump
+  }
+}
+
+function dumpToolExecuteBefore(
+  input: ToolExecuteBeforeInput,
+  output: ToolExecuteBeforeOutput
+): void {
+  try {
+    const dir = path.join(getCwdSafe(), 'production', 'debug');
+    fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, `tool-execute-before-${Date.now()}.json`);
+    fs.writeFileSync(
+      file,
+      JSON.stringify(
+        { input, output, timestamp: new Date().toISOString() },
+        null,
+        2
+      )
+    );
+  } catch {
+    // best-effort debug dump
+  }
+}
+
 export const OpencodeHooks: Plugin = async (
   ctx: PluginInput
 ): Promise<Hooks> => {
@@ -147,22 +189,63 @@ export const OpencodeHooks: Plugin = async (
       input: ToolExecuteBeforeInput,
       output: ToolExecuteBeforeOutput
     ) => {
-      const resolved = resolveToolConfig(
-        'tool.execute.before',
-        input.tool,
-        input,
-        output
-      );
+      const isTaskTool = input.tool === DEFAULTS.core.tool.TASK;
 
-      await executor.execute({
-        ctx,
-        eventType: 'tool.execute.before',
-        resolved,
-        sessionId: input.sessionID,
-        input: input,
-        output: output,
-        toolName: input.tool,
-      });
+      if (isTaskTool) {
+        const subagentType =
+          typeof output.args[DEFAULTS.core.tool.SUBAGENT_TYPE_ARG] === 'string'
+            ? output.args[DEFAULTS.core.tool.SUBAGENT_TYPE_ARG]
+            : '';
+
+        const rightTool = subagentType
+          ? 'tool.execute.before.subagent'
+          : 'tool.execute.before';
+
+        const enrichedInput = {
+          ...input,
+          subagentType,
+          description: (output.args.description as string | undefined) ?? '',
+        };
+
+        const resolved = resolveToolConfig(
+          rightTool,
+          input.tool,
+          enrichedInput,
+          output
+        );
+
+        if (subagentType) {
+          resolved.toastMessage = `Agent invoked: ${subagentType}`;
+          dumpToolExecuteBefore(input, output);
+        }
+
+        await executor.execute({
+          ctx,
+          eventType: rightTool,
+          resolved,
+          sessionId: input.sessionID,
+          input: enrichedInput as Record<string, unknown>,
+          output,
+          toolName: input.tool,
+        });
+      } else {
+        const resolved = resolveToolConfig(
+          'tool.execute.before',
+          input.tool,
+          input,
+          output
+        );
+
+        await executor.execute({
+          ctx,
+          eventType: 'tool.execute.before',
+          resolved,
+          sessionId: input.sessionID,
+          input,
+          output,
+          toolName: input.tool,
+        });
+      }
     },
 
     [OpenCodeEvents.TOOL_EXECUTE_AFTER]: async (
@@ -192,6 +275,7 @@ export const OpencodeHooks: Plugin = async (
 
         if (subagentType) {
           resolved.toastMessage = `Agent invoked: ${subagentType}`;
+          dumpToolExecuteAfter(input, output);
         }
 
         await executor.execute({
