@@ -88,7 +88,7 @@ export const userConfig: UserEventsConfig = {
       runScripts: true,
       scripts: [{ source: 'native', path: 'mempalace-exit.sh' }],
     },
-    [OpenCodeEvents.SESSION_IDLE]: { enabled: false },
+    [OpenCodeEvents.SESSION_IDLE]: {},
     [OpenCodeEvents.SESSION_DIFF]: { enabled: false },
     [OpenCodeEvents.SESSION_ERROR]: { toast: true },
     [OpenCodeEvents.SESSION_STATUS]: { enabled: false },
@@ -142,12 +142,7 @@ export const userConfig: UserEventsConfig = {
 
   tools: {
     [OpenCodeEvents.TOOL_EXECUTE_AFTER_SUBAGENT]: {
-      task: {
-        logToAudit: true,
-        toast: true,
-        runScripts: true,
-        scripts: [{ source: 'native', path: 'log-agent.sh' }],
-      },
+      task: {},
     },
     [OpenCodeEvents.TOOL_EXECUTE_AFTER]: {
       task: {},
@@ -189,18 +184,30 @@ export const userConfig: UserEventsConfig = {
       skill: {},
       bash: {
         runScripts: true,
-        scripts: [{ source: 'native', path: 'type-native-no-verify.sh' }],
+        scripts: [
+          { source: 'native', path: 'type-native-no-verify.sh' },
+          { source: 'native', path: 'block-sensitive.sh' },
+        ],
       },
       write: {
         runScripts: true,
-        scripts: [{ source: 'claude', path: 'block-env-write.sh' }],
+        scripts: [
+          { source: 'claude', path: 'block-env-write.sh' },
+          { source: 'native', path: 'block-sensitive.sh' },
+        ],
       },
       edit: {
         runScripts: true,
-        scripts: [{ source: 'claude', path: 'block-env-write.sh' }],
+        scripts: [
+          { source: 'claude', path: 'block-env-write.sh' },
+          { source: 'native', path: 'block-sensitive.sh' },
+        ],
       },
       chat: {},
-      read: {},
+      read: {
+        runScripts: true,
+        scripts: [{ source: 'native', path: 'block-sensitive.sh' }],
+      },
       glob: {},
       grep: {},
       list: {},
@@ -217,14 +224,23 @@ export const userConfig: UserEventsConfig = {
       },
       'git.push': {},
       'git.pull': {},
-      filesystem_read_file: {},
-      filesystem_write_file: {},
+      filesystem_read_file: {
+        runScripts: true,
+        scripts: [{ source: 'native', path: 'block-sensitive.sh' }],
+      },
+      filesystem_write_file: {
+        runScripts: true,
+        scripts: [{ source: 'native', path: 'block-sensitive.sh' }],
+      },
       filesystem_list_directory: {},
       filesystem_search_files: {},
       filesystem_create_directory: {},
       filesystem_move_file: {},
       filesystem_get_file_info: {},
       gh_grep_searchGitHub: {},
+    },
+    [OpenCodeEvents.TOOL_EXECUTE_BEFORE_SUBAGENT]: {
+      task: {},
     },
   },
 };

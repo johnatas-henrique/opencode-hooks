@@ -17,7 +17,7 @@ INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.filePath // empty')
 
-if [ "$TOOL_NAME" = "write" ] || [ "$TOOL_NAME" = "edit" ]; then
+if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
   if [ -n "$FILE_PATH" ] && echo "$FILE_PATH" | grep -qE '(^|/)\.env($|/)'; then
     deny "Blocked .env file write via Claude hook. Environment files should not be modified."
   fi
