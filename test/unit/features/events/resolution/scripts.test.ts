@@ -10,7 +10,11 @@ import type { ScriptEntry, EventConfig } from '.opencode/plugins/types/config';
 describe('asScriptEntry', () => {
   it('returns a ScriptEntry with source native and given path', () => {
     const result = asScriptEntry('test.sh');
-    expect(result).toEqual({ source: 'native', path: 'test.sh' });
+    expect(result).toEqual({
+      source: 'native',
+      path: 'test.sh',
+      scriptType: 'settings-native',
+    });
   });
 });
 
@@ -54,7 +58,13 @@ describe('resolveScripts', () => {
       baseScripts
     );
     expect(result).toEqual({
-      scripts: [{ source: 'native', path: handlerDefault }],
+      scripts: [
+        {
+          source: 'native',
+          path: handlerDefault,
+          scriptType: 'settings-native',
+        },
+      ],
       runScripts: true,
     });
   });
@@ -71,7 +81,13 @@ describe('resolveScripts', () => {
   it('returns handler default script when cfg is true', () => {
     const result = resolveScripts(true, handlerDefault, baseScripts);
     expect(result).toEqual({
-      scripts: [{ source: 'native', path: handlerDefault }],
+      scripts: [
+        {
+          source: 'native',
+          path: handlerDefault,
+          scriptType: 'settings-native',
+        },
+      ],
       runScripts: true,
     });
   });

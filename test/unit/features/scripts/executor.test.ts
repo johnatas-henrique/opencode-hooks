@@ -335,7 +335,7 @@ describe('buildClaudeStdin', () => {
     });
     expect(result.hook_event_name).toBe('PreToolUse');
     expect(result.session_id).toBe('s1');
-    expect(result.tool_name).toBe('bash');
+    expect(result.tool_name).toBe('Bash');
   });
 
   it('maps event types to claude names', () => {
@@ -362,6 +362,17 @@ describe('buildClaudeStdin', () => {
       subagentType: 'explore',
     });
     expect(result.agent_type).toBe('explore');
+  });
+
+  it('includes agent_type and description for SubagentStart', () => {
+    const result = buildClaudeStdin('tool.execute.before.subagent', '', {
+      sessionID: 's1',
+      subagentType: 'game-designer',
+      description: 'Design the combat healing mechanic',
+    });
+    expect(result.hook_event_name).toBe('SubagentStart');
+    expect(result.agent_type).toBe('game-designer');
+    expect(result.description).toBe('Design the combat healing mechanic');
   });
 
   it('includes file_path for FileChanged', () => {
@@ -407,6 +418,17 @@ describe('buildOpencodeStdin', () => {
       subagentType: 'explore',
     });
     expect(result.agent_type).toBe('explore');
+  });
+
+  it('includes agent_type and description for tool.execute.before.subagent', () => {
+    const result = buildOpencodeStdin('tool.execute.before.subagent', '', {
+      sessionID: 's1',
+      subagentType: 'game-designer',
+      description: 'Design the combat healing mechanic',
+    });
+    expect(result.event_type).toBe('tool.execute.before.subagent');
+    expect(result.agent_type).toBe('game-designer');
+    expect(result.description).toBe('Design the combat healing mechanic');
   });
 
   it('includes file_path for file.watcher.updated', () => {

@@ -429,6 +429,54 @@ describe('tool.execute.before handler', () => {
       hooks['tool.execute.before']!(input, {} as never)
     ).rejects.toThrow('Blocked by policy');
   });
+
+  it('resolves as subagent when task tool has subagent_type', async () => {
+    const resolveSpy = mockResolveToolConfig();
+
+    await hooks['tool.execute.before']!(
+      { tool: 'task', sessionID: 'ses_123', callID: 'call_1' },
+      { args: { subagent_type: 'explore', description: 'test' } }
+    );
+
+    expect(resolveSpy).toHaveBeenCalledWith(
+      'tool.execute.before.subagent',
+      'task',
+      expect.objectContaining({ subagentType: 'explore' }),
+      { args: { subagent_type: 'explore', description: 'test' } }
+    );
+  });
+
+  it('resolves as regular before for non-task tools', async () => {
+    const resolveSpy = mockResolveToolConfig();
+
+    await hooks['tool.execute.before']!(
+      { tool: 'bash', sessionID: 'ses_123', callID: 'call_1' },
+      { args: { command: 'ls' } }
+    );
+
+    expect(resolveSpy).toHaveBeenCalledWith(
+      'tool.execute.before',
+      'bash',
+      { tool: 'bash', sessionID: 'ses_123', callID: 'call_1' },
+      { args: { command: 'ls' } }
+    );
+  });
+
+  it('resolves as regular before for task without subagent_type', async () => {
+    const resolveSpy = mockResolveToolConfig();
+
+    await hooks['tool.execute.before']!(
+      { tool: 'task', sessionID: 'ses_123', callID: 'call_1' },
+      { args: { command: '/check-file', prompt: 'check it' } }
+    );
+
+    expect(resolveSpy).toHaveBeenCalledWith(
+      'tool.execute.before',
+      'task',
+      expect.objectContaining({ subagentType: '' }),
+      { args: { command: '/check-file', prompt: 'check it' } }
+    );
+  });
 });
 
 describe('tool.execute.after handler', () => {

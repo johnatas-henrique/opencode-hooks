@@ -281,7 +281,11 @@ describe('script execution', () => {
       toolName: 'bash',
     });
     expect(deps.executeScript).toHaveBeenCalledWith(
-      { source: 'native', path: 'tool-execute-before.bash.sh' },
+      {
+        source: 'native',
+        path: 'tool-execute-before.bash.sh',
+        scriptType: 'settings-native',
+      },
       'tool.execute.before',
       'bash',
       expect.any(Object),
@@ -661,5 +665,38 @@ describe('error toast suppression', () => {
       toolName: 'bash',
     });
     expect(findToastByTitle(deps, 'Script Error')).toBeUndefined();
+  });
+});
+
+// ------------------------------------------------------------------------- //
+// 15. SubagentStart (tool.execute.before.subagent)
+// ------------------------------------------------------------------------- //
+describe('subagent start routing', () => {
+  it('executes scripts configured for tool.execute.before.subagent', async () => {
+    const { deps, executor, resolved } = createToolSetup(
+      {
+        executeScript: vi
+          .fn()
+          .mockResolvedValue(createScriptResult('agent.sh', 'agent start', 0)),
+      },
+      createUserConfig({
+        default: { toast: true, runScripts: true },
+        tools: {
+          'tool.execute.before': {},
+          'tool.execute.before.subagent': {
+            task: { scripts: [{ source: 'native', path: 'agent.sh' }] },
+          },
+        } as never,
+      }),
+      'tool.execute.before.subagent',
+      'task'
+    );
+    await executeEvent(executor, {
+      resolved,
+      eventType: 'tool.execute.before.subagent',
+      toolName: 'task',
+      input: { subagentType: 'explore' },
+    });
+    expect(deps.executeScript).toHaveBeenCalledTimes(1);
   });
 });

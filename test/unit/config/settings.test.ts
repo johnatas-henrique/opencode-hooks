@@ -66,7 +66,7 @@ describe('userConfig', () => {
     expect(events['session.compacted']).toEqual({ toast: true });
     expect(events['session.diff']).toEqual({ enabled: false });
     expect(events['session.status']).toEqual({ enabled: false });
-    expect(events['session.idle']).toEqual({ enabled: false });
+    expect(events['session.idle']).toEqual({});
     expect(events['session.error']).toEqual({ toast: true });
   });
 
@@ -107,12 +107,7 @@ describe('userConfig', () => {
   it('has tool.execute.after.subagent with task config', () => {
     const subagentTools = userConfig.tools['tool.execute.after.subagent'];
     expect(subagentTools).toHaveProperty('task');
-    expect(subagentTools.task).toEqual({
-      logToAudit: true,
-      toast: true,
-      runScripts: true,
-      scripts: [{ source: 'native', path: 'log-agent.sh' }],
-    });
+    expect(subagentTools.task).toEqual({});
   });
 
   it('has installation.updated with toast:true', () => {

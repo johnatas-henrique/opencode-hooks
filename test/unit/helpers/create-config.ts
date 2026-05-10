@@ -67,6 +67,7 @@ export function createUserConfig(
       'tool.execute.after': {},
       'tool.execute.after.subagent': {},
       'tool.execute.before': {},
+      'tool.execute.before.subagent': {},
     },
     ...overrides,
   };
