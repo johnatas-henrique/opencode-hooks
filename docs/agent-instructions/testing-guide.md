@@ -239,10 +239,12 @@ expect(() => function()).toThrow();  // Too vague
 ## Running Tests
 
 ```bash
-npm run test:unit        # Run unit tests only
-npm run test:integration # Run integration tests only
-npm run test            # Run all tests
-npm run test:unit:cov   # Unit tests with coverage report
+npm run test:unit            # Run unit tests only
+npm run test:unit:cov        # Unit tests with coverage report
+npm run test:integration     # Run integration tests only
+npm run test:integration:cov # Integration tests with coverage report
+npm run test                 # Run all tests
+npm run test:cov             # Run all tests with coverage report
 ```
 
 ## Common Patterns

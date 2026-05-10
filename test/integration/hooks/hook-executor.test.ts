@@ -6,7 +6,10 @@ import {
 } from '.opencode/plugins/features/events/context';
 import { createUserConfig } from 'test/unit/helpers/create-config';
 import type { HookExecutorDeps } from '.opencode/plugins/types/executor';
-import type { ResolvedEventConfig } from '.opencode/plugins/types/config';
+import type {
+  ResolvedEventConfig,
+  ScriptToastsConfig,
+} from '.opencode/plugins/types/config';
 import type { ToastQueue } from '.opencode/plugins/types/toast';
 import type {
   EventRecorder,
@@ -93,6 +96,69 @@ export function withEvents(
   return createUserConfig({ events: events as never });
 }
 
+function createToolSetup(
+  depsOverrides?: Partial<HookExecutorDeps>,
+  config?: ReturnType<typeof createUserConfig>,
+  eventType = 'tool.execute.before',
+  toolName = 'bash'
+) {
+  const deps = createDeps(depsOverrides);
+  const executor = new HookExecutor(deps);
+  const resolved = createToolResolver(config ?? toastEnabledConfig()).resolve(
+    eventType,
+    toolName,
+    {}
+  );
+  return { deps, executor, resolved } as const;
+}
+
+function createEventSetup(
+  config: ReturnType<typeof createUserConfig>,
+  eventType: string,
+  input: Record<string, unknown> = {},
+  depsOverrides?: Partial<HookExecutorDeps>
+) {
+  const deps = createDeps(depsOverrides);
+  const executor = new HookExecutor(deps);
+  const resolved = createEventResolver(config).resolve(eventType, input);
+  return { deps, executor, resolved } as const;
+}
+
+function findToastByTitle(deps: ReturnType<typeof createDeps>, title: string) {
+  const calls = vi.mocked(deps.toastQueue.add).mock.calls;
+  return calls.find(([t]) => (t.title as string).includes(title));
+}
+
+function scriptToastsConfig(
+  overrides?: Partial<ScriptToastsConfig>
+): ScriptToastsConfig {
+  return {
+    showOutput: true,
+    showError: true,
+    outputVariant: 'info',
+    errorVariant: 'error',
+    outputDuration: 5000,
+    errorDuration: 15000,
+    outputTitle: 'Script Output',
+    errorTitle: 'Script Error',
+    ...overrides,
+  };
+}
+
+function withScripts(
+  scripts: { source: string; path: string }[]
+): ReturnType<typeof createUserConfig> {
+  return createUserConfig({
+    default: { toast: true, runScripts: true },
+    tools: {
+      ...createUserConfig().tools,
+      'tool.execute.before': {
+        bash: { scripts },
+      },
+    } as never,
+  });
+}
+
 export function withTools(
   tools: Record<string, Record<string, unknown>>
 ): ReturnType<typeof createUserConfig> {
@@ -110,69 +176,57 @@ export function withTools(
 // ------------------------------------------------------------------------- //
 describe('handler to toast property flow', () => {
   it('propagates tool.execute.before.bash handler title to toast', async () => {
-    const deps = createDeps();
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(toastEnabledConfig());
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
+    const { deps, executor, resolved } = createToolSetup();
     await executeEvent(executor, {
-      eventType: 'tool.execute.before',
       resolved,
+      eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-
     expect(deps.toastQueue.add).toHaveBeenCalledWith(
       expect.objectContaining({ title: '====BASH BEFORE====' })
     );
   });
 
   it('propagates tool.execute.after.bash handler title to toast', async () => {
-    const deps = createDeps();
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(toastEnabledConfig());
-    const resolved = toolResolver.resolve('tool.execute.after', 'bash', {});
-
+    const { deps, executor, resolved } = createToolSetup(
+      undefined,
+      undefined,
+      'tool.execute.after',
+      'bash'
+    );
     await executeEvent(executor, {
-      eventType: 'tool.execute.after',
       resolved,
+      eventType: 'tool.execute.after',
       toolName: 'bash',
     });
-
     expect(deps.toastQueue.add).toHaveBeenCalledWith(
       expect.objectContaining({ title: '====BASH AFTER====' })
     );
   });
 
   it('propagates session.created variant and duration from handler', async () => {
-    const deps = createDeps();
-    const executor = new HookExecutor(deps);
-    const eventResolver = createEventResolver(toastEnabledConfig());
-    const resolved = eventResolver.resolve('session.created', {
-      info: { id: 'ses_123' },
-    });
-
+    const { deps, executor, resolved } = createEventSetup(
+      toastEnabledConfig(),
+      'session.created',
+      { info: { id: 'ses_123' } }
+    );
     await executeEvent(executor, {
-      eventType: 'session.created',
       resolved,
+      eventType: 'session.created',
       input: { info: { id: 'ses_123' } },
     });
-
     expect(deps.toastQueue.add).toHaveBeenCalledWith(
       expect.objectContaining({ variant: 'success', duration: 10000 })
     );
   });
 
   it('propagates permission.asked warning variant from handler', async () => {
-    const deps = createDeps();
-    const executor = new HookExecutor(deps);
-    const eventResolver = createEventResolver(toastEnabledConfig());
-    const resolved = eventResolver.resolve('permission.asked', {});
-
-    await executeEvent(executor, {
-      eventType: 'permission.asked',
-      resolved,
-    });
-
+    const { deps, executor, resolved } = createEventSetup(
+      toastEnabledConfig(),
+      'permission.asked',
+      {}
+    );
+    await executeEvent(executor, { resolved, eventType: 'permission.asked' });
     expect(deps.toastQueue.add).toHaveBeenCalledWith(
       expect.objectContaining({ variant: 'warning' })
     );
@@ -184,47 +238,31 @@ describe('handler to toast property flow', () => {
 // ------------------------------------------------------------------------- //
 describe('fallback values and tool config overrides', () => {
   it('uses fallback values when no handler exists', async () => {
-    const deps = createDeps();
-    const executor = new HookExecutor(deps);
-    const eventResolver = createEventResolver(
-      withEvents({ unknown: { toast: true } })
+    const { deps, executor, resolved } = createEventSetup(
+      withEvents({ unknown: { toast: true } }),
+      'unknown',
+      {}
     );
-    const resolved = eventResolver.resolve('unknown', {});
-
-    await executeEvent(executor, {
-      eventType: 'unknown',
-      resolved,
-    });
-
+    await executeEvent(executor, { resolved, eventType: 'unknown' });
     expect(deps.toastQueue.add).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: '',
-        variant: 'info',
-        duration: 2000,
-      })
+      expect.objectContaining({ title: '', variant: 'info', duration: 2000 })
     );
   });
 
   it('applies toast title override from tool config', async () => {
-    const deps = createDeps();
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(
+    const { deps, executor, resolved } = createToolSetup(
+      undefined,
       withTools({
         'tool.execute.before': {
-          bash: {
-            toast: { title: 'Custom Title' } as never,
-          },
+          bash: { toast: { title: 'Custom Title' } as never },
         },
       })
     );
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
     await executeEvent(executor, {
-      eventType: 'tool.execute.before',
       resolved,
+      eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-
     expect(deps.toastQueue.add).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Custom Title' })
     );
@@ -236,17 +274,12 @@ describe('fallback values and tool config overrides', () => {
 // ------------------------------------------------------------------------- //
 describe('script execution', () => {
   it('executes defaultScript from handler', async () => {
-    const deps = createDeps();
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(toastEnabledConfig());
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
+    const { deps, executor, resolved } = createToolSetup();
     await executeEvent(executor, {
-      eventType: 'tool.execute.before',
       resolved,
+      eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-
     expect(deps.executeScript).toHaveBeenCalledWith(
       { source: 'native', path: 'tool-execute-before.bash.sh' },
       'tool.execute.before',
@@ -262,86 +295,51 @@ describe('script execution', () => {
 // ------------------------------------------------------------------------- //
 describe('error and output toasts', () => {
   it('shows error toast when script fails', async () => {
-    const deps = createDeps({
+    const { deps, executor, resolved } = createToolSetup({
       executeScript: vi
         .fn()
         .mockResolvedValue(createScriptResult('fail.sh', 'error msg', 1)),
     });
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(toastEnabledConfig());
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
     await executeEvent(executor, {
-      eventType: 'tool.execute.before',
       resolved,
+      eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-
-    const calls = vi.mocked(deps.toastQueue.add).mock.calls;
-    const errorToast = calls.find(([t]) =>
-      (t.title as string).includes('Script Error')
-    );
-    expect(errorToast).toBeDefined();
+    expect(findToastByTitle(deps, 'Script Error')).toBeDefined();
   });
 
   it('shows output toast when script succeeds with output', async () => {
-    const deps = createDeps({
+    const { deps, executor, resolved } = createToolSetup({
       executeScript: vi
         .fn()
         .mockResolvedValue(createScriptResult('ok.sh', 'hello world', 0)),
     });
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(toastEnabledConfig());
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
     await executeEvent(executor, {
-      eventType: 'tool.execute.before',
       resolved,
+      eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-
-    const calls = vi.mocked(deps.toastQueue.add).mock.calls;
-    const outputToast = calls.find(([t]) =>
-      (t.title as string).includes('Script Output')
-    );
-    expect(outputToast).toBeDefined();
+    expect(findToastByTitle(deps, 'Script Output')).toBeDefined();
   });
 
   it('suppresses output toast when scriptToasts.showOutput is false', async () => {
-    const deps = createDeps({
-      executeScript: vi
-        .fn()
-        .mockResolvedValue(createScriptResult('ok.sh', 'hello', 0)),
-    });
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(
+    const { deps, executor, resolved } = createToolSetup(
+      {
+        executeScript: vi
+          .fn()
+          .mockResolvedValue(createScriptResult('ok.sh', 'hello', 0)),
+      },
       createUserConfig({
         default: { toast: true, runScripts: true },
-        scriptToasts: {
-          showOutput: false,
-          showError: true,
-          outputVariant: 'info',
-          errorVariant: 'error',
-          outputDuration: 5000,
-          errorDuration: 15000,
-          outputTitle: 'Script Output',
-          errorTitle: 'Script Error',
-        },
+        scriptToasts: scriptToastsConfig({ showOutput: false }),
       })
     );
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
     await executeEvent(executor, {
-      eventType: 'tool.execute.before',
       resolved,
+      eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-
-    const calls = vi.mocked(deps.toastQueue.add).mock.calls;
-    const outputToast = calls.find(([t]) =>
-      (t.title as string).includes('Script Output')
-    );
-    expect(outputToast).toBeUndefined();
+    expect(findToastByTitle(deps, 'Script Output')).toBeUndefined();
   });
 });
 
@@ -350,43 +348,25 @@ describe('error and output toasts', () => {
 // ------------------------------------------------------------------------- //
 describe('multiple scripts', () => {
   it('executes multiple scripts, one passes one fails', async () => {
-    const deps = createDeps({
-      executeScript: vi
-        .fn()
-        .mockResolvedValueOnce(createScriptResult('ok.sh', 'success', 0))
-        .mockResolvedValueOnce(createScriptResult('fail.sh', 'failure', 1)),
-    });
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(
-      createUserConfig({
-        default: { toast: true, runScripts: true },
-        tools: {
-          ...createUserConfig().tools,
-          'tool.execute.before': {
-            bash: {
-              scripts: [
-                { source: 'native', path: 'ok.sh' },
-                { source: 'native', path: 'fail.sh' },
-              ],
-            },
-          },
-        } as never,
-      })
+    const { deps, executor, resolved } = createToolSetup(
+      {
+        executeScript: vi
+          .fn()
+          .mockResolvedValueOnce(createScriptResult('ok.sh', 'success', 0))
+          .mockResolvedValueOnce(createScriptResult('fail.sh', 'failure', 1)),
+      },
+      withScripts([
+        { source: 'native', path: 'ok.sh' },
+        { source: 'native', path: 'fail.sh' },
+      ])
     );
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
     await executeEvent(executor, {
-      eventType: 'tool.execute.before',
       resolved,
+      eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-
     expect(deps.executeScript).toHaveBeenCalledTimes(2);
-    const calls = vi.mocked(deps.toastQueue.add).mock.calls;
-    const errorToast = calls.find(([t]) =>
-      (t.title as string).includes('Script Error')
-    );
-    expect(errorToast).toBeDefined();
+    expect(findToastByTitle(deps, 'Script Error')).toBeDefined();
   });
 });
 
@@ -395,25 +375,21 @@ describe('multiple scripts', () => {
 // ------------------------------------------------------------------------- //
 describe('session append', () => {
   it('appends script output to session when appendToSession is enabled', async () => {
-    const deps = createDeps({
-      executeScript: vi
-        .fn()
-        .mockResolvedValue(createScriptResult('log.sh', 'session data', 0)),
-    });
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(
+    const { deps, executor, resolved } = createToolSetup(
+      {
+        executeScript: vi
+          .fn()
+          .mockResolvedValue(createScriptResult('log.sh', 'session data', 0)),
+      },
       createUserConfig({
         default: { toast: false, runScripts: true, appendToSession: true },
       })
     );
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
     await executeEvent(executor, {
-      eventType: 'tool.execute.before',
       resolved,
+      eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-
     expect(deps.appendToSession).toHaveBeenCalledWith(
       mockCtx,
       'ses_123',
@@ -428,23 +404,15 @@ describe('session append', () => {
 describe('disabled event', () => {
   it('does not show toast or execute scripts when event is disabled', async () => {
     const eventRecorder = createMockEventRecorder();
-    const deps = createDeps({
-      logDisabledEvents: true,
-      eventRecorder,
-    });
-    const executor = new HookExecutor(deps);
-    const eventResolver = createEventResolver(
-      withEvents({ 'test.disabled': false })
+    const { deps, executor, resolved } = createEventSetup(
+      withEvents({ 'test.disabled': false }),
+      'test.disabled',
+      {},
+      { logDisabledEvents: true, eventRecorder }
     );
-    const resolved = eventResolver.resolve('test.disabled', {});
 
     expect(resolved.enabled).toBe(false);
-
-    await executeEvent(executor, {
-      eventType: 'test.disabled',
-      resolved,
-    });
-
+    await executeEvent(executor, { resolved, eventType: 'test.disabled' });
     expect(deps.toastQueue.add).not.toHaveBeenCalled();
     expect(deps.executeScript).not.toHaveBeenCalled();
     expect(eventRecorder.logEvent).toHaveBeenCalledWith(
@@ -459,23 +427,15 @@ describe('disabled event', () => {
 // ------------------------------------------------------------------------- //
 describe('block exit code', () => {
   it('throws when tool.execute.before script exits with code 2', async () => {
-    const deps = createDeps({
+    const { executor, resolved } = createToolSetup({
       executeScript: vi
         .fn()
         .mockResolvedValue(createScriptResult('block.sh', 'Blocked', 2)),
     });
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(
-      createUserConfig({
-        default: { toast: true, runScripts: true },
-      })
-    );
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
     await expect(
       executeEvent(executor, {
-        eventType: 'tool.execute.before',
         resolved,
+        eventType: 'tool.execute.before',
         toolName: 'bash',
       })
     ).rejects.toThrow('Blocked');
@@ -492,22 +452,13 @@ describe('stop hook state management', () => {
       setState: vi.fn(),
       clearState: vi.fn(),
     };
-    const deps = createDeps({ stopHook });
-    const executor = new HookExecutor(deps);
-    const eventResolver = createEventResolver(
-      createUserConfig({
-        default: { toast: false, runScripts: true },
-      })
+    const { executor, resolved } = createEventSetup(
+      createUserConfig({ default: { toast: false, runScripts: true } }),
+      'session.idle',
+      { sessionID: 'ses_123' },
+      { stopHook }
     );
-    const resolved = eventResolver.resolve('session.idle', {
-      sessionID: 'ses_123',
-    });
-
-    await executeEvent(executor, {
-      eventType: 'session.idle',
-      resolved,
-    });
-
+    await executeEvent(executor, { resolved, eventType: 'session.idle' });
     expect(stopHook.clearState).toHaveBeenCalledWith('ses_123');
     expect(stopHook.setState).not.toHaveBeenCalled();
   });
@@ -518,30 +469,23 @@ describe('stop hook state management', () => {
       setState: vi.fn(),
       clearState: vi.fn(),
     };
-    const deps = createDeps({
-      executeScript: vi
-        .fn()
-        .mockResolvedValue(
-          createScriptResult('session-idle.sh', 'blocking content', 2)
-        ),
-      stopHook,
-    });
-    const executor = new HookExecutor(deps);
-    const eventResolver = createEventResolver(
+    const { executor, resolved } = createEventSetup(
       createUserConfig({
         default: { toast: false, runScripts: true },
         events: { 'session.idle': { runScripts: true } } as never,
-      })
+      }),
+      'session.idle',
+      { sessionID: 'ses_123' },
+      {
+        executeScript: vi
+          .fn()
+          .mockResolvedValue(
+            createScriptResult('session-idle.sh', 'blocking content', 2)
+          ),
+        stopHook,
+      }
     );
-    const resolved = eventResolver.resolve('session.idle', {
-      sessionID: 'ses_123',
-    });
-
-    await executeEvent(executor, {
-      eventType: 'session.idle',
-      resolved,
-    });
-
+    await executeEvent(executor, { resolved, eventType: 'session.idle' });
     expect(stopHook.setState).toHaveBeenCalledWith('ses_123');
     expect(stopHook.clearState).not.toHaveBeenCalled();
   });
@@ -555,15 +499,14 @@ describe('script recorder', () => {
     const scriptRecorder: ScriptRecorder = {
       logScript: vi.fn().mockResolvedValue(undefined),
     };
-    const deps = createDeps({
-      executeScript: vi
-        .fn()
-        .mockResolvedValueOnce(createScriptResult('ok.sh', 'output A', 0))
-        .mockResolvedValueOnce(createScriptResult('fail.sh', 'output B', 0)),
-      scriptRecorder,
-    });
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(
+    const { executor, resolved } = createToolSetup(
+      {
+        executeScript: vi
+          .fn()
+          .mockResolvedValueOnce(createScriptResult('ok.sh', 'output A', 0))
+          .mockResolvedValueOnce(createScriptResult('fail.sh', 'output B', 0)),
+        scriptRecorder,
+      },
       createUserConfig({
         default: { toast: false, runScripts: true },
         tools: {
@@ -579,14 +522,11 @@ describe('script recorder', () => {
         } as never,
       })
     );
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
     await executeEvent(executor, {
-      eventType: 'tool.execute.before',
       resolved,
+      eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-
     expect(scriptRecorder.logScript).toHaveBeenCalledTimes(2);
     expect(scriptRecorder.logScript).toHaveBeenNthCalledWith(
       1,
@@ -601,17 +541,12 @@ describe('script recorder', () => {
   });
 
   it('skips script recording when scriptRecorder is absent', async () => {
-    const deps = createDeps();
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(toastEnabledConfig());
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
+    const { deps, executor, resolved } = createToolSetup();
     await executeEvent(executor, {
-      eventType: 'tool.execute.before',
       resolved,
+      eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-
     expect(
       (deps as unknown as Record<string, unknown>).scriptRecorder
     ).toBeUndefined();
@@ -624,30 +559,18 @@ describe('script recorder', () => {
 describe('event recorder on enabled event', () => {
   it('calls eventRecorder.logEvent with event type on enabled event', async () => {
     const eventRecorder = createMockEventRecorder();
-    const deps = createDeps({
-      eventRecorder,
-      logDisabledEvents: false,
-    });
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(
-      createUserConfig({
-        default: { toast: false, runScripts: false },
-      })
+    const { executor, resolved } = createToolSetup(
+      { eventRecorder, logDisabledEvents: false },
+      createUserConfig({ default: { toast: false, runScripts: false } })
     );
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
     await executeEvent(executor, {
-      eventType: 'tool.execute.before',
       resolved,
+      eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-
     expect(eventRecorder.logEvent).toHaveBeenCalledWith(
       'tool.execute.before',
-      expect.objectContaining({
-        sessionID: 'ses_123',
-        tool: 'bash',
-      })
+      expect.objectContaining({ sessionID: 'ses_123', tool: 'bash' })
     );
   });
 });
@@ -658,21 +581,13 @@ describe('event recorder on enabled event', () => {
 describe('disabled event variants', () => {
   it('skips disabled event silently when logDisabledEvents is false', async () => {
     const eventRecorder = createMockEventRecorder();
-    const deps = createDeps({
-      logDisabledEvents: false,
-      eventRecorder,
-    });
-    const executor = new HookExecutor(deps);
-    const eventResolver = createEventResolver(
-      withEvents({ 'test.silent': false })
+    const { deps, executor, resolved } = createEventSetup(
+      withEvents({ 'test.silent': false }),
+      'test.silent',
+      {},
+      { logDisabledEvents: false, eventRecorder }
     );
-    const resolved = eventResolver.resolve('test.silent', {});
-
-    await executeEvent(executor, {
-      eventType: 'test.silent',
-      resolved,
-    });
-
+    await executeEvent(executor, { resolved, eventType: 'test.silent' });
     expect(deps.toastQueue.add).not.toHaveBeenCalled();
     expect(deps.executeScript).not.toHaveBeenCalled();
     expect(eventRecorder.logEvent).not.toHaveBeenCalled();
@@ -684,48 +599,40 @@ describe('disabled event variants', () => {
 // ------------------------------------------------------------------------- //
 describe('append to session edge cases', () => {
   it('does not append when script output is empty', async () => {
-    const deps = createDeps({
-      executeScript: vi
-        .fn()
-        .mockResolvedValue(createScriptResult('empty.sh', '', 0)),
-    });
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(
+    const { deps, executor, resolved } = createToolSetup(
+      {
+        executeScript: vi
+          .fn()
+          .mockResolvedValue(createScriptResult('empty.sh', '', 0)),
+      },
       createUserConfig({
         default: { toast: false, runScripts: true, appendToSession: true },
       })
     );
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
     await executeEvent(executor, {
-      eventType: 'tool.execute.before',
       resolved,
+      eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-
     expect(deps.appendToSession).not.toHaveBeenCalled();
   });
 
   it('does not append when appendToSession is disabled', async () => {
-    const deps = createDeps({
-      executeScript: vi
-        .fn()
-        .mockResolvedValue(createScriptResult('log.sh', 'data', 0)),
-    });
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(
+    const { deps, executor, resolved } = createToolSetup(
+      {
+        executeScript: vi
+          .fn()
+          .mockResolvedValue(createScriptResult('log.sh', 'data', 0)),
+      },
       createUserConfig({
         default: { toast: false, runScripts: true, appendToSession: false },
       })
     );
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
     await executeEvent(executor, {
-      eventType: 'tool.execute.before',
       resolved,
+      eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-
     expect(deps.appendToSession).not.toHaveBeenCalled();
   });
 });
@@ -735,39 +642,24 @@ describe('append to session edge cases', () => {
 // ------------------------------------------------------------------------- //
 describe('error toast suppression', () => {
   it('does not show error toast when scriptToasts.showError is false', async () => {
-    const deps = createDeps({
-      executeScript: vi
-        .fn()
-        .mockResolvedValue(createScriptResult('fail.sh', 'error occurred', 1)),
-    });
-    const executor = new HookExecutor(deps);
-    const toolResolver = createToolResolver(
+    const { deps, executor, resolved } = createToolSetup(
+      {
+        executeScript: vi
+          .fn()
+          .mockResolvedValue(
+            createScriptResult('fail.sh', 'error occurred', 1)
+          ),
+      },
       createUserConfig({
         default: { toast: true, runScripts: true },
-        scriptToasts: {
-          showError: false,
-          showOutput: true,
-          outputVariant: 'info',
-          errorVariant: 'error',
-          outputDuration: 5000,
-          errorDuration: 15000,
-          outputTitle: 'Script Output',
-          errorTitle: 'Script Error',
-        },
+        scriptToasts: scriptToastsConfig({ showError: false }),
       })
     );
-    const resolved = toolResolver.resolve('tool.execute.before', 'bash', {});
-
     await executeEvent(executor, {
-      eventType: 'tool.execute.before',
       resolved,
+      eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-
-    const calls = vi.mocked(deps.toastQueue.add).mock.calls;
-    const errorToast = calls.find(([t]) =>
-      (t.title as string).includes('Script Error')
-    );
-    expect(errorToast).toBeUndefined();
+    expect(findToastByTitle(deps, 'Script Error')).toBeUndefined();
   });
 });
