@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ScriptExecutor } from '.opencode/plugins/features/scripts/script-executor';
 import type { ScriptExecutorDeps } from '.opencode/plugins/types/executor';
+import { EventVariant } from '.opencode/plugins/types/config';
 
 function makeDeps(
   overrides: Partial<ScriptExecutorDeps> = {}
@@ -23,7 +24,7 @@ function makeEventContext(): {
   toastTitle: string;
   scriptToasts: {
     showError: boolean;
-    errorVariant: 'success' | 'warning' | 'error' | 'info';
+    errorVariant: EventVariant;
     errorDuration: number;
     errorTitle: string;
   };

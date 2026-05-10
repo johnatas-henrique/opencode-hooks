@@ -7,12 +7,13 @@ import type {
   ToolConfig,
   ResolvedEventConfig,
   ScriptEntry,
+  EventVariant,
 } from '.opencode/plugins/types/config';
 import type { EventInput } from '.opencode/plugins/types/core';
 
 export interface EventHandler {
   title: string;
-  variant: 'success' | 'warning' | 'error' | 'info';
+  variant: EventVariant;
   duration: number;
   defaultScript: string;
   buildMessage: BuildMessageFn;

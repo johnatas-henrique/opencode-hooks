@@ -2,7 +2,7 @@ import type {
   EventHandler,
   ConfigResolverContext,
 } from '.opencode/plugins/types/events';
-import type { ToolConfig } from '.opencode/plugins/types/config';
+import type { EventVariant, ToolConfig } from '.opencode/plugins/types/config';
 import type { EventOverride } from '.opencode/plugins/types/config';
 import type { ScriptEntry } from '.opencode/plugins/types/config';
 
@@ -19,8 +19,8 @@ export interface CreateContextOptions {
   scriptToasts?: {
     showOutput: boolean;
     showError: boolean;
-    outputVariant: 'success' | 'warning' | 'error' | 'info';
-    errorVariant: 'success' | 'warning' | 'error' | 'info';
+    outputVariant: EventVariant;
+    errorVariant: EventVariant;
     outputDuration: number;
     errorDuration: number;
     outputTitle: string;

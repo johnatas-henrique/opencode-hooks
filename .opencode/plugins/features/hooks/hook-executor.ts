@@ -82,7 +82,7 @@ export class HookExecutor {
     );
     this.handleStopHookState(eventType, results, sessionId);
     await this.recordScriptResults(results, toolName, eventType, sessionId);
-    this.showErrorToast(resolved, results, eventType, toolName);
+    this.showErrorToast(resolved, results);
     this.showOutputToast(resolved, results);
     await this.appendToSession(event, resolved, results, sessionId);
     this.checkBlockedExecution(eventType, results);
@@ -209,11 +209,9 @@ export class HookExecutor {
 
   private showErrorToast(
     resolved: ResolvedEventConfig,
-    results: ScriptResult[],
-    eventType: string,
-    toolName: string | undefined
+    results: ScriptResult[]
   ): void {
-    if (!resolved.scriptToasts?.showError) return;
+    if (!resolved.scriptToasts.showError) return;
 
     const failedScripts = results.filter((r) => r.exitCode !== 0 && r.output);
     if (failedScripts.length === 0) return;
@@ -222,15 +220,13 @@ export class HookExecutor {
       /=+$/,
       ` ${resolved.scriptToasts.errorTitle}====`
     );
-    const eventInfo =
-      eventType.startsWith('tool.execute.') && toolName ? toolName : eventType;
 
     this.deps.toastQueue.add({
       title: errorTitle,
       message: failedScripts
         .map(
           (r) =>
-            `Event: ${eventInfo}\nScript: ${r.script}\nError: ${r.output}\nExit Code: ${r.exitCode}\nCheck settings.ts`
+            `Script: ${r.script}\nError: ${r.output}\nExit Code: ${r.exitCode} - Check settings.ts`
         )
         .join('\n\n'),
       variant: resolved.scriptToasts.errorVariant,
@@ -249,7 +245,7 @@ export class HookExecutor {
     if (
       !resolved.toast ||
       successfulScripts.length === 0 ||
-      !resolved.scriptToasts?.showOutput
+      !resolved.scriptToasts.showOutput
     ) {
       return;
     }

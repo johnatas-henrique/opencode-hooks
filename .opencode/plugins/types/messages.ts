@@ -1,7 +1,9 @@
+import { EventVariant } from '.opencode/plugins/types/config';
+
 export type ToastCallback = (params: {
   title: string;
   message?: string;
-  variant?: 'success' | 'warning' | 'error' | 'info';
+  variant?: EventVariant;
   duration?: number;
 }) => void;
 
@@ -21,7 +23,7 @@ export type BuildMessageFn = (
 
 export interface HandlerConfig {
   title: string;
-  variant: 'success' | 'warning' | 'error' | 'info';
+  variant: EventVariant;
   duration: number;
   defaultScript: string;
   buildMessage: BuildMessageFn;

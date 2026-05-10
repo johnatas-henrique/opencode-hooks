@@ -1,9 +1,10 @@
 import type { TuiToast } from '@opencode-ai/plugin/tui';
+import { EventVariant } from '.opencode/plugins/types/config';
 
 export interface ShowToastOptions {
   title: string;
   message?: string;
-  variant?: 'success' | 'warning' | 'error' | 'info';
+  variant?: EventVariant;
   duration?: number;
 }
 

@@ -43,7 +43,7 @@ export async function runScriptAndHandle(
     {
       skipAudit: !resolved.logToAudit,
       skipSession: !resolved.appendToSession,
-      suppressToast: !resolved.scriptToasts?.showError,
+      suppressToast: !resolved.scriptToasts.showError,
       runOnlyOnce: resolved.runOnlyOnce,
     },
     {

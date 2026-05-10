@@ -132,10 +132,10 @@ export function mapClaudeHookToOpenCode(
 
 export function loadClaudeSettings(
   projectDir: string,
-  opts?: { loadGlobal?: boolean; loadLocal?: boolean }
+  opts: { loadGlobal: boolean; loadLocal: boolean }
 ): Record<string, ScriptEntry[]> {
-  const loadGlobal = opts?.loadGlobal ?? true;
-  const loadLocal = opts?.loadLocal ?? true;
+  const loadGlobal = opts.loadGlobal;
+  const loadLocal = opts.loadLocal;
 
   const globalPath = path.join(os.homedir(), '.claude/settings.json');
   const localPath = path.join(projectDir, '.claude/settings.json');

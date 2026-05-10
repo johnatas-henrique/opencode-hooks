@@ -45,7 +45,10 @@ describe('loadClaudeSettings', () => {
   it('returns empty hooks when hooks is missing', () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({}));
-    const result = loadClaudeSettings('/test/project');
+    const result = loadClaudeSettings('/test/project', {
+      loadGlobal: true,
+      loadLocal: true,
+    });
     expect(result).toEqual({});
   });
 
@@ -78,7 +81,10 @@ describe('loadClaudeSettings', () => {
       }
     });
 
-    const result = loadClaudeSettings('/test/project');
+    const result = loadClaudeSettings('/test/project', {
+      loadGlobal: true,
+      loadLocal: true,
+    });
     expect(result['tool.execute.before']).toHaveLength(2);
     expect(result['tool.execute.before'][0].path).toBe('first.sh');
     expect(result['tool.execute.before'][1].path).toBe('second.sh');
@@ -86,7 +92,10 @@ describe('loadClaudeSettings', () => {
 
   it('returns empty when no files exist', () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
-    const result = loadClaudeSettings('/test/project');
+    const result = loadClaudeSettings('/test/project', {
+      loadGlobal: true,
+      loadLocal: true,
+    });
     expect(result).toEqual({});
   });
 });
