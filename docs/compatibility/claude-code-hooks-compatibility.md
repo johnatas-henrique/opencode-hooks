@@ -72,6 +72,21 @@ retornado), mas a mineração automática do transcript não acontece.
 | `tool_response` | ✅  | ⚠️     | `output.output` (string)  |
 | `duration_ms`   | ✅  | ❌     | Não existe                |
 
+### `SubagentStart` (mapeado de `tool.execute.before.subagent`)
+
+| Campo           | CC  | Plugin | Como preenchemos                          |
+| --------------- | --- | ------ | ----------------------------------------- |
+| (campos comuns) | ✅  | ✅     |                                           |
+| `agent_type`    | ✅  | ✅     | `input.subagentType` — **novo**           |
+| `description`   | ❌  | ✅     | `input.description` — **extra nosso**     |
+| `model`         | ✅  | ❌     | Não disponível em eventos de tool\*\*     |
+| `agent_id`      | ✅  | ⚠️     | `input.sessionID` (usamos o ID da sessão) |
+
+**\*`model`:** O SDK do OpenCode só expõe `model` em eventos de chat
+(`chat.params`, `chat.message`). Eventos de tool (`tool.execute.before`)
+não incluem essa informação. Futuramente podemos implementar um cache
+de modelo por sessão.
+
 ### `SubagentStop` (mapeado de `tool.execute.after.subagent`)
 
 | Campo                    | CC  | Plugin | Como preenchemos                          |
@@ -141,7 +156,7 @@ Os mesmos campos acima também são enviados no formato OpenCode via
 | `Setup`               | ❌ não existe no OpenCode         | ⚠️ unsupported        |
 | `PermissionDenied`    | ❌ não existe no OpenCode         | ⚠️ unsupported        |
 | `UserPromptExpansion` | ❌ não existe no OpenCode         | ⚠️ unsupported        |
-| `SubagentStart`       | ❌ não existe no OpenCode         | ⚠️ unsupported        |
+| `SubagentStart`       | `tool.execute.before.subagent`    | ✅ mapeado            |
 | `TaskCreated`         | ❌ não existe no OpenCode         | ⚠️ unsupported        |
 | `TaskCompleted`       | ❌ não existe no OpenCode         | ⚠️ unsupported        |
 | `TeammateIdle`        | ❌ não existe no OpenCode         | ⚠️ unsupported        |
@@ -202,7 +217,7 @@ Abaixo, as diferenças:
 - Usa `tool_use_id` → ✅ adicionamos
 - Usa `stop_hook_active` → ✅ adicionamos (estado local)
 - Usa `file_path` → ✅ adicionamos (FileChanged)
-- Usa `agent_type` → ✅ adicionamos (SubagentStop)
+- Usa `agent_type` → ✅ adicionamos (SubagentStop, SubagentStart)
 
 ### ❌ NÃO VAI FUNCIONAR se:
 

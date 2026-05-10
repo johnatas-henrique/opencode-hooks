@@ -266,6 +266,30 @@ Fired before invoking a task (subagent).
 
 ---
 
+### tool.execute.before.subagent
+
+Fired before executing a subagent (task with `subagent_type`).
+
+**Input Keys:**
+| Key | Description |
+|-----|-------------|
+| `tool` | Always "task" |
+| `sessionID` | Session ID |
+| `callID` | Call ID |
+| `subagentType` | The subagent type that will be invoked |
+| `description` | Task description |
+
+**Output Keys:**
+| Key | Description |
+|-----|-------------|
+| `args` | Tool arguments (includes `subagent_type`, `description`, `prompt`) |
+
+**Recommended:** `tool`, `subagentType`, `description`
+
+**Note:** This event only fires when `args.subagent_type` is present in the task call. Mapped from Claude Code `SubagentStart`.
+
+---
+
 ### tool.execute.before.skill
 
 Fired before invoking a skill.
