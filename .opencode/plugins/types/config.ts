@@ -16,6 +16,12 @@ export interface ToastOverride {
   duration?: number;
 }
 
+export type ScriptOrigin =
+  | 'settings-native'
+  | 'settings-claude'
+  | 'local-claude'
+  | 'global-claude';
+
 export interface ScriptEntry {
   source: 'native' | 'claude';
   path: string;
@@ -23,6 +29,7 @@ export interface ScriptEntry {
   async?: boolean;
   timeout?: number;
   passStdin?: boolean;
+  scriptType?: ScriptOrigin;
 }
 
 export interface ClaudeHookSettings {
@@ -80,6 +87,7 @@ export interface UserEventsConfig {
     [OpenCodeEvents.TOOL_EXECUTE_AFTER]: Record<string, ToolConfig>;
     [OpenCodeEvents.TOOL_EXECUTE_AFTER_SUBAGENT]: Record<string, ToolConfig>;
     [OpenCodeEvents.TOOL_EXECUTE_BEFORE]: Record<string, ToolOverride>;
+    [OpenCodeEvents.TOOL_EXECUTE_BEFORE_SUBAGENT]: Record<string, ToolOverride>;
   };
 }
 
@@ -103,6 +111,9 @@ export interface ScriptResult {
   script: string;
   exitCode: number;
   output: string;
+  stderr?: string;
+  stdin?: string;
+  scriptType?: string;
 }
 
 export interface FileTemplate {

@@ -40,6 +40,7 @@ export const OpenCodeEvents = {
   TOOL_EXECUTE_AFTER: 'tool.execute.after',
   TOOL_EXECUTE_AFTER_SUBAGENT: 'tool.execute.after.subagent',
   TOOL_EXECUTE_BEFORE: 'tool.execute.before',
+  TOOL_EXECUTE_BEFORE_SUBAGENT: 'tool.execute.before.subagent',
 
   TUI_PROMPT_APPEND: 'tui.prompt.append',
   TUI_COMMAND_EXECUTE: 'tui.command.execute',

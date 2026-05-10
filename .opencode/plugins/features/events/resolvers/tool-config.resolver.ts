@@ -8,6 +8,7 @@ import type {
   EventVariant,
   ResolvedEventConfig,
   ToolConfig,
+  ScriptEntry,
 } from '.opencode/plugins/types/config';
 import {
   resolveScripts,
@@ -218,13 +219,22 @@ export class DefaultToolConfigResolver implements ToolConfigResolver {
       );
     }
 
-    const { scripts } = resolveScripts(
+    const { scripts: rawScripts } = resolveScripts(
       toolConfig,
       baseWithToolHandler.scripts[0]?.path ??
         toolHandler?.defaultScript ??
         this.defaultResolver.getDefaultScript(toolEventType),
       baseWithToolHandler.scripts
     );
+
+    const scripts: ScriptEntry[] = rawScripts.map((s: ScriptEntry) => ({
+      ...s,
+      scriptType:
+        s.scriptType ??
+        ((s.source === 'native' ? 'settings-native' : 'settings-claude') as
+          | 'settings-native'
+          | 'settings-claude'),
+    }));
 
     const toastCfg = resolveToastOverride(toolConfig);
     const projectDir = this.context.getProjectDir(input);

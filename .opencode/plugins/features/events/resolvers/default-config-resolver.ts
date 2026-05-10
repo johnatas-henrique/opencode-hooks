@@ -7,6 +7,7 @@ import type {
   ResolvedEventConfig,
   EventConfig,
   EventOverride,
+  ScriptEntry,
 } from '.opencode/plugins/types/config';
 import { DEFAULTS } from '.opencode/plugins/core/constants';
 import {
@@ -103,11 +104,19 @@ export class DefaultConfigResolver {
         ? (userCfg as EventOverride)
         : undefined;
 
-    const { scripts } = resolveScripts(
+    const { scripts: rawScripts } = resolveScripts(
       userCfg,
       handler?.defaultScript ?? this.getDefaultScript(eventType),
       []
     );
+    const scripts: ScriptEntry[] = rawScripts.map((s: ScriptEntry) => ({
+      ...s,
+      scriptType:
+        s.scriptType ??
+        ((s.source === 'native' ? 'settings-native' : 'settings-claude') as
+          | 'settings-native'
+          | 'settings-claude'),
+    }));
     const toastCfg = resolveToastOverride(userCfg);
     const allowedFields = userOverride?.allowedFields ?? handler?.allowedFields;
 
@@ -154,8 +163,6 @@ export class DefaultConfigResolver {
     input?: EventInput,
     toolName?: string
   ): ResolvedEventConfig {
-    if (!toolName && !config.runScripts) return config;
-
     const projectDir = this.context.getProjectDir(input);
     const claudeScripts = this.context.getClaudeScripts(projectDir);
     const merged = mergeClaudeScripts(
@@ -167,10 +174,17 @@ export class DefaultConfigResolver {
 
     if (merged === config.scripts) return config;
 
-    if (toolName && !config.runScripts) {
-      return { ...config, scripts: merged, runScripts: true };
+    const userCfg = this.context.getEventConfig(eventType);
+    if (
+      !config.runScripts &&
+      userCfg !== undefined &&
+      typeof userCfg === 'object' &&
+      userCfg !== null &&
+      'runScripts' in userCfg
+    ) {
+      return config;
     }
 
-    return { ...config, scripts: merged };
+    return { ...config, scripts: merged, runScripts: true };
   }
 }

@@ -3,9 +3,9 @@ import path from 'path';
 import os from 'os';
 import type {
   ScriptEntry,
-  ClaudeHook,
   ClaudeHookGroup,
   ClaudeSettings,
+  ScriptOrigin,
 } from '.opencode/plugins/types/config';
 
 const CLAUDE_EVENT_MAP: Record<string, string> = {
@@ -13,6 +13,7 @@ const CLAUDE_EVENT_MAP: Record<string, string> = {
   PostToolUse: 'tool.execute.after',
   PostToolUseFailure: 'tool.execute.after',
   Stop: 'session.idle',
+  SubagentStart: 'tool.execute.before.subagent',
   SubagentStop: 'tool.execute.after.subagent',
   SessionStart: 'session.created',
   SessionEnd: 'session.deleted',
@@ -25,63 +26,6 @@ const CLAUDE_EVENT_MAP: Record<string, string> = {
   FileChanged: 'file.watcher.updated',
 };
 
-function mergeGlobalAndLocalScripts(
-  global: Record<string, ClaudeHookGroup[]>,
-  local: Record<string, ClaudeHookGroup[]>
-): Record<string, ClaudeHookGroup[]> {
-  const merged: Record<string, ClaudeHookGroup[]> = {};
-
-  const allKeys = new Set<string>([
-    ...Object.keys(global),
-    ...Object.keys(local),
-  ]);
-
-  for (const key of allKeys) {
-    const globalGroups = global[key] || [];
-    const localGroups = local[key] || [];
-
-    const groupMap = new Map<string, ClaudeHookGroup>();
-
-    for (const group of globalGroups) {
-      if (!group.matcher) continue;
-      groupMap.set(group.matcher, {
-        matcher: group.matcher,
-        hooks: [...group.hooks],
-      });
-    }
-
-    for (const localGroup of localGroups) {
-      if (!localGroup.matcher) continue;
-      const existing = groupMap.get(localGroup.matcher);
-
-      if (existing) {
-        const hookMap = new Map<string, ClaudeHook>();
-
-        for (const hook of existing.hooks) {
-          if (!hook.command) continue;
-          hookMap.set(hook.command, hook);
-        }
-
-        for (const hook of localGroup.hooks) {
-          if (!hook.command) continue;
-          hookMap.set(hook.command, hook);
-        }
-
-        existing.hooks = Array.from(hookMap.values());
-      } else {
-        groupMap.set(localGroup.matcher, {
-          matcher: localGroup.matcher,
-          hooks: [...localGroup.hooks],
-        });
-      }
-    }
-
-    merged[key] = Array.from(groupMap.values());
-  }
-
-  return merged;
-}
-
 function extractCommandPath(command: string, projectDir: string = ''): string {
   let trimmed = command.trim();
   if (projectDir) {
@@ -93,15 +37,14 @@ function extractCommandPath(command: string, projectDir: string = ''): string {
   if (trimmed.startsWith('~/')) {
     trimmed = path.join(os.homedir(), trimmed.slice(2));
   }
-  if (trimmed.startsWith('node ')) trimmed = trimmed.slice(5).trim();
-  if (trimmed.startsWith('bash ')) trimmed = trimmed.slice(5).trim();
   return trimmed;
 }
 
 export function mapClaudeHookToOpenCode(
   claudeEventName: string,
   hookGroup: ClaudeHookGroup,
-  projectDir: string = ''
+  projectDir: string = '',
+  scriptType?: ScriptOrigin
 ): { openCodeEvent: string; scripts: ScriptEntry[] } {
   const openCodeEvent = CLAUDE_EVENT_MAP[claudeEventName];
 
@@ -112,6 +55,7 @@ export function mapClaudeHookToOpenCode(
       matcher: hookGroup.matcher,
       async: h.async,
       timeout: h.timeout,
+      scriptType,
     }));
     return {
       openCodeEvent: '',
@@ -125,6 +69,7 @@ export function mapClaudeHookToOpenCode(
     matcher: hookGroup.matcher,
     async: h.async,
     timeout: h.timeout,
+    scriptType,
   }));
 
   return { openCodeEvent, scripts };
@@ -169,19 +114,45 @@ export function loadClaudeSettings(
     if (overrideSettings.hooks) localOverrideHooks = overrideSettings.hooks;
   }
 
-  const mergedHooks = mergeGlobalAndLocalScripts(
-    mergeGlobalAndLocalScripts(globalHooks, localHooks),
-    localOverrideHooks
+  const globalMapped = mapAllHooksToOpenCode(
+    globalHooks,
+    projectDir,
+    'global-claude'
+  );
+  const localMapped = mapAllHooksToOpenCode(
+    localHooks,
+    projectDir,
+    'local-claude'
+  );
+  const localOverrideMapped = mapAllHooksToOpenCode(
+    localOverrideHooks,
+    projectDir,
+    'local-claude'
   );
 
-  return mapAllHooksToOpenCode(mergedHooks, projectDir);
+  const allKeys = new Set([
+    ...Object.keys(globalMapped),
+    ...Object.keys(localMapped),
+    ...Object.keys(localOverrideMapped),
+  ]);
+
+  const result: Record<string, ScriptEntry[]> = {};
+  for (const key of allKeys) {
+    result[key] = [
+      ...(globalMapped[key] || []),
+      ...(localMapped[key] || []),
+      ...(localOverrideMapped[key] || []),
+    ];
+  }
+
+  return result;
 }
 
 function mapAllHooksToOpenCode(
-  hooks: Record<string, ClaudeHookGroup[]> | undefined,
-  projectDir: string
+  hooks: Record<string, ClaudeHookGroup[]>,
+  projectDir: string,
+  scriptType: ScriptOrigin
 ): Record<string, ScriptEntry[]> {
-  if (!hooks) return {};
   const result: Record<string, ScriptEntry[]> = {};
 
   for (const [claudeEventName, groups] of Object.entries(hooks)) {
@@ -189,7 +160,8 @@ function mapAllHooksToOpenCode(
       const mapped = mapClaudeHookToOpenCode(
         claudeEventName,
         group,
-        projectDir
+        projectDir,
+        scriptType
       );
       if (mapped.openCodeEvent && mapped.scripts.length > 0) {
         result[mapped.openCodeEvent] = [

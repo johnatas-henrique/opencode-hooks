@@ -2,7 +2,7 @@ import type { ResolvedScripts } from '.opencode/plugins/types/events';
 import type { EventConfig, ScriptEntry } from '.opencode/plugins/types/config';
 
 export function asScriptEntry(path: string): ScriptEntry {
-  return { source: 'native', path };
+  return { source: 'native', path, scriptType: 'settings-native' };
 }
 
 export function resolveScripts(

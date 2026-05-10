@@ -213,6 +213,8 @@ export interface ScriptInput {
   args?: string[];
   startTime?: number;
   sessionId?: string;
+  stdin?: string;
+  scriptType?: string;
 }
 
 export interface ScriptRecorderResult {

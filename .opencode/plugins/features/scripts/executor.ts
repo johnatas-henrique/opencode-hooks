@@ -19,6 +19,7 @@ export const validateScriptPath = (scriptPath: string): boolean => {
 const EVENT_NAME_MAP: Record<string, string> = {
   'tool.execute.before': 'PreToolUse',
   'tool.execute.after': 'PostToolUse',
+  'tool.execute.before.subagent': 'SubagentStart',
   'tool.execute.after.subagent': 'SubagentStop',
   'session.created': 'SessionStart',
   'session.deleted': 'SessionEnd',
@@ -157,7 +158,7 @@ export function buildClaudeStdin(
   };
 
   if (toolName) {
-    base.tool_name = toolName;
+    base.tool_name = toolName.charAt(0).toUpperCase() + toolName.slice(1);
     base.tool_input = output?.args ?? input.args ?? {};
     base.tool_use_id = input.callID;
   }
@@ -166,8 +167,39 @@ export function buildClaudeStdin(
     base.stop_hook_active = input.stopHookActive === true;
   }
 
-  if (claudeEventName === 'SubagentStop') {
+  if (
+    claudeEventName === 'SubagentStop' ||
+    claudeEventName === 'SubagentStart'
+  ) {
     base.agent_type = input.subagentType;
+  }
+
+  if (claudeEventName === 'SubagentStart') {
+    base.description = (input as Record<string, unknown>).description ?? '';
+    base.agent_id = input.callID;
+  }
+
+  if (claudeEventName === 'SubagentStop') {
+    base.agent_id = input.callID;
+    const args = (input.args as Record<string, unknown>) ?? {};
+    base.description =
+      typeof args.description === 'string' ? args.description : '';
+    if (
+      output &&
+      typeof output.metadata === 'object' &&
+      output.metadata !== null
+    ) {
+      const meta = output.metadata as Record<string, unknown>;
+      if (meta.model && typeof meta.model === 'object') {
+        const m = meta.model as Record<string, unknown>;
+        if (typeof m.modelID === 'string') {
+          base.model = m.modelID;
+        }
+      }
+      if (typeof meta.sessionId === 'string') {
+        base.agent_transcript_path = meta.sessionId;
+      }
+    }
   }
 
   if (claudeEventName === 'FileChanged') {
@@ -206,8 +238,39 @@ export function buildOpencodeStdin(
     base.stop_hook_active = input.stopHookActive === true;
   }
 
-  if (eventType === 'tool.execute.after.subagent') {
+  if (
+    eventType === 'tool.execute.after.subagent' ||
+    eventType === 'tool.execute.before.subagent'
+  ) {
     base.agent_type = input.subagentType;
+  }
+
+  if (eventType === 'tool.execute.before.subagent') {
+    base.description = (input as Record<string, unknown>).description ?? '';
+    base.agent_id = input.callID;
+  }
+
+  if (eventType === 'tool.execute.after.subagent') {
+    base.agent_id = input.callID;
+    const args = (input.args as Record<string, unknown>) ?? {};
+    base.description =
+      typeof args.description === 'string' ? args.description : '';
+    if (
+      output &&
+      typeof output.metadata === 'object' &&
+      output.metadata !== null
+    ) {
+      const meta = output.metadata as Record<string, unknown>;
+      if (meta.model && typeof meta.model === 'object') {
+        const m = meta.model as Record<string, unknown>;
+        if (typeof m.modelID === 'string') {
+          base.model = m.modelID;
+        }
+      }
+      if (typeof meta.sessionId === 'string') {
+        base.agent_transcript_path = meta.sessionId;
+      }
+    }
   }
 
   if (eventType === 'file.watcher.updated') {
@@ -217,29 +280,67 @@ export function buildOpencodeStdin(
   return base;
 }
 
+function parseScriptCommand(entry: ScriptEntry): {
+  cmd: string;
+  scriptPath: string;
+  hasExplicitCmd: boolean;
+} {
+  const parts = entry.path.split(' ');
+  const hasExplicitCmd = parts.length > 1 && !path.isAbsolute(parts[0]);
+  if (hasExplicitCmd) {
+    return {
+      cmd: parts[0],
+      scriptPath: resolveScriptPath(parts.slice(1).join(' ')),
+      hasExplicitCmd,
+    };
+  }
+  return {
+    cmd: parts[0],
+    scriptPath: resolveScriptPath(entry.path),
+    hasExplicitCmd: false,
+  };
+}
+
 export async function executeScript(
   scriptEntry: ScriptEntry,
   eventType: string,
   toolName: string,
   input: Record<string, unknown>,
   output?: Record<string, unknown>
-): Promise<{ script: string; output: string; exitCode: number }> {
+): Promise<{
+  script: string;
+  output: string;
+  exitCode: number;
+  stderr?: string;
+  stdin?: string;
+  scriptType?: string;
+}> {
   if (!validateScriptPath(scriptEntry.path)) {
     return {
       script: scriptEntry.path,
       output: `Invalid script path: ${scriptEntry.path}`,
       exitCode: 1,
+      scriptType: scriptEntry.scriptType,
     };
   }
 
-  const scriptPath = resolveScriptPath(scriptEntry.path);
+  const { cmd, scriptPath, hasExplicitCmd } = parseScriptCommand(scriptEntry);
 
   if (scriptEntry.async) {
-    spawn(scriptPath, [], {
-      stdio: 'ignore',
-      env: { ...process.env, CLAUDE_PLUGIN_ROOT: process.cwd() },
-    }).unref();
-    return { script: scriptEntry.path, output: '', exitCode: 0 };
+    spawn(
+      hasExplicitCmd ? cmd : scriptPath,
+      hasExplicitCmd ? [scriptPath] : [],
+      {
+        stdio: 'ignore',
+        env: { ...process.env, CLAUDE_PLUGIN_ROOT: process.cwd() },
+      }
+    ).unref();
+    return {
+      script: scriptEntry.path,
+      output: '',
+      exitCode: 0,
+      scriptType: scriptEntry.scriptType,
+    };
   }
 
   let stdin: string | undefined;
@@ -254,71 +355,98 @@ export async function executeScript(
     }
   }
 
-  return new Promise<{ script: string; output: string; exitCode: number }>(
-    (resolve) => {
-      const proc = spawn(scriptPath, [], {
+  return new Promise<{
+    script: string;
+    output: string;
+    exitCode: number;
+    stderr?: string;
+    stdin?: string;
+    scriptType?: string;
+  }>((resolve) => {
+    const proc = spawn(
+      hasExplicitCmd ? cmd : scriptPath,
+      hasExplicitCmd ? [scriptPath] : [],
+      {
         stdio: stdin ? ['pipe', 'pipe', 'pipe'] : ['inherit', 'pipe', 'pipe'],
         env: { ...process.env, CLAUDE_PLUGIN_ROOT: process.cwd() },
-      });
-
-      if (stdin) {
-        proc.stdin!.write(stdin);
-        proc.stdin!.end();
       }
+    );
 
-      const outChunks: Buffer[] = [];
-      const errChunks: Buffer[] = [];
+    if (stdin) {
+      proc.stdin!.write(stdin);
+      proc.stdin!.end();
+    }
 
-      proc.stdout!.on('data', (d: Buffer) => {
-        outChunks.push(d);
-      });
-      proc.stderr!.on('data', (d: Buffer) => {
-        errChunks.push(d);
-      });
+    const outChunks: Buffer[] = [];
+    const errChunks: Buffer[] = [];
 
-      proc.on('close', (code) => {
-        const stdout = Buffer.concat(outChunks).toString();
-        const stderr = Buffer.concat(errChunks).toString();
+    proc.stdout!.on('data', (d: Buffer) => {
+      outChunks.push(d);
+    });
+    proc.stderr!.on('data', (d: Buffer) => {
+      errChunks.push(d);
+    });
 
-        if (code === null) {
-          resolve({
-            script: scriptEntry.path,
-            output: 'Process terminated unexpectedly',
-            exitCode: 1,
-          });
-          return;
-        }
+    proc.on('close', (code) => {
+      const stdout = Buffer.concat(outChunks).toString();
+      const stderr = Buffer.concat(errChunks).toString();
 
-        const result = parseHookOutput(stdout, stderr, code);
-
-        if (result.action === 'block') {
-          resolve({
-            script: scriptEntry.path,
-            output: result.reason!,
-            exitCode: 2,
-          });
-          return;
-        }
-
-        if (result.action === 'error') {
-          resolve({
-            script: scriptEntry.path,
-            output: result.reason!,
-            exitCode: code === 0 ? 1 : code,
-          });
-          return;
-        }
-
-        resolve({ script: scriptEntry.path, output: stdout, exitCode: code });
-      });
-
-      proc.on('error', (err) => {
+      if (code === null) {
         resolve({
           script: scriptEntry.path,
-          output: `Spawn failed: ${err.message}`,
+          output: 'Process terminated unexpectedly',
           exitCode: 1,
+          stderr,
+          stdin,
+          scriptType: scriptEntry.scriptType,
         });
+        return;
+      }
+
+      const result = parseHookOutput(stdout, stderr, code);
+
+      if (result.action === 'block') {
+        resolve({
+          script: scriptEntry.path,
+          output: result.reason!,
+          exitCode: 2,
+          stderr,
+          stdin,
+          scriptType: scriptEntry.scriptType,
+        });
+        return;
+      }
+
+      if (result.action === 'error') {
+        resolve({
+          script: scriptEntry.path,
+          output: result.reason!,
+          exitCode: code === 0 ? 1 : code,
+          stderr,
+          stdin,
+          scriptType: scriptEntry.scriptType,
+        });
+        return;
+      }
+
+      resolve({
+        script: scriptEntry.path,
+        output: stdout,
+        exitCode: code,
+        stderr,
+        stdin,
+        scriptType: scriptEntry.scriptType,
       });
-    }
-  );
+    });
+
+    proc.on('error', (err) => {
+      resolve({
+        script: scriptEntry.path,
+        output: `Spawn failed: ${err.message}`,
+        exitCode: 1,
+        stdin,
+        scriptType: scriptEntry.scriptType,
+      });
+    });
+  });
 }

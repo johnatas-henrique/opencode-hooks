@@ -197,10 +197,12 @@ export class HookExecutor {
           args: toolName ? [toolName] : [eventType],
           startTime: Date.now(),
           sessionId,
+          stdin: r.stdin,
+          scriptType: r.scriptType,
         },
         {
           output: r.output,
-          error: r.exitCode === 0 ? null : r.output,
+          error: r.stderr || null,
           exitCode: r.exitCode,
         }
       );
@@ -224,10 +226,10 @@ export class HookExecutor {
     this.deps.toastQueue.add({
       title: errorTitle,
       message: failedScripts
-        .map(
-          (r) =>
-            `Script: ${r.script}\nError: ${r.output}\nExit Code: ${r.exitCode} - Check settings.ts`
-        )
+        .map((r) => {
+          const stderrPart = r.stderr ? `\nStderr: ${r.stderr}` : '';
+          return `Script: ${r.script}\nError: ${r.output}${stderrPart}\nExit Code: ${r.exitCode} - Check settings.ts`;
+        })
         .join('\n\n'),
       variant: resolved.scriptToasts.errorVariant,
       duration: resolved.scriptToasts.errorDuration,

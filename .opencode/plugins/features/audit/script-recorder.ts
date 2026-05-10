@@ -62,6 +62,14 @@ export function createScriptRecorder(
   ): Promise<void> {
     const record = createScriptRecord(input, result, canLog, logTruncationKB);
     if (record !== null) {
+      if (config.level === 'debug') {
+        if (input.stdin) {
+          record.stdin = input.stdin;
+        }
+        if (input.scriptType) {
+          record.scriptType = input.scriptType;
+        }
+      }
       await deps.writeLine('scripts', record);
     }
   }

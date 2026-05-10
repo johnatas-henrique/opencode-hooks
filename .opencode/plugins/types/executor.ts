@@ -38,6 +38,8 @@ export interface ScriptInput {
   script: string;
   args: string[];
   startTime: number;
+  stdin?: string;
+  scriptType?: string;
 }
 
 export interface ScriptResultForAudit {
@@ -89,7 +91,12 @@ export type ExecuteScriptFn = (
   toolName: string,
   input: Record<string, unknown>,
   output?: Record<string, unknown>
-) => Promise<{ script: string; output: string; exitCode: number }>;
+) => Promise<{
+  script: string;
+  output: string;
+  exitCode: number;
+  stdin?: string;
+}>;
 
 export interface HookExecutorDeps {
   executeScript: ExecuteScriptFn;

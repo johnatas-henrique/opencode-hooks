@@ -29,6 +29,7 @@ export interface ScriptRunResult {
   output: string;
   error: string | null;
   exitCode: number;
+  stdin?: string;
 }
 
 export interface ScriptExecutionResult {

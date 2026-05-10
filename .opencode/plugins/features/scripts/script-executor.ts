@@ -68,6 +68,7 @@ export class ScriptExecutor {
         script,
         args: arg ? [arg] : [],
         startTime: new Date(timestamp).getTime(),
+        stdin: result.stdin,
       };
       const scriptResult: ScriptResultForAudit = {
         output: result.output,
@@ -93,7 +94,12 @@ export class ScriptExecutor {
 
     if (!options.skipAudit && this.deps.audit && result.output) {
       await this.deps.audit.logScript(
-        { script, args: arg ? [arg] : [], startTime: Date.now() },
+        {
+          script,
+          args: arg ? [arg] : [],
+          startTime: Date.now(),
+          stdin: result.stdin,
+        },
         { output: result.output, error: null, exitCode: result.exitCode }
       );
     }
