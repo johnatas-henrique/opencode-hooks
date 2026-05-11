@@ -5,7 +5,7 @@ import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
   {
-    ignores: ['dist/**'],
+    ignores: ['dist/**', 'coverage/**', 'commitlint.config.js'],
   },
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
@@ -15,6 +15,7 @@ export default defineConfig([
   },
   ...tseslint.configs.recommended,
   {
+    files: ['**/*.{ts,mts,cts}'],
     languageOptions: {
       parserOptions: {
         project: './tsconfig.json',
