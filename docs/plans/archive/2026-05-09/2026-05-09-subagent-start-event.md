@@ -38,11 +38,11 @@ Add `SubagentStart: 'tool.execute.before.subagent'` to `CLAUDE_EVENT_MAP`.
 Route `tool.execute.before` when `tool === 'task'` + `subagent_type` → `tool.execute.before.subagent`.
 Enrich input with `subagentType` and `description`.
 
-### `events-catalog.md` — MODIFY
+### `docs/EVENTS.md` — MODIFY
 
 Add `tool.execute.before.subagent` entry.
 
-### `docs/compatibility/claude-code-hooks-compatibility.md` — MODIFY
+### `docs/CLAUDE-COMPATIBILITY.md` — MODIFY
 
 - `SubagentStart`: ❌ → ✅
 - Add stdin fields: `agent_type`, `description`
