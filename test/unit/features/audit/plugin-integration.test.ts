@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('fs/promises', async () => {
   const { createFsPromisesMock } =
-    await import('../../helpers/mock-fs-promises');
+    await import('../../../helpers/mock-fs-promises');
   const mock = createFsPromisesMock();
   return { ...mock, default: mock };
 });

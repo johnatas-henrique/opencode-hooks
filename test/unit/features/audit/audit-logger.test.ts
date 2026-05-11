@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('fs/promises', async () => {
   const { createFsPromisesMock } =
-    await import('../../helpers/mock-fs-promises');
+    await import('../../../helpers/mock-fs-promises');
   const mock = createFsPromisesMock();
   return { ...mock, default: mock };
 });
@@ -244,5 +244,17 @@ describe('createAuditLogger', () => {
 
     expect(mockAppend).toHaveBeenCalled();
     expect(mockMkdirFn).toHaveBeenCalled();
+  });
+
+  it('handles appendFile rejection gracefully', async () => {
+    vi.mocked(fsPromises.appendFile).mockRejectedValue(new Error('disk full'));
+    vi.mocked(fsPromises.mkdir).mockResolvedValue(undefined);
+    vi.mocked(fsPromises.stat).mockResolvedValue({ size: 0 } as never);
+    const config = makeConfig();
+    const logger = createAuditLogger({ basePath: '/tmp', config });
+
+    await expect(
+      logger.writeLine('events', { test: true })
+    ).resolves.toBeUndefined();
   });
 });

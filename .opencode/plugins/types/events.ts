@@ -21,13 +21,6 @@ export interface EventHandler {
   defaultTemplate?: string;
 }
 
-export interface OnUnknownEventInput {
-  readonly eventType: string;
-  readonly context: Record<string, unknown>;
-}
-
-export type OnUnknownEventFn = (input: OnUnknownEventInput) => void;
-
 export interface ConfigResolverContext {
   readonly enabled: boolean;
   readonly default: EventOverride;
@@ -41,7 +34,6 @@ export interface ConfigResolverContext {
   readonly getClaudeScripts: (
     projectDir: string
   ) => Record<string, ScriptEntry[]>;
-  readonly onUnknownEvent: OnUnknownEventFn;
 }
 
 export interface ResolverFactory {

@@ -120,6 +120,19 @@ describe('ScriptExecutor', () => {
       expect(deps.executeScript).toHaveBeenCalled();
     });
 
+    it('continues when runOnlyOnce is true but session is not subagent', async () => {
+      const { deps, executor } = makeExecutor({
+        isSubagent: vi.fn().mockReturnValue(false),
+      });
+      await executor.execute(
+        'test.sh',
+        undefined,
+        { runOnlyOnce: true },
+        makeEventContext()
+      );
+      expect(deps.executeScript).toHaveBeenCalled();
+    });
+
     it('audits on error and shows toast', async () => {
       const { deps, executor } = makeExecutor({
         executeScript: vi

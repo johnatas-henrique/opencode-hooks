@@ -8,12 +8,7 @@ import type {
 } from '.opencode/plugins/types/config';
 import { isSubagent } from '.opencode/plugins/features/scripts/run-script-handler';
 import { appendToSession } from '.opencode/plugins/features/messages/append-to-session';
-import {
-  executeScript,
-  getStopHookActive,
-  setStopHookState,
-  clearStopHookState,
-} from '.opencode/plugins/features/scripts/executor';
+import { executeScript } from '.opencode/plugins/features/scripts/executor';
 import {
   getEventRecorder,
   getScriptRecorder,
@@ -21,7 +16,6 @@ import {
 import { useGlobalToastQueue } from '.opencode/plugins/core/toast-queue';
 import { userConfig } from '.opencode/plugins/config/settings';
 
-const SESSION_IDLE = 'session.idle';
 const TOOL_EXECUTE_BEFORE = 'tool.execute.before';
 const COMMAND_EXECUTE_BEFORE = 'command.execute.before';
 
@@ -37,11 +31,6 @@ export function createHookExecutor(): HookExecutor {
     executeScript,
     isSubagent,
     appendToSession,
-    stopHook: {
-      isActive: getStopHookActive,
-      setState: setStopHookState,
-      clearState: clearStopHookState,
-    },
     toastQueue: useGlobalToastQueue(),
     eventRecorder: getEventRecorder(),
     scriptRecorder: getScriptRecorder(),
@@ -77,10 +66,8 @@ export class HookExecutor {
       resolved,
       input,
       output,
-      toolName,
-      sessionId
+      toolName
     );
-    this.handleStopHookState(eventType, results, sessionId);
     await this.recordScriptResults(results, toolName, eventType, sessionId);
     this.showErrorToast(resolved, results);
     this.showOutputToast(resolved, results);
@@ -144,42 +131,19 @@ export class HookExecutor {
     resolved: ResolvedEventConfig,
     input: Record<string, unknown> | undefined,
     output: Record<string, unknown> | undefined,
-    toolName: string | undefined,
-    sessionId: string
+    toolName: string | undefined
   ): Promise<ScriptResult[]> {
-    const stopHookActive =
-      eventType === SESSION_IDLE && this.deps.stopHook.isActive(sessionId);
-    const hookInput = { ...(input ?? {}), stopHookActive };
-
     return Promise.all(
       resolved.scripts.map(async (script) => {
         return this.deps.executeScript(
           script,
           eventType,
           toolName ?? '',
-          hookInput,
+          input ?? {},
           output
         );
       })
     );
-  }
-
-  private handleStopHookState(
-    eventType: string,
-    results: ScriptResult[],
-    sessionId: string
-  ): void {
-    if (eventType !== SESSION_IDLE) return;
-
-    const anyBlocked = results.some(
-      (r) => r.exitCode === 2 || r.output.includes('block')
-    );
-
-    if (anyBlocked) {
-      this.deps.stopHook.setState(sessionId);
-    } else {
-      this.deps.stopHook.clearState(sessionId);
-    }
   }
 
   private async recordScriptResults(
@@ -280,9 +244,7 @@ export class HookExecutor {
     );
 
     for (const r of successfulScripts) {
-      if (r.output) {
-        await this.deps.appendToSession(event.ctx, sessionId, r.output);
-      }
+      await this.deps.appendToSession(event.ctx, sessionId, r.output);
     }
   }
 

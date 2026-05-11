@@ -4,7 +4,7 @@ import {
   createToolResolver,
   createEventResolver,
 } from '.opencode/plugins/features/events/context';
-import { createUserConfig } from 'test/unit/helpers/create-config';
+import { createUserConfig } from 'test/helpers/create-config';
 import type { HookExecutorDeps } from '.opencode/plugins/types/executor';
 import type {
   ResolvedEventConfig,
@@ -14,7 +14,13 @@ import type { ToastQueue } from '.opencode/plugins/types/toast';
 import type {
   EventRecorder,
   ScriptRecorder,
+  AuditConfig,
 } from '.opencode/plugins/types/audit';
+import { executeScript } from '.opencode/plugins/features/scripts/executor';
+import { createScriptRecorder } from '.opencode/plugins/features/audit/script-recorder';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
 function createMockToastQueue(): ToastQueue {
   return {
@@ -45,11 +51,6 @@ function createDeps(
       .mockResolvedValue({ script: '', output: '', exitCode: 0 }),
     isSubagent: () => false,
     appendToSession: vi.fn().mockResolvedValue(undefined),
-    stopHook: {
-      isActive: () => false,
-      setState: vi.fn(),
-      clearState: vi.fn(),
-    },
     toastQueue,
     logDisabledEvents: false,
     ...overrides,
@@ -122,6 +123,19 @@ function createEventSetup(
   const executor = new HookExecutor(deps);
   const resolved = createEventResolver(config).resolve(eventType, input);
   return { deps, executor, resolved } as const;
+}
+
+function createAppendSetup(output: string) {
+  return createToolSetup(
+    {
+      executeScript: vi
+        .fn()
+        .mockResolvedValue(createScriptResult('log.sh', output, 0)),
+    },
+    createUserConfig({
+      default: { toast: false, runScripts: true, appendToSession: true },
+    })
+  );
 }
 
 function findToastByTitle(deps: ReturnType<typeof createDeps>, title: string) {
@@ -298,18 +312,25 @@ describe('script execution', () => {
 // 4. Error & Output Toasts
 // ------------------------------------------------------------------------- //
 describe('error and output toasts', () => {
-  it('shows error toast when script fails', async () => {
+  it('includes stderr in error toast when script fails with stderr', async () => {
     const { deps, executor, resolved } = createToolSetup({
-      executeScript: vi
-        .fn()
-        .mockResolvedValue(createScriptResult('fail.sh', 'error msg', 1)),
+      executeScript: vi.fn().mockResolvedValue({
+        script: 'fail.sh',
+        output: 'error msg',
+        stderr: 'permission denied',
+        exitCode: 1,
+      }),
     });
     await executeEvent(executor, {
       resolved,
       eventType: 'tool.execute.before',
       toolName: 'bash',
     });
-    expect(findToastByTitle(deps, 'Script Error')).toBeDefined();
+    const toast = findToastByTitle(deps, 'Script Error');
+    expect(toast).toBeDefined();
+    expect((toast![0] as { message: string }).message).toContain(
+      'Stderr: permission denied'
+    );
   });
 
   it('shows output toast when script succeeds with output', async () => {
@@ -379,16 +400,8 @@ describe('multiple scripts', () => {
 // ------------------------------------------------------------------------- //
 describe('session append', () => {
   it('appends script output to session when appendToSession is enabled', async () => {
-    const { deps, executor, resolved } = createToolSetup(
-      {
-        executeScript: vi
-          .fn()
-          .mockResolvedValue(createScriptResult('log.sh', 'session data', 0)),
-      },
-      createUserConfig({
-        default: { toast: false, runScripts: true, appendToSession: true },
-      })
-    );
+    const { deps, executor, resolved } = createAppendSetup('session data');
+
     await executeEvent(executor, {
       resolved,
       eventType: 'tool.execute.before',
@@ -447,56 +460,7 @@ describe('block exit code', () => {
 });
 
 // ------------------------------------------------------------------------- //
-// 9. Stop Hook
-// ------------------------------------------------------------------------- //
-describe('stop hook state management', () => {
-  it('clears stop hook state on session.idle with no blocking', async () => {
-    const stopHook = {
-      isActive: vi.fn().mockReturnValue(true),
-      setState: vi.fn(),
-      clearState: vi.fn(),
-    };
-    const { executor, resolved } = createEventSetup(
-      createUserConfig({ default: { toast: false, runScripts: true } }),
-      'session.idle',
-      { sessionID: 'ses_123' },
-      { stopHook }
-    );
-    await executeEvent(executor, { resolved, eventType: 'session.idle' });
-    expect(stopHook.clearState).toHaveBeenCalledWith('ses_123');
-    expect(stopHook.setState).not.toHaveBeenCalled();
-  });
-
-  it('sets stop hook state on session.idle with blocking exit code 2', async () => {
-    const stopHook = {
-      isActive: vi.fn().mockReturnValue(false),
-      setState: vi.fn(),
-      clearState: vi.fn(),
-    };
-    const { executor, resolved } = createEventSetup(
-      createUserConfig({
-        default: { toast: false, runScripts: true },
-        events: { 'session.idle': { runScripts: true } } as never,
-      }),
-      'session.idle',
-      { sessionID: 'ses_123' },
-      {
-        executeScript: vi
-          .fn()
-          .mockResolvedValue(
-            createScriptResult('session-idle.sh', 'blocking content', 2)
-          ),
-        stopHook,
-      }
-    );
-    await executeEvent(executor, { resolved, eventType: 'session.idle' });
-    expect(stopHook.setState).toHaveBeenCalledWith('ses_123');
-    expect(stopHook.clearState).not.toHaveBeenCalled();
-  });
-});
-
-// ------------------------------------------------------------------------- //
-// 10. Script Recorder
+// 9. Script Recorder
 // ------------------------------------------------------------------------- //
 describe('script recorder', () => {
   it('logs each script result when scriptRecorder is present', async () => {
@@ -603,16 +567,8 @@ describe('disabled event variants', () => {
 // ------------------------------------------------------------------------- //
 describe('append to session edge cases', () => {
   it('does not append when script output is empty', async () => {
-    const { deps, executor, resolved } = createToolSetup(
-      {
-        executeScript: vi
-          .fn()
-          .mockResolvedValue(createScriptResult('empty.sh', '', 0)),
-      },
-      createUserConfig({
-        default: { toast: false, runScripts: true, appendToSession: true },
-      })
-    );
+    const { deps, executor, resolved } = createAppendSetup('');
+
     await executeEvent(executor, {
       resolved,
       eventType: 'tool.execute.before',
@@ -698,5 +654,227 @@ describe('subagent start routing', () => {
       input: { subagentType: 'explore' },
     });
     expect(deps.executeScript).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ------------------------------------------------------------------------- //
+// 16. Real Script Blocking by ScriptType
+// ------------------------------------------------------------------------- //
+describe('real script blocking by scriptType', () => {
+  let tmpDir: string;
+  let auditCfg: AuditConfig;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hook-executor-test-'));
+    auditCfg = {
+      enabled: true,
+      level: 'debug',
+      basePath: tmpDir,
+      maxSizeMB: 1,
+      maxAgeDays: 30,
+      logTruncationKB: 10,
+      maxFieldSize: 1000,
+      maxArrayItems: 50,
+      largeFields: [],
+      files: {
+        events: '',
+        scripts: 'plugin-scripts.json',
+        errors: '',
+        security: '',
+        debug: '',
+      },
+    };
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  function createScriptFile(auditDir: string): string {
+    return path.join(auditDir, 'plugin-scripts.json');
+  }
+
+  function createRecorder(auditDir: string): ScriptRecorder {
+    const scriptFile = createScriptFile(auditDir);
+    return createScriptRecorder(auditCfg, {
+      writeLine: async (_ft, data) => {
+        fs.mkdirSync(auditDir, { recursive: true });
+        fs.appendFileSync(scriptFile, JSON.stringify(data) + '\n');
+      },
+    });
+  }
+
+  function readRecords(auditDir: string): Record<string, unknown>[] {
+    const f = createScriptFile(auditDir);
+    if (!fs.existsSync(f)) return [];
+    return fs
+      .readFileSync(f, 'utf-8')
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => JSON.parse(l));
+  }
+
+  function resolvedConfig(
+    scripts: { source: string; path: string; scriptType: string }[]
+  ): ResolvedEventConfig {
+    return {
+      enabled: true,
+      toast: true,
+      toastTitle: '',
+      toastMessage: '',
+      toastVariant: 'info',
+      toastDuration: 2000,
+      scripts: scripts as never,
+      runScripts: true,
+      logToAudit: true,
+      appendToSession: false,
+      runOnlyOnce: false,
+      scriptToasts: {
+        showOutput: true,
+        showError: true,
+        outputVariant: 'info',
+        errorVariant: 'error',
+        outputDuration: 5000,
+        errorDuration: 15000,
+        outputTitle: 'Script Output',
+        errorTitle: 'Script Error',
+      },
+    };
+  }
+
+  function createBlockDeps(
+    recorder: ScriptRecorder
+  ): HookExecutorDeps & { toastQueue: ToastQueue } {
+    const toastQueue = createMockToastQueue();
+    return {
+      executeScript,
+      isSubagent: () => false,
+      appendToSession: vi.fn().mockResolvedValue(undefined),
+      toastQueue,
+      scriptRecorder: recorder,
+      logDisabledEvents: false,
+    };
+  }
+
+  async function assertBlocked(
+    deps: HookExecutorDeps & { toastQueue: ToastQueue },
+    auditDir: string,
+    expectedScriptType: string
+  ): Promise<void> {
+    const records = readRecords(auditDir);
+    const block = records.find((r) => r.exit === 2);
+    expect(block).toBeDefined();
+    expect(block!.scriptType).toBe(expectedScriptType);
+    expect(block!.stdin).toBeDefined();
+    expect(deps.toastQueue.add).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: 'error' })
+    );
+  }
+
+  it('blocks on settings-native (git commit --no-verify)', async () => {
+    const recorder = createRecorder(tmpDir);
+    const deps = createBlockDeps(recorder);
+    const executor = new HookExecutor(deps);
+    const resolved = resolvedConfig([
+      {
+        source: 'native',
+        path: 'type-native-no-verify.sh',
+        scriptType: 'settings-native',
+      },
+    ]);
+
+    await expect(
+      executor.execute({
+        ctx: {} as never,
+        eventType: 'tool.execute.before',
+        resolved,
+        sessionId: 'ses_test',
+        input: { tool: 'bash', callID: 'test_001', sessionID: 'ses_test' },
+        output: { args: { command: 'git commit --no-verify -m "test"' } },
+        toolName: 'bash',
+      })
+    ).rejects.toThrow(/no-verify/i);
+
+    await assertBlocked(deps, tmpDir, 'settings-native');
+  });
+
+  it('blocks on settings-claude (edit .env)', async () => {
+    const recorder = createRecorder(tmpDir);
+    const deps = createBlockDeps(recorder);
+    const executor = new HookExecutor(deps);
+    const resolved = resolvedConfig([
+      {
+        source: 'claude',
+        path: 'block-env-write.sh',
+        scriptType: 'settings-claude',
+      },
+    ]);
+
+    await expect(
+      executor.execute({
+        ctx: {} as never,
+        eventType: 'tool.execute.before',
+        resolved,
+        sessionId: 'ses_test',
+        input: { tool: 'edit', callID: 'test_002', sessionID: 'ses_test' },
+        output: { args: { filePath: '.env' } },
+        toolName: 'edit',
+      })
+    ).rejects.toThrow(/\.env/i);
+
+    await assertBlocked(deps, tmpDir, 'settings-claude');
+  });
+
+  it('blocks on local-claude (cat .env)', async () => {
+    const recorder = createRecorder(tmpDir);
+    const deps = createBlockDeps(recorder);
+    const executor = new HookExecutor(deps);
+    const scriptPath = path.join(
+      process.cwd(),
+      '.claude/hooks/block-destructive.sh'
+    );
+    const resolved = resolvedConfig([
+      { source: 'claude', path: scriptPath, scriptType: 'local-claude' },
+    ]);
+
+    await expect(
+      executor.execute({
+        ctx: {} as never,
+        eventType: 'tool.execute.before',
+        resolved,
+        sessionId: 'ses_test',
+        input: { tool: 'bash', callID: 'test_003', sessionID: 'ses_test' },
+        output: { args: { command: 'cat .env' } },
+        toolName: 'bash',
+      })
+    ).rejects.toThrow(/\.env/i);
+
+    await assertBlocked(deps, tmpDir, 'local-claude');
+  });
+
+  it('blocks on global-claude (cat .env)', async () => {
+    const recorder = createRecorder(tmpDir);
+    const deps = createBlockDeps(recorder);
+    const executor = new HookExecutor(deps);
+    const homedir = os.homedir();
+    const scriptPath = `node ${homedir}/.claude/hooks/block-dangerous-commands.js`;
+    const resolved = resolvedConfig([
+      { source: 'claude', path: scriptPath, scriptType: 'global-claude' },
+    ]);
+
+    await expect(
+      executor.execute({
+        ctx: {} as never,
+        eventType: 'tool.execute.before',
+        resolved,
+        sessionId: 'ses_test',
+        input: { tool: 'bash', callID: 'test_004', sessionID: 'ses_test' },
+        output: { args: { command: 'cat .env' } },
+        toolName: 'bash',
+      })
+    ).rejects.toThrow(/cat-env/i);
+
+    await assertBlocked(deps, tmpDir, 'global-claude');
   });
 });

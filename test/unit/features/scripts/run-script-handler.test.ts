@@ -163,4 +163,13 @@ describe('runScriptAndHandle', () => {
 
     expect(result).toEqual({ script: 'test.sh', output: 'output' });
   });
+
+  it('executes script when runOnlyOnce is true but not subagent', async () => {
+    const config = makeBaseConfig({
+      resolved: { ...makeBaseConfig().resolved, runOnlyOnce: true },
+    });
+    const result = await runScriptAndHandle(config);
+
+    expect(result).toEqual({ script: 'test.sh', output: 'output' });
+  });
 });

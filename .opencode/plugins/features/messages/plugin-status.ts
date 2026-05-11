@@ -110,8 +110,12 @@ export function getPluginStatus(): PluginStatus[] {
         pluginMap.set(name, { name, status: 'active', source });
       }
     } else if (entry.level === 'ERROR') {
-      const errorMsg = entry.error || entry.message;
-      pluginMap.set(name, { name, status: 'failed', error: errorMsg, source });
+      pluginMap.set(name, {
+        name,
+        status: 'failed',
+        error: entry.error ?? entry.message,
+        source,
+      });
     } else if (
       entry.level === 'WARN' &&
       entry.message.includes(INCOMPATIBLE_MARKER)

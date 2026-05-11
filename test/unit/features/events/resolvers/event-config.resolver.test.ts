@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { DelegatingEventConfigResolver } from '.opencode/plugins/features/events/resolvers/event-config.resolver';
-import { createContext } from '../../../helpers/create-context';
-import { createHandler } from '../../../helpers/create-handler';
+import { createContext } from '../../../../helpers/create-context';
+import { createHandler } from '../../../../helpers/create-handler';
 
 describe('DelegatingEventConfigResolver', () => {
   it('resolve delegates to ConfigBuilder', () => {

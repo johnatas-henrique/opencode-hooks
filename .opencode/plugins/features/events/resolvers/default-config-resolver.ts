@@ -51,13 +51,6 @@ export class DefaultConfigResolver {
     defaultCfg: EventOverride,
     input?: EventInput
   ): ResolvedEventConfig {
-    if (!handler) {
-      this.context.onUnknownEvent({
-        eventType,
-        context: { input: { eventType } },
-      });
-    }
-
     const allowedFields = handler?.allowedFields;
     return {
       enabled: true,

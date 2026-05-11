@@ -79,12 +79,6 @@ export interface HookEvent {
   toolName?: string;
 }
 
-export interface StopHookAPI {
-  isActive(sessionId: string): boolean;
-  setState(sessionId: string): void;
-  clearState(sessionId: string): void;
-}
-
 export type ExecuteScriptFn = (
   script: ScriptEntry,
   eventType: string,
@@ -106,7 +100,6 @@ export interface HookExecutorDeps {
     sessionId: string,
     text: string
   ) => Promise<void>;
-  stopHook: StopHookAPI;
   toastQueue: ToastQueue;
   eventRecorder?: EventRecorder;
   scriptRecorder?: ScriptRecorder;

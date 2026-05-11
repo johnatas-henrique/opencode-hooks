@@ -1,5 +1,4 @@
 import { spawn } from 'child_process';
-import fs from 'fs';
 import path from 'path';
 import type { ScriptEntry } from '.opencode/plugins/types/config';
 import { DEFAULTS } from '.opencode/plugins/core/constants';
@@ -38,44 +37,6 @@ export function resolveScriptPath(scriptPath: string): string {
   // Paths relativos (scripts nativos em ./scripts/) → resolver normalmente
   const scriptsDir = path.join(process.cwd(), DEFAULTS.scripts.dir);
   return path.join(scriptsDir, scriptPath);
-}
-
-const STOP_HOOK_STATE_DIR = path.join(
-  process.cwd(),
-  'production',
-  'hook-state'
-);
-
-export function getStopHookStateFile(sessionId: string): string {
-  return path.join(STOP_HOOK_STATE_DIR, `${sessionId}_stop_flag`);
-}
-
-export function getStopHookActive(sessionId: string): boolean {
-  const filePath = getStopHookStateFile(sessionId);
-  try {
-    return fs.existsSync(filePath);
-  } catch {
-    return false;
-  }
-}
-
-export function setStopHookState(sessionId: string): void {
-  const filePath = getStopHookStateFile(sessionId);
-  try {
-    fs.mkdirSync(STOP_HOOK_STATE_DIR, { recursive: true });
-    fs.writeFileSync(filePath, 'true');
-  } catch {
-    // silently ignore
-  }
-}
-
-export function clearStopHookState(sessionId: string): void {
-  const filePath = getStopHookStateFile(sessionId);
-  try {
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-  } catch {
-    // silently ignore
-  }
 }
 
 export function parseHookOutput(
@@ -163,10 +124,6 @@ export function buildClaudeStdin(
     base.tool_use_id = input.callID;
   }
 
-  if (claudeEventName === 'Stop' || claudeEventName === 'SubagentStop') {
-    base.stop_hook_active = input.stopHookActive === true;
-  }
-
   if (
     claudeEventName === 'SubagentStop' ||
     claudeEventName === 'SubagentStart'
@@ -229,13 +186,6 @@ export function buildOpencodeStdin(
 
   if (output) {
     base.tool_result = output;
-  }
-
-  if (
-    eventType === 'session.idle' ||
-    eventType === 'tool.execute.after.subagent'
-  ) {
-    base.stop_hook_active = input.stopHookActive === true;
   }
 
   if (

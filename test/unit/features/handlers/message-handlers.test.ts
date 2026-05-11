@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { messageHandlers } from '.opencode/plugins/features/handlers/message-handlers';
-import { expectHandlerProps } from '../../helpers/handler-assertions';
+import { expectHandlerProps } from '../../../helpers/handler-assertions';
 
 describe('messageHandlers', () => {
   const expectedKeys = [

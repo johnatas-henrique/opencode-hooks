@@ -5,13 +5,13 @@ import { homedir } from 'os';
 vi.mock('fs/promises', () => ({ readFile: vi.fn() }));
 
 vi.mock('fs', async () => {
-  const { createSyncMockFs } = await import('../../helpers/mock-fs');
+  const { createSyncMockFs } = await import('../../../helpers/mock-fs');
   const mockFs = createSyncMockFs();
   return { ...mockFs, default: mockFs };
 });
 
 vi.mock('.opencode/plugins/config/settings', async () => {
-  const { createMockSettings } = await import('../../helpers/mock-settings');
+  const { createMockSettings } = await import('../../../helpers/mock-settings');
   return createMockSettings();
 });
 
@@ -26,7 +26,7 @@ import {
   resetGlobalToastQueue,
   useGlobalToastQueue,
 } from '.opencode/plugins/core/toast-queue';
-import { mockLogFile } from './test-utils';
+import { mockLogFile } from '../../../helpers/test-utils';
 
 function logDir(): string {
   return join(homedir(), '.local', 'share', 'opencode', 'log');
@@ -68,6 +68,23 @@ function setupPatternFileMock(): void {
   }) as (...args: unknown[]) => boolean);
 }
 
+function setupErrorTest(error: unknown): {
+  mockLogError: ReturnType<typeof vi.fn>;
+} {
+  setupPatternFileMock();
+
+  const mockLogError = vi.fn().mockResolvedValue(undefined);
+  vi.spyOn(pluginIntegration, 'getErrorRecorder').mockReturnValue({
+    logError: mockLogError,
+  } as never);
+
+  vi.spyOn(showActivePluginsModule, 'showActivePluginsToast').mockRejectedValue(
+    error
+  );
+
+  return { mockLogError };
+}
+
 describe('showStartupToast', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -78,6 +95,7 @@ describe('showStartupToast', () => {
     vi.mocked(fs.readdirSync).mockReturnValue([]);
     vi.mocked(fs.readFileSync).mockReturnValue('');
     vi.mocked(fsPromises.readFile).mockResolvedValue('some no-toast content');
+    pluginIntegration.resetAuditLogging();
   });
 
   afterEach(() => {
@@ -166,22 +184,25 @@ describe('showStartupToast', () => {
   });
 
   it('records error when showActivePluginsToast throws', async () => {
-    setupPatternFileMock();
-
-    const mockLogError = vi.fn().mockResolvedValue(undefined);
-    vi.spyOn(pluginIntegration, 'getErrorRecorder').mockReturnValue({
-      logError: mockLogError,
-    } as never);
-
-    vi.spyOn(
-      showActivePluginsModule,
-      'showActivePluginsToast'
-    ).mockRejectedValue(new Error('plugins failed'));
+    const { mockLogError } = setupErrorTest(new Error('plugins failed'));
 
     await runShowStartupToast([100, 10000, 2500]);
 
     expect(mockLogError).toHaveBeenCalledWith(
       expect.objectContaining({
+        context: 'showStartupToast',
+      })
+    );
+  });
+
+  it('wraps non-Error throw value in Error object', async () => {
+    const { mockLogError } = setupErrorTest('string error message');
+
+    await runShowStartupToast([100, 10000, 2500]);
+
+    expect(mockLogError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.any(Error),
         context: 'showStartupToast',
       })
     );

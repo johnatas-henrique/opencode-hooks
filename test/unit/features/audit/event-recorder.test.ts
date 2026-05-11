@@ -466,19 +466,22 @@ describe('createEventRecorder', () => {
 });
 
 describe('sanitizeAndTruncate large fields', () => {
-  it('truncates content field when it is in largeFields and over maxBytes', () => {
-    const largeContent = 'y'.repeat(12000);
+  it('truncates large field content when over maxBytes', () => {
+    const largeContent = 'y'.repeat(5000);
     const record = createGenericEventRecord(
       'test',
-      { content: largeContent },
+      { patch: largeContent },
       {},
       undefined,
       true,
-      ['content'],
-      100,
+      ['patch'],
+      10000,
       3,
-      200
+      1 // logTruncationKB = 1 → maxBytes = 1024 < 5000
     );
-    expect(record!.input?.content).toContain('REDACTED');
+    expect(record!.input?.patch).toContain('[truncated]');
+    expect((record!.input?.patch as string).length).toBe(
+      1024 + '... [truncated]'.length
+    );
   });
 });

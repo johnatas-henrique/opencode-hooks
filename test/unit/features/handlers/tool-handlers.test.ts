@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { toolHandlers } from '.opencode/plugins/features/handlers/tool-handlers';
-import { expectHandlerProps } from '../../helpers/handler-assertions';
+import { expectHandlerProps } from '../../../helpers/handler-assertions';
 
 function assertBaseHandler(
   h: {

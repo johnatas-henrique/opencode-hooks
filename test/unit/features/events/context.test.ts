@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createSyncMockFs } from '../../helpers/mock-fs';
+import { createSyncMockFs } from '../../../helpers/mock-fs';
 
 vi.mock('fs', () => ({ default: createSyncMockFs() }));
 
 import fs from 'fs';
 
-import { createUserConfig } from '../../helpers/create-config';
+import { createUserConfig } from '../../../helpers/create-config';
 import {
   createContext,
   createEventResolver,

@@ -1,21 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fromAny } from '@total-typescript/shoehorn';
-import { createSyncMockFs } from '../../helpers/mock-fs';
-import { createSpawnMock } from '../../helpers/mock-child-process';
+import { createSyncMockFs } from '../../../helpers/mock-fs';
+import { createSpawnMock } from '../../../helpers/mock-child-process';
 
 vi.mock('fs', () => ({ default: createSyncMockFs() }));
 vi.mock('child_process', () => createSpawnMock());
-
-import fs from 'fs';
 
 import {
   sanitizeArg,
   validateScriptPath,
   resolveScriptPath,
-  getStopHookStateFile,
-  getStopHookActive,
-  setStopHookState,
-  clearStopHookState,
   parseHookOutput,
   buildClaudeStdin,
   buildOpencodeStdin,
@@ -167,84 +161,6 @@ describe('resolveScriptPath', () => {
   });
 });
 
-describe('getStopHookStateFile', () => {
-  it('returns path with session id', () => {
-    const result = getStopHookStateFile('ses_123');
-    expect(result).toContain('ses_123_stop_flag');
-  });
-});
-
-describe('getStopHookActive', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('returns true when state file exists', () => {
-    vi.mocked(fs.existsSync).mockReturnValue(true);
-    expect(getStopHookActive('ses_1')).toBe(true);
-  });
-
-  it('returns false when state file does not exist', () => {
-    vi.mocked(fs.existsSync).mockReturnValue(false);
-    expect(getStopHookActive('ses_1')).toBe(false);
-  });
-
-  it('returns false when existsSync throws', () => {
-    vi.mocked(fs.existsSync).mockImplementation(() => {
-      throw new Error('permission');
-    });
-    expect(getStopHookActive('ses_1')).toBe(false);
-  });
-});
-
-describe('setStopHookState', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('creates directory and writes state file', () => {
-    vi.mocked(fs.mkdirSync).mockReturnValue(undefined);
-    vi.mocked(fs.writeFileSync).mockReturnValue(undefined);
-
-    setStopHookState('ses_1');
-    expect(fs.mkdirSync).toHaveBeenCalled();
-    expect(fs.writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('ses_1_stop_flag'),
-      'true'
-    );
-  });
-
-  it('silently handles errors', () => {
-    vi.mocked(fs.mkdirSync).mockImplementation(() => {
-      throw new Error('permission');
-    });
-    expect(() => setStopHookState('ses_1')).not.toThrow();
-  });
-});
-
-describe('clearStopHookState', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('removes state file when it exists', () => {
-    vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.unlinkSync).mockReturnValue(undefined);
-
-    clearStopHookState('ses_1');
-    expect(fs.unlinkSync).toHaveBeenCalledWith(
-      expect.stringContaining('ses_1_stop_flag')
-    );
-  });
-
-  it('does not call unlink when file does not exist', () => {
-    vi.mocked(fs.existsSync).mockReturnValue(false);
-
-    clearStopHookState('ses_1');
-    expect(fs.unlinkSync).not.toHaveBeenCalled();
-  });
-});
-
 describe('parseHookOutput', () => {
   it('returns block action for exit code 2', () => {
     const result = parseHookOutput('', 'Denied by policy', 2);
@@ -316,6 +232,46 @@ describe('parseHookOutput', () => {
     expect(result.action).toBe('allow');
   });
 
+  it('uses default reason when both stderr and stdout are empty at exit code 2', () => {
+    const result = parseHookOutput('', '', 2);
+    expect(result.action).toBe('block');
+    expect(result.reason).toBe('Blocked by exit code 2');
+  });
+
+  it('handles hookSpecificOutput with deny without reason', () => {
+    const result = parseHookOutput(
+      JSON.stringify({
+        hookSpecificOutput: { permissionDecision: 'deny' },
+      }),
+      '',
+      0
+    );
+    expect(result.action).toBe('block');
+    expect(result.reason).toBe('Denied');
+  });
+
+  it('uses default reason for decision block without reason', () => {
+    const result = parseHookOutput(
+      JSON.stringify({ decision: 'block' }),
+      '',
+      0
+    );
+    expect(result.action).toBe('block');
+    expect(result.reason).toBe('Blocked');
+  });
+
+  it('uses default reason for continue false without stopReason', () => {
+    const result = parseHookOutput(JSON.stringify({ continue: false }), '', 0);
+    expect(result.action).toBe('block');
+    expect(result.reason).toBe('Stopped');
+  });
+
+  it('uses default reason for ok false without reason', () => {
+    const result = parseHookOutput(JSON.stringify({ ok: false }), '', 0);
+    expect(result.action).toBe('error');
+    expect(result.reason).toBe('Failed');
+  });
+
   it('includes additionalContext and systemMessage on allow', () => {
     const stdout = JSON.stringify({
       additionalContext: 'ctx',
@@ -348,14 +304,6 @@ describe('buildClaudeStdin', () => {
     expect(result.hook_event_name).toBe('custom.event');
   });
 
-  it('includes stop_hook_active for Stop events', () => {
-    const result = buildClaudeStdin('session.idle', '', {
-      sessionID: 's1',
-      stopHookActive: true,
-    });
-    expect(result.stop_hook_active).toBe(true);
-  });
-
   it('includes agent_type for SubagentStop', () => {
     const result = buildClaudeStdin('tool.execute.after.subagent', '', {
       sessionID: 's1',
@@ -382,6 +330,78 @@ describe('buildClaudeStdin', () => {
     });
     expect(result.file_path).toBe('/tmp/test.ts');
   });
+
+  it('handles subagentStop output with non-object model gracefully', () => {
+    const result = buildClaudeStdin(
+      'tool.execute.after.subagent',
+      '',
+      { sessionID: 's1', callID: 'call_2' },
+      {
+        metadata: {
+          model: 'string-not-object',
+          sessionId: 'ses_2',
+        },
+      }
+    );
+    expect(result.model).toBeUndefined();
+    expect(result.agent_transcript_path).toBe('ses_2');
+  });
+
+  it('handles subagentStop output with object model but non-string modelID', () => {
+    const result = buildClaudeStdin(
+      'tool.execute.after.subagent',
+      '',
+      { sessionID: 's1', callID: 'call_3' },
+      {
+        metadata: {
+          model: { notModelID: 'something' },
+          sessionId: 'ses_3',
+        },
+      }
+    );
+    expect(result.model).toBeUndefined();
+    expect(result.agent_transcript_path).toBe('ses_3');
+  });
+
+  it('falls back to empty description when SubagentStart has no description', () => {
+    const result = buildClaudeStdin('tool.execute.before.subagent', '', {
+      sessionID: 's1',
+      subagentType: 'explore',
+    });
+    expect(result.description).toBe('');
+  });
+
+  it('extracts description from args for SubagentStop', () => {
+    const result = buildClaudeStdin('tool.execute.after.subagent', '', {
+      sessionID: 's1',
+      callID: 'call_6',
+      args: { description: 'From args' },
+    });
+    expect(result.description).toBe('From args');
+  });
+
+  it('handles non-string sessionId metadata for SubagentStop', () => {
+    const result = buildClaudeStdin(
+      'tool.execute.after.subagent',
+      '',
+      { sessionID: 's1', callID: 'call_7' },
+      {
+        metadata: {
+          model: { modelID: 'claude-3' },
+          sessionId: 123,
+        },
+      }
+    );
+    expect(result.model).toBe('claude-3');
+    expect(result.agent_transcript_path).toBeUndefined();
+  });
+
+  it('falls back to empty file_path for FileChanged without file', () => {
+    const result = buildClaudeStdin('file.watcher.updated', '', {
+      sessionID: 's1',
+    });
+    expect(result.file_path).toBe('');
+  });
 });
 
 describe('buildOpencodeStdin', () => {
@@ -404,14 +424,6 @@ describe('buildOpencodeStdin', () => {
     expect(result.tool_result).toEqual({ status: 'ok' });
   });
 
-  it('includes stop_hook_active for session.idle', () => {
-    const result = buildOpencodeStdin('session.idle', '', {
-      sessionID: 's1',
-      stopHookActive: true,
-    });
-    expect(result.stop_hook_active).toBe(true);
-  });
-
   it('includes agent_type for tool.execute.after.subagent', () => {
     const result = buildOpencodeStdin('tool.execute.after.subagent', '', {
       sessionID: 's1',
@@ -431,12 +443,85 @@ describe('buildOpencodeStdin', () => {
     expect(result.description).toBe('Design the combat healing mechanic');
   });
 
+  it('falls back to empty description when missing for tool.execute.before.subagent', () => {
+    const result = buildOpencodeStdin('tool.execute.before.subagent', '', {
+      sessionID: 's1',
+      subagentType: 'explore',
+    });
+    expect(result.description).toBe('');
+  });
+
   it('includes file_path for file.watcher.updated', () => {
     const result = buildOpencodeStdin('file.watcher.updated', '', {
       sessionID: 's1',
       file: 'src/main.ts',
     });
     expect(result.file_path).toBe('src/main.ts');
+  });
+
+  it('extracts model from metadata for tool.execute.after.subagent', () => {
+    const result = buildOpencodeStdin(
+      'tool.execute.after.subagent',
+      '',
+      { sessionID: 's1', callID: 'call_1', subagentType: 'explore' },
+      {
+        metadata: {
+          model: { modelID: 'claude-3-opus' },
+          sessionId: 'ses_sub',
+        },
+      }
+    );
+    expect(result.agent_id).toBe('call_1');
+    expect(result.model).toBe('claude-3-opus');
+    expect(result.agent_transcript_path).toBe('ses_sub');
+  });
+
+  it('handles subagentStop output with non-object model in opencode stdin', () => {
+    const result = buildOpencodeStdin(
+      'tool.execute.after.subagent',
+      '',
+      { sessionID: 's1', callID: 'call_2' },
+      {
+        metadata: {
+          model: 'plain-string',
+          sessionId: null,
+        },
+      }
+    );
+    expect(result.model).toBeUndefined();
+    expect(result.agent_transcript_path).toBeUndefined();
+  });
+
+  it('extracts description from args for tool.execute.after.subagent', () => {
+    const result = buildOpencodeStdin('tool.execute.after.subagent', '', {
+      sessionID: 's1',
+      callID: 'call_4',
+      args: { description: 'Test subagent' },
+    });
+    expect(result.description).toBe('Test subagent');
+  });
+
+  it('handles object model with non-string modelID in opencode stdin', () => {
+    const result = buildOpencodeStdin(
+      'tool.execute.after.subagent',
+      '',
+      { sessionID: 's1', callID: 'call_5' },
+      {
+        metadata: {
+          model: { notModelID: 123 },
+          sessionId: 'ses_5',
+        },
+      }
+    );
+    expect(result.model).toBeUndefined();
+    expect(result.agent_transcript_path).toBe('ses_5');
+  });
+
+  it('falls back to empty file_path when file is missing for file.watcher.updated', () => {
+    const result = buildOpencodeStdin('file.watcher.updated', '', {
+      sessionID: 's1',
+    });
+    expect(result.file_path).toBe('');
   });
 });
 
@@ -496,6 +581,23 @@ describe('executeScript', () => {
     );
     expect(result.script).toBe('test.sh');
     expect(mockProc.stdin.write).not.toHaveBeenCalled();
+  });
+
+  it('spawns async script with explicit command when path has prefix', async () => {
+    const entry: ScriptEntry = {
+      source: 'native',
+      path: 'node async_runner.js',
+      async: true,
+    };
+    const result = await executeScript(entry, 'tool.execute.before', 'bash', {
+      sessionID: 's1',
+    });
+    expect(result.exitCode).toBe(0);
+    expect(spawn).toHaveBeenCalledWith(
+      'node',
+      [expect.stringContaining('async_runner.js')],
+      expect.objectContaining({ stdio: 'ignore' })
+    );
   });
 
   it('handles non-zero exit code', async () => {
@@ -591,5 +693,14 @@ describe('executeScript', () => {
       expect.objectContaining({ stdio: ['pipe', 'pipe', 'pipe'] })
     );
     expect(mockProc.stdin.write).toHaveBeenCalled();
+  });
+
+  it('skips stdin for unknown source (neither claude nor native)', async () => {
+    const { mockProc } = await runExecuteScript({
+      source: 'unknown' as 'native',
+      path: 'test.sh',
+    });
+
+    expect(mockProc.stdin.write).not.toHaveBeenCalled();
   });
 });

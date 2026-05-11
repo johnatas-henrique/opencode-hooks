@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { join } from 'path';
 import { homedir } from 'os';
-import { createMockSettings } from '../../helpers/mock-settings';
+import { createMockSettings } from '../../../helpers/mock-settings';
 
 vi.mock('fs', async () => {
-  const { createSyncMockFs } = await import('../../helpers/mock-fs');
+  const { createSyncMockFs } = await import('../../../helpers/mock-fs');
   const mockFs = createSyncMockFs();
   return { ...mockFs, default: mockFs };
 });
@@ -15,7 +15,7 @@ import * as settingsModule from '.opencode/plugins/config/settings';
 
 import { showActivePluginsToast } from '.opencode/plugins/features/messages/show-active-plugins';
 import type { ToastQueue } from '.opencode/plugins/types/toast';
-import { mockLogFile } from './test-utils';
+import { mockLogFile } from '../../../helpers/test-utils';
 
 function logDir(): string {
   const home = homedir();

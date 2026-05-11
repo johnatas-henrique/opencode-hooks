@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('fs', async () => {
-  const { createSyncMockFs } = await import('../../helpers/mock-fs');
+  const { createSyncMockFs } = await import('../../../helpers/mock-fs');
   const mockFs = createSyncMockFs();
   return { ...mockFs, default: mockFs };
 });
@@ -215,6 +215,63 @@ describe('getPluginStatus', () => {
     expect(result).toHaveLength(1);
     expect(result[0].status).toBe('failed');
   });
+
+  it('falls back to default sessionId when name, path, and pkg are all missing', () => {
+    setupMockFs({
+      exists: true,
+      readdir: ['plugin-2026-01-15.log'],
+      readFile: [
+        'INFO 2026-01-15T14:30:00.000Z +0ms service=plugin loading loaded',
+      ].join('\n'),
+    });
+
+    const result = getPluginStatus();
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('unknown');
+  });
+
+  it('skips duplicate INFO loading entries', () => {
+    setupMockFs({
+      exists: true,
+      readdir: ['plugin-2026-01-15.log'],
+      readFile: [
+        'INFO 2026-01-15T14:30:00.000Z +0ms service=plugin name=dup-plugin loading first',
+        'INFO 2026-01-15T14:30:01.000Z +0ms service=plugin name=dup-plugin loading second',
+      ].join('\n'),
+    });
+
+    const result = getPluginStatus();
+    expect(result).toHaveLength(1);
+    expect(result[0].status).toBe('active');
+  });
+
+  it('uses error message when ERROR entry has no error tag', () => {
+    setupMockFs({
+      exists: true,
+      readdir: ['plugin-2026-01-15.log'],
+      readFile: [
+        'ERROR 2026-01-15T14:30:00.000Z +0ms service=plugin name=crash-plugin Some error without tag',
+      ].join('\n'),
+    });
+
+    const result = getPluginStatus();
+    expect(result).toHaveLength(1);
+    expect(result[0].status).toBe('failed');
+    expect(result[0].error).toBe('Some error without tag');
+  });
+
+  it('ignores non-matching log levels', () => {
+    setupMockFs({
+      exists: true,
+      readdir: ['plugin-2026-01-15.log'],
+      readFile: [
+        'DEBUG 2026-01-15T14:30:00.000Z +0ms service=plugin name=debug-plugin step',
+      ].join('\n'),
+    });
+
+    const result = getPluginStatus();
+    expect(result).toHaveLength(0);
+  });
 });
 
 describe('getLatestLogFile', () => {
@@ -254,6 +311,15 @@ describe('getLatestLogFile', () => {
     });
     const result = getLatestLogFile();
     expect(result).toMatch(/plugin-2026-01-15\.log$/);
+  });
+
+  it('pushes dev.log to end with multiple files', () => {
+    setupMockFs({
+      exists: true,
+      readdir: ['a.log', 'dev.log', 'b.log'],
+    });
+    const result = getLatestLogFile();
+    expect(result).not.toContain('dev.log');
   });
 });
 
@@ -390,5 +456,29 @@ describe('formatPluginStatus', () => {
     const result = formatPluginStatus([builtInIncompatible], 'all-labeled');
     expect(result).toContain('Incompatible:');
     expect(result).toContain('⚠ @opencode/legacy-builtin (built-in)');
+  });
+
+  it('handles user-separated mode with failed plugin without error', () => {
+    const noError: PluginStatus = {
+      name: 'no-error-plugin',
+      status: 'failed',
+      source: 'user',
+    };
+    const result = formatPluginStatus([noError], 'user-separated');
+    expect(result).toContain('Failed:');
+    expect(result).toContain('✗ no-error-plugin');
+    expect(result).not.toContain('(undefined)');
+  });
+
+  it('handles all-labeled mode with failed plugin without error', () => {
+    const noError: PluginStatus = {
+      name: 'no-error-all',
+      status: 'failed',
+      source: 'user',
+    };
+    const result = formatPluginStatus([noError], 'all-labeled');
+    expect(result).toContain('Failed:');
+    expect(result).toContain('✗ no-error-all (user)');
+    expect(result).not.toContain('(undefined)');
   });
 });

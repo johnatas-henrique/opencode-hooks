@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { DefaultToolConfigResolver } from '.opencode/plugins/features/events/resolvers/tool-config.resolver';
-import { createContext } from '../../../helpers/create-context';
-import { createHandler } from '../../../helpers/create-handler';
-import { expectDefaults } from '../../../helpers/config-assertions';
+import { createContext } from '../../../../helpers/create-context';
+import { createHandler } from '../../../../helpers/create-handler';
+import { expectDefaults } from '../../../../helpers/config-assertions';
 
 function resolveToolConfig(
   overrides: Parameters<typeof createContext>[0] = {},
@@ -168,5 +168,27 @@ describe('DefaultToolConfigResolver', () => {
     });
     expect(result.runScripts).toBe(true);
     expect(result.scripts[0]?.path).toBe('custom-handler.sh');
+  });
+
+  it('preserves runScripts:false when event config explicitly sets it with claude scripts', () => {
+    const result = resolveToolConfig({
+      default: { runScripts: false },
+      getEventConfig: () => ({ runScripts: false }),
+      getClaudeScripts: () => ({
+        'tool.execute.before': [
+          { source: 'claude', path: 'claude.sh', matcher: 'bash' },
+        ],
+      }),
+    });
+    expect(result.runScripts).toBe(false);
+  });
+
+  it('falls back settings-claude for claude-sourced tool scripts without scriptType', () => {
+    const result = resolveToolConfig({
+      getToolConfigs: () => ({
+        bash: { scripts: [{ source: 'claude', path: 'claude.sh' }] },
+      }),
+    });
+    expect(result.scripts[0]?.scriptType).toBe('settings-claude');
   });
 });

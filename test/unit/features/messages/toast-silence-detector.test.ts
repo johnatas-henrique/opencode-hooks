@@ -134,4 +134,25 @@ describe('waitForToastSilence', () => {
 
     expect(settled).toBe('pending');
   });
+
+  it('clears silenceTimer when readFile fails after toasts', async () => {
+    const readFileFn = vi
+      .fn()
+      .mockResolvedValueOnce('path=/tui/show-toast first')
+      .mockRejectedValueOnce(new Error('read error'));
+
+    const { promise, cleanup } = waitForToastSilence(
+      '/fake/log.log',
+      { pollMs: 100, silenceMs: 500 },
+      fromAny<
+        ((path: string, encoding: string) => Promise<string>) | undefined,
+        ReturnType<typeof vi.fn>
+      >(readFileFn)
+    );
+
+    await vi.advanceTimersByTimeAsync(200);
+
+    await expect(promise).resolves.toBeUndefined();
+    cleanup();
+  });
 });

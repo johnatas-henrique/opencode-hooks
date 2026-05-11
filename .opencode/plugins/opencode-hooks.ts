@@ -29,7 +29,6 @@ import {
   getEventRecorder,
   getErrorRecorder,
 } from '.opencode/plugins/features/audit/plugin-integration';
-import { setOnUnknownEvent } from '.opencode/plugins/features/events/context';
 import { createHookExecutor } from '.opencode/plugins/features/hooks/hook-executor';
 import fs from 'fs';
 import path from 'path';
@@ -50,48 +49,6 @@ function validateScriptsDirectory(cwd: string = getCwdSafe()): void {
 }
 
 let hasShownToast = false;
-
-function dumpToolExecuteAfter(
-  input: ToolExecuteAfterInput,
-  output: ToolExecuteAfterOutput
-): void {
-  try {
-    const dir = path.join(getCwdSafe(), 'production', 'debug');
-    fs.mkdirSync(dir, { recursive: true });
-    const file = path.join(dir, `tool-execute-after-${Date.now()}.json`);
-    fs.writeFileSync(
-      file,
-      JSON.stringify(
-        { input, output, timestamp: new Date().toISOString() },
-        null,
-        2
-      )
-    );
-  } catch {
-    // best-effort debug dump
-  }
-}
-
-function dumpToolExecuteBefore(
-  input: ToolExecuteBeforeInput,
-  output: ToolExecuteBeforeOutput
-): void {
-  try {
-    const dir = path.join(getCwdSafe(), 'production', 'debug');
-    fs.mkdirSync(dir, { recursive: true });
-    const file = path.join(dir, `tool-execute-before-${Date.now()}.json`);
-    fs.writeFileSync(
-      file,
-      JSON.stringify(
-        { input, output, timestamp: new Date().toISOString() },
-        null,
-        2
-      )
-    );
-  } catch {
-    // best-effort debug dump
-  }
-}
 
 export const OpencodeHooks: Plugin = async (
   ctx: PluginInput
@@ -134,13 +91,6 @@ export const OpencodeHooks: Plugin = async (
   validateScriptsDirectory();
 
   await initAuditLogging(userConfig.audit);
-
-  setOnUnknownEvent(async (input) => {
-    const rec = getEventRecorder();
-    if (rec) {
-      await rec.logEvent('UNKNOWN_EVENT_IN_RESOLVE', input.context);
-    }
-  });
 
   const executor = createHookExecutor();
 
@@ -216,7 +166,6 @@ export const OpencodeHooks: Plugin = async (
 
         if (subagentType) {
           resolved.toastMessage = `Agent invoked: ${subagentType}`;
-          dumpToolExecuteBefore(input, output);
         }
 
         await executor.execute({
@@ -275,7 +224,6 @@ export const OpencodeHooks: Plugin = async (
 
         if (subagentType) {
           resolved.toastMessage = `Agent invoked: ${subagentType}`;
-          dumpToolExecuteAfter(input, output);
         }
 
         await executor.execute({

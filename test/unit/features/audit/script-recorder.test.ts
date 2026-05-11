@@ -182,4 +182,23 @@ describe('createScriptRecorder', () => {
 
     expect(mockWriteLine).not.toHaveBeenCalled();
   });
+
+  it('does not enrich record with debug fields when level is audit', async () => {
+    const { recorder, mockWriteLine } = makeRecorderWithWriteLine({
+      level: 'audit',
+    });
+
+    const input: ScriptInput = {
+      script: 'test.sh',
+      args: [],
+      stdin: 'secret',
+      scriptType: 'global-claude',
+    };
+    await recorder.logScript(input, { output: 'ok', error: null, exitCode: 0 });
+
+    expect(mockWriteLine).toHaveBeenCalledOnce();
+    const record = mockWriteLine.mock.calls[0][1];
+    expect(record.stdin).toBeUndefined();
+    expect(record.scriptType).toBeUndefined();
+  });
 });

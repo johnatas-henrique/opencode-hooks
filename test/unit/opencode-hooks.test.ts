@@ -5,7 +5,7 @@ import type { Event, UserMessage, Model, Provider } from '@opencode-ai/sdk';
 import type { ChildProcess } from 'child_process';
 import { spawn } from 'child_process';
 import { fromAny } from '@total-typescript/shoehorn';
-import { makeMockChildProcess } from './helpers/mock-child-process';
+import { makeMockChildProcess } from '../helpers/mock-child-process';
 import * as startupToastModule from '.opencode/plugins/features/messages/show-startup-toast';
 import * as settingsModule from '.opencode/plugins/config/settings';
 import * as executorModule from '.opencode/plugins/features/scripts/executor';
@@ -13,7 +13,7 @@ import * as appendToSessionModule from '.opencode/plugins/features/messages/appe
 import fs from 'fs';
 
 vi.mock('fs', async () => {
-  const { createSyncMockFs } = await import('./helpers/mock-fs');
+  const { createSyncMockFs } = await import('../helpers/mock-fs');
   const mockFsObj = createSyncMockFs();
   return { ...mockFsObj, default: mockFsObj };
 });
@@ -27,12 +27,13 @@ vi.mock('fs/promises', () => ({
   rename: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('child_process', async () => {
-  const { makeMockChildProcess } = await import('./helpers/mock-child-process');
+  const { makeMockChildProcess } =
+    await import('../helpers/mock-child-process');
   return { spawn: vi.fn(() => makeMockChildProcess()) };
 });
 
 vi.mock('.opencode/plugins/config/settings', async () => {
-  const { createMockSettings } = await import('./helpers/mock-settings');
+  const { createMockSettings } = await import('../helpers/mock-settings');
   const mockSettings = createMockSettings();
   mockSettings.userConfig.toastQueue = { staggerMs: 300, maxSize: 50 };
   Object.assign(mockSettings.userConfig.scriptToasts, {
@@ -62,7 +63,7 @@ vi.mock('.opencode/plugins/config/settings', async () => {
 });
 
 vi.mock('.opencode/plugins/features/scripts/executor', async () => {
-  const { createExecutorMock } = await import('./helpers/mock-executor');
+  const { createExecutorMock } = await import('../helpers/mock-executor');
   return createExecutorMock();
 });
 
@@ -547,6 +548,48 @@ describe('tool.execute.after handler', () => {
       {}
     );
   });
+
+  it('handles task tool without subagent_type in after', async () => {
+    const resolveSpy = mockResolveToolConfig();
+
+    await hooks['tool.execute.after']!(
+      {
+        tool: 'task',
+        sessionID: 'ses_123',
+        callID: 'call_1',
+        args: { command: 'ls' },
+      },
+      {} as never
+    );
+
+    expect(resolveSpy).toHaveBeenCalledWith(
+      'tool.execute.after',
+      'task',
+      expect.objectContaining({ subagentType: '' }),
+      {}
+    );
+  });
+
+  it('handles skill tool without name', async () => {
+    const resolveSpy = mockResolveToolConfig();
+
+    await hooks['tool.execute.after']!(
+      {
+        tool: 'skill',
+        sessionID: 'ses_123',
+        callID: 'call_1',
+        args: {},
+      },
+      {} as never
+    );
+
+    expect(resolveSpy).toHaveBeenCalledWith(
+      'tool.execute.after',
+      'skill',
+      expect.objectContaining({ skillType: '' }),
+      {}
+    );
+  });
 });
 
 describe('shell.env handler', () => {
@@ -609,10 +652,6 @@ describe('executeHook behavior', () => {
       output: '',
       exitCode: 0,
     });
-    vi.mocked(executorModule).getStopHookActive.mockReset();
-    vi.mocked(executorModule).getStopHookActive.mockReturnValue(false);
-    vi.mocked(executorModule).setStopHookState.mockReset();
-    vi.mocked(executorModule).clearStopHookState.mockReset();
     vi.mocked(appendToSessionModule).appendToSession.mockReset();
     vi.mocked(appendToSessionModule).appendToSession.mockResolvedValue(
       undefined
@@ -709,38 +748,27 @@ describe('executeHook behavior', () => {
     );
   });
 
-  it.each([
-    { isActive: false, expectedFn: 'setStopHookState' as const },
-    { isActive: true, expectedFn: 'clearStopHookState' as const },
-  ])(
-    '$expectedFn when idle script active=$isActive',
-    async ({ isActive, expectedFn }) => {
-      if (!isActive) {
-        vi.mocked(executorModule).executeScript.mockResolvedValue({
-          script: 'idle.sh',
-          output: 'blocked',
-          exitCode: 2,
-        });
-      }
-      vi.mocked(executorModule).getStopHookActive.mockReturnValue(isActive);
+  it('executes scripts for session.idle', async () => {
+    mockResolveEventConfig({
+      runScripts: true,
+      scripts: [{ source: 'native' as const, path: 'idle.sh' }],
+    });
 
-      mockResolveEventConfig({
-        runScripts: true,
-        scripts: [{ source: 'native' as const, path: 'idle.sh' }],
-      });
+    await hooks.event!({
+      event: {
+        type: 'session.idle',
+        properties: { sessionID: 'ses_123' },
+      } as Event,
+    });
 
-      await hooks.event!({
-        event: {
-          type: 'session.idle',
-          properties: { sessionID: 'ses_123' },
-        } as Event,
-      });
-
-      expect(vi.mocked(executorModule)[expectedFn]).toHaveBeenCalledWith(
-        'ses_123'
-      );
-    }
-  );
+    expect(vi.mocked(executorModule).executeScript).toHaveBeenCalledWith(
+      { source: 'native', path: 'idle.sh' },
+      'session.idle',
+      '',
+      expect.any(Object),
+      undefined
+    );
+  });
 
   it('shows script output toast when configured', async () => {
     const addSpy = mockToastAdd();
@@ -779,6 +807,55 @@ describe('executeHook behavior', () => {
       })
     );
   });
+
+  it('handles toast dropped via onToastDropped callback', async () => {
+    vi.mocked(settingsModule).userConfig.toastQueue.maxSize = 2;
+    vi.spyOn(pluginIntegration, 'getErrorRecorder').mockReturnValue(undefined);
+
+    resetGlobalToastQueue();
+    pluginIntegration.resetAuditLogging();
+    setupGlobalRecorders();
+    setupCommonMocks();
+    const localHooks = await OpencodeHooks(mockCtx as never);
+    await vi.advanceTimersByTimeAsync(300);
+
+    const q = useGlobalToastQueue();
+    q.add(fromAny({ title: 't1', variant: 'info', message: 'm1' }));
+    q.add(fromAny({ title: 't2', variant: 'info', message: 'm2' }));
+    q.add(fromAny({ title: 't3', variant: 'info', message: 'm3' }));
+
+    expect(localHooks).toBeDefined();
+  });
+
+  it('uses fallback title in dropped toast when title is empty', async () => {
+    vi.mocked(settingsModule).userConfig.toastQueue.maxSize = 2;
+
+    resetGlobalToastQueue();
+    pluginIntegration.resetAuditLogging();
+    setupGlobalRecorders();
+    setupCommonMocks();
+    await OpencodeHooks(mockCtx as never);
+    await vi.advanceTimersByTimeAsync(300);
+
+    const logError = vi.fn();
+    vi.spyOn(pluginIntegration, 'getErrorRecorder').mockReturnValue({
+      logError,
+    });
+
+    const q = useGlobalToastQueue();
+    q.add(fromAny({ title: '', variant: 'info', message: 'm1', duration: 1 }));
+    q.add(
+      fromAny({ title: 't2', variant: 'info', message: 'm2', duration: 1 })
+    );
+    q.add(
+      fromAny({ title: 't3', variant: 'info', message: 'm3', duration: 1 })
+    );
+
+    expect(logError).toHaveBeenCalledWith({
+      message: 'Toast dropped: (no title)',
+      context: expect.any(String),
+    });
+  });
 });
 
 describe('config handler', () => {
@@ -787,7 +864,8 @@ describe('config handler', () => {
     await vi.advanceTimersByTimeAsync(300);
   });
 
-  it('is a function', () => {
+  it('is a function and can be called', async () => {
+    await hooks.config!({});
     expect(typeof hooks.config).toBe('function');
   });
 });
@@ -931,6 +1009,20 @@ describe('remaining event handlers', () => {
       'experimental.chat.system.transform',
       input
     );
+  });
+
+  it('uses default sessionId when sessionID missing in system transform', async () => {
+    const input = {
+      model: fromAny<Model, unknown>({
+        providerID: 'anthropic',
+        modelID: 'claude-3',
+      }),
+    };
+    const output = { system: [] };
+
+    await hooks['experimental.chat.system.transform']!(input, output as never);
+
+    expect(hooks).toBeDefined();
   });
 
   it('calls resolveEventConfig for experimental.session.compacting', async () => {

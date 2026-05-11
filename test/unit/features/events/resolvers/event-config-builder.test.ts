@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { ConfigBuilder } from '.opencode/plugins/features/events/resolvers/event-config-builder';
-import { createContext } from '../../../helpers/create-context';
-import { createHandler } from '../../../helpers/create-handler';
-import { expectDefaults } from '../../../helpers/config-assertions';
+import { createContext } from '../../../../helpers/create-context';
+import { createHandler } from '../../../../helpers/create-handler';
+import { expectDefaults } from '../../../../helpers/config-assertions';
 
 function buildConfig(overrides?: Parameters<typeof createContext>[0]) {
   const ctx = createContext(overrides);

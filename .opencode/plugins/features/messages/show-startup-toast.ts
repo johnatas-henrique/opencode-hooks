@@ -45,13 +45,10 @@ export async function showStartupToast(
           duration: DEFAULTS.toast.durations.FIVE_SECONDS,
         });
       } catch (err) {
-        const errorRecorder = getErrorRecorder();
-        if (errorRecorder) {
-          await errorRecorder.logError({
-            error: err instanceof Error ? err : new Error(String(err)),
-            context: 'showStartupToast',
-          });
-        }
+        await getErrorRecorder()?.logError({
+          error: err instanceof Error ? err : new Error(String(err)),
+          context: 'showStartupToast',
+        });
       }
     });
   }

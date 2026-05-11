@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createSyncMockFs } from '../helpers/mock-fs';
+import { createSyncMockFs } from '../../helpers/mock-fs';
 
 vi.mock('fs', () => ({ default: createSyncMockFs() }));
 
@@ -35,12 +35,35 @@ describe('mapClaudeHookToOpenCode', () => {
     expect(result.openCodeEvent).toBe('');
     expect(result.scripts).toHaveLength(1);
   });
+
+  it('expands tilde in command path', () => {
+    const result = mapClaudeHookToOpenCode('PreToolUse', {
+      hooks: [{ command: '~/scripts/myhook.sh' }],
+    });
+    expect(result.scripts[0].path).toBe('/test/home/scripts/myhook.sh');
+  });
 });
 
 describe('loadClaudeSettings', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
+
+  function setupClaudeSettingsMock(
+    globalContent: Record<string, unknown>,
+    localContent: Record<string, unknown>
+  ) {
+    const globalPath = '/test/home/.claude/settings.json';
+    const localPath = '/test/project/.claude/settings.json';
+    vi.mocked(fs.existsSync).mockImplementation((p) => {
+      const s = p.toString();
+      return s === globalPath || s === localPath;
+    });
+    vi.mocked(fs.readFileSync).mockImplementation((p) => {
+      if (p.toString() === globalPath) return JSON.stringify(globalContent);
+      return JSON.stringify(localContent);
+    });
+  }
 
   it('returns empty hooks when hooks is missing', () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
@@ -53,33 +76,22 @@ describe('loadClaudeSettings', () => {
   });
 
   it('merges global and local scripts with different matchers', () => {
-    const globalPath = '/test/home/.claude/settings.json';
-    const localPath = '/test/project/.claude/settings.json';
-
-    vi.mocked(fs.existsSync).mockImplementation((p) => {
-      const s = p.toString();
-      return s === globalPath || s === localPath;
-    });
-
-    vi.mocked(fs.readFileSync).mockImplementation((p) => {
-      if (p.toString() === globalPath) {
-        return JSON.stringify({
-          hooks: {
-            PreToolUse: [
-              { matcher: { app: 'bash' }, hooks: [{ command: 'first.sh' }] },
-            ],
-          },
-        });
-      } else {
-        return JSON.stringify({
-          hooks: {
-            PreToolUse: [
-              { matcher: { app: 'write' }, hooks: [{ command: 'second.sh' }] },
-            ],
-          },
-        });
+    setupClaudeSettingsMock(
+      {
+        hooks: {
+          PreToolUse: [
+            { matcher: { app: 'bash' }, hooks: [{ command: 'first.sh' }] },
+          ],
+        },
+      },
+      {
+        hooks: {
+          PreToolUse: [
+            { matcher: { app: 'write' }, hooks: [{ command: 'second.sh' }] },
+          ],
+        },
       }
-    });
+    );
 
     const result = loadClaudeSettings('/test/project', {
       loadGlobal: true,
@@ -92,6 +104,40 @@ describe('loadClaudeSettings', () => {
 
   it('returns empty when no files exist', () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
+    const result = loadClaudeSettings('/test/project', {
+      loadGlobal: true,
+      loadLocal: true,
+    });
+    expect(result).toEqual({});
+  });
+
+  it('merges scripts from different events across global and local', () => {
+    setupClaudeSettingsMock(
+      { hooks: { PreToolUse: [{ hooks: [{ command: 'global-pre.sh' }] }] } },
+      {
+        hooks: { SessionStart: [{ hooks: [{ command: 'local-session.sh' }] }] },
+      }
+    );
+
+    const result = loadClaudeSettings('/test/project', {
+      loadGlobal: true,
+      loadLocal: true,
+    });
+    expect(result['tool.execute.before']).toHaveLength(1);
+    expect(result['tool.execute.before'][0].path).toBe('global-pre.sh');
+    expect(result['session.created']).toHaveLength(1);
+    expect(result['session.created'][0].path).toBe('local-session.sh');
+  });
+
+  it('skips known event with empty hooks array', () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      JSON.stringify({
+        hooks: {
+          PreToolUse: [{ hooks: [] }],
+        },
+      })
+    );
     const result = loadClaudeSettings('/test/project', {
       loadGlobal: true,
       loadLocal: true,

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { sessionHandlers } from '.opencode/plugins/features/handlers/session-handlers';
-import { expectHandlerProps } from '../../helpers/handler-assertions';
+import { expectHandlerProps } from '../../../helpers/handler-assertions';
 
 describe('sessionHandlers', () => {
   const expectedKeys = [
