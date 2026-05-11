@@ -29,6 +29,8 @@
     "./src/**/*.tsx",
     "./src/**/*.ts",
     "./.opencode/**/*.ts",
-    "**/*.test.ts"
+    "**/*.test.ts",
+    "vitest.config.ts",
+    "vitest.setup.ts"
   ]
 }
