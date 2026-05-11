@@ -37,260 +37,21 @@ npm run build
 
 2. OpenCode will automatically detect and load the plugin from `.opencode/plugins/opencode-hooks.ts`.
 
-### Configuration
+### Next Steps
 
-All configuration is done in a single file: `.opencode/plugins/helpers/user-events.config.ts`
+- See [Configuration](docs/CONFIGURATION.md) to set up events, tools, scripts, and audit
+- See [Scripts](docs/SCRIPTS.md) to learn how to write blocking scripts, async scripts, and Claude-compatible hooks
+- See [Events](docs/EVENTS.md) for the full event catalog with available fields
 
-```typescript
-export const userConfig: UserEventsConfig = {
-  // Global toggles
-  enabled: true,
-  toast: true,
-  saveToFile: true,
-  appendToSession: true,
-  runScripts: true,
+## Documentation
 
-  // Plugin status toast configuration (one-shot at startup)
-  pluginStatus: {
-    enabled: true, // Show/hide the status toast
-    displayMode: 'user-only' | 'user-separated' | 'all-labeled', // How to display
-  },
-
-  // Per-event configuration
-  events: {
-    [EventType.SESSION_CREATED]: true,
-    [EventType.SESSION_ERROR]: { toast: { duration: 30000 } },
-    [EventType.SESSION_IDLE]: false,
-    [EventType.SESSION_COMPACTED]: { scripts: ['pre-compact.sh'] },
-  },
-
-  // Per-tool configuration
-  tools: {
-    [EventType.TOOL_EXECUTE_AFTER]: {
-      task: { toast: true, scripts: ['log-agent.sh'] },
-      chat: { toast: false },
-    },
-  },
-};
-```
-
-### Plugin Status Display
-
-At startup, the plugin displays a toast showing loaded plugins. You can configure what to show:
-
-```typescript
-export const userConfig: UserEventsConfig = {
-  enabled: true,
-
-  // Plugin status toast configuration (one-shot at startup)
-  pluginStatus: {
-    enabled: true, // Show/hide the status toast
-    displayMode: 'user-only' | 'user-separated' | 'all-labeled', // How to display
-  },
-
-  // ... rest of config
-};
-```
-
-#### Display Modes
-
-| Mode             | Description                                                          |
-| ---------------- | -------------------------------------------------------------------- |
-| `user-only`      | Shows only user-configured plugins (default)                         |
-| `user-separated` | Groups plugins into "Active (user)" and "Active (built-in)" sections |
-| `all-labeled`    | Shows all plugins with "(user)" or "(built-in)" labels               |
-
-#### Example Output
-
-**user-only** (default):
-
-```
-Plugins: 5 active, 0 failed, 0 incompatible
-
-Active:
-  ✓ @gotgenes/opencode-agent-identity
-  ✓ opencode-handoff
-  ✓ true-mem
-```
-
-**user-separated**:
-
-```
-Plugins: 11 active, 0 failed, 0 incompatible
-
-Active (user):
-  ✓ @gotgenes/opencode-agent-identity
-  ✓ opencode-handoff
-
-Active (built-in):
-  ✓ CodexAuthPlugin
-  ✓ CopilotAuthPlugin
-```
-
-### Event Configuration Options
-
-Each event can be configured in three ways:
-
-| Syntax    | Behavior                                       |
-| --------- | ---------------------------------------------- |
-| `true`    | Uses all global defaults                       |
-| `false`   | Disables the event entirely                    |
-| `{ ... }` | Implicitly enabled, overrides specified fields |
-
-#### Override Fields
-
-| Field             | Type                                                   | Description                                      |
-| ----------------- | ------------------------------------------------------ | ------------------------------------------------ |
-| `debug`           | `boolean`                                              | Enable debug logging to session_debug_events.log |
-| `toast`           | `boolean \| { title?, message?, variant?, duration? }` | Toggle or customize toast                        |
-| `scripts`         | `string[]`                                             | Custom scripts to run                            |
-| `runScripts`      | `boolean`                                              | Enable/disable script execution                  |
-| `saveToFile`      | `boolean`                                              | Toggle file persistence                          |
-| `appendToSession` | `boolean`                                              | Toggle session appending                         |
-
-#### Script Resolution
-
-| `runScripts` | `scripts` array | Result                   |
-| ------------ | --------------- | ------------------------ |
-| `false`      | `['a.sh']`      | No scripts run           |
-| `true`       | not defined     | Default script runs      |
-| not defined  | `['a.sh']`      | `['a.sh']` runs          |
-| not defined  | not defined     | Uses global `runScripts` |
-
-### Creating Shell Scripts
-
-Place your shell scripts in `.opencode/scripts/`. Script names follow the pattern `<event-name>.sh`:
-
-```bash
-# .opencode/scripts/session-created.sh
-#!/bin/bash
-echo "New session started at $(date)"
-```
-
-```bash
-# .opencode/scripts/log-agent.sh
-#!/bin/bash
-echo "Agent executed: $1"
-```
-
-Scripts receive the tool name as the first argument when called from `tool.execute` events.
-
-### Per-Tool Configuration
-
-For `tool.execute.before` and `tool.execute.after` events, you can configure behavior per specific tool. This is useful when you want different handling for different tools (e.g., `task` subagent calls vs `read` file operations).
-
-```typescript
-tools: {
-  [EventType.TOOL_EXECUTE_AFTER]: {
-    task: { debug: true, toast: true, scripts: ['log-agent.sh'] },
-    read: { debug: false, toast: false },
-    chat: { debug: false },
-    glob: { debug: false },
-  },
-  [EventType.TOOL_EXECUTE_BEFORE]: {
-    task: { debug: true },
-    read: { debug: false },
-  },
-}
-```
-
-#### Resolution Order
-
-Configuration is resolved in this order:
-
-1. **Tool-specific** - Check if the tool has explicit config in `tools` section
-2. **Event-level** - Fall back to config in `events` section
-3. **Global defaults** - Use global settings if neither above exists
-
-This means you can set a default for all tool events in `events`, then override specific tools in `tools`.
-
-### Debug Mode
-
-When `debug: true` is set for an event:
-
-- A 10-second toast shows with the complete event object (input, output, resolved config)
-- Full event data is saved to `session_debug_events.log` (in `production/session-logs/`)
-
-Debug works at both event-level and tool-level:
-
-```typescript
-events: {
-  [EventType.TOOL_EXECUTE_AFTER]: { debug: true },  // All tools
-},
-tools: {
-  [EventType.TOOL_EXECUTE_AFTER]: {
-    task: { debug: true },   // Only task tool
-    read: { debug: false },  // Exclude read
-  },
-}
-```
-
-## Supported Events
-
-### Session Events (8)
-
-| Event               | Default Toast | Default Script         |
-| ------------------- | ------------- | ---------------------- |
-| `session.created`   | Success       | `session-created.sh`   |
-| `session.compacted` | Info          | `session-compacted.sh` |
-| `session.deleted`   | Error         | `session-deleted.sh`   |
-| `session.error`     | Error (30s)   | `session-error.sh`     |
-| `session.diff`      | Warning       | `session-diff.sh`      |
-| `session.idle`      | Info          | `session-idle.sh`      |
-| `session.status`    | Info          | `session-status.sh`    |
-| `session.updated`   | Info          | `session-updated.sh`   |
-
-### Message Events (4)
-
-| Event                  | Default Toast | Default Script            |
-| ---------------------- | ------------- | ------------------------- |
-| `message.part.removed` | Warning       | `message-part-removed.sh` |
-| `message.part.updated` | Info          | `message-part-updated.sh` |
-| `message.removed`      | Warning       | `message-removed.sh`      |
-| `message.updated`      | Info          | `message-updated.sh`      |
-
-### Tool Events (2)
-
-| Event                 | Default Toast | Default Script           |
-| --------------------- | ------------- | ------------------------ |
-| `tool.execute.before` | Info          | `tool-execute-before.sh` |
-| `tool.execute.after`  | Info          | `tool-execute-after.sh`  |
-
-### File Events (2)
-
-| Event                  | Default Toast | Default Script            |
-| ---------------------- | ------------- | ------------------------- |
-| `file.edited`          | Info          | `file-edited.sh`          |
-| `file.watcher.updated` | Info          | `file-watcher-updated.sh` |
-
-### Permission Events (2)
-
-| Event                | Default Toast | Default Script          |
-| -------------------- | ------------- | ----------------------- |
-| `permission.asked`   | Warning (5s)  | `permission-asked.sh`   |
-| `permission.replied` | Info          | `permission-replied.sh` |
-
-### Server Events (2)
-
-| Event                      | Default Toast | Default Script        |
-| -------------------------- | ------------- | --------------------- |
-| `server.connected`         | Success       | `server-connected.sh` |
-| `server.instance.disposed` | None          | `session-stop.sh`     |
-
-### Other Events (10)
-
-| Event                             | Default Toast | Default Script              |
-| --------------------------------- | ------------- | --------------------------- |
-| `command.executed`                | Info          | `command-executed.sh`       |
-| `lsp.client.diagnostics`          | Warning       | `lsp-client-diagnostics.sh` |
-| `lsp.updated`                     | Info          | `lsp-updated.sh`            |
-| `installation.updated`            | Success       | `installation-updated.sh`   |
-| `todo.updated`                    | Info          | `todo-updated.sh`           |
-| `shell.env`                       | None          | `shell-env.sh`              |
-| `tui.prompt.append`               | Info          | `tui-prompt-append.sh`      |
-| `tui.command.execute`             | Info          | `tui-command-execute.sh`    |
-| `tui.toast.show`                  | Info          | `tui-toast-show.sh`         |
-| `experimental.session.compacting` | Warning       | `session-compacting.sh`     |
+| Document                                                  | Description                                                                                                       |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| [Configuration](docs/CONFIGURATION.md)                    | Full reference for `settings.ts` — all config fields, types, events, tools, audit, and toasts                     |
+| [Scripts](docs/SCRIPTS.md)                                | How to write and run shell scripts — stdin formats, blocking, async, exit codes, Claude Code compatibility        |
+| [Events](docs/EVENTS.md)                                  | Event catalog with available fields, descriptions, and recommended toast fields                                   |
+| [Claude Code Compatibility](docs/CLAUDE-COMPATIBILITY.md) | How Claude Code `.sh` hooks map to OpenCode events — stdin field comparison, limitations, and migration checklist |
+| [Audit System](docs/AUDIT_SYSTEM.md)                      | Audit logging reference — log files, sanitization, archiving, and migration                                       |
 
 ## Development
 
@@ -312,63 +73,12 @@ npm run format:check   # Check formatting
 
 ### Test Coverage
 
-Current coverage: **98%+ statements, 88%+ branches, 79%+ functions, 99%+ lines**
+Current coverage: **99%+ statements, 99%+ branches, 99%+ functions, 99%+ lines**
 
 ```bash
 npm run test:cov       # Terminal coverage summary
 npm run coverage:report # HTML report in coverage/lcov-report/index.html
 ```
-
-### Project Structure
-
-```
-.opencode/plugins/
-├── opencode-hooks.ts           # Main plugin entry point
-├── types/
-│   └── *.ts                    # OpenCode event type definitions
-└── helpers/
-    ├── index.ts                # Barrel exports
-    ├── event-types.ts          # EventType enum and interfaces
-    ├── default-handlers.ts     # Default handlers with message builders
-    ├── events.ts               # Config resolution logic
-    ├── user-events.config.ts   # User configuration (edit this file)
-    ├── toast-queue.ts          # Staggered toast notification queue
-    ├── run-script.ts           # Shell script execution
-    ├── run-script-handler.ts   # Script execution with error handling
-    ├── save-to-file.ts         # File persistence utility
-    ├── append-to-session.ts    # Session context appending
-    ├── session.ts              # Session tracking utilities
-    ├── debug.ts                # Debug logging
-    ├── plugin-status.ts        # Plugin status management
-    └── constants.ts            # Shared constants
-
-test/
-├── unit/                       # Unit tests (Jest)
-├── integration/               # Integration tests
-├── e2e/                       # End-to-end tests
-└── __mocks__/                 # Test mocks
-```
-
-### Adding a New Event Handler
-
-1. Add the event to `EventType` enum in `helpers/event-types.ts`
-2. Add a handler entry in `helpers/default-handlers.ts` with title, variant, duration, defaultScript, and buildMessage
-3. Add the event to `helpers/user-events.config.ts` with desired configuration
-4. Write tests in `test/unit/handlers.test.ts` and `test/unit/events.test.ts`
-
-The `opencode-hooks.ts` plugin uses `executeHook()` to handle all events consistently.
-
-## Architecture
-
-The plugin uses a modular, layered architecture:
-
-1. **User Config** (`helpers/user-events.config.ts`) — User edits only this file
-2. **Handlers** (`helpers/default-handlers.ts`) — Base defaults for each event
-3. **Events** (`helpers/events.ts`) — Merges user config with handler defaults
-4. **Execute Hook** (`helpers/run-script-handler.ts`) — Generic script execution with error handling
-5. **Plugin** (`opencode-hooks.ts`) — Orchestrates toasts, scripts, and file operations
-
-Events not listed in the config use global defaults. Setting an event to `false` disables it entirely.
 
 ## License
 

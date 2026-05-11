@@ -17,7 +17,7 @@ TypeScript plugin system for OpenCode AI with event-driven hooks.
 | `config/settings.ts`                    | User configuration                  |
 | `config/security-rules.ts`              | Security predicates                 |
 | `features/messages/default-handlers.ts` | Event handlers with `allowedFields` |
-| `events-catalog.md`                     | Event types and available fields    |
+| `docs/EVENTS.md`                        | Event types and available fields    |
 
 ## Guidelines
 
