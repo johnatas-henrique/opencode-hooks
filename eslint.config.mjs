@@ -15,6 +15,11 @@ export default defineConfig([
   },
   ...tseslint.configs.recommended,
   {
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.json',
+      },
+    },
     rules: {
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -34,6 +39,14 @@ export default defineConfig([
           ignoreRestArgs: true,
         },
       ],
+      'no-return-await': 'error',
+      'no-useless-catch': 'error',
+      '@typescript-eslint/no-unnecessary-template-expression': 'error',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+      '@typescript-eslint/no-unnecessary-type-arguments': 'error',
+      '@typescript-eslint/prefer-function-type': 'error',
+      '@typescript-eslint/method-signature-style': 'error',
+      '@typescript-eslint/prefer-optional-chain': 'error',
     },
   },
   {
@@ -46,7 +59,16 @@ export default defineConfig([
   {
     files: ['test/__mocks__/*.js'],
     languageOptions: {
-      globals: { vi: 'readonly', describe: 'readonly', it: 'readonly', expect: 'readonly', beforeEach: 'readonly', afterEach: 'readonly', beforeAll: 'readonly', afterAll: 'readonly' },
+      globals: {
+        vi: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+      },
     },
   },
 ]);
