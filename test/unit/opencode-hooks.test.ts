@@ -226,6 +226,56 @@ describe('OpencodeHooks initialization', () => {
     const result = await OpencodeHooks(mockCtx as never);
     expect(result).toEqual({});
   });
+
+  it('detects and logs malformed Claude settings JSON during init', async () => {
+    vi.mocked(settingsModule).userConfig.loadClaudeHookSettings = {
+      loadGlobalClaudeHooks: true,
+      loadLocalClaudeHooks: false,
+    };
+
+    resetGlobalToastQueue();
+    pluginIntegration.resetAuditLogging();
+    setupCommonMocks();
+    setupGlobalRecorders();
+
+    vi.mocked(fs).existsSync.mockImplementation(((p: string) => {
+      if (p.includes('.opencode/scripts')) return true;
+      if (p.includes('.claude/settings.json')) return true;
+      return false;
+    }) as (...args: unknown[]) => boolean);
+
+    vi.mocked(fs).readFileSync.mockImplementation(((p: string) => {
+      if (p.includes('.claude/settings.json')) return '{ invalid json }';
+      return '';
+    }) as (...args: unknown[]) => string);
+
+    const logError = vi.fn();
+    vi.spyOn(pluginIntegration, 'getErrorRecorder').mockReturnValue({
+      logError,
+    });
+
+    const hooksPromise = OpencodeHooks(mockCtx as never);
+
+    const toastAddSpy = vi
+      .spyOn(useGlobalToastQueue(), 'add')
+      .mockImplementation(() => {});
+
+    await vi.advanceTimersByTimeAsync(10000);
+    await hooksPromise;
+
+    expect(logError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining('Malformed JSON'),
+        context: 'loadClaudeSettings',
+      })
+    );
+    expect(toastAddSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Claude Settings Error',
+        variant: 'error',
+      })
+    );
+  });
 });
 
 describe('hooks structure', () => {
@@ -758,7 +808,7 @@ describe('executeHook behavior', () => {
       event: {
         type: 'session.idle',
         properties: { sessionID: 'ses_123' },
-      } as Event,
+      },
     });
 
     expect(vi.mocked(executorModule).executeScript).toHaveBeenCalledWith(
@@ -934,7 +984,7 @@ describe('remaining event handlers', () => {
     const input = createChatInput();
     const output = { headers: { 'x-api-key': 'test' } };
 
-    await hooks['chat.headers']!(input, output as never);
+    await hooks['chat.headers']!(input, output);
 
     expect(resolveSpy).toHaveBeenCalledWith('chat.headers', input);
   });
@@ -954,7 +1004,7 @@ describe('remaining event handlers', () => {
     };
     const output = { status: 'ask' as const };
 
-    await hooks['permission.ask']!(input, output as never);
+    await hooks['permission.ask']!(input, output);
 
     expect(resolveSpy).toHaveBeenCalledWith('permission.ask', input);
   });
@@ -969,7 +1019,7 @@ describe('remaining event handlers', () => {
     };
     const output = { parts: [] };
 
-    await hooks['command.execute.before']!(input, output as never);
+    await hooks['command.execute.before']!(input, output);
 
     expect(resolveSpy).toHaveBeenCalledWith('command.execute.before', input);
   });
@@ -980,10 +1030,7 @@ describe('remaining event handlers', () => {
     const input = { messages: [] };
     const output = { messages: [] };
 
-    await hooks['experimental.chat.messages.transform']!(
-      input,
-      output as never
-    );
+    await hooks['experimental.chat.messages.transform']!(input, output);
 
     expect(resolveSpy).toHaveBeenCalledWith(
       'experimental.chat.messages.transform',
@@ -1003,7 +1050,7 @@ describe('remaining event handlers', () => {
     };
     const output = { system: [] };
 
-    await hooks['experimental.chat.system.transform']!(input, output as never);
+    await hooks['experimental.chat.system.transform']!(input, output);
 
     expect(resolveSpy).toHaveBeenCalledWith(
       'experimental.chat.system.transform',
@@ -1020,7 +1067,7 @@ describe('remaining event handlers', () => {
     };
     const output = { system: [] };
 
-    await hooks['experimental.chat.system.transform']!(input, output as never);
+    await hooks['experimental.chat.system.transform']!(input, output);
 
     expect(hooks).toBeDefined();
   });
@@ -1031,7 +1078,7 @@ describe('remaining event handlers', () => {
     const input = { sessionID: 'ses_123' };
     const output = { context: [] };
 
-    await hooks['experimental.session.compacting']!(input, output as never);
+    await hooks['experimental.session.compacting']!(input, output);
 
     expect(resolveSpy).toHaveBeenCalledWith(
       'experimental.session.compacting',
@@ -1049,7 +1096,7 @@ describe('remaining event handlers', () => {
     };
     const output = { text: '' };
 
-    await hooks['experimental.text.complete']!(input, output as never);
+    await hooks['experimental.text.complete']!(input, output);
 
     expect(resolveSpy).toHaveBeenCalledWith(
       'experimental.text.complete',
@@ -1063,7 +1110,7 @@ describe('remaining event handlers', () => {
     const input = { toolID: 'bash' };
     const output = { description: 'Run shell commands', parameters: {} };
 
-    await hooks['tool.definition']!(input, output as never);
+    await hooks['tool.definition']!(input, output);
 
     expect(resolveSpy).toHaveBeenCalledWith('tool.definition', input);
   });

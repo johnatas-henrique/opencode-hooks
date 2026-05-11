@@ -13,6 +13,7 @@ import fs from 'fs';
 import {
   mapClaudeHookToOpenCode,
   loadClaudeSettings,
+  getClaudeParseErrors,
 } from '.opencode/plugins/features/adapters/claude-settings';
 
 describe('mapClaudeHookToOpenCode', () => {
@@ -143,5 +144,34 @@ describe('loadClaudeSettings', () => {
       loadLocal: true,
     });
     expect(result).toEqual({});
+  });
+
+  it('handles malformed JSON and reports via getClaudeParseErrors', () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue('{ invalid json }');
+    const result = loadClaudeSettings('/test/project', {
+      loadGlobal: true,
+      loadLocal: true,
+    });
+    expect(result).toEqual({});
+    const errors = getClaudeParseErrors();
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0]).toContain('Malformed JSON');
+  });
+
+  it('handles readFileSync throwing non-SyntaxError', () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockImplementation(() => {
+      throw new Error('ENOENT: no such file');
+    });
+    const result = loadClaudeSettings('/test/project', {
+      loadGlobal: true,
+      loadLocal: true,
+    });
+    expect(result).toEqual({});
+    const errors = getClaudeParseErrors();
+    const enoentError = errors.find((e) => e.includes('ENOENT'));
+    expect(enoentError).toBeDefined();
+    expect(enoentError).toContain('Malformed JSON');
   });
 });

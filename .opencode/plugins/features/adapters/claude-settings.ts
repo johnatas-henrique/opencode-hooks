@@ -8,6 +8,25 @@ import type {
   ScriptOrigin,
 } from '.opencode/plugins/types/config';
 
+const claudeParseErrors: string[] = [];
+
+export function getClaudeParseErrors(): string[] {
+  return [...claudeParseErrors];
+}
+
+function parseJsonFile(filePath: string): Record<string, unknown> | null {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as Record<
+      string,
+      unknown
+    >;
+  } catch (e) {
+    const msg = e instanceof SyntaxError ? e.message : String(e);
+    claudeParseErrors.push(`Malformed JSON in ${filePath}: ${msg}`);
+    return null;
+  }
+}
+
 const CLAUDE_EVENT_MAP: Record<string, string> = {
   PreToolUse: 'tool.execute.before',
   PostToolUse: 'tool.execute.after',
@@ -94,24 +113,20 @@ export function loadClaudeSettings(
   let localOverrideHooks: Record<string, ClaudeHookGroup[]> = {};
 
   if (loadGlobal && fs.existsSync(globalPath)) {
-    const globalSettings = JSON.parse(
-      fs.readFileSync(globalPath, 'utf-8')
-    ) as ClaudeSettings;
-    if (globalSettings.hooks) globalHooks = globalSettings.hooks;
+    const globalSettings = parseJsonFile(globalPath) as ClaudeSettings | null;
+    if (globalSettings?.hooks) globalHooks = globalSettings.hooks;
   }
 
   if (loadLocal && fs.existsSync(localPath)) {
-    const localSettings = JSON.parse(
-      fs.readFileSync(localPath, 'utf-8')
-    ) as ClaudeSettings;
-    if (localSettings.hooks) localHooks = localSettings.hooks;
+    const localSettings = parseJsonFile(localPath) as ClaudeSettings | null;
+    if (localSettings?.hooks) localHooks = localSettings.hooks;
   }
 
   if (fs.existsSync(localOverridePath)) {
-    const overrideSettings = JSON.parse(
-      fs.readFileSync(localOverridePath, 'utf-8')
-    ) as ClaudeSettings;
-    if (overrideSettings.hooks) localOverrideHooks = overrideSettings.hooks;
+    const overrideSettings = parseJsonFile(
+      localOverridePath
+    ) as ClaudeSettings | null;
+    if (overrideSettings?.hooks) localOverrideHooks = overrideSettings.hooks;
   }
 
   const globalMapped = mapAllHooksToOpenCode(

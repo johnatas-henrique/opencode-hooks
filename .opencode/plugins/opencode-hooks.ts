@@ -2,8 +2,6 @@ import type {
   Plugin,
   PluginInput,
   Hooks,
-  AuthHook,
-  ToolDefinition,
   ProviderContext,
 } from '@opencode-ai/plugin';
 import type { Model, UserMessage, Part } from '@opencode-ai/sdk';
@@ -13,7 +11,10 @@ import type {
   ToolExecuteBeforeInput,
   ToolExecuteBeforeOutput,
 } from '.opencode/plugins/types/core';
-import { initGlobalToastQueue } from '.opencode/plugins/core/toast-queue';
+import {
+  initGlobalToastQueue,
+  useGlobalToastQueue,
+} from '.opencode/plugins/core/toast-queue';
 import { handlers } from '.opencode/plugins/features/handlers';
 import { showStartupToast } from '.opencode/plugins/features/messages/show-startup-toast';
 import {
@@ -30,6 +31,10 @@ import {
   getErrorRecorder,
 } from '.opencode/plugins/features/audit/plugin-integration';
 import { createHookExecutor } from '.opencode/plugins/features/hooks/hook-executor';
+import {
+  getClaudeParseErrors,
+  loadClaudeSettings,
+} from '.opencode/plugins/features/adapters/claude-settings';
 import fs from 'fs';
 import path from 'path';
 
@@ -92,6 +97,29 @@ export const OpencodeHooks: Plugin = async (
 
   await initAuditLogging(userConfig.audit);
 
+  const cwd = getCwdSafe();
+  if (
+    userConfig.loadClaudeHookSettings.loadGlobalClaudeHooks ||
+    userConfig.loadClaudeHookSettings.loadLocalClaudeHooks
+  ) {
+    loadClaudeSettings(cwd, {
+      loadGlobal: userConfig.loadClaudeHookSettings.loadGlobalClaudeHooks,
+      loadLocal: userConfig.loadClaudeHookSettings.loadLocalClaudeHooks,
+    });
+  }
+
+  const { logError } = getErrorRecorder() ?? {};
+  const queue = useGlobalToastQueue();
+  for (const err of getClaudeParseErrors()) {
+    logError?.({ message: err, context: 'loadClaudeSettings' });
+    queue?.add({
+      title: 'Claude Settings Error',
+      message: `${err} — check plugin-errors.json`,
+      variant: 'error',
+      duration: 10000,
+    });
+  }
+
   const executor = createHookExecutor();
 
   const hooks: Hooks = {
@@ -112,10 +140,7 @@ export const OpencodeHooks: Plugin = async (
         });
       }
 
-      const resolved = resolveEventConfig(
-        event.type,
-        event.properties as Record<string, unknown>
-      );
+      const resolved = resolveEventConfig(event.type, event.properties);
 
       if (event.type === OpenCodeEvents.SESSION_CREATED && info?.parentID) {
         addSubagentSession(sessionId);
@@ -173,7 +198,7 @@ export const OpencodeHooks: Plugin = async (
           eventType: rightTool,
           resolved,
           sessionId: input.sessionID,
-          input: enrichedInput as Record<string, unknown>,
+          input: enrichedInput,
           output,
           toolName: input.tool,
         });
@@ -231,10 +256,7 @@ export const OpencodeHooks: Plugin = async (
           eventType: rightTool,
           resolved: resolved,
           sessionId: input.sessionID,
-          input: { ...input, subagentType } as unknown as Record<
-            string,
-            unknown
-          >,
+          input: { ...input, subagentType },
           output: output,
           toolName: input.tool,
         });
@@ -503,9 +525,9 @@ export const OpencodeHooks: Plugin = async (
     auth: {
       provider: '',
       methods: [],
-    } as AuthHook,
+    },
 
-    tool: {} as Record<string, ToolDefinition>,
+    tool: {},
   };
 
   return hooks;
