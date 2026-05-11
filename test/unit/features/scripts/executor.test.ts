@@ -100,7 +100,7 @@ async function runWithStdout(stdoutData: string) {
       },
     })
   );
-  return await runExecute();
+  return runExecute();
 }
 
 describe('sanitizeArg', () => {

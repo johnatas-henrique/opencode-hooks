@@ -20,7 +20,7 @@ const TOOL_EXECUTE_BEFORE = 'tool.execute.before';
 const COMMAND_EXECUTE_BEFORE = 'command.execute.before';
 
 function getNormalizedSessionId(sessionId: string): string {
-  if (sessionId && sessionId.startsWith('ses_')) {
+  if (sessionId?.startsWith('ses_')) {
     return sessionId;
   }
   return 'ses_default';
@@ -120,7 +120,7 @@ export class HookExecutor {
 
     this.deps.toastQueue.add({
       title: resolved.toastTitle,
-      message: resolved.toastMessage!.trim().replace(/^\s+/gm, ''),
+      message: resolved.toastMessage.trim().replace(/^\s+/gm, ''),
       variant: resolved.toastVariant,
       duration: resolved.toastDuration,
     });

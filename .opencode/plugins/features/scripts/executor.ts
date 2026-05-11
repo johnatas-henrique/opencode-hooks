@@ -132,7 +132,7 @@ export function buildClaudeStdin(
   }
 
   if (claudeEventName === 'SubagentStart') {
-    base.description = (input as Record<string, unknown>).description ?? '';
+    base.description = input.description ?? '';
     base.agent_id = input.callID;
   }
 
@@ -196,7 +196,7 @@ export function buildOpencodeStdin(
   }
 
   if (eventType === 'tool.execute.before.subagent') {
-    base.description = (input as Record<string, unknown>).description ?? '';
+    base.description = input.description ?? '';
     base.agent_id = input.callID;
   }
 

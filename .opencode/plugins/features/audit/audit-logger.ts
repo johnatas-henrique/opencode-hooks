@@ -54,7 +54,7 @@ export function createAuditLogger(options: AuditLoggerOptions): AuditLogger {
 
   function getFilePath(fileType: AuditFileType): string {
     const configFiles = config.files;
-    const fileName = configFiles[fileType as keyof typeof configFiles];
+    const fileName = configFiles[fileType];
     return `${basePath}/${fileName}`;
   }
 
@@ -84,11 +84,7 @@ export function createAuditLogger(options: AuditLoggerOptions): AuditLogger {
         filePath,
         archiveDir,
         config.maxSizeMB * 1024 * 1024,
-        deps as unknown as Partial<{
-          mkdir: typeof mkdir;
-          rename: typeof rename;
-          stat: typeof stat;
-        }>
+        deps
       );
     };
 

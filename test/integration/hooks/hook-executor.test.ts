@@ -94,7 +94,7 @@ function toastEnabledConfig(): ReturnType<typeof createUserConfig> {
 export function withEvents(
   events: Record<string, unknown>
 ): ReturnType<typeof createUserConfig> {
-  return createUserConfig({ events: events as never });
+  return createUserConfig({ events: events });
 }
 
 function createToolSetup(
@@ -181,7 +181,7 @@ export function withTools(
     tools: {
       ...base.tools,
       ...tools,
-    } as never,
+    },
   });
 }
 

@@ -1,4 +1,3 @@
-// fallow-ignore-file code-duplication
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('fs/promises', async () => {
@@ -199,7 +198,7 @@ describe('createAuditLogger', () => {
     const logger = createAuditLogger({
       basePath: '/tmp',
       config,
-      deps: { stat: undefined as undefined },
+      deps: { stat: undefined },
     });
     await logger.cleanup();
     expect(vi.mocked(fsPromises.readdir)).not.toHaveBeenCalled();

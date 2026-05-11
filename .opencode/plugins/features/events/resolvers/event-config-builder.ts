@@ -6,7 +6,6 @@ import type {
 import type {
   ResolvedEventConfig,
   EventConfig,
-  EventOverride,
 } from '.opencode/plugins/types/config';
 import { DEFAULTS } from '.opencode/plugins/core/constants';
 import { DefaultConfigResolver } from '.opencode/plugins/features/events/resolvers/default-config-resolver';
@@ -75,7 +74,7 @@ export class ConfigBuilder {
       this.userEventConfig !== null
     ) {
       this.isOverride = true;
-      return (this.userEventConfig as EventOverride).enabled === false;
+      return this.userEventConfig.enabled === false;
     }
     return false;
   }

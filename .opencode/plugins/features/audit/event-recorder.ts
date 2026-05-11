@@ -72,12 +72,12 @@ export function createToolExecuteAfterRecord(
 
   const hasExit = output?.metadata?.exit !== undefined;
   if (hasExit) {
-    status = output!.metadata!.exit === 0 ? 'success' : 'error';
+    status = output.metadata.exit === 0 ? 'success' : 'error';
   }
 
-  const hasNonZeroExit = hasExit && output!.metadata!.exit !== 0;
+  const hasNonZeroExit = hasExit && output.metadata.exit !== 0;
   if (hasNonZeroExit) {
-    error = `Exit code: ${output!.metadata!.exit}`;
+    error = `Exit code: ${output.metadata.exit}`;
   }
 
   return {

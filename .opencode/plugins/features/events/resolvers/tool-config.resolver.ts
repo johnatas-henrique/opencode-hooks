@@ -136,7 +136,7 @@ export class DefaultToolConfigResolver implements ToolConfigResolver {
     output?: Record<string, unknown>
   ): ResolvedEventConfig {
     const tools = this.context.getToolConfigs(toolEventType);
-    const toolConfigs = tools as Record<string, ToolConfig> | undefined;
+    const toolConfigs = tools;
     const toolConfig = toolConfigs?.[toolName];
 
     if (toolConfig === false) {
@@ -231,9 +231,7 @@ export class DefaultToolConfigResolver implements ToolConfigResolver {
       ...s,
       scriptType:
         s.scriptType ??
-        ((s.source === 'native' ? 'settings-native' : 'settings-claude') as
-          | 'settings-native'
-          | 'settings-claude'),
+        (s.source === 'native' ? 'settings-native' : 'settings-claude'),
     }));
 
     const toastCfg = resolveToastOverride(toolConfig);

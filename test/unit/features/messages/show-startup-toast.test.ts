@@ -76,7 +76,7 @@ function setupErrorTest(error: unknown): {
   const mockLogError = vi.fn().mockResolvedValue(undefined);
   vi.spyOn(pluginIntegration, 'getErrorRecorder').mockReturnValue({
     logError: mockLogError,
-  } as never);
+  });
 
   vi.spyOn(showActivePluginsModule, 'showActivePluginsToast').mockRejectedValue(
     error

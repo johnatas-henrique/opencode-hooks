@@ -1,7 +1,4 @@
-import type {
-  UserEventsConfig,
-  EventVariant,
-} from '.opencode/plugins/types/config';
+import type { UserEventsConfig } from '.opencode/plugins/types/config';
 
 export function createUserConfig(
   overrides?: Partial<UserEventsConfig>
@@ -14,8 +11,8 @@ export function createUserConfig(
     scriptToasts: {
       showOutput: true,
       showError: true,
-      outputVariant: 'info' as EventVariant,
-      errorVariant: 'error' as EventVariant,
+      outputVariant: 'info',
+      errorVariant: 'error',
       outputDuration: 5000,
       errorDuration: 15000,
       outputTitle: 'Script Output',

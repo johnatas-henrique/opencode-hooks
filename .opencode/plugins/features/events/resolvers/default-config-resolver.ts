@@ -93,9 +93,7 @@ export class DefaultConfigResolver {
     output?: Record<string, unknown>
   ): ResolvedEventConfig {
     const userOverride =
-      typeof userCfg === 'object' && userCfg !== null
-        ? (userCfg as EventOverride)
-        : undefined;
+      typeof userCfg === 'object' && userCfg !== null ? userCfg : undefined;
 
     const { scripts: rawScripts } = resolveScripts(
       userCfg,
@@ -106,9 +104,7 @@ export class DefaultConfigResolver {
       ...s,
       scriptType:
         s.scriptType ??
-        ((s.source === 'native' ? 'settings-native' : 'settings-claude') as
-          | 'settings-native'
-          | 'settings-claude'),
+        (s.source === 'native' ? 'settings-native' : 'settings-claude'),
     }));
     const toastCfg = resolveToastOverride(userCfg);
     const allowedFields = userOverride?.allowedFields ?? handler?.allowedFields;

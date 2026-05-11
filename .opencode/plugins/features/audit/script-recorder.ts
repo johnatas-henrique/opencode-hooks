@@ -40,10 +40,10 @@ export function createScriptRecord(
 
   return {
     ts: new Date().toISOString(),
-    script: input.script,
-    args: input.args ?? [],
     exit: result.exitCode,
     duration,
+    args: input.args ?? [],
+    script: input.script,
     output: output || undefined,
     error: result.error || undefined,
   };
