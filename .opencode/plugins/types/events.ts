@@ -37,25 +37,25 @@ export interface ConfigResolverContext {
 }
 
 export interface ResolverFactory {
-  createEventResolver(context: ConfigResolverContext): EventConfigResolver;
-  createToolResolver(context: ConfigResolverContext): ToolConfigResolver;
+  createEventResolver: (context: ConfigResolverContext) => EventConfigResolver;
+  createToolResolver: (context: ConfigResolverContext) => ToolConfigResolver;
 }
 
 export interface EventConfigResolver {
-  resolve(
+  resolve: (
     eventType: string,
     input?: Record<string, unknown>,
     output?: Record<string, unknown>
-  ): ResolvedEventConfig;
+  ) => ResolvedEventConfig;
 }
 
 export interface ToolConfigResolver {
-  resolve(
+  resolve: (
     toolEventType: string,
     toolName: string,
     input?: Record<string, unknown>,
     output?: Record<string, unknown>
-  ): ResolvedEventConfig;
+  ) => ResolvedEventConfig;
 }
 
 export interface BooleanFieldOptions {

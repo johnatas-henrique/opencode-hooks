@@ -8,23 +8,23 @@ import type { EventVariant } from '.opencode/plugins/types/config';
 import type { ScriptRunResult } from '.opencode/plugins/types/scripts';
 
 export interface ScriptAuditLogger {
-  logScript(
+  logScript: (
     input: ScriptInput,
     result: { output: string; error: string | null; exitCode: number }
-  ): Promise<void>;
+  ) => Promise<void>;
 }
 
 export interface SessionAppender {
-  appendToSession(sessionId: string, text: string): Promise<void>;
+  appendToSession: (sessionId: string, text: string) => Promise<void>;
 }
 
 export interface ToastNotifier {
-  showToast(
+  showToast: (
     title: string,
     message: string,
     variant: EventVariant,
     duration: number
-  ): void;
+  ) => void;
 }
 
 export interface ScriptExecutorOptions {
