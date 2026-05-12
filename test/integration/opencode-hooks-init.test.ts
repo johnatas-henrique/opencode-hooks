@@ -5,6 +5,11 @@ import os from 'os';
 import { OpencodeHooks } from '.opencode/plugins/opencode-hooks';
 import type { PluginInput } from '@opencode-ai/plugin';
 
+vi.mock('.opencode/plugins/features/adapters/claude-settings', () => ({
+  loadClaudeSettings: vi.fn(),
+  getClaudeParseErrors: vi.fn(() => []),
+}));
+
 const TEST_ROOT = path.join(
   os.tmpdir(),
   'opencode-hooks-init-integration-test'
