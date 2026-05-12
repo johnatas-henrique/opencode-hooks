@@ -46,10 +46,10 @@ function getCwdSafe(): string {
   }
 }
 
-function validateScriptsDirectory(cwd: string = getCwdSafe()): void {
+function ensureScriptsDirectory(cwd: string = getCwdSafe()): void {
   const scriptsDir = path.join(cwd, DEFAULTS.scripts.dir);
-  if (!fs.existsSync(scriptsDir) || !fs.statSync(scriptsDir).isDirectory()) {
-    throw new Error(`Scripts directory not found: ${scriptsDir}`);
+  if (!fs.existsSync(scriptsDir)) {
+    fs.mkdirSync(scriptsDir, { recursive: true });
   }
 }
 
@@ -93,7 +93,7 @@ export const OpencodeHooks: Plugin = async (
     return {};
   }
 
-  validateScriptsDirectory();
+  ensureScriptsDirectory();
 
   await initAuditLogging(userConfig.audit);
 

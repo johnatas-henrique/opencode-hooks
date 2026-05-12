@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -15,13 +15,6 @@ beforeAll(() => {
     fs.rmSync(TEST_ROOT, { recursive: true });
   }
   fs.mkdirSync(TEST_ROOT, { recursive: true });
-  fs.mkdirSync(path.join(TEST_ROOT, '.opencode', 'scripts'), {
-    recursive: true,
-  });
-  fs.writeFileSync(
-    path.join(TEST_ROOT, '.opencode', 'scripts', 'test.sh'),
-    'echo ok'
-  );
 });
 
 afterAll(() => {
@@ -40,18 +33,34 @@ function mockCtx(): PluginInput {
 }
 
 describe('OpencodeHooks with real filesystem', () => {
-  it('handles process.cwd() throwing in getCwdSafe', async () => {
+  it('auto-creates the scripts directory if missing', async () => {
+    const missingDir = path.join(TEST_ROOT, 'no-scripts-here');
     const originalCwd = process.cwd;
+    process.cwd = () => missingDir;
+
+    try {
+      await OpencodeHooks(mockCtx());
+      const scriptsDir = path.join(missingDir, '.opencode', 'scripts');
+      expect(fs.existsSync(scriptsDir)).toBe(true);
+      expect(fs.statSync(scriptsDir).isDirectory()).toBe(true);
+    } finally {
+      process.cwd = originalCwd;
+    }
+  });
+
+  it('handles process.cwd() throwing in getCwdSafe', async () => {
+    const origCwd = process.cwd;
+    const origExistsSync = fs.existsSync;
     process.cwd = () => {
       throw new Error('cwd-error');
     };
+    fs.existsSync = vi.fn(() => true);
 
     try {
-      await expect(OpencodeHooks(mockCtx())).rejects.toThrow(
-        'Scripts directory not found'
-      );
+      await OpencodeHooks(mockCtx());
     } finally {
-      process.cwd = originalCwd;
+      process.cwd = origCwd;
+      fs.existsSync = origExistsSync;
     }
   });
 });

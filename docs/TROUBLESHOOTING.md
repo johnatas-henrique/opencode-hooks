@@ -6,7 +6,7 @@ Common issues and how to diagnose them.
 
 | Symptom                   | Most Likely Cause            | Check                                         |
 | ------------------------- | ---------------------------- | --------------------------------------------- |
-| Plugin not loading        | Missing scripts directory    | `production/session-logs/plugin-errors.json`  |
+| Plugin not loading        | Import or JSON parse error   | `production/session-logs/plugin-errors.json`  |
 | Scripts not running       | `runScripts` not enabled     | `settings.ts` event config                    |
 | Script fails silently     | Permission or path issue     | `production/session-logs/plugin-scripts.json` |
 | OpenCode stops responding | Plugin threw unhandled error | `production/session-logs/plugin-errors.json`  |
@@ -25,8 +25,6 @@ cat production/session-logs/plugin-errors.json
 
 Common startup failures:
 
-- **"Scripts directory not found"** — The plugin expects `.opencode/scripts/`
-  to exist. Create it: `mkdir -p .opencode/scripts`
 - **Import errors** — A missing dependency or TypeScript compilation error.
   Run `npm run build` to check for build errors.
 - **Malformed `.claude/settings.json` or `.claude/local.json`** — If the
@@ -72,10 +70,6 @@ disposed by OpenCode. After that:
    `settings.ts` doesn't exist, the plugin detects this at runtime and
    logs an error, but may not crash entirely. However, if the error
    propagates unhandled, it can take down the plugin.
-
-4. **Missing `scripts` directory** — The `validateScriptsDirectory()`
-   function throws during plugin initialization. The plugin constructor
-   will fail and the plugin won't load.
 
 ### How to Diagnose a Crash
 
@@ -154,8 +148,8 @@ chmod +x .opencode/scripts/my-script.sh
 
 ```bash
 # Scripts that ran with their exit code
-cat production/session-logs/plugin-scripts.json | grep -c '"exit":0'
-cat production/session-logs/plugin-scripts.json | grep '"exit":[^0]'
+cat production/session-logs/plugin-scripts.json | grep -c 'exit:0'
+cat production/session-logs/plugin-scripts.json | grep 'exit:[^0]'
 ```
 
 ## Block Not Working
