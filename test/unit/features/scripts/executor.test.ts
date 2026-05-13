@@ -152,12 +152,48 @@ describe('validateScriptPath', () => {
 });
 
 describe('resolveScriptPath', () => {
-  it('joins cwd with .opencode/scripts and the script path', () => {
-    const originalCwd = process.cwd;
+  const originalCwd = process.cwd;
+  beforeAll(() => {
     process.cwd = vi.fn(() => '/home/project');
-    const result = resolveScriptPath('test.sh');
-    expect(result).toBe('/home/project/.opencode/scripts/test.sh');
+  });
+  afterAll(() => {
     process.cwd = originalCwd;
+  });
+
+  it('resolves relative path with scriptsDir', () => {
+    expect(resolveScriptPath('test.sh')).toBe(
+      '/home/project/.opencode/scripts/test.sh'
+    );
+  });
+
+  it('returns absolute path as-is', () => {
+    expect(resolveScriptPath('/home/user/scripts/test.sh')).toBe(
+      '/home/user/scripts/test.sh'
+    );
+  });
+
+  it('strips double quotes from absolute path', () => {
+    expect(resolveScriptPath('"/home/user/scripts/test.sh"')).toBe(
+      '/home/user/scripts/test.sh'
+    );
+  });
+
+  it('strips single quotes from absolute path', () => {
+    expect(resolveScriptPath("'/home/user/scripts/test.sh'")).toBe(
+      '/home/user/scripts/test.sh'
+    );
+  });
+
+  it('strips quotes from absolute path with spaces', () => {
+    expect(resolveScriptPath('"/home/user/scripts/my script.sh"')).toBe(
+      '/home/user/scripts/my script.sh'
+    );
+  });
+
+  it('strips quotes from relative path and resolves with scriptsDir', () => {
+    expect(resolveScriptPath('"./scripts/test.sh"')).toBe(
+      '/home/project/.opencode/scripts/scripts/test.sh'
+    );
   });
 });
 

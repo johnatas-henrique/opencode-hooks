@@ -30,13 +30,12 @@ const EVENT_NAME_MAP: Record<string, string> = {
 };
 
 export function resolveScriptPath(scriptPath: string): string {
-  // Paths absolutos (do .claude/settings.json) → usar direto
-  if (path.isAbsolute(scriptPath)) {
-    return scriptPath;
+  const clean = scriptPath.replace(/^["']|["']$/g, '');
+  if (path.isAbsolute(clean)) {
+    return clean;
   }
-  // Paths relativos (scripts nativos em ./scripts/) → resolver normalmente
   const scriptsDir = path.join(process.cwd(), DEFAULTS.scripts.dir);
-  return path.join(scriptsDir, scriptPath);
+  return path.join(scriptsDir, clean);
 }
 
 export function parseHookOutput(
