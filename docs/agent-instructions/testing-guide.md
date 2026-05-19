@@ -14,7 +14,7 @@ Pure unit tests that verify individual functions or components in isolation.
 
 - Must NOT depend on external services (databases, APIs, network)
 - Must NOT use real `fs` operations (unless testing fs utilities directly)
-- The ONLY allowed `vi.mock()` targets are: `fs`, `shell`, `http`, `.opencode/plugins/config/settings`
+- The ONLY allowed `vi.mock()` targets are: `fs`, `shell`, `http`, `.opencode/plugins/config/jsonc-loader`
 - **No `__mocks__/` directory** — use `vi.hoisted()` inline per test file
 - Shared mock defaults via `test/unit/helpers/mock-factories.ts` (plain factories, no `vi`)
 - No `any` anywhere
@@ -42,7 +42,7 @@ describe('functionName', () => {
 **Allowed Patterns:**
 
 - Direct function calls with controlled inputs
-- `vi.mock()` only for `fs`, `shell`, `http`, `settings` (with `vi.hoisted()`)
+- `vi.mock()` only for `fs`, `shell`, `http`, `.opencode/plugins/config/jsonc-loader` (with `vi.hoisted()`) — mock the loader when you want to control `loadUserConfig` return value
 - Dependency Injection for providing test doubles
 - `vi.mocked()` for accessing mock methods with proper types
 

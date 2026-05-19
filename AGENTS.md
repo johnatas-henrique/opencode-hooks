@@ -4,11 +4,12 @@ TypeScript plugin system for OpenCode AI with event-driven hooks.
 
 ## Commands
 
-| Command            | Description        |
-| ------------------ | ------------------ |
-| `npm run build`    | Compile TypeScript |
-| `npm run lint`     | Run ESLint         |
-| `npm run test:cov` | Run coverage tests |
+| Command             | Description               |
+| ------------------- | ------------------------- |
+| `npm run build`     | Bundle for npm publishing |
+| `npm run typecheck` | TypeScript type checking  |
+| `npm run lint`      | Run ESLint                |
+| `npm run test:cov`  | Run coverage tests        |
 
 ## Important Files
 
