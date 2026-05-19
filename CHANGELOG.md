@@ -1,5 +1,94 @@
 # Changelog
 
+## [0.7.0](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.6.0...opencode-hooks-v0.7.0) (2026-05-19)
+
+
+### Features
+
+* add @total-typescript/shoehorn for test typing ([e5ef186](https://github.com/johnatas-henrique/opencode-hooks/commit/e5ef186322827d32f430aae8faf036631e50f138))
+* add block on READ to .env file ([f7181af](https://github.com/johnatas-henrique/opencode-hooks/commit/f7181af0478c859a504886830e111fe81b679399))
+* add block shell scripts to replace security-rules ([7a8dd87](https://github.com/johnatas-henrique/opencode-hooks/commit/7a8dd87325df120229ea250d8fe9529f9e72c6d8))
+* add claude hooks implementation ([624f880](https://github.com/johnatas-henrique/opencode-hooks/commit/624f8808feeaabe50eac4b7d3d9f824d46c5216c))
+* add Claude scripts to EventContext ([8dc3425](https://github.com/johnatas-henrique/opencode-hooks/commit/8dc34258eba13f8bb17d05de956b62ffc1f1daf2))
+* add Claude settings loader and hook mapper ([cc5a08f](https://github.com/johnatas-henrique/opencode-hooks/commit/cc5a08f60b17cb412e8e0af3d4163811447b7e1a))
+* add executor with script execution, Claude and OpenCode stdin builders ([4f7a207](https://github.com/johnatas-henrique/opencode-hooks/commit/4f7a207ff27cb9b39f361434a75de66576e08007))
+* add mempalace exit mining and update chat mining ([cbe7548](https://github.com/johnatas-henrique/opencode-hooks/commit/cbe75484dcae3bdbfee9f7f55f8e469d4522df6a))
+* add mempalace mine and wake scripts for OpenCode hooks ([224d1ce](https://github.com/johnatas-henrique/opencode-hooks/commit/224d1cec3e1d6ac7ab7942ffc9a6cfae2b889173))
+* add missing Claude Code stdin fields and compatibility doc ([82268fe](https://github.com/johnatas-henrique/opencode-hooks/commit/82268feee4c63ff1b525e2089b7907d46cee66e7))
+* add resolveScripts and mergeClaudeScripts for ScriptEntry handling ([cc840a4](https://github.com/johnatas-henrique/opencode-hooks/commit/cc840a4df2d8066748455493a85ac22bb567a957))
+* add security scripts for tool usage ([47be68f](https://github.com/johnatas-henrique/opencode-hooks/commit/47be68f0efb72a66b0009dbfe7f3f1edee048a14))
+* add SubagentStart/Stop routing, dump debug, and tool_name capitalisation ([552c9fb](https://github.com/johnatas-henrique/opencode-hooks/commit/552c9fb37b8c927e2baa924f6a9ada3684fca3d8))
+* **audit:** align EventRecorder signatures with core types ([5cb390e](https://github.com/johnatas-henrique/opencode-hooks/commit/5cb390e971a8846144b7ea48d5cb5dee7007d0d6))
+* **audit:** implement session-aware audit logging ([9fee8a1](https://github.com/johnatas-henrique/opencode-hooks/commit/9fee8a1e176aa79163e0e50a89b3d115b13d489e))
+* auto-create .opencode/scripts directory if missing ([ed754b0](https://github.com/johnatas-henrique/opencode-hooks/commit/ed754b0113c857093a76fa73b84c23952306dd63))
+* **claude-settings:** handle malformed JSON with error reporting ([bafde2c](https://github.com/johnatas-henrique/opencode-hooks/commit/bafde2c38239f89d901f86c00becf0b59435107c))
+* config extraction, schema, PTY events, isKnownEvent fix, and test restructuring ([972af40](https://github.com/johnatas-henrique/opencode-hooks/commit/972af402d33e208380bdd80d8fb8f8f36366ffb8))
+* **eslint:** enable auto-fixable rules and type-aware lint ([f844ef0](https://github.com/johnatas-henrique/opencode-hooks/commit/f844ef09aea7fd31652c72c914f8f9d7ca5ae4d5))
+* **events:** add PTY events to enum, session.next handlers, and isKnownEvent fix ([9740bb4](https://github.com/johnatas-henrique/opencode-hooks/commit/9740bb42f380b5e4b3272d84069326ddb4761219))
+* **hooks:** restrict sessionId updates to main session events ([1dcaaca](https://github.com/johnatas-henrique/opencode-hooks/commit/1dcaaca5e14d249ac7ad70a849e9c46da05c55e9))
+* integrate executeScript for Claude hooks, add passStdin support ([850e81e](https://github.com/johnatas-henrique/opencode-hooks/commit/850e81e0c4a89521cf391f60ca7534c0fe4488ab))
+* **opencode-hooks:** add runOnlyOnce, appendToSession, and error toast ([607c40d](https://github.com/johnatas-henrique/opencode-hooks/commit/607c40d7d6ff751a8b50468f67f876de779c696a))
+* **scripts:** add wing drawer deletion utility ([da800f3](https://github.com/johnatas-henrique/opencode-hooks/commit/da800f3230640bca8f2adf99c26af94aa6292e7c))
+* thread stdin, scriptType, and stderr through script execution pipeline ([e110a1b](https://github.com/johnatas-henrique/opencode-hooks/commit/e110a1b5ee81665db336693b1287ab14e66fed64))
+* throw in executeHook to cancel tool on script block ([8a4ea72](https://github.com/johnatas-henrique/opencode-hooks/commit/8a4ea72b6759c232b2bab65c5b1369e8ecb12168))
+* **types:** add ClaudeHook interfaces to types/config ([5b2a508](https://github.com/johnatas-henrique/opencode-hooks/commit/5b2a508dd2de678605b93b82b3639f527ec55b14))
+* **types:** move ExecuteHookParams interface to types/executor ([1d955cb](https://github.com/johnatas-henrique/opencode-hooks/commit/1d955cbba2d137d9c6dfbd04bb908f365e05bc07))
+* **types:** move HookResult interface to types/scripts ([4e6d2e8](https://github.com/johnatas-henrique/opencode-hooks/commit/4e6d2e800b02272c27050b8d695346ce200aba64))
+* update .claude settings with PreToolUse, SubagentStart, SubagentStop ([4a6f77c](https://github.com/johnatas-henrique/opencode-hooks/commit/4a6f77c9bd4e1496d7b8da7c91302994de979645))
+* update resolvers to support ScriptEntry and passStdin ([3ad9e2c](https://github.com/johnatas-henrique/opencode-hooks/commit/3ad9e2cc1f2dd1517ddb6f3b9c7e4f33536daefe))
+* update settings with ScriptEntry format ([0a5ed52](https://github.com/johnatas-henrique/opencode-hooks/commit/0a5ed52f89db4b0847bb7d787f2a2151cf8dc318))
+* wire block-sensitive.sh and block-env-write.sh as settings-native, add block scripts ([a2f7908](https://github.com/johnatas-henrique/opencode-hooks/commit/a2f7908611fec6e96804b1319b76f3b0f279ca93))
+
+
+### Bug Fixes
+
+* improve no-verify gate regex to avoid false positives ([6c4b717](https://github.com/johnatas-henrique/opencode-hooks/commit/6c4b717a2abcf85a6f0f3565eba70c7b57e75476))
+* part of claude implementation ([b96664e](https://github.com/johnatas-henrique/opencode-hooks/commit/b96664ebf4e1fe88ed6252300fe5894c1ac914db))
+* remove all remaining 'as any' casts and fix type error in toast-silence-detector ([cfd43ba](https://github.com/johnatas-henrique/opencode-hooks/commit/cfd43bafef6442322fb38b13f256332e6bd5fae9))
+* resolve tsc build errors (missing imports, optional output type) ([faa9086](https://github.com/johnatas-henrique/opencode-hooks/commit/faa9086d079fb91486921e98d0a7aed677ba16b2))
+* **scripts:** pass output to buildClaudeStdin to fix empty tool_input bug ([339bc1f](https://github.com/johnatas-henrique/opencode-hooks/commit/339bc1f89adba6a723b12fbb2f590ca7bfac1222))
+* **scripts:** strip wrapping quotes from script paths before resolution ([7841e44](https://github.com/johnatas-henrique/opencode-hooks/commit/7841e446522d9a41eac854b27ccc5b4b32c83583))
+* **test:** make global-claude block test portable by creating mock script in tmpDir ([c2e8f9a](https://github.com/johnatas-henrique/opencode-hooks/commit/c2e8f9a2979730bb4a35308b075fbf9cc8c9384a))
+* **test:** prevent integration test from polluting plugin-errors.json ([2eed5bb](https://github.com/johnatas-henrique/opencode-hooks/commit/2eed5bb042785fd4045dc019ae14e48167461526))
+* use unique titles per tool handler and buildKeysMessage for toast data ([e5b7e1c](https://github.com/johnatas-henrique/opencode-hooks/commit/e5b7e1cfdfa2a5e4ce9dbe7d41a4856cca43e2a3))
+
+
+### Performance Improvements
+
+* **test:** optimize slow tests - add mocks to reduce execution time ([102afd2](https://github.com/johnatas-henrique/opencode-hooks/commit/102afd2a4f9ce4371aa4e961cf7b16aafc5ddcbd))
+
+
+### Maintenance
+
+* add fallow npm script ([9cb5705](https://github.com/johnatas-henrique/opencode-hooks/commit/9cb5705e99cee45819b6673273543f9558453e63))
+* add path aliases for absolute imports in tests ([a441c9d](https://github.com/johnatas-henrique/opencode-hooks/commit/a441c9d25234f6af4f305b619c27aa0748e859c3))
+* add plan files for dead code, coverage gaps, and event type unification ([a5a78d6](https://github.com/johnatas-henrique/opencode-hooks/commit/a5a78d6402b1ec588e9e8cd8894cd6723a7f1031))
+* archive completed subagent-start plan ([8b7c50a](https://github.com/johnatas-henrique/opencode-hooks/commit/8b7c50ac719fef26dcbd531ea1976f08874bd775))
+* **deps-dev:** bump @commitlint/config-conventional ([934c51a](https://github.com/johnatas-henrique/opencode-hooks/commit/934c51ad7bce88d59d2c8dcd453c720006519d3b))
+* **deps-dev:** bump @commitlint/config-conventional from 20.5.0 to 21.0.1 ([039a00f](https://github.com/johnatas-henrique/opencode-hooks/commit/039a00ffee991ab73856d86136ed1aac6e989e1d))
+* **deps-dev:** bump @opencode-ai/plugin from 1.14.29 to 1.15.3 ([59ec303](https://github.com/johnatas-henrique/opencode-hooks/commit/59ec3031d172b348bd7077b74a134ca27edd79ce))
+* **deps-dev:** bump @opencode-ai/plugin from 1.14.29 to 1.15.3 ([f1a3a41](https://github.com/johnatas-henrique/opencode-hooks/commit/f1a3a41cc39fec45f501bf05507dacbccc5d0b9c))
+* **deps-dev:** bump @types/node from 25.6.0 to 25.8.0 ([8a93ab4](https://github.com/johnatas-henrique/opencode-hooks/commit/8a93ab47c43cb7316109ee34d88781a98f63c14b))
+* **deps-dev:** bump @types/node from 25.6.0 to 25.8.0 ([d40643c](https://github.com/johnatas-henrique/opencode-hooks/commit/d40643c560ff627c1e8393c58aaf961092d7b420))
+* **deps-dev:** bump globals from 17.5.0 to 17.6.0 ([2385f99](https://github.com/johnatas-henrique/opencode-hooks/commit/2385f992784d58490c2c55071a4ebdae4732fae7))
+* **deps-dev:** bump globals from 17.5.0 to 17.6.0 ([d5709de](https://github.com/johnatas-henrique/opencode-hooks/commit/d5709de1c5f5e0f1c5367e8d6fdf06f3dcb65831))
+* **deps-dev:** bump lint-staged from 16.4.0 to 17.0.5 ([b4e804f](https://github.com/johnatas-henrique/opencode-hooks/commit/b4e804f0c6cef24b160fc96eceb1d4b4b9a3960f))
+* **deps-dev:** bump lint-staged from 16.4.0 to 17.0.5 ([fa03d8b](https://github.com/johnatas-henrique/opencode-hooks/commit/fa03d8bc586c7d5e07e0fb8088596f5533968e7a))
+* **deps-dev:** bump vitest from 4.1.5 to 4.1.6 ([603b3b2](https://github.com/johnatas-henrique/opencode-hooks/commit/603b3b2489009c5e07f47bf0f8e6531575431d93))
+* **deps-dev:** bump vitest from 4.1.5 to 4.1.6 ([9252616](https://github.com/johnatas-henrique/opencode-hooks/commit/92526162e5d5d49521731b293f67836350f7111b))
+* merge main and resolve package.json/lock conflicts ([d5e66d7](https://github.com/johnatas-henrique/opencode-hooks/commit/d5e66d73b331fab3503d14af49dd6c357c4b2f43))
+* minor type and import adjustments ([e05cbff](https://github.com/johnatas-henrique/opencode-hooks/commit/e05cbff78d2f6b774ffc547ce39b8cfa982e3c9e))
+* remove old test infrastructure ([38d12ee](https://github.com/johnatas-henrique/opencode-hooks/commit/38d12ee93bc9fe8b8913a931f8119322d9e66ead))
+* remove stale fallow-ignore comments after duplication fixes ([fbd431d](https://github.com/johnatas-henrique/opencode-hooks/commit/fbd431d4212956b44c7c404be1d9f8ad6e7c5315))
+* remove stale OpenCode scripts (migrated to .claude/hooks) ([9e5ddaa](https://github.com/johnatas-henrique/opencode-hooks/commit/9e5ddaa47a82c30d9d71215d1cfce350cdc9be83))
+* resolve dead code issues (fallow) ([ae07034](https://github.com/johnatas-henrique/opencode-hooks/commit/ae07034390bab94ec5a4d3e7d507364f49ba3437))
+* **scripts:** remove unused sessionId passthrough ([4d615eb](https://github.com/johnatas-henrique/opencode-hooks/commit/4d615eb80a329f40242b5db0362bd101274169d1))
+* set execute permission on claude hook scripts ([4d6c419](https://github.com/johnatas-henrique/opencode-hooks/commit/4d6c41973e0a8b92d0fa8a219c149e246f3313a0))
+* update AGENTS.md with fallow gate and remove dead setDebugRecorder tests ([0856649](https://github.com/johnatas-henrique/opencode-hooks/commit/0856649ea1a513ef8588591192ca78cd83eb1144))
+* update audit config with sessionId settings ([4f424d7](https://github.com/johnatas-henrique/opencode-hooks/commit/4f424d7f24006ff17acae8fb27906d919b7b7a42))
+* update dependencies and build config ([79bdb2b](https://github.com/johnatas-henrique/opencode-hooks/commit/79bdb2b6faff90e69cd187d359d7a904c7d0aa30))
+* update eslint ignore patterns and narrow type-aware rules ([a374d0e](https://github.com/johnatas-henrique/opencode-hooks/commit/a374d0ed725028ae6df72dd0c142c1ceecdbc946))
+
 ## [0.6.0](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.5.0...opencode-hooks-v0.6.0) (2026-04-29)
 
 
