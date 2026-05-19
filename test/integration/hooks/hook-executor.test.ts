@@ -857,10 +857,19 @@ describe('real script blocking by scriptType', () => {
     const recorder = createRecorder(tmpDir);
     const deps = createBlockDeps(recorder);
     const executor = new HookExecutor(deps);
-    const homedir = os.homedir();
-    const scriptPath = `node ${homedir}/.claude/hooks/block-dangerous-commands.js`;
+    const hooksDir = path.join(tmpDir, '.claude/hooks');
+    fs.mkdirSync(hooksDir, { recursive: true });
+    const scriptPath = path.join(hooksDir, 'block-dangerous-commands.js');
+    fs.writeFileSync(
+      scriptPath,
+      `process.stdin.on('data', d => {\n  const input = JSON.parse(d.toString());\n  const cmd = input.tool_input?.command || '';\n  if (cmd.includes('cat .env')) {\n    process.stderr.write('blocked cat-env');\n    process.exit(2);\n  }\n  process.stdout.write('{}');\n  process.exit(0);\n});\n`
+    );
     const resolved = resolvedConfig([
-      { source: 'claude', path: scriptPath, scriptType: 'global-claude' },
+      {
+        source: 'claude',
+        path: `node ${scriptPath}`,
+        scriptType: 'global-claude',
+      },
     ]);
 
     await expect(
