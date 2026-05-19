@@ -1,17 +1,7 @@
-import { DEFAULTS } from '../../core/constants';
-import { buildKeysMessageSimple } from '../message-formatter/build-keys-message';
-import type { EventHandler } from '../../types/events';
-import type { HandlerConfig } from '../../types/messages';
-
-const createHandler = (config: HandlerConfig): EventHandler => ({
-  title: config.title,
-  variant: config.variant,
-  duration: config.duration,
-  defaultScript: config.defaultScript,
-  buildMessage: config.buildMessage,
-  allowedFields: config.allowedFields,
-  defaultTemplate: config.defaultTemplate,
-});
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import { buildKeysMessageSimple } from '.opencode/plugins/features/message-formatter/build-keys-message';
+import type { EventHandler } from '.opencode/plugins/types/events';
+import { createHandler } from '.opencode/plugins/features/handlers/create-handler';
 
 export const chatHandlers: Record<string, EventHandler> = {
   'chat.headers': createHandler({
@@ -173,6 +163,14 @@ export const experimentalHandlers: Record<string, EventHandler> = {
   }),
 };
 
+const otherHandler: EventHandler = {
+  title: '',
+  variant: 'info',
+  duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  defaultScript: '',
+  buildMessage: buildKeysMessageSimple,
+};
+
 export const otherHandlers: Record<string, EventHandler> = {
   'tool.definition': createHandler({
     title: '====TOOL DEFINITION====',
@@ -197,4 +195,18 @@ export const otherHandlers: Record<string, EventHandler> = {
     defaultScript: 'installation-updated.sh',
     buildMessage: buildKeysMessageSimple,
   }),
+
+  'question.asked': otherHandler,
+  'question.replied': otherHandler,
+  'question.rejected': otherHandler,
+  'tui.session.select': otherHandler,
+  'mcp.tools.changed': otherHandler,
+  'mcp.browser.open.failed': otherHandler,
+  'project.updated': otherHandler,
+  'workspace.ready': otherHandler,
+  'workspace.failed': otherHandler,
+  'workspace.status': otherHandler,
+  'worktree.ready': otherHandler,
+  'worktree.failed': otherHandler,
+  'global.disposed': otherHandler,
 };

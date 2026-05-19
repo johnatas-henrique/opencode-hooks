@@ -4,8 +4,8 @@ import type {
   AuditLoggerOptions,
   AuditFileType,
   AuditLoggerDependencies,
-} from '../../types/audit';
-import type { ArchiveDependencies } from '../../types/audit';
+} from '.opencode/plugins/types/audit';
+import type { ArchiveDependencies } from '.opencode/plugins/types/audit';
 
 export async function archiveFileIfNeeded(
   sourcePath: string,
@@ -36,7 +36,7 @@ export async function archiveFileIfNeeded(
   return true;
 }
 
-function createDefaultDeps(): AuditLoggerDependencies {
+export function createDefaultDeps(): AuditLoggerDependencies {
   return {
     appendFile,
     mkdir,
@@ -53,7 +53,9 @@ export function createAuditLogger(options: AuditLoggerOptions): AuditLogger {
   const writeQueue = new Map<string, Promise<void>>();
 
   function getFilePath(fileType: AuditFileType): string {
-    return `${basePath}/plugin-${fileType}.json`;
+    const configFiles = config.files;
+    const fileName = configFiles[fileType];
+    return `${basePath}/${fileName}`;
   }
 
   async function ensureDirectory(): Promise<void> {
@@ -77,23 +79,13 @@ export function createAuditLogger(options: AuditLoggerOptions): AuditLogger {
       const filePath = getFilePath(fileType);
       await deps.appendFile(filePath, jsonLine);
 
-      if (
-        fileType === 'events' ||
-        fileType === 'errors' ||
-        fileType === 'scripts'
-      ) {
-        const archiveDir = `${basePath}/plugin-archive`;
-        await archiveFileIfNeeded(
-          filePath,
-          archiveDir,
-          config.maxSizeMB * 1024 * 1024,
-          deps as unknown as Partial<{
-            mkdir: typeof mkdir;
-            rename: typeof rename;
-            stat: typeof stat;
-          }>
-        );
-      }
+      const archiveDir = `${basePath}/plugin-archive`;
+      await archiveFileIfNeeded(
+        filePath,
+        archiveDir,
+        config.maxSizeMB * 1024 * 1024,
+        deps
+      );
     };
 
     const currentQueue = writeQueue.get(fileType) ?? Promise.resolve();
@@ -127,5 +119,8 @@ export function createAuditLogger(options: AuditLoggerOptions): AuditLogger {
     }
   }
 
-  return { writeLine, cleanup };
+  return {
+    writeLine,
+    cleanup,
+  };
 }

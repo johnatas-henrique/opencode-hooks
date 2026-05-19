@@ -1,20 +1,10 @@
-import { DEFAULTS } from '../../core/constants';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
 import {
   buildKeysMessage,
   buildKeysMessageSimple,
-} from '../message-formatter/build-keys-message';
-import type { EventHandler } from '../../types/events';
-import type { HandlerConfig } from '../../types/messages';
-
-const createHandler = (config: HandlerConfig): EventHandler => ({
-  title: config.title,
-  variant: config.variant,
-  duration: config.duration,
-  defaultScript: config.defaultScript,
-  buildMessage: config.buildMessage,
-  allowedFields: config.allowedFields,
-  defaultTemplate: config.defaultTemplate,
-});
+} from '.opencode/plugins/features/message-formatter/build-keys-message';
+import type { EventHandler } from '.opencode/plugins/types/events';
+import { createHandler } from '.opencode/plugins/features/handlers/create-handler';
 
 export const toolHandlers: Record<string, EventHandler> = {
   'tool.execute.before': createHandler({
@@ -74,11 +64,11 @@ export const toolHandlers: Record<string, EventHandler> = {
     allowedFields: ['path'],
   }),
 
-  'permission.ask': createHandler({
-    title: '====PERMISSION ASK====',
+  'permission.asked': createHandler({
+    title: '====PERMISSION ASKED====',
     variant: 'warning',
     duration: DEFAULTS.toast.durations.FIVE_SECONDS,
-    defaultScript: 'permission-ask.sh',
+    defaultScript: 'permission-asked.sh',
     buildMessage: buildKeysMessageSimple,
     allowedFields: ['sessionID', 'tool', 'type', 'pattern', 'title'],
   }),

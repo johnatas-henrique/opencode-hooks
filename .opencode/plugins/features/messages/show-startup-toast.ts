@@ -1,10 +1,10 @@
-import { getLatestLogFile } from './plugin-status';
-import { showActivePluginsToast } from './show-active-plugins';
-import { waitForToastSilence } from './toast-silence-detector';
-import { useGlobalToastQueue } from '../../core/toast-queue';
-import { getErrorRecorder } from '../audit/plugin-integration';
-import { DEFAULTS } from '../../core/constants';
-import type { StartupToastOptions } from '../../types/messages';
+import { getLatestLogFile } from '.opencode/plugins/features/messages/plugin-status';
+import { showActivePluginsToast } from '.opencode/plugins/features/messages/show-active-plugins';
+import { waitForToastSilence } from '.opencode/plugins/features/messages/toast-silence-detector';
+import { useGlobalToastQueue } from '.opencode/plugins/core/toast-queue';
+import { getErrorRecorder } from '.opencode/plugins/features/audit/plugin-integration';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import type { StartupToastOptions } from '.opencode/plugins/types/messages';
 
 export async function showStartupToast(
   options: StartupToastOptions = {}
@@ -45,13 +45,10 @@ export async function showStartupToast(
           duration: DEFAULTS.toast.durations.FIVE_SECONDS,
         });
       } catch (err) {
-        const errorRecorder = getErrorRecorder();
-        if (errorRecorder) {
-          await errorRecorder.logError({
-            error: err instanceof Error ? err : new Error(String(err)),
-            context: 'showStartupToast',
-          });
-        }
+        await getErrorRecorder()?.logError({
+          error: err instanceof Error ? err : new Error(String(err)),
+          context: 'showStartupToast',
+        });
       }
     });
   }

@@ -40,6 +40,7 @@ export const OpenCodeEvents = {
   TOOL_EXECUTE_AFTER: 'tool.execute.after',
   TOOL_EXECUTE_AFTER_SUBAGENT: 'tool.execute.after.subagent',
   TOOL_EXECUTE_BEFORE: 'tool.execute.before',
+  TOOL_EXECUTE_BEFORE_SUBAGENT: 'tool.execute.before.subagent',
 
   TUI_PROMPT_APPEND: 'tui.prompt.append',
   TUI_COMMAND_EXECUTE: 'tui.command.execute',
@@ -49,64 +50,88 @@ export const OpenCodeEvents = {
   PTY_UPDATED: 'pty.updated',
   PTY_EXITED: 'pty.exited',
   PTY_DELETED: 'pty.deleted',
+
+  MESSAGE_PART_DELTA: 'message.part.delta',
+  PERMISSION_ASKED: 'permission.asked',
+  PERMISSION_ASK: 'permission.ask',
+  COMMAND_EXECUTE_BEFORE: 'command.execute.before',
+  EXPERIMENTAL_SESSION_COMPACTING: 'experimental.session.compacting',
+  CHAT_MESSAGE: 'chat.message',
+  CHAT_PARAMS: 'chat.params',
+  CHAT_HEADERS: 'chat.headers',
+  EXPERIMENTAL_CHAT_MESSAGES_TRANSFORM: 'experimental.chat.messages.transform',
+  EXPERIMENTAL_CHAT_SYSTEM_TRANSFORM: 'experimental.chat.system.transform',
+  EXPERIMENTAL_TEXT_COMPLETE: 'experimental.text.complete',
+  TOOL_DEFINITION: 'tool.definition',
+  SESSION_UNKNOWN: 'session.unknown',
+
+  QUESTION_ASKED: 'question.asked',
+  QUESTION_REPLIED: 'question.replied',
+  QUESTION_REJECTED: 'question.rejected',
+
+  TUI_SESSION_SELECT: 'tui.session.select',
+
+  MCP_TOOLS_CHANGED: 'mcp.tools.changed',
+  MCP_BROWSER_OPEN_FAILED: 'mcp.browser.open.failed',
+
+  PROJECT_UPDATED: 'project.updated',
+
+  WORKSPACE_READY: 'workspace.ready',
+  WORKSPACE_FAILED: 'workspace.failed',
+  WORKSPACE_STATUS: 'workspace.status',
+
+  WORKTREE_READY: 'worktree.ready',
+  WORKTREE_FAILED: 'worktree.failed',
+
+  SESSION_NEXT_AGENT_SWITCHED: 'session.next.agent.switched',
+  SESSION_NEXT_MODEL_SWITCHED: 'session.next.model.switched',
+  SESSION_NEXT_PROMPTED: 'session.next.prompted',
+  SESSION_NEXT_SYNTHETIC: 'session.next.synthetic',
+  SESSION_NEXT_SHELL_STARTED: 'session.next.shell.started',
+  SESSION_NEXT_SHELL_ENDED: 'session.next.shell.ended',
+  SESSION_NEXT_STEP_STARTED: 'session.next.step.started',
+  SESSION_NEXT_STEP_ENDED: 'session.next.step.ended',
+  SESSION_NEXT_STEP_FAILED: 'session.next.step.failed',
+  SESSION_NEXT_TEXT_STARTED: 'session.next.text.started',
+  SESSION_NEXT_TEXT_DELTA: 'session.next.text.delta',
+  SESSION_NEXT_TEXT_ENDED: 'session.next.text.ended',
+  SESSION_NEXT_REASONING_STARTED: 'session.next.reasoning.started',
+  SESSION_NEXT_REASONING_DELTA: 'session.next.reasoning.delta',
+  SESSION_NEXT_REASONING_ENDED: 'session.next.reasoning.ended',
+  SESSION_NEXT_TOOL_INPUT_STARTED: 'session.next.tool.input.started',
+  SESSION_NEXT_TOOL_INPUT_DELTA: 'session.next.tool.input.delta',
+  SESSION_NEXT_TOOL_INPUT_ENDED: 'session.next.tool.input.ended',
+  SESSION_NEXT_TOOL_CALLED: 'session.next.tool.called',
+  SESSION_NEXT_TOOL_PROGRESS: 'session.next.tool.progress',
+  SESSION_NEXT_TOOL_SUCCESS: 'session.next.tool.success',
+  SESSION_NEXT_TOOL_FAILED: 'session.next.tool.failed',
+  SESSION_NEXT_RETRIED: 'session.next.retried',
+  SESSION_NEXT_COMPACTION_STARTED: 'session.next.compaction.started',
+  SESSION_NEXT_COMPACTION_DELTA: 'session.next.compaction.delta',
+  SESSION_NEXT_COMPACTION_ENDED: 'session.next.compaction.ended',
+
+  GLOBAL_DISPOSED: 'global.disposed',
 } as const;
+
+export interface ToolArgs {
+  command?: string;
+  filePath?: string;
+  path?: string;
+  pattern?: string;
+  url?: string;
+  query?: string;
+  name?: string;
+  message?: string;
+  source?: string;
+  destination?: string;
+  [key: string]: unknown;
+}
 
 export type OpenCodeEventType =
   (typeof OpenCodeEvents)[keyof typeof OpenCodeEvents];
 
 export type OpenCodeEventMap = {
-  [OpenCodeEvents.COMMAND_EXECUTED]: Event & { type: 'command.executed' };
-  [OpenCodeEvents.FILE_EDITED]: Event & { type: 'file.edited' };
-  [OpenCodeEvents.FILE_WATCHER_UPDATED]: Event & {
-    type: 'file.watcher.updated';
-  };
-  [OpenCodeEvents.VCS_BRANCH_UPDATED]: Event & { type: 'vcs.branch.updated' };
-  [OpenCodeEvents.INSTALLATION_UPDATED]: Event & {
-    type: 'installation.updated';
-  };
-  [OpenCodeEvents.INSTALLATION_UPDATE_AVAILABLE]: Event & {
-    type: 'installation.update-available';
-  };
-  [OpenCodeEvents.LSP_CLIENT_DIAGNOSTICS]: Event & {
-    type: 'lsp.client.diagnostics';
-  };
-  [OpenCodeEvents.LSP_UPDATED]: Event & { type: 'lsp.updated' };
-  [OpenCodeEvents.MESSAGE_PART_REMOVED]: Event & {
-    type: 'message.part.removed';
-  };
-  [OpenCodeEvents.MESSAGE_PART_UPDATED]: Event & {
-    type: 'message.part.updated';
-  };
-  [OpenCodeEvents.MESSAGE_REMOVED]: Event & { type: 'message.removed' };
-  [OpenCodeEvents.MESSAGE_UPDATED]: Event & { type: 'message.updated' };
-  [OpenCodeEvents.PERMISSION_UPDATED]: Event & { type: 'permission.updated' };
-  [OpenCodeEvents.PERMISSION_REPLIED]: Event & { type: 'permission.replied' };
-  [OpenCodeEvents.SERVER_CONNECTED]: Event & { type: 'server.connected' };
-  [OpenCodeEvents.SERVER_INSTANCE_DISPOSED]: Event & {
-    type: 'server.instance.disposed';
-  };
-  [OpenCodeEvents.SESSION_CREATED]: Event & { type: 'session.created' };
-  [OpenCodeEvents.SESSION_COMPACTED]: Event & { type: 'session.compacted' };
-  [OpenCodeEvents.SESSION_DELETED]: Event & { type: 'session.deleted' };
-  [OpenCodeEvents.SESSION_DIFF]: Event & { type: 'session.diff' };
-  [OpenCodeEvents.SESSION_ERROR]: Event & { type: 'session.error' };
-  [OpenCodeEvents.SESSION_IDLE]: Event & { type: 'session.idle' };
-  [OpenCodeEvents.SESSION_STATUS]: Event & { type: 'session.status' };
-  [OpenCodeEvents.SESSION_UPDATED]: Event & { type: 'session.updated' };
-  [OpenCodeEvents.TODO_UPDATED]: Event & { type: 'todo.updated' };
-  [OpenCodeEvents.SHELL_ENV]: Event & { type: 'shell.env' };
-  [OpenCodeEvents.TOOL_EXECUTE_AFTER]: Event & { type: 'tool.execute.after' };
-  [OpenCodeEvents.TOOL_EXECUTE_AFTER_SUBAGENT]: Event & {
-    type: 'tool.execute.after.subagent';
-  };
-  [OpenCodeEvents.TOOL_EXECUTE_BEFORE]: Event & { type: 'tool.execute.before' };
-  [OpenCodeEvents.TUI_PROMPT_APPEND]: Event & { type: 'tui.prompt.append' };
-  [OpenCodeEvents.TUI_COMMAND_EXECUTE]: Event & { type: 'tui.command.execute' };
-  [OpenCodeEvents.TUI_TOAST_SHOW]: Event & { type: 'tui.toast.show' };
-  [OpenCodeEvents.PTY_CREATED]: Event & { type: 'pty.created' };
-  [OpenCodeEvents.PTY_UPDATED]: Event & { type: 'pty.updated' };
-  [OpenCodeEvents.PTY_EXITED]: Event & { type: 'pty.exited' };
-  [OpenCodeEvents.PTY_DELETED]: Event & { type: 'pty.deleted' };
+  [K in OpenCodeEventType]: Event & { type: K };
 };
 
 export type OpenCodeEventProperties<T extends OpenCodeEventType> =
@@ -116,17 +141,11 @@ export type OpenCodeEventHandler<T extends OpenCodeEventType> = (input: {
   event: OpenCodeEventMap[T];
 }) => Promise<void>;
 
-export function createEventHandler<T extends OpenCodeEventType>(
-  handler: OpenCodeEventHandler<T>
-): OpenCodeEventHandler<T> {
-  return handler;
-}
-
 export type ToolExecuteAfterInput = {
   tool: string;
   sessionID: string;
   callID: string;
-  args: Record<string, unknown>;
+  args: ToolArgs;
 };
 
 export type ToolExecuteAfterOutput = {
@@ -151,7 +170,7 @@ export type ToolExecuteBeforeInput = {
 };
 
 export type ToolExecuteBeforeOutput = {
-  args: Record<string, unknown>;
+  args: ToolArgs;
 };
 
 // ============================================
@@ -211,7 +230,7 @@ export interface ToolExecuteAfterProps {
   tool: string;
   sessionID: string;
   callID: string;
-  args: Record<string, unknown>;
+  args: ToolArgs;
   subagentType?: string;
 }
 
@@ -219,7 +238,7 @@ export interface ToolExecuteBeforeProps {
   tool: string;
   sessionID: string;
   callID?: string;
-  args?: Record<string, unknown>;
+  args?: ToolArgs;
 }
 
 // Chat Events Properties
@@ -230,6 +249,15 @@ export interface ChatMessageProps {
   messageID?: string;
   variant?: string;
   message?: { role: string; content: string };
+}
+
+// Message Part Delta Properties
+export interface MessagePartDeltaProps {
+  sessionID: string;
+  messageID: string;
+  partID: string;
+  field: string;
+  delta: string;
 }
 
 export interface ChatParamsProps {
@@ -301,8 +329,11 @@ export interface ExperimentalTextCompleteProps {
 }
 
 // Event Input/Output Types for Hooks
-export interface EventInputRecord {
+export interface EventInput {
   sessionID?: string;
+  tool?: string;
+  callID?: string;
+  args?: Record<string, unknown>;
   [key: string]: unknown;
 }
 
@@ -468,7 +499,7 @@ export type ShellEnvNormalized = {
 };
 
 export type PermissionAskNormalized = {
-  type: 'permission.ask';
+  type: 'permission.asked';
   properties: {
     sessionID?: string;
     tool?: string;

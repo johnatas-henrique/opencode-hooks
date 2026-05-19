@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/johnatas-henrique/opencode-hooks/main/opencode-hooks.schema.json",
+  "audit": {
+    "basePath": "./.opencode/hooks/logs",
+    "level": "debug",
+    "enabled": true
+  },
+  "events": {
+    "server.instance.disposed": {
+      "runScripts": true,
+      "scripts": [{ "source": "native", "path": "scripts/exit.sh" }]
+    },
+    "session.created": {
+      "runScripts": true,
+      "runOnlyOnce": true,
+      "appendToSession": true,
+      "scripts": [
+        { "source": "native", "path": "scripts/session-start.sh" }
+      ]
+    },
+    "installation.updated": { "toast": true },
+    "installation.update-available": { "toast": true }
+  },
+  "tools": {
+    "tool.execute.after": {
+      "skill": {
+        "logToAudit": true,
+        "toast": true
+      }
+    },
+    "tool.execute.before": {
+      "bash": {
+        "runScripts": true,
+        "scripts": [{ "source": "native", "path": "scripts/block-sensitive.sh" }]
+      },
+      "write": {
+        "runScripts": true,
+        "scripts": [{ "source": "native", "path": "scripts/block-env-write.sh" }]
+      }
+    }
+  }
+}

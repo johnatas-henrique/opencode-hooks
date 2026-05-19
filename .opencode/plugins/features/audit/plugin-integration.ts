@@ -1,10 +1,9 @@
-import { createAuditLogger, archiveFileIfNeeded } from './audit-logger';
-import { createEventRecorder } from './event-recorder';
-import { createScriptRecorder } from './script-recorder';
-import { createErrorRecorder } from './error-recorder';
-import type { AuditConfig } from '../../types/audit';
-import type { ScriptRecorder } from '../../types/audit';
-import { readdir, rename, mkdir, stat } from 'fs/promises';
+import { createAuditLogger } from '.opencode/plugins/features/audit/audit-logger';
+import { createEventRecorder } from '.opencode/plugins/features/audit/event-recorder';
+import { createScriptRecorder } from '.opencode/plugins/features/audit/script-recorder';
+import { createErrorRecorder } from '.opencode/plugins/features/audit/error-recorder';
+import type { AuditConfig } from '.opencode/plugins/types/audit';
+import type { ScriptRecorder } from '.opencode/plugins/types/audit';
 
 let initPromise: Promise<void> | null = null;
 let auditLogger: ReturnType<typeof createAuditLogger>;
@@ -51,28 +50,4 @@ export function getErrorRecorder() {
 
 export function resetAuditLogging() {
   initPromise = null;
-}
-
-export async function archiveAllJsonFiles(basePath: string): Promise<void> {
-  try {
-    const files = await readdir(basePath);
-
-    const jsonFiles = files.filter(
-      (f) => f.endsWith('.json') && !f.includes('-archive')
-    );
-
-    const archiveDir = `${basePath}/plugin-archive`;
-    await mkdir(archiveDir, { recursive: true });
-
-    for (const file of jsonFiles) {
-      const filePath = `${basePath}/${file}`;
-      await archiveFileIfNeeded(filePath, archiveDir, 0, {
-        mkdir,
-        rename,
-        stat,
-      });
-    }
-  } catch {
-    // Silently ignore - app is shutting down, no one to see errors
-  }
 }

@@ -1,7 +1,10 @@
-import { getPluginStatus, formatPluginStatus } from './plugin-status';
-import { userConfig } from '../../config/settings';
-import { DEFAULTS } from '../../core/constants';
-import type { ToastQueue } from '../../types/toast';
+import {
+  getPluginStatus,
+  formatPluginStatus,
+} from '.opencode/plugins/features/messages/plugin-status';
+import { userConfig } from '.opencode/plugins/config/runtime';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import type { ToastQueue } from '.opencode/plugins/types/toast';
 
 export async function showActivePluginsToast(
   queue: ToastQueue,

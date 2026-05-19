@@ -3,12 +3,12 @@ import type {
   EventRecorderDependencies,
   SessionInput,
   AuditRecord,
-} from '../../types/audit';
+} from '.opencode/plugins/types/audit';
 import type {
   ToolExecuteBeforeInput,
   ToolExecuteAfterInput,
   ToolExecuteAfterOutput,
-} from '../../types/core';
+} from '.opencode/plugins/types/core';
 
 export function shouldLogEvents(config: AuditConfig): boolean {
   return config.enabled && config.level === 'debug';
@@ -72,12 +72,12 @@ export function createToolExecuteAfterRecord(
 
   const hasExit = output?.metadata?.exit !== undefined;
   if (hasExit) {
-    status = output!.metadata!.exit === 0 ? 'success' : 'error';
+    status = output.metadata.exit === 0 ? 'success' : 'error';
   }
 
-  const hasNonZeroExit = hasExit && output!.metadata!.exit !== 0;
+  const hasNonZeroExit = hasExit && output.metadata.exit !== 0;
   if (hasNonZeroExit) {
-    error = `Exit code: ${output!.metadata!.exit}`;
+    error = `Exit code: ${output.metadata.exit}`;
   }
 
   return {
@@ -107,10 +107,6 @@ export function createSessionEventRecord(
   };
 }
 
-// ============================================
-// Sanitization and Truncation Functions
-// ============================================
-
 const SENSITIVE_FIELDS = [
   'password',
   'token',
@@ -133,20 +129,15 @@ function isSensitiveField(key: string): boolean {
   return SENSITIVE_FIELDS.some((sensitive) => lowerKey.includes(sensitive));
 }
 
-let globalTruncationKB = 10;
-
-export function setGlobalTruncationKB(kb: number) {
-  globalTruncationKB = kb;
-}
-
-function sanitizeAndTruncate(
+export function sanitizeAndTruncate(
   data: Record<string, unknown>,
   largeFields: string[],
   maxFieldSize: number,
-  maxArrayItems: number
+  maxArrayItems: number,
+  logTruncationKB: number
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
-  const maxBytes = Math.floor(globalTruncationKB * 1024);
+  const maxBytes = Math.floor(logTruncationKB * 1024);
 
   for (const [key, value] of Object.entries(data)) {
     // Truncate known-large fields to logTruncationKB limit
@@ -177,7 +168,8 @@ function sanitizeAndTruncate(
         value as Record<string, unknown>,
         largeFields,
         maxFieldSize,
-        maxArrayItems
+        maxArrayItems,
+        logTruncationKB
       );
       continue;
     }
@@ -192,7 +184,8 @@ function sanitizeAndTruncate(
                 item as Record<string, unknown>,
                 largeFields,
                 maxFieldSize,
-                maxArrayItems
+                maxArrayItems,
+                logTruncationKB
               )
             : item
         );
@@ -209,10 +202,6 @@ function sanitizeAndTruncate(
   return result;
 }
 
-// ============================================
-// Generic Event Record Creation
-// ============================================
-
 export function createGenericEventRecord(
   eventType: string,
   input: Record<string, unknown> | undefined,
@@ -221,7 +210,8 @@ export function createGenericEventRecord(
   shouldLogResult: boolean,
   largeFields: string[],
   maxFieldSize: number,
-  maxArrayItems: number
+  maxArrayItems: number,
+  logTruncationKB: number
 ): AuditRecord | null {
   if (!shouldLogResult) {
     return null;
@@ -258,7 +248,8 @@ export function createGenericEventRecord(
       input,
       largeFields,
       maxFieldSize,
-      maxArrayItems
+      maxArrayItems,
+      logTruncationKB
     );
   }
 
@@ -268,7 +259,8 @@ export function createGenericEventRecord(
       output,
       largeFields,
       maxFieldSize,
-      maxArrayItems
+      maxArrayItems,
+      logTruncationKB
     );
   }
 
@@ -283,7 +275,6 @@ export function createEventRecorder(
   const maxFieldSize = config.maxFieldSize;
   const maxArrayItems = config.maxArrayItems;
   const largeFields = config.largeFields;
-  globalTruncationKB = config.logTruncationKB;
 
   async function logToolExecuteBefore(
     input: ToolExecuteBeforeInput
@@ -337,7 +328,8 @@ export function createEventRecorder(
       canLog,
       largeFields,
       maxFieldSize,
-      maxArrayItems
+      maxArrayItems,
+      config.logTruncationKB
     );
     if (record !== null) {
       if (data.context) {

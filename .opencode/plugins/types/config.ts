@@ -1,6 +1,6 @@
-import type { ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from './core';
-import type { AuditConfig } from './audit';
-import { EventType } from './events';
+import type { AuditConfig } from '.opencode/plugins/types/audit';
+import { OpenCodeEvents } from '.opencode/plugins/types/core';
+import type { OpenCodeEventType } from '.opencode/plugins/types/core';
 
 export type EventVariant = 'success' | 'warning' | 'error' | 'info';
 
@@ -16,11 +16,31 @@ export interface ToastOverride {
   duration?: number;
 }
 
+export type ScriptOrigin =
+  | 'settings-native'
+  | 'settings-claude'
+  | 'local-claude'
+  | 'global-claude';
+
+export interface ScriptEntry {
+  source: 'native' | 'claude';
+  path: string;
+  matcher?: string;
+  async?: boolean;
+  timeout?: number;
+  passStdin?: boolean;
+  scriptType?: ScriptOrigin;
+}
+
+export interface ClaudeHookSettings {
+  loadGlobalClaudeHooks: boolean;
+  loadLocalClaudeHooks: boolean;
+}
+
 export interface EventOverride {
   enabled?: boolean;
-  debug?: boolean;
   toast?: boolean | ToastOverride;
-  scripts?: string[];
+  scripts?: ScriptEntry[];
   runScripts?: boolean;
   runOnlyOnce?: boolean;
   logToAudit?: boolean;
@@ -35,6 +55,11 @@ export type PluginStatusDisplayMode =
   | 'user-only'
   | 'user-separated'
   | 'all-labeled';
+
+export interface ToastQueueConfig {
+  staggerMs: number;
+  maxSize: number;
+}
 
 export interface ScriptToastsConfig {
   showOutput: boolean;
@@ -55,47 +80,40 @@ export interface UserEventsConfig {
   pluginStatusDisplayMode: PluginStatusDisplayMode;
   scriptToasts: ScriptToastsConfig;
   default: EventOverride;
-  events: Partial<Record<EventType, EventConfig>>;
+  loadClaudeHookSettings: ClaudeHookSettings;
+  toastQueue: ToastQueueConfig;
+  events: Partial<Record<OpenCodeEventType, EventConfig>>;
   tools: {
-    [EventType.TOOL_EXECUTE_AFTER]: Record<string, ToolConfig>;
-    [EventType.TOOL_EXECUTE_AFTER_SUBAGENT]: Record<string, ToolConfig>;
-    [EventType.TOOL_EXECUTE_BEFORE]: Record<string, ToolOverride>;
+    [OpenCodeEvents.TOOL_EXECUTE_AFTER]: Record<string, ToolConfig>;
+    [OpenCodeEvents.TOOL_EXECUTE_AFTER_SUBAGENT]: Record<string, ToolConfig>;
+    [OpenCodeEvents.TOOL_EXECUTE_BEFORE]: Record<string, ToolOverride>;
+    [OpenCodeEvents.TOOL_EXECUTE_BEFORE_SUBAGENT]: Record<string, ToolOverride>;
   };
 }
 
 export interface ResolvedEventConfig {
   enabled: boolean;
-  debug: boolean;
   toast: boolean;
   toastTitle: string;
   toastMessage: string;
   toastVariant: EventVariant;
   toastDuration: number;
-  scripts: string[];
+  scripts: ScriptEntry[];
   runScripts: boolean;
   logToAudit: boolean;
   appendToSession: boolean;
   runOnlyOnce: boolean;
   scriptToasts: ScriptToastsConfig;
   allowedFields?: string[];
-  block: BlockCheck[];
 }
 
 export interface ScriptResult {
   script: string;
   exitCode: number;
-  output?: string;
-}
-
-export type BlockPredicate = (
-  input: ToolExecuteBeforeInput,
-  output: ToolExecuteBeforeOutput,
-  scriptResults: ScriptResult[]
-) => boolean;
-
-export interface BlockCheck {
-  check: BlockPredicate;
-  message: string;
+  output: string;
+  stderr?: string;
+  stdin?: string;
+  scriptType?: string;
 }
 
 export interface FileTemplate {
@@ -106,13 +124,50 @@ export interface FileTemplate {
 
 export interface ToolOverride {
   enabled?: boolean;
-  debug?: boolean;
   toast?: boolean | ToolOverride;
-  scripts?: string[];
+  scripts?: ScriptEntry[];
   runScripts?: boolean;
   runOnlyOnce?: boolean;
   logToAudit?: boolean;
   appendToSession?: boolean;
-  block?: BlockCheck[];
   messageFn?: (input: unknown, output?: unknown) => string | undefined;
+}
+
+// Claude hooks interfaces
+export interface ClaudeHookGroup {
+  hooks: ClaudeHook[];
+  matcher?: string;
+}
+
+export interface ClaudeHook {
+  command: string;
+  async?: boolean;
+  timeout?: number;
+}
+
+export interface ClaudeSettings {
+  hooks?: Record<string, ClaudeHookGroup[]>;
+  disableAllHooks?: boolean;
+}
+
+export interface ScriptConstantsConfig {
+  dir: string;
+}
+
+export interface CoreConstantsConfig {
+  defaultSessionId: 'unknown';
+  maxPromptLength: 10000;
+  maxToastLength: 1000;
+  tool: {
+    TASK: 'task';
+    SUBAGENT_TYPE_ARG: 'subagent_type';
+  };
+}
+
+export interface AuditFileNamesConfig {
+  events: 'plugin-events.json';
+  scripts: 'plugin-scripts.json';
+  errors: 'plugin-errors.json';
+  security: 'plugin-security.json';
+  debug: 'plugin-debug.json';
 }

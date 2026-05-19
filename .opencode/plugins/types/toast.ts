@@ -1,9 +1,10 @@
 import type { TuiToast } from '@opencode-ai/plugin/tui';
+import { EventVariant } from '.opencode/plugins/types/config';
 
 export interface ShowToastOptions {
   title: string;
   message?: string;
-  variant?: 'success' | 'warning' | 'error' | 'info';
+  variant?: EventVariant;
   duration?: number;
 }
 
@@ -13,13 +14,13 @@ export interface ShowToastOptions {
  */
 export interface ToastDirector {
   /** Enqueue a toast for display */
-  enqueue(toast: TuiToast): void;
+  enqueue: (toast: TuiToast) => void;
 
   /** Wait for all pending toasts to be displayed */
-  flush(): Promise<void>;
+  flush: () => Promise<void>;
 
   /** Clear the queue and cancel pending timers */
-  clear(): void;
+  clear: () => void;
 
   /** Number of toasts waiting to be displayed */
   readonly pending: number;
@@ -28,14 +29,14 @@ export interface ToastDirector {
   readonly isProcessing: boolean;
 
   /** Gracefully shutdown: wait for active toast then stop */
-  shutdown(): Promise<void>;
+  shutdown: () => Promise<void>;
 }
 
 export interface ToastQueue {
-  add(toast: TuiToast): void;
-  addMultiple(toasts: TuiToast[]): void;
-  clear(): void;
-  flush(): Promise<void>;
+  add: (toast: TuiToast) => void;
+  addMultiple: (toasts: TuiToast[]) => void;
+  clear: () => void;
+  flush: () => Promise<void>;
   readonly pending: number;
 }
 

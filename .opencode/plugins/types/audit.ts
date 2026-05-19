@@ -1,3 +1,9 @@
+import type {
+  EventInput,
+  ToolArgs,
+  ToolExecuteAfterOutput,
+} from '.opencode/plugins/types/core';
+
 export type AuditLogLevel = 'debug' | 'audit';
 
 export type AuditFileType =
@@ -17,6 +23,13 @@ export interface AuditConfig {
   maxFieldSize: number;
   maxArrayItems: number;
   largeFields: string[];
+  files: {
+    events: string;
+    scripts: string;
+    errors: string;
+    security: string;
+    debug: string;
+  };
 }
 
 export interface AuditFileStat {
@@ -66,8 +79,8 @@ export interface AuditRecord {
   duration?: number;
   error?: string;
   directory?: string;
-  input?: Record<string, unknown>; // Sanitized input data
-  output?: Record<string, unknown>; // Sanitized output data
+  input?: EventInput;
+  output?: EventInput;
   [key: string]: unknown;
 }
 
@@ -129,21 +142,21 @@ export interface DebugRecord {
 }
 
 export interface DebugRecorder {
-  logDebug(input: {
+  logDebug: (input: {
     message: string;
     level?: 'info' | 'warn' | 'error';
     data?: Record<string, unknown>;
-  }): Promise<void>;
+  }) => Promise<void>;
 }
 
 export interface SecurityRecorder {
-  logSecurity(input: {
+  logSecurity: (input: {
     sessionID?: string;
     toolName?: string;
     rule: string;
     reason?: string;
     input?: Record<string, unknown>;
-  }): Promise<void>;
+  }) => Promise<void>;
 }
 
 export interface SessionInput {
@@ -157,11 +170,11 @@ export interface SessionInput {
 }
 
 export interface AuditLogger {
-  writeLine(
+  writeLine: (
     fileType: AuditFileType,
     data: Record<string, unknown>
-  ): Promise<void>;
-  cleanup(): Promise<void>;
+  ) => Promise<void>;
+  cleanup: () => Promise<void>;
 }
 
 export interface AuditLoggerOptions {
@@ -171,38 +184,30 @@ export interface AuditLoggerOptions {
 }
 
 export interface EventRecorder {
-  logToolExecuteBefore(input: {
-    tool?: string;
-    sessionID?: string;
-    callID?: string;
-  }): Promise<void>;
-  logToolExecuteAfter(
+  logToolExecuteBefore: (input: {
+    tool: string;
+    sessionID: string;
+    callID: string;
+  }) => Promise<void>;
+  logToolExecuteAfter: (
     input: {
-      tool?: string;
-      sessionID?: string;
-      callID?: string;
+      tool: string;
+      sessionID: string;
+      callID: string;
+      args: ToolArgs;
     },
-    output?: {
-      metadata?: { exit?: number };
-    }
-  ): Promise<void>;
-  logSessionEvent(eventType: string, input: SessionInput): Promise<void>;
-  logEvent(
+    output?: ToolExecuteAfterOutput
+  ) => Promise<void>;
+  logSessionEvent: (eventType: string, input: SessionInput) => Promise<void>;
+  logEvent: (
     eventType: string,
     data: {
       sessionID?: string;
-      input?: Record<string, unknown>;
-      output?: Record<string, unknown>;
+      input?: EventInput;
+      output?: EventInput;
       tool?: string;
       context?: string;
     }
-  ): Promise<void>;
-}
-
-export interface ScriptRecorderDependencies {
-  writeLine: (
-    fileType: 'scripts',
-    data: Record<string, unknown>
   ) => Promise<void>;
 }
 
@@ -210,6 +215,9 @@ export interface ScriptInput {
   script: string;
   args?: string[];
   startTime?: number;
+  sessionId?: string;
+  stdin?: string;
+  scriptType?: string;
 }
 
 export interface ScriptRecorderResult {
@@ -219,7 +227,10 @@ export interface ScriptRecorderResult {
 }
 
 export interface ScriptRecorder {
-  logScript(input: ScriptInput, result: ScriptRecorderResult): Promise<void>;
+  logScript: (
+    input: ScriptInput,
+    result: ScriptRecorderResult
+  ) => Promise<void>;
 }
 
 export type ErrorType = 'config' | 'code';

@@ -1,16 +1,16 @@
-import { runScript } from './run-script';
+import { runScript } from '.opencode/plugins/features/scripts/run-script';
 import type {
   ScriptExecutionResult,
   EventScriptConfig,
-} from '../../types/scripts';
-import type { ScriptRecorder } from '../../types/audit';
-import { ScriptExecutor } from './script-executor';
+} from '.opencode/plugins/types/scripts';
+import type { ScriptRecorder } from '.opencode/plugins/types/audit';
+import { ScriptExecutor } from '.opencode/plugins/features/scripts/script-executor';
 import {
   createAuditAdapter,
   createSessionAdapter,
   createToastAdapter,
-} from './adapters';
-import { DEFAULTS } from '../../core/constants';
+} from '.opencode/plugins/features/scripts/adapters';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
 
 const subagentSessionIds = new Set<string>();
 
@@ -20,10 +20,6 @@ export function isSubagent(sessionId: string | undefined): boolean {
 
 export function addSubagentSession(sessionId: string): void {
   subagentSessionIds.add(sessionId);
-}
-
-export function resetSubagentTracking(): void {
-  subagentSessionIds.clear();
 }
 
 export async function runScriptAndHandle(
@@ -41,14 +37,13 @@ export async function runScriptAndHandle(
     isSubagent: (sessionId) => isSubagent(sessionId),
   });
 
-  // Execute using the executor
   return executor.execute(
     config.script,
     config.scriptArg,
     {
       skipAudit: !resolved.logToAudit,
       skipSession: !resolved.appendToSession,
-      suppressToast: !resolved.scriptToasts?.showError,
+      suppressToast: !resolved.scriptToasts.showError,
       runOnlyOnce: resolved.runOnlyOnce,
     },
     {

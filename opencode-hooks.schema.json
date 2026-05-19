@@ -1,0 +1,235 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OpenCode Hooks Configuration",
+  "type": "object",
+  "definitions": {
+    "scriptEntry": {
+      "type": "object",
+      "properties": {
+        "source": { "type": "string", "enum": ["native", "claude"] },
+        "path": { "type": "string" },
+        "matcher": { "type": "string" },
+        "async": { "type": "boolean" },
+        "timeout": { "type": "integer", "minimum": 0 },
+        "passStdin": { "type": "boolean" },
+        "scriptType": {
+          "type": "string",
+          "enum": [
+            "settings-native",
+            "settings-claude",
+            "local-claude",
+            "global-claude"
+          ]
+        }
+      },
+      "required": ["source", "path"]
+    },
+    "scriptsConfig": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/scriptEntry" }
+    },
+    "toastConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "variant": {
+          "type": "string",
+          "enum": ["success", "warning", "error", "info"]
+        },
+        "duration": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "eventOverride": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "toast": {
+          "oneOf": [
+            { "type": "boolean" },
+            { "$ref": "#/definitions/toastConfig" }
+          ]
+        },
+        "runScripts": { "type": "boolean" },
+        "runOnlyOnce": { "type": "boolean" },
+        "logToAudit": { "type": "boolean" },
+        "appendToSession": { "type": "boolean" },
+        "allowedFields": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "scripts": { "$ref": "#/definitions/scriptsConfig" }
+      }
+    },
+    "toolOverride": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "toast": {
+          "oneOf": [
+            { "type": "boolean" },
+            { "$ref": "#/definitions/toastConfig" }
+          ]
+        },
+        "runScripts": { "type": "boolean" },
+        "runOnlyOnce": { "type": "boolean" },
+        "logToAudit": { "type": "boolean" },
+        "appendToSession": { "type": "boolean" },
+        "scripts": { "$ref": "#/definitions/scriptsConfig" }
+      }
+    }
+  },
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "description": "Enable or disable the plugin globally",
+      "default": true
+    },
+    "logDisabledEvents": {
+      "type": "boolean",
+      "description": "Log events that are disabled in the configuration",
+      "default": false
+    },
+    "showPluginStatus": {
+      "type": "boolean",
+      "description": "Show plugin status toast on startup",
+      "default": true
+    },
+    "pluginStatusDisplayMode": {
+      "type": "string",
+      "enum": ["user-only", "user-separated", "all-labeled"],
+      "description": "Which plugins to show in status toast",
+      "default": "user-only"
+    },
+    "toastQueue": {
+      "type": "object",
+      "properties": {
+        "staggerMs": { "type": "integer", "default": 300 },
+        "maxSize": { "type": "integer", "default": 50 }
+      }
+    },
+    "loadClaudeHookSettings": {
+      "type": "object",
+      "properties": {
+        "loadGlobalClaudeHooks": { "type": "boolean", "default": true },
+        "loadLocalClaudeHooks": { "type": "boolean", "default": true }
+      }
+    },
+    "scriptToasts": {
+      "type": "object",
+      "properties": {
+        "showOutput": { "type": "boolean", "default": true },
+        "showError": { "type": "boolean", "default": true },
+        "outputVariant": {
+          "type": "string",
+          "enum": ["info", "warning", "error", "success"],
+          "default": "warning"
+        },
+        "errorVariant": {
+          "type": "string",
+          "enum": ["info", "warning", "error", "success"],
+          "default": "error"
+        },
+        "outputDuration": { "type": "integer", "default": 5000 },
+        "errorDuration": { "type": "integer", "default": 15000 },
+        "outputTitle": { "type": "string", "default": "- SCRIPTS OUTPUT" },
+        "errorTitle": { "type": "string", "default": "- SCRIPT ERROR" }
+      }
+    },
+    "default": {
+      "type": "object",
+      "properties": {
+        "toast": { "type": "boolean", "default": false },
+        "runScripts": { "type": "boolean", "default": false },
+        "runOnlyOnce": { "type": "boolean", "default": false },
+        "logToAudit": { "type": "boolean", "default": true },
+        "appendToSession": { "type": "boolean", "default": false }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "level": {
+          "type": "string",
+          "enum": ["debug", "audit"],
+          "default": "debug"
+        },
+        "basePath": { "type": "string", "default": "./opencode-hooks/logs" },
+        "maxSizeMB": { "type": "integer", "default": 1 },
+        "maxAgeDays": { "type": "integer", "default": 30 },
+        "logTruncationKB": { "type": "integer", "default": 2 },
+        "maxFieldSize": { "type": "integer", "default": 1000 },
+        "maxArrayItems": { "type": "integer", "default": 50 },
+        "largeFields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "patch",
+            "diff",
+            "content",
+            "snapshot",
+            "output",
+            "result",
+            "text"
+          ]
+        },
+        "files": {
+          "type": "object",
+          "properties": {
+            "events": { "type": "string", "default": "plugin-events.json" },
+            "scripts": { "type": "string", "default": "plugin-scripts.json" },
+            "errors": { "type": "string", "default": "plugin-errors.json" },
+            "security": { "type": "string", "default": "plugin-security.json" },
+            "debug": { "type": "string", "default": "plugin-debug.json" }
+          }
+        }
+      }
+    },
+    "events": {
+      "type": "object",
+      "description": "Event-specific configuration overrides",
+      "default": {},
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "boolean" },
+          { "$ref": "#/definitions/eventOverride" }
+        ]
+      }
+    },
+    "tools": {
+      "type": "object",
+      "description": "Tool-specific configuration overrides",
+      "properties": {
+        "tool.execute.after": {
+          "type": "object",
+          "description": "Tool configs for after tool execution",
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "boolean" },
+              { "$ref": "#/definitions/toolOverride" }
+            ]
+          }
+        },
+        "tool.execute.after.subagent": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "boolean" },
+              { "$ref": "#/definitions/toolOverride" }
+            ]
+          }
+        },
+        "tool.execute.before": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/toolOverride" }
+        },
+        "tool.execute.before.subagent": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/toolOverride" }
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,22 @@
-import type { ResolvedEventConfig } from '../types/config';
-import type { DefaultsConfig } from '../types/constants';
+import type {
+  ResolvedEventConfig,
+  ScriptConstantsConfig,
+  CoreConstantsConfig,
+  AuditFileNamesConfig,
+} from '.opencode/plugins/types/config';
+import type { ToastConfig } from '.opencode/plugins/types/toast';
+
+export interface DefaultsConfig {
+  toast: ToastConfig;
+  scripts: ScriptConstantsConfig;
+  core: CoreConstantsConfig;
+  audit: {
+    files: AuditFileNamesConfig;
+  };
+  config: {
+    disabled: ResolvedEventConfig;
+  };
+}
 
 export const DEFAULTS: DefaultsConfig = {
   toast: {
@@ -43,12 +60,10 @@ export const DEFAULTS: DefaultsConfig = {
       security: 'plugin-security.json',
       debug: 'plugin-debug.json',
     },
-    archiveDir: 'audit-archive',
   },
   config: {
     disabled: {
       enabled: false,
-      debug: false,
       toast: false,
       toastTitle: '',
       toastMessage: '',
@@ -69,7 +84,6 @@ export const DEFAULTS: DefaultsConfig = {
         outputTitle: 'Script Output',
         errorTitle: 'Script Error',
       },
-      block: [],
-    } as ResolvedEventConfig,
+    },
   },
 };

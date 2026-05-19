@@ -1,17 +1,7 @@
-import { DEFAULTS } from '../../core/constants';
-import { buildKeysMessageSimple } from '../message-formatter/build-keys-message';
-import type { EventHandler } from '../../types/events';
-import type { HandlerConfig } from '../../types/messages';
-
-const createHandler = (config: HandlerConfig): EventHandler => ({
-  title: config.title,
-  variant: config.variant,
-  duration: config.duration,
-  defaultScript: config.defaultScript,
-  buildMessage: config.buildMessage,
-  allowedFields: config.allowedFields,
-  defaultTemplate: config.defaultTemplate,
-});
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import { buildKeysMessageSimple } from '.opencode/plugins/features/message-formatter/build-keys-message';
+import type { EventHandler } from '.opencode/plugins/types/events';
+import { createHandler } from '.opencode/plugins/features/handlers/create-handler';
 
 export const messageHandlers: Record<string, EventHandler> = {
   'message.part.removed': createHandler({

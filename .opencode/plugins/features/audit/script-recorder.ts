@@ -3,7 +3,7 @@ import type {
   ScriptRecord,
   ScriptRecorderDependencies,
   ScriptInput,
-} from '../../types/audit';
+} from '.opencode/plugins/types/audit';
 
 export function shouldLogScripts(config: AuditConfig): boolean {
   return config.enabled;
@@ -40,10 +40,10 @@ export function createScriptRecord(
 
   return {
     ts: new Date().toISOString(),
-    script: input.script,
-    args: input.args ?? [],
     exit: result.exitCode,
     duration,
+    args: input.args ?? [],
+    script: input.script,
     output: output || undefined,
     error: result.error || undefined,
   };
@@ -62,6 +62,14 @@ export function createScriptRecorder(
   ): Promise<void> {
     const record = createScriptRecord(input, result, canLog, logTruncationKB);
     if (record !== null) {
+      if (config.level === 'debug') {
+        if (input.stdin) {
+          record.stdin = input.stdin;
+        }
+        if (input.scriptType) {
+          record.scriptType = input.scriptType;
+        }
+      }
       await deps.writeLine('scripts', record);
     }
   }

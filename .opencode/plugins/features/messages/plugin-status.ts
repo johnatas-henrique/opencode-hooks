@@ -1,9 +1,12 @@
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
-import { DEFAULTS } from '../../core/constants';
-import type { PluginStatusDisplayMode } from '../../types/config';
-import type { PluginStatus, PluginEntry } from '../../types/plugin';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import type { PluginStatusDisplayMode } from '.opencode/plugins/types/config';
+import type {
+  PluginStatus,
+  PluginEntry,
+} from '.opencode/plugins/types/messages';
 
 const LINE_REGEX = /^(INFO|WARN|ERROR|DEBUG)\s+\S+\s+\+\d+ms\s+(.+)$/;
 const TAG_REGEX = /^(\w+)=(.+)$/;
@@ -33,7 +36,7 @@ export function getLatestLogFile(): string | null {
   return join(logDir, sorted[0]);
 }
 
-function parseLogLine(line: string): PluginEntry | null {
+export function parseLogLine(line: string): PluginEntry | null {
   const match = line.match(LINE_REGEX);
   if (!match) return null;
 
@@ -107,8 +110,12 @@ export function getPluginStatus(): PluginStatus[] {
         pluginMap.set(name, { name, status: 'active', source });
       }
     } else if (entry.level === 'ERROR') {
-      const errorMsg = entry.error || entry.message;
-      pluginMap.set(name, { name, status: 'failed', error: errorMsg, source });
+      pluginMap.set(name, {
+        name,
+        status: 'failed',
+        error: entry.error ?? entry.message,
+        source,
+      });
     } else if (
       entry.level === 'WARN' &&
       entry.message.includes(INCOMPATIBLE_MARKER)
@@ -123,6 +130,20 @@ export function getPluginStatus(): PluginStatus[] {
   }
 
   return Array.from(pluginMap.values());
+}
+
+function renderSection(
+  lines: string[],
+  items: PluginStatus[],
+  title: string,
+  formatItem: (p: PluginStatus) => string
+): void {
+  if (items.length === 0) return;
+  lines.push('');
+  lines.push(title);
+  for (const p of items) {
+    lines.push(formatItem(p));
+  }
 }
 
 export function formatPluginStatus(
@@ -150,97 +171,65 @@ export function formatPluginStatus(
       `Plugins: ${userStatuses.length} active, ${failedUser.length} failed, ${incompatibleUser.length} incompatible`
     );
 
-    if (activeUser.length > 0) {
-      lines.push('');
-      lines.push('Active:');
-      for (const p of activeUser) {
-        lines.push(`  ✓ ${p.name}`);
-      }
-    }
-
-    if (failedUser.length > 0) {
-      lines.push('');
-      lines.push('Failed:');
-      for (const p of failedUser) {
-        lines.push(`  ✗ ${p.name}${p.error ? ` (${p.error})` : ''}`);
-      }
-    }
-
-    if (incompatibleUser.length > 0) {
-      lines.push('');
-      lines.push('Incompatible:');
-      for (const p of incompatibleUser) {
-        lines.push(`  ⚠ ${p.name}`);
-      }
-    }
+    renderSection(lines, activeUser, 'Active:', (p) => `  ✓ ${p.name}`);
+    renderSection(
+      lines,
+      failedUser,
+      'Failed:',
+      (p) => `  ✗ ${p.name}${p.error ? ` (${p.error})` : ''}`
+    );
+    renderSection(
+      lines,
+      incompatibleUser,
+      'Incompatible:',
+      (p) => `  ⚠ ${p.name}`
+    );
   } else if (displayMode === 'user-separated') {
     lines.push(
       `Plugins: ${active.length} active, ${failed.length} failed, ${incompatible.length} incompatible`
     );
 
-    if (activeUser.length > 0) {
-      lines.push('');
-      lines.push('Active (user):');
-      for (const p of activeUser) {
-        lines.push(`  ✓ ${p.name}`);
-      }
-    }
-
-    if (activeBuiltIn.length > 0) {
-      lines.push('');
-      lines.push('Active (built-in):');
-      for (const p of activeBuiltIn) {
-        lines.push(`  ✓ ${p.name}`);
-      }
-    }
-
-    if (failed.length > 0) {
-      lines.push('');
-      lines.push('Failed:');
-      for (const p of failed) {
-        lines.push(`  ✗ ${p.name}${p.error ? ` (${p.error})` : ''}`);
-      }
-    }
-
-    if (incompatible.length > 0) {
-      lines.push('');
-      lines.push('Incompatible:');
-      for (const p of incompatible) {
-        lines.push(`  ⚠ ${p.name}`);
-      }
-    }
+    renderSection(lines, activeUser, 'Active (user):', (p) => `  ✓ ${p.name}`);
+    renderSection(
+      lines,
+      activeBuiltIn,
+      'Active (built-in):',
+      (p) => `  ✓ ${p.name}`
+    );
+    renderSection(
+      lines,
+      failed,
+      'Failed:',
+      (p) => `  ✗ ${p.name}${p.error ? ` (${p.error})` : ''}`
+    );
+    renderSection(lines, incompatible, 'Incompatible:', (p) => `  ⚠ ${p.name}`);
   } else {
     lines.push(
       `Plugins: ${active.length} active, ${failed.length} failed, ${incompatible.length} incompatible`
     );
 
     const allActive = [...activeUser, ...activeBuiltIn];
-    if (allActive.length > 0) {
-      lines.push('');
-      lines.push('Active:');
-      for (const p of allActive) {
-        const label = p.source === 'built-in' ? '(built-in)' : '(user)';
-        lines.push(`  ✓ ${p.name} ${label}`);
-      }
-    }
-
-    if (failed.length > 0) {
-      lines.push('');
-      lines.push('Failed:');
-      for (const p of failed) {
-        const label = p.source === 'built-in' ? '(built-in)' : '(user)';
-        lines.push(`  ✗ ${p.name}${p.error ? ` (${p.error})` : ''} ${label}`);
-      }
-    }
-
-    if (incompatible.length > 0) {
-      lines.push('');
-      lines.push('Incompatible:');
-      for (const p of incompatible) {
-        const label = p.source === 'built-in' ? '(built-in)' : '(user)';
-        lines.push(`  ⚠ ${p.name} ${label}`);
-      }
-    }
+    renderSection(
+      lines,
+      allActive,
+      'Active:',
+      (p) =>
+        `  ✓ ${p.name} ${p.source === 'built-in' ? '(built-in)' : '(user)'}`
+    );
+    renderSection(
+      lines,
+      failed,
+      'Failed:',
+      (p) =>
+        `  ✗ ${p.name}${p.error ? ` (${p.error})` : ''} ${p.source === 'built-in' ? '(built-in)' : '(user)'}`
+    );
+    renderSection(
+      lines,
+      incompatible,
+      'Incompatible:',
+      (p) =>
+        `  ⚠ ${p.name} ${p.source === 'built-in' ? '(built-in)' : '(user)'}`
+    );
   }
 
   return lines.join('\n');

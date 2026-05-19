@@ -1,241 +1,176 @@
-import { DEFAULTS } from '../../core/constants';
-import { buildKeysMessageSimple } from '../message-formatter/build-keys-message';
-import type { EventHandler } from '../../types/events';
-import type { HandlerConfig } from '../../types/messages';
+import { DEFAULTS } from '.opencode/plugins/core/constants';
+import { buildKeysMessage } from '.opencode/plugins/features/message-formatter/build-keys-message';
+import type { EventHandler } from '.opencode/plugins/types/events';
+import { createHandler } from '.opencode/plugins/features/handlers/create-handler';
 
-const createHandler = (config: HandlerConfig): EventHandler => ({
-  title: config.title,
-  variant: config.variant,
-  duration: config.duration,
-  defaultScript: config.defaultScript,
-  buildMessage: config.buildMessage,
-  allowedFields: config.allowedFields,
-  defaultTemplate: config.defaultTemplate,
-});
+interface BeforeToolConfig {
+  tool: string;
+  title: string;
+  defaultScript: string;
+  allowedFields: string[];
+}
 
-export const toolBeforeHandlers: Record<string, EventHandler> = {
-  'tool.execute.before.bash': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+const BEFORE_TOOLS: BeforeToolConfig[] = [
+  {
+    tool: 'bash',
+    title: '====BASH BEFORE====',
     defaultScript: 'tool-execute-before.bash.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.command'],
-  }),
-
-  'tool.execute.before.codesearch': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'codesearch',
+    title: '====CODE SEARCH BEFORE====',
     defaultScript: 'tool-execute-before.codesearch.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.query'],
-  }),
-
-  'tool.execute.before.edit': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'edit',
+    title: '====EDIT BEFORE====',
     defaultScript: 'tool-execute-before.edit.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.path'],
-  }),
-
-  'tool.execute.before.filesystem_create_directory': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'filesystem_create_directory',
+    title: '====FS MKDIR BEFORE====',
     defaultScript: 'tool-execute-before.filesystem_create_directory.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.path'],
-  }),
-
-  'tool.execute.before.filesystem_get_file_info': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'filesystem_get_file_info',
+    title: '====FS STAT BEFORE====',
     defaultScript: 'tool-execute-before.filesystem_get_file_info.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.path'],
-  }),
-
-  'tool.execute.before.filesystem_list_directory': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'filesystem_list_directory',
+    title: '====FS LS BEFORE====',
     defaultScript: 'tool-execute-before.filesystem_list_directory.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.path'],
-  }),
-
-  'tool.execute.before.filesystem_move_file': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'filesystem_move_file',
+    title: '====FS MV BEFORE====',
     defaultScript: 'tool-execute-before.filesystem_move_file.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.source', 'args.destination'],
-  }),
-
-  'tool.execute.before.filesystem_read_file': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'filesystem_read_file',
+    title: '====FS READ BEFORE====',
     defaultScript: 'tool-execute-before.filesystem_read_file.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.path'],
-  }),
-
-  'tool.execute.before.filesystem_search_files': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'filesystem_search_files',
+    title: '====FS FIND BEFORE====',
     defaultScript: 'tool-execute-before.filesystem_search_files.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.pattern'],
-  }),
-
-  'tool.execute.before.filesystem_write_file': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'filesystem_write_file',
+    title: '====FS WRITE BEFORE====',
     defaultScript: 'tool-execute-before.filesystem_write_file.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.path'],
-  }),
-
-  'tool.execute.before.gh_grep_searchGitHub': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'gh_grep_searchGitHub',
+    title: '====GH SEARCH BEFORE====',
     defaultScript: 'tool-execute-before.github_search_code.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.query'],
-  }),
-
-  'tool.execute.before.git-commit': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'git-commit',
+    title: '====GIT COMMIT BEFORE====',
     defaultScript: 'tool-execute-before.git-commit.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.message'],
-  }),
-
-  'tool.execute.before.glob': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'glob',
+    title: '====GLOB BEFORE====',
     defaultScript: 'tool-execute-before.glob.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.pattern'],
-  }),
-
-  'tool.execute.before.grep': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'grep',
+    title: '====GREP BEFORE====',
     defaultScript: 'tool-execute-before.grep.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.pattern'],
-  }),
-
-  'tool.execute.before.list': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'list',
+    title: '====LIST BEFORE====',
     defaultScript: 'tool-execute-before.list.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool'],
-  }),
-
-  'tool.execute.before.patch': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'patch',
+    title: '====PATCH BEFORE====',
     defaultScript: 'tool-execute-before.patch.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.path'],
-  }),
-
-  'tool.execute.before.question': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'question',
+    title: '====QUESTION BEFORE====',
     defaultScript: 'tool-execute-before.question.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.question'],
-  }),
-
-  'tool.execute.before.read': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'read',
+    title: '====READ BEFORE====',
     defaultScript: 'tool-execute-before.read.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.filePath'],
-  }),
-
-  'tool.execute.before.skill': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'skill',
+    title: '====SKILL BEFORE====',
     defaultScript: 'tool-execute-before.skill.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.name'],
-  }),
-
-  'tool.execute.before.task': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'task',
+    title: '====TASK BEFORE====',
     defaultScript: 'tool-execute-before.task.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool'],
-  }),
-
-  'tool.execute.before.todoread': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'todoread',
+    title: '====TODO READ BEFORE====',
     defaultScript: 'tool-execute-before.todoread.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool'],
-  }),
-
-  'tool.execute.before.todowrite': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'todowrite',
+    title: '====TODO WRITE BEFORE====',
     defaultScript: 'tool-execute-before.todowrite.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool'],
-  }),
-
-  'tool.execute.before.webfetch': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'webfetch',
+    title: '====WEB FETCH BEFORE====',
     defaultScript: 'tool-execute-before.webfetch.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.url'],
-  }),
-
-  'tool.execute.before.websearch': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
-    variant: 'info',
-    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  },
+  {
+    tool: 'websearch',
+    title: '====WEB SEARCH BEFORE====',
     defaultScript: 'tool-execute-before.websearch.sh',
-    buildMessage: buildKeysMessageSimple,
     allowedFields: ['tool', 'args.query'],
-  }),
+  },
+  {
+    tool: 'write',
+    title: '====WRITE BEFORE====',
+    defaultScript: 'tool-execute-before.write.sh',
+    allowedFields: ['tool', 'args.filePath'],
+  },
+];
 
-  'tool.execute.before.write': createHandler({
-    title: '====TOOL EXECUTE BEFORE====',
+export const toolBeforeHandlers: Record<string, EventHandler> = {};
+for (const cfg of BEFORE_TOOLS) {
+  toolBeforeHandlers[`tool.execute.before.${cfg.tool}`] = createHandler({
+    title: cfg.title,
     variant: 'info',
     duration: DEFAULTS.toast.durations.FIVE_SECONDS,
-    defaultScript: 'tool-execute-before.write.sh',
-    buildMessage: buildKeysMessageSimple,
-    allowedFields: ['tool', 'args.filePath'],
-  }),
-};
+    defaultScript: cfg.defaultScript,
+    buildMessage: buildKeysMessage,
+    allowedFields: cfg.allowedFields,
+  });
+}

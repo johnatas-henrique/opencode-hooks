@@ -1,12 +1,13 @@
+import type { EventInput } from '.opencode/plugins/types/core';
 import type {
   EventHandler,
   ConfigResolverContext,
   EventConfigResolver,
-} from '../../../types/events';
-import type { ResolvedEventConfig } from '../../../types/config';
-import { ConfigBuilder } from './event-config-builder';
+} from '.opencode/plugins/types/events';
+import type { ResolvedEventConfig } from '.opencode/plugins/types/config';
+import { ConfigBuilder } from '.opencode/plugins/features/events/resolvers/event-config-builder';
 
-export class EventConfigResolverImpl implements EventConfigResolver {
+export class DelegatingEventConfigResolver implements EventConfigResolver {
   constructor(private context: ConfigResolverContext) {}
 
   public getHandler(eventType: string): EventHandler | undefined {
@@ -19,7 +20,7 @@ export class EventConfigResolverImpl implements EventConfigResolver {
 
   resolve(
     eventType: string,
-    input?: Record<string, unknown>,
+    input?: EventInput,
     output?: Record<string, unknown>
   ): ResolvedEventConfig {
     const builder = new ConfigBuilder(this.context, eventType, input, output);

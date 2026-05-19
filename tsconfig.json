@@ -4,7 +4,12 @@
     "module": "es2022",
     "lib": ["dom", "es2020"],
     "sourceMap": false,
+    "paths": {
+      ".opencode/plugins/*": ["./.opencode/plugins/*"],
+      "*": ["./*"]
+    },
     "outDir": "./dist",
+    "ignoreDeprecations": "6.0",
     "strict": true,
     "removeComments": true,
     "noImplicitAny": true,
@@ -25,6 +30,8 @@
     "./src/**/*.tsx",
     "./src/**/*.ts",
     "./.opencode/**/*.ts",
-    "**/*.test.ts"
+    "**/*.test.ts",
+    "vitest.config.ts",
+    "vitest.setup.ts"
   ]
 }

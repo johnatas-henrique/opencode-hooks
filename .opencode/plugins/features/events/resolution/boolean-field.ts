@@ -1,5 +1,8 @@
-import type { EventConfig, EventOverride } from '../../../types/config';
-import { resolveToastEnabled } from './toast';
+import type {
+  EventConfig,
+  EventOverride,
+} from '.opencode/plugins/types/config';
+import { resolveToastEnabled } from '.opencode/plugins/features/events/resolution/toast';
 
 export function getBooleanField(
   eventCfg: EventConfig,
