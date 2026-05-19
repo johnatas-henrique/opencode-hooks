@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.6.1](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.6.0...opencode-hooks-v0.6.1) (2026-05-19)
+
+
+### Maintenance
+
+* **deps-dev:** bump @commitlint/config-conventional ([934c51a](https://github.com/johnatas-henrique/opencode-hooks/commit/934c51ad7bce88d59d2c8dcd453c720006519d3b))
+* **deps-dev:** bump @commitlint/config-conventional from 20.5.0 to 21.0.1 ([039a00f](https://github.com/johnatas-henrique/opencode-hooks/commit/039a00ffee991ab73856d86136ed1aac6e989e1d))
+* **deps-dev:** bump @opencode-ai/plugin from 1.14.29 to 1.15.3 ([59ec303](https://github.com/johnatas-henrique/opencode-hooks/commit/59ec3031d172b348bd7077b74a134ca27edd79ce))
+* **deps-dev:** bump @opencode-ai/plugin from 1.14.29 to 1.15.3 ([f1a3a41](https://github.com/johnatas-henrique/opencode-hooks/commit/f1a3a41cc39fec45f501bf05507dacbccc5d0b9c))
+* **deps-dev:** bump @types/node from 25.6.0 to 25.8.0 ([8a93ab4](https://github.com/johnatas-henrique/opencode-hooks/commit/8a93ab47c43cb7316109ee34d88781a98f63c14b))
+* **deps-dev:** bump @types/node from 25.6.0 to 25.8.0 ([d40643c](https://github.com/johnatas-henrique/opencode-hooks/commit/d40643c560ff627c1e8393c58aaf961092d7b420))
+* **deps-dev:** bump globals from 17.5.0 to 17.6.0 ([2385f99](https://github.com/johnatas-henrique/opencode-hooks/commit/2385f992784d58490c2c55071a4ebdae4732fae7))
+* **deps-dev:** bump globals from 17.5.0 to 17.6.0 ([d5709de](https://github.com/johnatas-henrique/opencode-hooks/commit/d5709de1c5f5e0f1c5367e8d6fdf06f3dcb65831))
+* **deps-dev:** bump lint-staged from 16.4.0 to 17.0.5 ([b4e804f](https://github.com/johnatas-henrique/opencode-hooks/commit/b4e804f0c6cef24b160fc96eceb1d4b4b9a3960f))
+* **deps-dev:** bump lint-staged from 16.4.0 to 17.0.5 ([fa03d8b](https://github.com/johnatas-henrique/opencode-hooks/commit/fa03d8bc586c7d5e07e0fb8088596f5533968e7a))
+* **deps-dev:** bump vitest from 4.1.5 to 4.1.6 ([603b3b2](https://github.com/johnatas-henrique/opencode-hooks/commit/603b3b2489009c5e07f47bf0f8e6531575431d93))
+* **deps-dev:** bump vitest from 4.1.5 to 4.1.6 ([9252616](https://github.com/johnatas-henrique/opencode-hooks/commit/92526162e5d5d49521731b293f67836350f7111b))
+
 ## [0.6.0](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.5.0...opencode-hooks-v0.6.0) (2026-04-29)
 
 
