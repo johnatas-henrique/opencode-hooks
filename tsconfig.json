@@ -9,6 +9,7 @@
       "*": ["./*"]
     },
     "outDir": "./dist",
+    "ignoreDeprecations": "6.0",
     "strict": true,
     "removeComments": true,
     "noImplicitAny": true,

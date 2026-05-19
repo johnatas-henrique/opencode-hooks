@@ -1,11 +1,22 @@
 {
-  "name": "opencode-hooks",
+  "name": "@johnatas-henrique/opencode-hooks",
   "version": "0.6.0",
   "description": "TypeScript plugin system for OpenCode AI providing event-driven hooks",
-  "main": "./dist/index.js",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "start": "node .",
-    "build": "tsc",
+    "build": "tsup --no-config --entry.index=.opencode/plugins/opencode-hooks.ts --out-dir dist --format esm --dts --dts-resolve --clean --tsconfig tsconfig.json --target es2022 --external fs --external path --external @opencode-ai/plugin --external @opencode-ai/sdk",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build",
     "test": "vitest",
     "fallow": "fallow",
     "test:unit": "vitest run test/unit/",
@@ -36,6 +47,14 @@
     "email": "johnatas.henrique@gmail.com",
     "name": "Johnatas Henrique"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johnatas-henrique/opencode-hooks.git"
+  },
+  "homepage": "https://github.com/johnatas-henrique/opencode-hooks#readme",
+  "bugs": {
+    "url": "https://github.com/johnatas-henrique/opencode-hooks/issues"
+  },
   "license": "MIT",
   "devDependencies": {
     "@commitlint/cli": "^20.5.2",
@@ -52,6 +71,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.3",
+    "tsup": "^8.5.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.1",
     "vitest": "^4.1.4"
