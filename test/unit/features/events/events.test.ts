@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { fromAny } from '@total-typescript/shoehorn';
 
-vi.mock('.opencode/plugins/config/settings', () => ({
+vi.mock('.opencode/plugins/config/runtime', () => ({
   userConfig: {
     enabled: true,
     logDisabledEvents: false,
@@ -50,7 +50,7 @@ import {
   resolveEventConfig,
   resolveToolConfig,
 } from '.opencode/plugins/features/events/events';
-import { userConfig } from '.opencode/plugins/config/settings';
+import { userConfig } from '.opencode/plugins/config/runtime';
 
 describe('events', () => {
   describe('resolveEventConfig', () => {

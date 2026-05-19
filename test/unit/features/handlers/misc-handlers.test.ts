@@ -191,6 +191,19 @@ describe('otherHandlers', () => {
     'tool.definition',
     'unknown.event',
     'installation.updated',
+    'question.asked',
+    'question.replied',
+    'question.rejected',
+    'tui.session.select',
+    'mcp.tools.changed',
+    'mcp.browser.open.failed',
+    'project.updated',
+    'workspace.ready',
+    'workspace.failed',
+    'workspace.status',
+    'worktree.ready',
+    'worktree.failed',
+    'global.disposed',
   ] as const;
 
   it('contains all expected keys', () => {

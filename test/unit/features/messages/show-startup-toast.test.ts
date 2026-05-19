@@ -10,7 +10,7 @@ vi.mock('fs', async () => {
   return { ...mockFs, default: mockFs };
 });
 
-vi.mock('.opencode/plugins/config/settings', async () => {
+vi.mock('.opencode/plugins/config/runtime', async () => {
   const { createMockSettings } = await import('../../../helpers/mock-settings');
   return createMockSettings();
 });

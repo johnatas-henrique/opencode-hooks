@@ -7,7 +7,7 @@ import { spawn } from 'child_process';
 import { fromAny } from '@total-typescript/shoehorn';
 import { makeMockChildProcess } from '../helpers/mock-child-process';
 import * as startupToastModule from '.opencode/plugins/features/messages/show-startup-toast';
-import * as settingsModule from '.opencode/plugins/config/settings';
+import * as runtimeModule from '.opencode/plugins/config/runtime';
 import * as executorModule from '.opencode/plugins/features/scripts/executor';
 import * as appendToSessionModule from '.opencode/plugins/features/messages/append-to-session';
 import fs from 'fs';
@@ -32,7 +32,7 @@ vi.mock('child_process', async () => {
   return { spawn: vi.fn(() => makeMockChildProcess()) };
 });
 
-vi.mock('.opencode/plugins/config/settings', async () => {
+vi.mock('.opencode/plugins/config/runtime', async () => {
   const { createMockSettings } = await import('../helpers/mock-settings');
   const mockSettings = createMockSettings();
   mockSettings.userConfig.toastQueue = { staggerMs: 300, maxSize: 50 };
@@ -117,8 +117,8 @@ const mockCtx = {
 };
 
 function setupCommonMocks(): void {
-  vi.mocked(settingsModule).userConfig.enabled = true;
-  vi.mocked(settingsModule).userConfig.logDisabledEvents = false;
+  vi.mocked(runtimeModule).userConfig.enabled = true;
+  vi.mocked(runtimeModule).userConfig.logDisabledEvents = false;
   vi.mocked(fs).existsSync.mockImplementation(((path: string) => {
     if (path.includes('.opencode/scripts')) return true;
     return false;
@@ -222,13 +222,13 @@ describe('OpencodeHooks initialization', () => {
   });
 
   it('returns empty hooks when plugin is disabled', async () => {
-    vi.mocked(settingsModule).userConfig.enabled = false;
+    vi.mocked(runtimeModule).userConfig.enabled = false;
     const result = await OpencodeHooks(mockCtx as never);
     expect(result).toEqual({});
   });
 
   it('detects and logs malformed Claude settings JSON during init', async () => {
-    vi.mocked(settingsModule).userConfig.loadClaudeHookSettings = {
+    vi.mocked(runtimeModule).userConfig.loadClaudeHookSettings = {
       loadGlobalClaudeHooks: true,
       loadLocalClaudeHooks: false,
     };
@@ -357,6 +357,28 @@ describe('event handler', () => {
     });
   });
 
+  it('does not log UNKNOWN_EVENT when event is in userConfig.events even without handler', async () => {
+    const logEventSpy = vi
+      .spyOn(pluginIntegration.getEventRecorder()!, 'logEvent')
+      .mockResolvedValue(undefined);
+
+    (vi.mocked(runtimeModule).userConfig.events as Record<string, unknown>)[
+      'config.only.event'
+    ] = { enabled: false };
+
+    await hooks.event!({
+      event: fromAny<Event, unknown>({
+        type: 'config.only.event',
+        properties: {},
+      }),
+    });
+
+    expect(logEventSpy).not.toHaveBeenCalledWith(
+      'UNKNOWN_EVENT',
+      expect.anything()
+    );
+  });
+
   it('stops execution when runOnlyOnce and isSubagent', async () => {
     addSubagentSession('ses_sub');
 
@@ -385,7 +407,7 @@ describe('event handler', () => {
   });
 
   it('logs disabled event when logDisabledEvents is true', async () => {
-    vi.mocked(settingsModule).userConfig.logDisabledEvents = true;
+    vi.mocked(runtimeModule).userConfig.logDisabledEvents = true;
     const logEventSpy = vi
       .spyOn(pluginIntegration.getEventRecorder()!, 'logEvent')
       .mockResolvedValue(undefined);
@@ -859,7 +881,7 @@ describe('executeHook behavior', () => {
   });
 
   it('handles toast dropped via onToastDropped callback', async () => {
-    vi.mocked(settingsModule).userConfig.toastQueue.maxSize = 2;
+    vi.mocked(runtimeModule).userConfig.toastQueue.maxSize = 2;
     vi.spyOn(pluginIntegration, 'getErrorRecorder').mockReturnValue(undefined);
 
     resetGlobalToastQueue();
@@ -878,7 +900,7 @@ describe('executeHook behavior', () => {
   });
 
   it('uses fallback title in dropped toast when title is empty', async () => {
-    vi.mocked(settingsModule).userConfig.toastQueue.maxSize = 2;
+    vi.mocked(runtimeModule).userConfig.toastQueue.maxSize = 2;
 
     resetGlobalToastQueue();
     pluginIntegration.resetAuditLogging();

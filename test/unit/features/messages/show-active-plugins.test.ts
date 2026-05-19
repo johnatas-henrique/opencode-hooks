@@ -8,10 +8,10 @@ vi.mock('fs', async () => {
   const mockFs = createSyncMockFs();
   return { ...mockFs, default: mockFs };
 });
-vi.mock('.opencode/plugins/config/settings', () => createMockSettings());
+vi.mock('.opencode/plugins/config/runtime', () => createMockSettings());
 
 import fs from 'fs';
-import * as settingsModule from '.opencode/plugins/config/settings';
+import * as runtimeModule from '.opencode/plugins/config/runtime';
 
 import { showActivePluginsToast } from '.opencode/plugins/features/messages/show-active-plugins';
 import type { ToastQueue } from '.opencode/plugins/types/toast';
@@ -42,12 +42,12 @@ function makeMockQueue(): ToastQueue {
 describe('showActivePluginsToast', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(settingsModule).userConfig.showPluginStatus = true;
-    vi.mocked(settingsModule).userConfig.pluginStatusDisplayMode = 'user-only';
+    vi.mocked(runtimeModule).userConfig.showPluginStatus = true;
+    vi.mocked(runtimeModule).userConfig.pluginStatusDisplayMode = 'user-only';
   });
 
   it('returns early when showPluginStatus is false', async () => {
-    vi.mocked(settingsModule).userConfig.showPluginStatus = false;
+    vi.mocked(runtimeModule).userConfig.showPluginStatus = false;
     const queue = makeMockQueue();
 
     await showActivePluginsToast(queue);
