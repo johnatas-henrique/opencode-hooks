@@ -23,7 +23,7 @@ import {
 } from '.opencode/plugins/features/events/events';
 import { addSubagentSession } from '.opencode/plugins/features/scripts/run-script-handler';
 import { OpenCodeEvents } from '.opencode/plugins/types/core';
-import { userConfig } from '.opencode/plugins/config/settings';
+import { userConfig } from '.opencode/plugins/config/runtime';
 import { DEFAULTS } from '.opencode/plugins/core/constants';
 import {
   initAuditLogging,
@@ -124,7 +124,8 @@ export const OpencodeHooks: Plugin = async (
 
   const hooks: Hooks = {
     event: async ({ event }) => {
-      const isKnownEvent = !!handlers[event.type];
+      const isKnownEvent =
+        !!handlers[event.type] || event.type in userConfig.events;
 
       const props = event.properties as Record<string, unknown>;
       const info = props?.info as Record<string, unknown> | undefined;

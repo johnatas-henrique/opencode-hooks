@@ -163,6 +163,14 @@ export const experimentalHandlers: Record<string, EventHandler> = {
   }),
 };
 
+const otherHandler: EventHandler = {
+  title: '',
+  variant: 'info',
+  duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  defaultScript: '',
+  buildMessage: buildKeysMessageSimple,
+};
+
 export const otherHandlers: Record<string, EventHandler> = {
   'tool.definition': createHandler({
     title: '====TOOL DEFINITION====',
@@ -187,4 +195,18 @@ export const otherHandlers: Record<string, EventHandler> = {
     defaultScript: 'installation-updated.sh',
     buildMessage: buildKeysMessageSimple,
   }),
+
+  'question.asked': otherHandler,
+  'question.replied': otherHandler,
+  'question.rejected': otherHandler,
+  'tui.session.select': otherHandler,
+  'mcp.tools.changed': otherHandler,
+  'mcp.browser.open.failed': otherHandler,
+  'project.updated': otherHandler,
+  'workspace.ready': otherHandler,
+  'workspace.failed': otherHandler,
+  'workspace.status': otherHandler,
+  'worktree.ready': otherHandler,
+  'worktree.failed': otherHandler,
+  'global.disposed': otherHandler,
 };

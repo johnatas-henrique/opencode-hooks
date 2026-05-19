@@ -3,6 +3,14 @@ import { buildKeysMessageSimple } from '.opencode/plugins/features/message-forma
 import type { EventHandler } from '.opencode/plugins/types/events';
 import { createHandler } from '.opencode/plugins/features/handlers/create-handler';
 
+const sessionNextHandler: EventHandler = {
+  title: '',
+  variant: 'info',
+  duration: DEFAULTS.toast.durations.FIVE_SECONDS,
+  defaultScript: '',
+  buildMessage: buildKeysMessageSimple,
+};
+
 export const sessionHandlers: Record<string, EventHandler> = {
   'session.created': createHandler({
     title: '====SESSION CREATED====',
@@ -83,4 +91,31 @@ export const sessionHandlers: Record<string, EventHandler> = {
     defaultScript: 'session-unknown.sh',
     buildMessage: buildKeysMessageSimple,
   }),
+
+  'session.next.agent.switched': sessionNextHandler,
+  'session.next.model.switched': sessionNextHandler,
+  'session.next.prompted': sessionNextHandler,
+  'session.next.synthetic': sessionNextHandler,
+  'session.next.shell.started': sessionNextHandler,
+  'session.next.shell.ended': sessionNextHandler,
+  'session.next.step.started': sessionNextHandler,
+  'session.next.step.ended': sessionNextHandler,
+  'session.next.step.failed': sessionNextHandler,
+  'session.next.text.started': sessionNextHandler,
+  'session.next.text.delta': sessionNextHandler,
+  'session.next.text.ended': sessionNextHandler,
+  'session.next.reasoning.started': sessionNextHandler,
+  'session.next.reasoning.delta': sessionNextHandler,
+  'session.next.reasoning.ended': sessionNextHandler,
+  'session.next.tool.input.started': sessionNextHandler,
+  'session.next.tool.input.delta': sessionNextHandler,
+  'session.next.tool.input.ended': sessionNextHandler,
+  'session.next.tool.called': sessionNextHandler,
+  'session.next.tool.progress': sessionNextHandler,
+  'session.next.tool.success': sessionNextHandler,
+  'session.next.tool.failed': sessionNextHandler,
+  'session.next.retried': sessionNextHandler,
+  'session.next.compaction.started': sessionNextHandler,
+  'session.next.compaction.delta': sessionNextHandler,
+  'session.next.compaction.ended': sessionNextHandler,
 };

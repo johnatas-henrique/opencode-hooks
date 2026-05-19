@@ -64,6 +64,53 @@ export const OpenCodeEvents = {
   EXPERIMENTAL_TEXT_COMPLETE: 'experimental.text.complete',
   TOOL_DEFINITION: 'tool.definition',
   SESSION_UNKNOWN: 'session.unknown',
+
+  QUESTION_ASKED: 'question.asked',
+  QUESTION_REPLIED: 'question.replied',
+  QUESTION_REJECTED: 'question.rejected',
+
+  TUI_SESSION_SELECT: 'tui.session.select',
+
+  MCP_TOOLS_CHANGED: 'mcp.tools.changed',
+  MCP_BROWSER_OPEN_FAILED: 'mcp.browser.open.failed',
+
+  PROJECT_UPDATED: 'project.updated',
+
+  WORKSPACE_READY: 'workspace.ready',
+  WORKSPACE_FAILED: 'workspace.failed',
+  WORKSPACE_STATUS: 'workspace.status',
+
+  WORKTREE_READY: 'worktree.ready',
+  WORKTREE_FAILED: 'worktree.failed',
+
+  SESSION_NEXT_AGENT_SWITCHED: 'session.next.agent.switched',
+  SESSION_NEXT_MODEL_SWITCHED: 'session.next.model.switched',
+  SESSION_NEXT_PROMPTED: 'session.next.prompted',
+  SESSION_NEXT_SYNTHETIC: 'session.next.synthetic',
+  SESSION_NEXT_SHELL_STARTED: 'session.next.shell.started',
+  SESSION_NEXT_SHELL_ENDED: 'session.next.shell.ended',
+  SESSION_NEXT_STEP_STARTED: 'session.next.step.started',
+  SESSION_NEXT_STEP_ENDED: 'session.next.step.ended',
+  SESSION_NEXT_STEP_FAILED: 'session.next.step.failed',
+  SESSION_NEXT_TEXT_STARTED: 'session.next.text.started',
+  SESSION_NEXT_TEXT_DELTA: 'session.next.text.delta',
+  SESSION_NEXT_TEXT_ENDED: 'session.next.text.ended',
+  SESSION_NEXT_REASONING_STARTED: 'session.next.reasoning.started',
+  SESSION_NEXT_REASONING_DELTA: 'session.next.reasoning.delta',
+  SESSION_NEXT_REASONING_ENDED: 'session.next.reasoning.ended',
+  SESSION_NEXT_TOOL_INPUT_STARTED: 'session.next.tool.input.started',
+  SESSION_NEXT_TOOL_INPUT_DELTA: 'session.next.tool.input.delta',
+  SESSION_NEXT_TOOL_INPUT_ENDED: 'session.next.tool.input.ended',
+  SESSION_NEXT_TOOL_CALLED: 'session.next.tool.called',
+  SESSION_NEXT_TOOL_PROGRESS: 'session.next.tool.progress',
+  SESSION_NEXT_TOOL_SUCCESS: 'session.next.tool.success',
+  SESSION_NEXT_TOOL_FAILED: 'session.next.tool.failed',
+  SESSION_NEXT_RETRIED: 'session.next.retried',
+  SESSION_NEXT_COMPACTION_STARTED: 'session.next.compaction.started',
+  SESSION_NEXT_COMPACTION_DELTA: 'session.next.compaction.delta',
+  SESSION_NEXT_COMPACTION_ENDED: 'session.next.compaction.ended',
+
+  GLOBAL_DISPOSED: 'global.disposed',
 } as const;
 
 export interface ToolArgs {
