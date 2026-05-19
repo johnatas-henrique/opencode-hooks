@@ -14,7 +14,7 @@ import {
   getScriptRecorder,
 } from '.opencode/plugins/features/audit/plugin-integration';
 import { useGlobalToastQueue } from '.opencode/plugins/core/toast-queue';
-import { userConfig } from '.opencode/plugins/config/settings';
+import { userConfig } from '.opencode/plugins/config/runtime';
 
 const TOOL_EXECUTE_BEFORE = 'tool.execute.before';
 const COMMAND_EXECUTE_BEFORE = 'command.execute.before';

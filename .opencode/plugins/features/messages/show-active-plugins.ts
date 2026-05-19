@@ -2,7 +2,7 @@ import {
   getPluginStatus,
   formatPluginStatus,
 } from '.opencode/plugins/features/messages/plugin-status';
-import { userConfig } from '.opencode/plugins/config/settings';
+import { userConfig } from '.opencode/plugins/config/runtime';
 import { DEFAULTS } from '.opencode/plugins/core/constants';
 import type { ToastQueue } from '.opencode/plugins/types/toast';
 

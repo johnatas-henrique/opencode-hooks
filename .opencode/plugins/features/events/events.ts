@@ -1,4 +1,4 @@
-import { userConfig } from '.opencode/plugins/config/settings';
+import { userConfig } from '.opencode/plugins/config/runtime';
 import type { ResolvedEventConfig } from '.opencode/plugins/types/config';
 import type { EventInput } from '.opencode/plugins/types/core';
 import {
