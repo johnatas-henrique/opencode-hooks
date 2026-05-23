@@ -60,7 +60,7 @@
     "@commitlint/cli": "^20.5.2",
     "@commitlint/config-conventional": "^21.0.1",
     "@eslint/js": "^10.0.1",
-    "@opencode-ai/plugin": "^1.15.3",
+    "@opencode-ai/plugin": "^1.15.10",
     "@opencode-ai/sdk": "^1.14.41",
     "@total-typescript/shoehorn": "^0.1.2",
     "@types/node": "^25.8.0",
