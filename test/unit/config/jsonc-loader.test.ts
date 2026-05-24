@@ -288,6 +288,23 @@ describe('jsonc-loader', () => {
         read: { logToAudit: true },
       });
     });
+
+    it('preserves base tool sections when override only provides partial tools', () => {
+      const result = deepMerge(base, {
+        tools: {
+          'tool.execute.before': { read: { runScripts: true } },
+        },
+      } as unknown as Parameters<typeof deepMerge>[1]);
+      expect(result.tools['tool.execute.after']).toEqual({ bash: {} });
+      expect(result.tools['tool.execute.after.subagent']).toEqual({ task: {} });
+      expect(result.tools['tool.execute.before']).toEqual({
+        bash: {},
+        read: { runScripts: true },
+      });
+      expect(result.tools['tool.execute.before.subagent']).toEqual({
+        task: {},
+      });
+    });
   });
 
   describe('loadUserConfig', () => {
