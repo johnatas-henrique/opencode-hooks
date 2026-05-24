@@ -21,6 +21,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "types": ["node", "vitest/globals"],
+    "resolveJsonModule": true,
     "esModuleInterop": true,
     "isolatedModules": true,
     "skipLibCheck": true

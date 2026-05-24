@@ -1,3 +1,4 @@
+import { version } from '../../../package.json';
 import type {
   ResolvedEventConfig,
   ScriptConstantsConfig,
@@ -5,6 +6,8 @@ import type {
   AuditFileNamesConfig,
 } from '.opencode/plugins/types/config';
 import type { ToastConfig } from '.opencode/plugins/types/toast';
+
+export const PLUGIN_VERSION = version;
 
 export interface DefaultsConfig {
   toast: ToastConfig;

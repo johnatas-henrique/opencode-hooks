@@ -3,7 +3,7 @@ import {
   formatPluginStatus,
 } from '.opencode/plugins/features/messages/plugin-status';
 import { userConfig } from '.opencode/plugins/config/runtime';
-import { DEFAULTS } from '.opencode/plugins/core/constants';
+import { DEFAULTS, PLUGIN_VERSION } from '.opencode/plugins/core/constants';
 import type { ToastQueue } from '.opencode/plugins/types/toast';
 
 export async function showActivePluginsToast(
@@ -24,7 +24,7 @@ export async function showActivePluginsToast(
   );
 
   queue.add({
-    title: 'Plugin Status',
+    title: `Plugin Status v${PLUGIN_VERSION}`,
     message,
     variant: hasIssues ? 'warning' : 'info',
     duration: options.duration ?? DEFAULTS.toast.durations.EIGHT_SECONDS,
