@@ -10,7 +10,7 @@ export function waitForToastSilence(
 ): { promise: Promise<void>; cleanup: () => void } {
   const pollMs = options?.pollMs ?? 200;
   const silenceMs =
-    options?.silenceMs ?? DEFAULTS.toast.timeouts.ONE_SECOND_AND_HALF;
+    options?.silenceMs ?? DEFAULTS.toast.timer.OVERWRITE_CHECK_DELAY;
   const readFn = readFileFn ?? readFile;
 
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
