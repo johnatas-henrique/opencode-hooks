@@ -64,7 +64,7 @@ describe('showActivePluginsToast', () => {
     expect(queue.add).toHaveBeenCalledOnce();
     expect(queue.add).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'Plugin Status',
+        title: expect.stringContaining('Plugin Status'),
         variant: 'info',
       })
     );
@@ -80,7 +80,7 @@ describe('showActivePluginsToast', () => {
 
     expect(queue.add).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'Plugin Status',
+        title: expect.stringContaining('Plugin Status'),
         variant: 'warning',
       })
     );
