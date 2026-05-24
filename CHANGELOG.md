@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.8.0](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.7.1...opencode-hooks-v0.8.0) (2026-05-24)
+
+
+### Features
+
+* add PLUGIN_VERSION constant and show in startup toast ([7aed416](https://github.com/johnatas-henrique/opencode-hooks/commit/7aed416c86d88aeef6c73b2426d5b5c9b434680d))
+* auto-create minimal opencode-hooks.jsonc on first startup ([16e532e](https://github.com/johnatas-henrique/opencode-hooks/commit/16e532e6fadaf9d2770dfdbe13c805b63ba4796d))
+* move schema to assets/ for npm distribution ([de77b4e](https://github.com/johnatas-henrique/opencode-hooks/commit/de77b4e28d05531bc26be29cbc14999a39c1d184))
+* prepare for npm distribution — schema assets, config auto-creation, docs rewrite ([ba737c2](https://github.com/johnatas-henrique/opencode-hooks/commit/ba737c2a6027e2b6b9ec109fc8c5bef82391a27c))
+
+
+### Bug Fixes
+
+* increase startup toast silence timer and loading duration ([bc2c78b](https://github.com/johnatas-henrique/opencode-hooks/commit/bc2c78b34d7a0e5f99c3f9b92b84cdca21b71e49))
+
+
+### Maintenance
+
+* ignore auto-created opencode-hooks config ([4b6654c](https://github.com/johnatas-henrique/opencode-hooks/commit/4b6654c8ab9e7c31aeec0419e0f5af38a1b35b3d))
+
 ## [0.7.1](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.7.0...opencode-hooks-v0.7.1) (2026-05-24)
 
 
