@@ -63,7 +63,7 @@
     "@opencode-ai/plugin": "^1.15.10",
     "@opencode-ai/sdk": "^1.14.41",
     "@total-typescript/shoehorn": "^0.1.2",
-    "@types/node": "^25.8.0",
+    "@types/node": "^25.9.1",
     "@vitest/coverage-v8": "^4.1.4",
     "eslint": "^10.2.1",
     "fallow": "^2.62.0",
