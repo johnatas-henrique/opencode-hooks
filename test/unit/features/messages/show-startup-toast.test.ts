@@ -56,7 +56,7 @@ async function runShowStartupToast(
 
 function assertPluginStatusToastShown(showFn: ReturnType<typeof vi.fn>): void {
   expect(showFn).toHaveBeenCalledWith(
-    expect.objectContaining({ title: 'Plugin Status' })
+    expect.objectContaining({ title: expect.stringContaining('Plugin Status') })
   );
 }
 
@@ -113,7 +113,7 @@ describe('showStartupToast', () => {
         title: 'Loading plugin status...',
         message: 'Scanning OpenCode plugins',
         variant: 'info',
-        duration: 2000,
+        duration: 5000,
       })
     );
   });

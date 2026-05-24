@@ -4,6 +4,8 @@ dist/
 config.json
 coverage/
 production/session-logs/
+opencode-hooks/
+.opencode/opencode-hooks.jsonc
 .env
 .vscode/
 *.logfmt

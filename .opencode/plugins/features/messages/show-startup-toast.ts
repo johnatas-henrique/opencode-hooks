@@ -17,7 +17,7 @@ export async function showStartupToast(
     title: 'Loading plugin status...',
     message: 'Scanning OpenCode plugins',
     variant: 'info',
-    duration: DEFAULTS.toast.durations.TWO_SECONDS,
+    duration: DEFAULTS.toast.durations.FIVE_SECONDS,
   });
 
   if (logFile) {

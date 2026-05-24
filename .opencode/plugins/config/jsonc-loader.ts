@@ -116,7 +116,7 @@ export function deepMerge(
   };
 }
 
-function getConfigPaths(): { projectPath: string; globalPath: string } {
+export function getConfigPaths(): { projectPath: string; globalPath: string } {
   return {
     projectPath: path.join(process.cwd(), '.opencode', 'opencode-hooks.jsonc'),
     globalPath: path.join(
