@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/johnatas-henrique/opencode-hooks/main/opencode-hooks.schema.json",
+  "$schema": "https://raw.githubusercontent.com/johnatas-henrique/opencode-hooks/main/assets/opencode-hooks.schema.json",
   "audit": {
     "basePath": "./.opencode/hooks/logs",
     "level": "debug",
