@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.7.1](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.7.0...opencode-hooks-v0.7.1) (2026-05-24)
+
+
+### Bug Fixes
+
+* restore 100% coverage in jsonc-loader test with partial tools branch ([b6acd79](https://github.com/johnatas-henrique/opencode-hooks/commit/b6acd7990237836f66e5e46e76bc4799202f48de))
+
+
+### Maintenance
+
+* add partial tools test branch to restore 100% coverage ([b3821b3](https://github.com/johnatas-henrique/opencode-hooks/commit/b3821b3b504173b47fbcefda4ef0b6d68a4ea36b))
+* delete vscode settings file ([7e15cb4](https://github.com/johnatas-henrique/opencode-hooks/commit/7e15cb4c1e96208cd78c0c00eb9029f011cc7470))
+* **deps-dev:** bump @opencode-ai/plugin from 1.15.5 to 1.15.10 ([7f1411b](https://github.com/johnatas-henrique/opencode-hooks/commit/7f1411b4d738fddf794012f736aa8b67a9d3a25e))
+* **deps-dev:** bump @opencode-ai/plugin from 1.15.5 to 1.15.10 ([296cd73](https://github.com/johnatas-henrique/opencode-hooks/commit/296cd7377b9dc8df1c584e09bf7f849defceca20))
+* **deps-dev:** bump @types/node from 25.9.0 to 25.9.1 ([e4c820c](https://github.com/johnatas-henrique/opencode-hooks/commit/e4c820c2f5bb6dc875aed769b61a98052c5c6a15))
+* **deps-dev:** bump @types/node from 25.9.0 to 25.9.1 ([0d2f093](https://github.com/johnatas-henrique/opencode-hooks/commit/0d2f093069536c03217a45e8beac6384992455f1))
+* **deps-dev:** bump @vitest/coverage-v8 from 4.1.6 to 4.1.7 ([3a3a9ef](https://github.com/johnatas-henrique/opencode-hooks/commit/3a3a9ef27b7b0962f58405593fbecc16085012c0))
+* **deps-dev:** bump @vitest/coverage-v8 from 4.1.6 to 4.1.7 ([e700766](https://github.com/johnatas-henrique/opencode-hooks/commit/e70076698df1dff1e02f631c731902c5b82532ac))
+* **deps-dev:** bump fallow from 2.62.0 to 2.79.0 ([47a69fc](https://github.com/johnatas-henrique/opencode-hooks/commit/47a69fc2d66705e7fda7483f36889d17c23f9415))
+* **deps-dev:** bump fallow from 2.62.0 to 2.79.0 ([a905afe](https://github.com/johnatas-henrique/opencode-hooks/commit/a905afe1ed9942fed1eb97d80d48ecc54364e504))
+* **deps-dev:** bump typescript-eslint from 8.59.1 to 8.59.4 ([12388ff](https://github.com/johnatas-henrique/opencode-hooks/commit/12388fff535713e5783b7f7b49117d7271f04a5c))
+* **deps-dev:** bump typescript-eslint from 8.59.1 to 8.59.4 ([dd20b56](https://github.com/johnatas-henrique/opencode-hooks/commit/dd20b568ec8ff7343a7e423c7fa4d7c36c0908c2))
+* **deps-dev:** bump vitest from 4.1.6 to 4.1.7 ([4c38180](https://github.com/johnatas-henrique/opencode-hooks/commit/4c38180411c723d29944378e2611eb59072526c4))
+* **deps-dev:** bump vitest from 4.1.6 to 4.1.7 ([0b5a6fd](https://github.com/johnatas-henrique/opencode-hooks/commit/0b5a6fd8a5113680dd8b78ba18c752a6b37754f5))
+* remove fallow audit config and script ([bb96455](https://github.com/johnatas-henrique/opencode-hooks/commit/bb964552a83979dd6e90d26567f427a091105c82))
+
 ## [0.7.0](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.6.0...opencode-hooks-v0.7.0) (2026-05-19)
 
 
