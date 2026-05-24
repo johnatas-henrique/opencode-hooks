@@ -24,7 +24,33 @@ A TypeScript plugin system for [OpenCode AI](https://opencode.ai) that provides 
 
 ### Installation
 
-1. Clone this repository into your project's `.opencode/plugins` directory:
+#### Via opencode.json (recommended)
+
+Add the plugin to your `opencode.json`:
+
+```json
+{
+  "plugins": ["@johnatas-henrique/opencode-hooks@latest"]
+}
+```
+
+OpenCode installs and loads the plugin automatically.
+
+#### Via npm
+
+```bash
+npm install @johnatas-henrique/opencode-hooks
+```
+
+Create the entry point `.opencode/plugins/opencode-hooks.ts`:
+
+```ts
+export { default } from '@johnatas-henrique/opencode-hooks';
+```
+
+OpenCode detects and loads the plugin from this file.
+
+#### Via git clone (development)
 
 ```bash
 mkdir -p .opencode/plugins
@@ -35,11 +61,21 @@ npm install
 npm run build
 ```
 
-2. OpenCode will automatically detect and load the plugin from `.opencode/plugins/opencode-hooks.ts`.
+### First Startup
+
+Zero configuration required. When OpenCode starts with the plugin:
+
+1. **Claude hooks detected** — existing hooks from `~/.claude/hooks/` and `.claude/hooks/` are loaded and mapped to OpenCode events automatically
+2. **Default config created** — `.opencode/opencode-hooks.jsonc` is created with sensible defaults if no config exists
+3. **Status toast** — a notification shows which plugins are active
+4. **Scripts directory** — `.opencode/scripts/` is created for your custom scripts
+5. **Audit logging** — event logs start recording under `opencode-hooks/logs/`
+
+Everything works out of the box. To customize behavior, edit `.opencode/opencode-hooks.jsonc` — see [Configuration](docs/CONFIGURATION.md).
 
 ### Next Steps
 
-- See [Configuration](docs/CONFIGURATION.md) to set up events, tools, scripts, and audit
+- See [Configuration](docs/CONFIGURATION.md) to customize events, tools, scripts, and audit via JSONC
 - See [Scripts](docs/SCRIPTS.md) to learn how to write blocking scripts, async scripts, and Claude-compatible hooks
 - See [Events](docs/EVENTS.md) for the full event catalog with available fields
 
@@ -47,7 +83,7 @@ npm run build
 
 | Document                                                  | Description                                                                                                       |
 | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| [Configuration](docs/CONFIGURATION.md)                    | Full reference for `settings.ts` — all config fields, types, events, tools, audit, and toasts                     |
+| [Configuration](docs/CONFIGURATION.md)                    | Full reference for `opencode-hooks.jsonc` — all config fields, types, events, tools, audit, and toasts            |
 | [Scripts](docs/SCRIPTS.md)                                | How to write and run shell scripts — stdin formats, blocking, async, exit codes, Claude Code compatibility        |
 | [Events](docs/EVENTS.md)                                  | Event catalog with available fields, descriptions, and recommended toast fields                                   |
 | [Claude Code Compatibility](docs/CLAUDE-COMPATIBILITY.md) | How Claude Code `.sh` hooks map to OpenCode events — stdin field comparison, limitations, and migration checklist |
