@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.8.1](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.8.0...opencode-hooks-v0.8.1) (2026-06-07)
+
+
+### Maintenance
+
+* **deps-dev:** bump @commitlint/cli from 20.5.2 to 21.0.2 ([b1bb7a8](https://github.com/johnatas-henrique/opencode-hooks/commit/b1bb7a8ad3b59ff8b9d938fcc6524627e5ddf8e9))
+* **deps-dev:** bump @commitlint/cli from 20.5.2 to 21.0.2 ([8761c35](https://github.com/johnatas-henrique/opencode-hooks/commit/8761c35a20ebf14b25f390411573ac6585233688))
+* **deps-dev:** bump @commitlint/config-conventional ([9820222](https://github.com/johnatas-henrique/opencode-hooks/commit/9820222d887ddddeec9d38c835071de0f19fa89f))
+* **deps-dev:** bump @commitlint/config-conventional from 21.0.1 to 21.0.2 ([27d057e](https://github.com/johnatas-henrique/opencode-hooks/commit/27d057e89f73996df819c52084b4e86cc94d1aad))
+* **deps-dev:** bump @opencode-ai/sdk from 1.15.10 to 1.16.2 ([a4cf767](https://github.com/johnatas-henrique/opencode-hooks/commit/a4cf7671e283c3d86e2514f948de998a481164b8))
+* **deps-dev:** bump @opencode-ai/sdk from 1.15.10 to 1.16.2 ([5604daf](https://github.com/johnatas-henrique/opencode-hooks/commit/5604daf75039d3fb2fd114de88d67b149c6667c5))
+* **deps-dev:** bump @types/node from 25.9.1 to 25.9.2 ([2de51d4](https://github.com/johnatas-henrique/opencode-hooks/commit/2de51d4240dd738bef557194ef3846755ccac2ff))
+* **deps-dev:** bump @types/node from 25.9.1 to 25.9.2 ([3ca06ed](https://github.com/johnatas-henrique/opencode-hooks/commit/3ca06ed6cf6e48c57837c2f392fd95d9f5549453))
+* **deps-dev:** bump eslint from 10.2.1 to 10.4.1 ([0ea4006](https://github.com/johnatas-henrique/opencode-hooks/commit/0ea400631f0db57608c61a3575eb20e7f4ae840e))
+* **deps-dev:** bump eslint from 10.2.1 to 10.4.1 ([93d923f](https://github.com/johnatas-henrique/opencode-hooks/commit/93d923f6677a2e6d89a6e2c3a5047efa267adaec))
+* **deps-dev:** bump fallow from 2.79.0 to 2.89.0 ([d48c728](https://github.com/johnatas-henrique/opencode-hooks/commit/d48c7288ca08050ba0bec03e606b60b696ffaa82))
+* **deps-dev:** bump fallow from 2.79.0 to 2.89.0 ([402cece](https://github.com/johnatas-henrique/opencode-hooks/commit/402cecead70cb568ecb16eedc1875d8475a8139d))
+* **deps-dev:** bump lint-staged from 17.0.5 to 17.0.7 ([045a99f](https://github.com/johnatas-henrique/opencode-hooks/commit/045a99f9c6a6b7709441f257db2f2a607985aa03))
+* **deps-dev:** bump lint-staged from 17.0.5 to 17.0.7 ([2cc7e6c](https://github.com/johnatas-henrique/opencode-hooks/commit/2cc7e6c51d84a93d5641e9b1678fa62a785dc7ee))
+* **deps-dev:** bump typescript-eslint from 8.59.4 to 8.60.1 ([8a31a00](https://github.com/johnatas-henrique/opencode-hooks/commit/8a31a00fa8c2449f5f6be5f4a0c796adce8481cd))
+* **deps-dev:** bump typescript-eslint from 8.59.4 to 8.60.1 ([95a28f2](https://github.com/johnatas-henrique/opencode-hooks/commit/95a28f23cd13b3ae76baa756db79764a18b20bc3))
+* **deps-dev:** bump vitest from 4.1.7 to 4.1.8 ([5279724](https://github.com/johnatas-henrique/opencode-hooks/commit/5279724f8befa22ae97f3d56d92fb144f36edaf7))
+* **deps-dev:** bump vitest from 4.1.7 to 4.1.8 ([43a37fc](https://github.com/johnatas-henrique/opencode-hooks/commit/43a37fcdf2f8bdd8083c39b607eb165e4f35cb93))
+
 ## [0.8.0](https://github.com/johnatas-henrique/opencode-hooks/compare/opencode-hooks-v0.7.1...opencode-hooks-v0.8.0) (2026-05-24)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@johnatas-henrique/opencode-hooks",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "TypeScript plugin system for OpenCode AI providing event-driven hooks",
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
